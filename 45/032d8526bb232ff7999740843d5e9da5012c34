@@ -1,0 +1,16 @@
+openspec/changes/cull-to-local-ide/tasks.md
+  h_9fe6a8bd72c8b9 51
+src/renderer/src/components/editor/EditorEditFileSurface.tsx
+  h_9fe6a8bd72c8b9 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "45032d8526bb232ff7999740843d5e9da5012c34",
+  "prompts": {},
+  "humans": {
+    "h_9fe6a8bd72c8b9": {
+      "author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
