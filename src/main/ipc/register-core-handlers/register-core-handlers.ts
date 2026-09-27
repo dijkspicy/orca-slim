@@ -23,7 +23,6 @@ import { registerMemoryHandlers } from '../memory'
 import { registerRateLimitHandlers } from '../rate-limits'
 import { registerRuntimeHandlers } from '../runtime'
 import { registerRuntimeEnvironmentHandlers } from '../runtime-environments'
-import { registerEphemeralVmHandlers } from '../ephemeral-vm'
 import { registerAiVaultHandlers } from '../ai-vault'
 import { registerAiVaultSearchHandlers } from '../ai-vault-search'
 import { registerNativeChatHandlers } from '../native-chat'
@@ -32,7 +31,6 @@ import { registerOnboardingHandlers } from '../onboarding'
 import { registerDashboardPopoutHandlers } from '../dashboard-popout'
 import { registerTerminalPreviewHandlers } from '../terminal-preview'
 import { registerDeveloperPermissionHandlers } from '../developer-permissions'
-import { registerComputerUsePermissionHandlers } from '../computer-use-permissions'
 import { setAgentBrowserBridgeRef, registerBrowserHandlers } from '../browser'
 import { setTrustedBrowserRendererWebContentsId } from '../browser-renderer-trust'
 import { registerSessionHandlers } from '../session'
@@ -49,7 +47,6 @@ import { registerTelemetryHandlers } from '../telemetry'
 import { registerShellHandlers } from '../shell'
 import { registerUIHandlers, setTrustedUIRendererWebContentsId } from '../ui'
 import { registerTerminalRenderDesyncEvidenceHandler } from '../terminal-render-desync-evidence'
-import { registerOrcaProfileHandlers } from '../orca-profiles'
 import { registerCodexAccountHandlers } from '../codex-accounts'
 import { registerAgentHookHandlers } from '../agent-hooks'
 import { registerCodexConfigSyncHandlers } from '../codex-config-sync'
@@ -168,7 +165,6 @@ export function registerCoreHandlers(
   // not load-bearing; both register independent ipcMain channels.
   registerDiagnosticsHandlers()
   registerTerminalRenderDesyncEvidenceHandler()
-  registerComputerUsePermissionHandlers()
   registerSettingsHandlers(store, agentAwakeService)
   registerSkillsHandlers(store, runtime)
   registerSkillDeleteIpcHandlers(store, runtime)
@@ -179,11 +175,6 @@ export function registerCoreHandlers(
     registerKeybindingHandlers(keybindings)
   }
   registerTelemetryHandlers(store)
-  registerOrcaProfileHandlers(store, {
-    onBeforeRelaunch: lifecycleOptions.onBeforeRelaunch,
-    onAuthMutation: lifecycleOptions.onOrcaProfileAuthMutation,
-    onBeforeSignOut: lifecycleOptions.onBeforeOrcaProfileSignOut
-  })
   registerBrowserHandlers()
   registerShellHandlers(store)
   registerSessionHandlers(store)
@@ -199,7 +190,6 @@ export function registerCoreHandlers(
   registerFilesystemWatcherHandlers()
   registerRuntimeHandlers(runtime)
   registerRuntimeEnvironmentHandlers(store)
-  registerEphemeralVmHandlers(store)
   registerAiVaultSearchHandlers({
     callRuntimeSearch: (environmentId, method, params) =>
       callRuntimeSessionSearch(app.getPath('userData'), environmentId, method, params)

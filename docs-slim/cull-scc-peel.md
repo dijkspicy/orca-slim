@@ -2,14 +2,60 @@
 
 generated from HEAD
 
-- delete-set (current tree): 3618
-- peeled away leaf-first: 0
-- IRREDUCIBLE CORE: 3618
-- keep files importing the core: 2711
+- delete-set (current tree): 3627
+- peeled away leaf-first: 47
+- IRREDUCIBLE CORE: 3580
+- keep files importing the core: 2705
 
 ## Peelable (delete safely, leaf-first)
 
-
+- src/main/computer/computer-action-verification-normalization.ts
+- src/main/computer/computer-clipboard-paste-validation.ts
+- src/main/computer/computer-sidecar-diagnostics.ts
+- src/main/computer/computer-sidecar-paste-validation.ts
+- src/main/computer/macos-computer-use-permission-status.ts
+- src/main/computer/macos-computer-use-permissions.ts
+- src/main/computer/macos-native-provider-paths.ts
+- src/main/computer/runtime-client-error.ts
+- src/main/computer/sidecar-client.ts
+- src/main/ephemeral-vm-failed-start-cleanup.ts
+- src/main/ephemeral-vm-provisioned-root-source.ts
+- src/main/ephemeral-vm-recipe-runner.ts
+- src/main/ephemeral-vm-resume-integrity.ts
+- src/main/ephemeral-vm-runtime-attachment.ts
+- src/main/ephemeral-vm-runtime-cleanup-control.ts
+- src/main/ephemeral-vm-runtime-provisioning-persistence.ts
+- src/main/ephemeral-vm-runtime-service.ts
+- src/main/ephemeral-vm-runtime-ssh-cleanup.ts
+- src/main/ephemeral-vm-runtime-ssh.ts
+- src/main/ipc/computer-use-permissions.ts
+- src/main/ipc/ephemeral-vm-recipe-context.ts
+- src/main/ipc/ephemeral-vm-runtime-handlers.ts
+- src/main/ipc/ephemeral-vm.ts
+- src/main/ipc/orca-profile-auth-status-broadcast.ts
+- src/main/ipc/orca-profile-org-members-handlers.ts
+- src/main/ipc/orca-profile-project-transfer-args.ts
+- src/main/ipc/orca-profiles.ts
+- src/main/orca-profiles/profile-artifact-cloud-cleanup.test.ts
+- src/main/orca-profiles/profile-cloud-auth-status.ts
+- src/main/orca-profiles/profile-cloud-callback-page.ts
+- src/main/orca-profiles/profile-cloud-capability-refresh.ts
+- src/main/orca-profiles/profile-cloud-dev-auth.ts
+- src/main/orca-profiles/profile-cloud-dev-org-members.ts
+- src/main/orca-profiles/profile-cloud-dev-service.ts
+- src/main/orca-profiles/profile-cloud-org-members-client.ts
+- src/main/orca-profiles/profile-cloud-org-members-service.ts
+- src/main/orca-profiles/profile-cloud-org-selection.ts
+- src/main/orca-profiles/profile-cloud-pkce.ts
+- src/main/orca-profiles/profile-cloud-service.ts
+- src/main/provisioned-root-ssh-adoption.test.ts
+- src/main/runtime/rpc/methods/computer-actions.test.ts
+- src/main/runtime/rpc/methods/computer-schemas.ts
+- src/main/runtime/rpc/methods/computer.test.ts
+- src/shared/ephemeral-vm-recipe-repo-url.ts
+- src/shared/ephemeral-vm-runtime-feature-store.ts
+- src/shared/ephemeral-vm-runtime-rollback-projection.ts
+- src/shared/ephemeral-vm-runtime-store.ts
 
 ## Irreducible core (needs stubs or call-site edits)
 
@@ -626,15 +672,6 @@ generated from HEAD
 - src/main/codex-accounts/service.ts
 - src/main/codex-accounts/wsl-codex-auth-batch-reader.ts
 - src/main/codex-accounts/wsl-codex-command.ts
-- src/main/computer/computer-action-verification-normalization.ts
-- src/main/computer/computer-clipboard-paste-validation.ts
-- src/main/computer/computer-sidecar-diagnostics.ts
-- src/main/computer/computer-sidecar-paste-validation.ts
-- src/main/computer/macos-computer-use-permission-status.ts
-- src/main/computer/macos-computer-use-permissions.ts
-- src/main/computer/macos-native-provider-paths.ts
-- src/main/computer/runtime-client-error.ts
-- src/main/computer/sidecar-client.ts
 - src/main/crash-reporting/crash-breadcrumb-store.ts
 - src/main/crash-reporting/crash-feedback-diagnostic-bundle.ts
 - src/main/crash-reporting/crash-report-copy-text.ts
@@ -666,16 +703,6 @@ generated from HEAD
 - src/main/crash-reporting/swap-volume-free-space.ts
 - src/main/crash-reporting/system-memory-details.ts
 - src/main/cursor-accounts/status.ts
-- src/main/ephemeral-vm-failed-start-cleanup.ts
-- src/main/ephemeral-vm-provisioned-root-source.ts
-- src/main/ephemeral-vm-recipe-runner.ts
-- src/main/ephemeral-vm-resume-integrity.ts
-- src/main/ephemeral-vm-runtime-attachment.ts
-- src/main/ephemeral-vm-runtime-cleanup-control.ts
-- src/main/ephemeral-vm-runtime-provisioning-persistence.ts
-- src/main/ephemeral-vm-runtime-service.ts
-- src/main/ephemeral-vm-runtime-ssh-cleanup.ts
-- src/main/ephemeral-vm-runtime-ssh.ts
 - src/main/gitea/client.ts
 - src/main/gitea/pull-request-creation.ts
 - src/main/gitea/pull-request-mappers.ts
@@ -872,16 +899,12 @@ generated from HEAD
 - src/main/ipc/browser.ts
 - src/main/ipc/claude-accounts.ts
 - src/main/ipc/codex-accounts.ts
-- src/main/ipc/computer-use-permissions.ts
 - src/main/ipc/crash-reporting-renderer-breadcrumbs.ts
 - src/main/ipc/crash-reporting-renderer-error-report.ts
 - src/main/ipc/crash-reporting-sendable-reports.ts
 - src/main/ipc/crash-reporting-submission.ts
 - src/main/ipc/crash-reporting.ts
 - src/main/ipc/doc-preview-grant-ipc.ts
-- src/main/ipc/ephemeral-vm-recipe-context.ts
-- src/main/ipc/ephemeral-vm-runtime-handlers.ts
-- src/main/ipc/ephemeral-vm.ts
 - src/main/ipc/filesystem-import-ssh-directory.ts
 - src/main/ipc/filesystem-import-ssh.ts
 - src/main/ipc/github-account-handlers.ts
@@ -914,10 +937,6 @@ generated from HEAD
 - src/main/ipc/linear.ts
 - src/main/ipc/mobile.ts
 - src/main/ipc/native-chat.ts
-- src/main/ipc/orca-profile-auth-status-broadcast.ts
-- src/main/ipc/orca-profile-org-members-handlers.ts
-- src/main/ipc/orca-profile-project-transfer-args.ts
-- src/main/ipc/orca-profiles.ts
 - src/main/ipc/rate-limits.ts
 - src/main/ipc/repos/remote-home-path.ts
 - src/main/ipc/repos/remote-repo-clone.ts
@@ -1259,21 +1278,11 @@ generated from HEAD
 - src/main/observability/logs-directory.ts
 - src/main/observability/redactor.ts
 - src/main/observability/tracer.ts
+- src/main/orca-profiles/profile-artifact-cloud-cleanup.ts
 - src/main/orca-profiles/profile-cloud-auth-config.ts
-- src/main/orca-profiles/profile-cloud-auth-status.ts
-- src/main/orca-profiles/profile-cloud-callback-page.ts
-- src/main/orca-profiles/profile-cloud-capability-refresh.ts
 - src/main/orca-profiles/profile-cloud-client.ts
-- src/main/orca-profiles/profile-cloud-dev-auth.ts
-- src/main/orca-profiles/profile-cloud-dev-org-members.ts
-- src/main/orca-profiles/profile-cloud-dev-service.ts
 - src/main/orca-profiles/profile-cloud-index.ts
-- src/main/orca-profiles/profile-cloud-org-members-client.ts
-- src/main/orca-profiles/profile-cloud-org-members-service.ts
-- src/main/orca-profiles/profile-cloud-org-selection.ts
-- src/main/orca-profiles/profile-cloud-pkce.ts
 - src/main/orca-profiles/profile-cloud-refresh-replay-guard.ts
-- src/main/orca-profiles/profile-cloud-service.ts
 - src/main/orca-profiles/profile-cloud-session-exchange.ts
 - src/main/orca-profiles/profile-cloud-session-invalidation.ts
 - src/main/orca-profiles/profile-cloud-session-mutation.ts
@@ -1342,6 +1351,7 @@ generated from HEAD
 - src/main/providers/ssh-pty-spawn-repair.ts
 - src/main/providers/ssh-pty-spawn-request.ts
 - src/main/providers/ssh-pty-write.ts
+- src/main/provisioned-root-ssh-adoption.ts
 - src/main/rate-limits/account-runtime-target-sync.ts
 - src/main/rate-limits/antigravity-usage-mirror.ts
 - src/main/rate-limits/auth-filesystem-operation.ts
@@ -1481,6 +1491,7 @@ generated from HEAD
 - src/main/runtime/rpc/methods/browser-screencast.ts
 - src/main/runtime/rpc/methods/browser-tab-create-schema.ts
 - src/main/runtime/rpc/methods/browser-text-rpc-methods.ts
+- src/main/runtime/rpc/methods/computer.ts
 - src/main/runtime/rpc/methods/github-account-binding-methods.ts
 - src/main/runtime/rpc/methods/github-issue-methods.ts
 - src/main/runtime/rpc/methods/github-project-methods.ts
@@ -1499,6 +1510,7 @@ generated from HEAD
 - src/main/runtime/rpc/methods/native-chat-rpc-image-block.ts
 - src/main/runtime/rpc/methods/native-chat.ts
 - src/main/runtime/rpc/methods/skills.ts
+- src/main/runtime/runtime-artifact-controller.ts
 - src/main/runtime/runtime-file-commands-ssh-file-watcher-rearm.ts
 - src/main/runtime/runtime-mobile-agent-status-builder.ts
 - src/main/runtime/runtime-mobile-agent-status-projection.ts
@@ -3346,12 +3358,8 @@ generated from HEAD
 - src/shared/ephemeral-vm-recipe-doctor.ts
 - src/shared/ephemeral-vm-recipe-lifecycle-payload.ts
 - src/shared/ephemeral-vm-recipe-process.ts
-- src/shared/ephemeral-vm-recipe-repo-url.ts
 - src/shared/ephemeral-vm-recipe-runner.ts
 - src/shared/ephemeral-vm-recipes.ts
-- src/shared/ephemeral-vm-runtime-feature-store.ts
-- src/shared/ephemeral-vm-runtime-rollback-projection.ts
-- src/shared/ephemeral-vm-runtime-store.ts
 - src/shared/ephemeral-vm-runtimes.ts
 - src/shared/github/account-binding.ts
 - src/shared/github/api-availability.ts
@@ -4167,8 +4175,6 @@ generated from HEAD
 - src/main/orca-profiles/profile-active-transfer-worker.test.ts
 - src/main/orca-profiles/profile-active-transfer.test.ts
 - src/main/orca-profiles/profile-active-transfer.ts
-- src/main/orca-profiles/profile-artifact-cloud-cleanup.test.ts
-- src/main/orca-profiles/profile-artifact-cloud-cleanup.ts
 - src/main/orca-profiles/profile-index-store.test.ts
 - src/main/orca-profiles/profile-index-store.ts
 - src/main/orca-profiles/profile-project-domain-transfer.test.ts
@@ -4231,8 +4237,6 @@ generated from HEAD
 - src/main/providers/execution-host-provider-dispatch.ts
 - src/main/providers/settled-pty-writer-census.test.ts
 - src/main/providers/terminal-path-existence-batch.integration.test.ts
-- src/main/provisioned-root-ssh-adoption.test.ts
-- src/main/provisioned-root-ssh-adoption.ts
 - src/main/pty/posix-pty-process-groups.ts
 - src/main/pty/wsl-orca-env.ts
 - src/main/refused-tree-kill-root-termination.test.ts
@@ -4439,7 +4443,6 @@ generated from HEAD
 - src/main/runtime/rpc/methods/client-ui-pairing-local-fields.test.ts
 - src/main/runtime/rpc/methods/client-ui.test.ts
 - src/main/runtime/rpc/methods/client-ui.ts
-- src/main/runtime/rpc/methods/computer.ts
 - src/main/runtime/rpc/methods/files-path-search.test.ts
 - src/main/runtime/rpc/methods/files-preview-transport-budget.test.ts
 - src/main/runtime/rpc/methods/files-remote-content-budget.ts
@@ -4570,7 +4573,6 @@ generated from HEAD
 - src/main/runtime/runtime-agent-orchestration-projection.ts
 - src/main/runtime/runtime-agent-row-main-agent-projection.test.ts
 - src/main/runtime/runtime-ai-vault-commands.ts
-- src/main/runtime/runtime-artifact-controller.ts
 - src/main/runtime/runtime-automation-controller.ts
 - src/main/runtime/runtime-browser-client-automation.test.ts
 - src/main/runtime/runtime-browser-client-automation.ts
