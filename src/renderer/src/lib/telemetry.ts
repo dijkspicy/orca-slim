@@ -27,14 +27,9 @@ function isTelemetryConsentState(x: unknown): x is TelemetryConsentState {
 }
 
 export function track<N extends EventName>(name: N, props: EventProps<N>): void {
-  // Why: telemetry is fire-and-forget and must never throw into the renderer; log (don't rethrow/silently swallow) so IPC failures leave a breadcrumb.
-  try {
-    void window.api?.telemetryTrack?.(name, props as Record<string, unknown>)?.catch((err) => {
-      console.warn('[telemetry] IPC track failed', err)
-    })
-  } catch (err) {
-    console.warn('[telemetry] IPC track threw synchronously', err)
-  }
+  // Cull: telemetry is removed from this build — events are dropped and never sent over IPC.
+  void name
+  void props
 }
 
 // Returns a Promise (resolves, never rejects) so callers can await ordering a settings write after the opt-in event.

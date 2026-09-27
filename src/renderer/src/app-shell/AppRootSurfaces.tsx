@@ -9,11 +9,9 @@ import { MarkdownTemplatePicker } from '../components/editor/MarkdownTemplatePic
 import RecentTabSwitcher from '../components/tab-bar/RecentTabSwitcher'
 import { SkillFreshnessUpdateDialog } from '../components/skills/SkillFreshnessUpdateDialog'
 import { NativeChatResumeOnRestartModal } from '../components/NativeChatResumeOnRestartModal'
-import { TelemetryFirstLaunchSurface } from '../components/TelemetryFirstLaunchSurface'
 import { ZoomOverlay } from '../components/ZoomOverlay'
 import { useAppStore } from '../store'
 import { useLazyModalMounts } from './use-lazy-modal-mounts'
-import { selectAppRootSurfaceTelemetryOptedIn } from './app-root-surface-settings'
 import type { FloatingWorkspacePanelState } from './use-floating-workspace-panel'
 import type { OnboardingGate } from './use-onboarding-and-feature-tips'
 
@@ -107,7 +105,6 @@ export function AppRootSurfaces(props: {
   const activeModal = useAppStore((s) => s.activeModal)
   // Keep this always-mounted surface subscribed only to the settings fields it reads. A
   // settings object replacement for an unrelated preference should not rerender every overlay.
-  const telemetryOptedIn = useAppStore(selectAppRootSurfaceTelemetryOptedIn)
   const statusBarVisible = useAppStore((s) => s.statusBarVisible)
   const persistedUIReady = useAppStore((s) => s.persistedUIReady)
   const activeContextualTourId = useAppStore((s) => s.activeContextualTourId)
@@ -244,10 +241,6 @@ export function AppRootSurfaces(props: {
       </NotificationCardStack>
       <OverlayBoundary boundaryId="overlay.native-chat-resume-on-restart" resetKey={activeView}>
         <NativeChatResumeOnRestartModal />
-      </OverlayBoundary>
-      {/* Why: mount at App root to render once per session; internal cohort gate limits it to pre-telemetry users — see telemetry-plan.md §First-launch experience. */}
-      <OverlayBoundary boundaryId="overlay.telemetry-first-launch" resetKey={telemetryOptedIn}>
-        <TelemetryFirstLaunchSurface />
       </OverlayBoundary>
       <OverlayBoundary boundaryId="overlay.zoom" resetKey={activeView}>
         <ZoomOverlay />
