@@ -314,6 +314,34 @@ skills         -> artifacts, cloud-profiles, telemetry-stack
 4. 每次测量 `pnpm tc` 前先 `rm -f config/*.tsbuildinfo`（F-7）
 5. 提交前确认无后台写手（F-8），并跑 `npx oxlint <changed>` 预检 pre-commit
 
+
+### F-14 叶子剥离法：模块级图正确，但类型消费是隐形的（决定性结论）
+
+**方法**：从叶子向内剥离——一个删除集文件可删当且仅当它的**所有** import 者也在删除集内。这天然正确处理 barrel（F-10），因为保留侧 barrel re-export 会被算作「非删除集 import 者」而阻断。
+
+**结果**（`/tmp/opencode/scc-peel.mjs`，清单见 `docs-slim/cull-scc-peel.md`）：
+
+| 指标 | 值 |
+| --- | --- |
+| 删除集 | 6,725 |
+| 第 1 轮可剥离 | 5,909 |
+| 不可约核心 | 816 |
+| 引用核心的保留文件 | 2,711 |
+
+**实测**：删除这 5,909 个「安全」文件后 → **1,478 处唯一 `tc` 错误**。
+
+**根因（关键）**：错误不是悬空 import（TS2307），而是**类型退化**：
+```
+src/cli/linear-format.ts: Property 'capReached' does not exist on type '{}'
+src/main/agent-auth-restart-preservation.ts: 'syncForCurrentSelection' is of type 'unknown'
+src/main/agent-hooks/first-work-branch-rename.ts: Property 'renameCurrentBranch' does not exist on type 'SshGitProvider'
+```
+删除一个被保留代码**类型消费**的模块时，如果该类型仍能经由某个残留路径解析（部分 re-export / 同名声明），TS 不会把它降级为 `any`，而是塌缩成 `{}` / `unknown` / `never`，于是每一处成员访问都报错。
+
+**为何模块级 import 图看不见**：保留文件通过 `import type` 消费的是**导出符号**，而剥离算法只看**模块间关系**。一个文件可以「没有保留侧模块 import 它」却仍被大量保留代码依赖其类型。
+
+**结论**：本 cull 需要的是**导出符号级**的依赖分析（哪些类型被保留代码消费），而不是模块级 import 图。这是执行剩余 6,725 文件删除的先决条件；在此之前，任何删除策略（按域、按簇、stub、剥离）都无法收敛——这解释了 F-12、F-10、以及四次失败的共同根因。
+
 ## Migration Plan
 
 - 分支 `cull/local-ide`，WAVE 0 打 tag `pre-cull`
