@@ -1,10 +1,12 @@
 import type { StateCreator } from 'zustand'
 import type { AppState } from '../types'
-import type { RemoteServerUpdaterSnapshot } from '../../../../shared/remote-server-update'
+import type {
+  RemoteServerUpdateCheckOptions,
+  RemoteServerUpdaterSnapshot
+} from '../../../../shared/remote-server-update'
 import { isUserManagedRuntimeEnvironment } from '../../../../shared/runtime-environments'
 import type { RuntimeRpcResponse } from '../../../../shared/runtime-rpc-envelope'
 import type { RuntimeStatus } from '../../../../shared/runtime-types'
-import type { UpdateCheckOptions } from '../../../../shared/update-status-types'
 import { unwrapRuntimeRpcResult } from '@/runtime/runtime-rpc-client'
 import {
   checkingRemoteServerUpdateEntry,
@@ -50,13 +52,13 @@ const transport: RemoteServerUpdateTransport = {
 
 export type RemoteServerUpdatesSlice = {
   remoteServerUpdates: Map<string, RemoteServerUpdateEntry>
-  remoteServerUpdateCheckOptions: UpdateCheckOptions | null
+  remoteServerUpdateCheckOptions: RemoteServerUpdateCheckOptions | null
   remoteServerUpdatesChecking: boolean
   remoteServerUpdatesRunning: boolean
   remoteServerUpdateDialogOpen: boolean
   remoteServerUpdatesLastCheckedAt: number | null
   setRemoteServerUpdateDialogOpen: (open: boolean) => void
-  refreshRemoteServerUpdates: (options?: UpdateCheckOptions) => Promise<void>
+  refreshRemoteServerUpdates: (options?: RemoteServerUpdateCheckOptions) => Promise<void>
   startRemoteServerUpdates: (environmentIds?: readonly string[]) => Promise<void>
 }
 
@@ -110,7 +112,7 @@ export const createRemoteServerUpdatesSlice: StateCreator<
         })
       )
       set({ remoteServerUpdates: initial })
-      const clientVersion = await window.api.updater.getVersion()
+      const clientVersion = await window.api.app.getVersion()
       await Promise.allSettled(
         environments.map(async (environment) => {
           const entry = await inspectRemoteServerUpdate(

@@ -5,15 +5,15 @@ import {
   isPrereleaseAppVersion,
   isValidAppVersion
 } from '../../../shared/app-version'
-import { REMOTE_SERVER_UPDATE_CAPABILITY } from '../../../shared/remote-server-update'
-import type {
-  RemoteServerUpdateInstallResult,
-  RemoteServerUpdaterSnapshot,
-  RemoteServerUpdateSupport
+import {
+  REMOTE_SERVER_UPDATE_CAPABILITY,
+  type RemoteServerUpdateCheckOptions,
+  type RemoteServerUpdateInstallResult,
+  type RemoteServerUpdaterSnapshot,
+  type RemoteServerUpdateSupport
 } from '../../../shared/remote-server-update'
 import type { PublicKnownRuntimeEnvironment } from '../../../shared/runtime-environments'
 import type { RuntimeStatus } from '../../../shared/runtime-types'
-import type { UpdateCheckOptions } from '../../../shared/update-status-types'
 import { waitForReplacementRuntime } from './remote-server-restart-wait'
 import { remoteServerUpdateErrorMessage } from './remote-server-update-errors'
 import { pollRemoteServerUpdater } from './remote-server-updater-polling'
@@ -53,7 +53,7 @@ export type RemoteServerUpdateTransport = {
   ) => Promise<RemoteServerUpdaterSnapshot>
   check: (
     environmentId: string,
-    options: UpdateCheckOptions
+    options: RemoteServerUpdateCheckOptions
   ) => Promise<RemoteServerUpdaterSnapshot>
   download: (environmentId: string) => Promise<RemoteServerUpdaterSnapshot>
   install: (environmentId: string) => Promise<RemoteServerUpdateInstallResult>
@@ -74,7 +74,7 @@ export const DEFAULT_REMOTE_SERVER_UPDATE_TIMING: RemoteServerUpdateTiming = {
 }
 
 export type RemoteServerUpdateRunOptions = {
-  checkOptions?: UpdateCheckOptions
+  checkOptions?: RemoteServerUpdateCheckOptions
   timing?: RemoteServerUpdateTiming
 }
 
@@ -100,7 +100,7 @@ export async function inspectRemoteServerUpdate(
   environment: PublicKnownRuntimeEnvironment,
   clientVersion: string,
   transport: RemoteServerUpdateTransport,
-  checkOptions?: UpdateCheckOptions,
+  checkOptions?: RemoteServerUpdateCheckOptions,
   timing: RemoteServerUpdateTiming = DEFAULT_REMOTE_SERVER_UPDATE_TIMING
 ): Promise<RemoteServerUpdateEntry> {
   const base = checkingRemoteServerUpdateEntry(environment)

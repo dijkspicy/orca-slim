@@ -1,12 +1,15 @@
 import type {
+  RemoteServerUpdateCheckOptions,
   RemoteServerUpdateInstallResult,
   RemoteServerUpdaterSnapshot
 } from '../../shared/remote-server-update'
-import type { UpdateCheckOptions } from '../../shared/update-status-types'
 
 type RemoteServerUpdaterAdapter = {
   getSnapshot: (runtimeId: string) => RemoteServerUpdaterSnapshot
-  check: (runtimeId: string, options?: UpdateCheckOptions) => RemoteServerUpdaterSnapshot
+  check: (
+    runtimeId: string,
+    options?: RemoteServerUpdateCheckOptions
+  ) => RemoteServerUpdaterSnapshot
   download: (runtimeId: string) => RemoteServerUpdaterSnapshot
   install: (runtimeId: string) => RemoteServerUpdateInstallResult
 }
@@ -45,7 +48,7 @@ export function getRemoteServerUpdaterSnapshot(runtimeId: string): RemoteServerU
 
 export function checkRemoteServerUpdater(
   runtimeId: string,
-  options?: UpdateCheckOptions
+  options?: RemoteServerUpdateCheckOptions
 ): RemoteServerUpdaterSnapshot {
   return options ? adapter.check(runtimeId, options) : adapter.check(runtimeId)
 }

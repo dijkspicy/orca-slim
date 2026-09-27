@@ -9,8 +9,8 @@ import { createSessionWriteSubscriber } from '../lib/session-write-subscriber'
 import { buildActiveViewUnloadPatch } from '../lib/active-view-persist'
 import {
   isIntentionalAppRestartInProgress,
-  registerUpdaterBeforeUnloadBypass
-} from '../lib/updater-beforeunload'
+  registerAppRestartBeforeUnloadBypass
+} from '../lib/app-restart-beforeunload'
 import {
   buildWorkspaceSessionPayload,
   shouldPersistWorkspaceSession
@@ -31,9 +31,6 @@ import {
 } from '../components/window-close-request-coordinator'
 import {
   ORCA_APP_RESTART_ABORTED_EVENT,
-  ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT
-} from '../../../shared/updater-renderer-events'
-import {
   ORCA_RENDERER_SHUTDOWN_CHECKPOINT_ABORTED_EVENT,
   ORCA_RENDERER_UNLOAD_PREVENTED_EVENT
 } from '../../../shared/renderer-shutdown-events'
@@ -117,7 +114,7 @@ function captureUploadedDirectSshLayoutEdits(
  * workspace upload chain, and the synchronous shutdown checkpoint.
  */
 export function useAppSessionPersistence(): void {
-  useEffect(() => registerUpdaterBeforeUnloadBypass(), [])
+  useEffect(() => registerAppRestartBeforeUnloadBypass(), [])
 
   // Why: session persistence only writes to disk; a Zustand subscribe() outside React drops ~15 render-cycle subscriptions and their re-renders on every tab/file/browser change.
   useEffect(() => {
@@ -253,10 +250,6 @@ export function useAppSessionPersistence(): void {
       shutdownCheckpoint.abortAfterCheckpointFailure
     )
     window.addEventListener(ORCA_APP_RESTART_ABORTED_EVENT, shutdownCheckpoint.abandonAttempt)
-    window.addEventListener(
-      ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT,
-      shutdownCheckpoint.abandonAttempt
-    )
     window.addEventListener(ORCA_RENDERER_UNLOAD_PREVENTED_EVENT, shutdownCheckpoint.abandonAttempt)
     return () => {
       window.removeEventListener('beforeunload', persistBeforeUnload)
@@ -265,10 +258,6 @@ export function useAppSessionPersistence(): void {
         shutdownCheckpoint.abortAfterCheckpointFailure
       )
       window.removeEventListener(ORCA_APP_RESTART_ABORTED_EVENT, shutdownCheckpoint.abandonAttempt)
-      window.removeEventListener(
-        ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT,
-        shutdownCheckpoint.abandonAttempt
-      )
       window.removeEventListener(
         ORCA_RENDERER_UNLOAD_PREVENTED_EVENT,
         shutdownCheckpoint.abandonAttempt

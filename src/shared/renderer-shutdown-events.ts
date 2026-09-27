@@ -4,6 +4,11 @@ export const ORCA_RENDERER_SHUTDOWN_CHECKPOINT_FAILED_EVENT =
 export const ORCA_RENDERER_SHUTDOWN_CHECKPOINT_ABORTED_EVENT =
   'orca:renderer-shutdown-checkpoint-aborted'
 
+/** Fired while an intentional app restart (profile switch, relaunch, recovery reload) prepares the renderer. */
+export const ORCA_APP_RESTART_STARTED_EVENT = 'orca:app-restart-started'
+/** Fired when an intentional app restart is aborted before navigation. */
+export const ORCA_APP_RESTART_ABORTED_EVENT = 'orca:app-restart-aborted'
+
 // Why a DOM attribute: the checkpoint guard runs in the renderer's main world while
 // prepareRendererForAppRestart runs in the context-isolated preload world. Events
 // cross worlds but their JS payloads don't; document attributes are shared platform

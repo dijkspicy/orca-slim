@@ -17,7 +17,6 @@ import {
 } from './status-bar-context-menu-policy'
 import { StatusBarUsageEmptyCta } from './StatusBarUsageEmptyCta'
 import { UsagePercentageDisplayChangeNotice } from './UsagePercentageDisplayChangeNotice'
-import { UpdateStatusSegment } from './UpdateStatusSegment'
 import { SkillUpdateStatusSegment } from './SkillUpdateStatusSegment'
 import { NativeChatResumeStatusSegment } from './NativeChatResumeStatusSegment'
 import { CaffeinateStatusSegment } from './CaffeinateStatusSegment'
@@ -248,7 +247,6 @@ export function StatusBarSurface({
         <RemoteServerUpdateStatusSegment iconOnly={iconOnly} />
         <SkillUpdateStatusSegment iconOnly={iconOnly} />
         <NativeChatResumeStatusSegment iconOnly={iconOnly} />
-        <UpdateStatusSegment compact={compact} iconOnly={iconOnly} />
         <React.Suspense fallback={null}>
           {petEnabled ? <PetStatusSegment /> : null}
           {showResourceUsage ? (

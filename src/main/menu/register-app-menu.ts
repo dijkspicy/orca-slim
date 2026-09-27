@@ -5,7 +5,6 @@ import {
   type KeybindingActionId,
   type KeybindingOverrides
 } from '../../shared/keybindings'
-import type { UpdateCheckOptions } from '../../shared/update-status-types'
 import { translateMain } from '../i18n/main-i18n'
 import { createAppMenuSelectionItem } from './app-menu-selection-item'
 
@@ -28,7 +27,6 @@ type RegisterAppMenuOptions = {
   onOpenSetupGuide: (window?: Electron.BaseWindow | null) => void
   onOpenFeatureTour: (window?: Electron.BaseWindow | null) => void
   onOpenCrashReport: (window?: Electron.BaseWindow | null) => void
-  onCheckForUpdates: (options: UpdateCheckOptions) => void
   onBeforeReload?: (options: { ignoreCache: boolean; webContentsId: number }) => void
   onZoomIn: () => void
   onZoomOut: () => void
@@ -49,7 +47,6 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
     onOpenSetupGuide,
     onOpenFeatureTour,
     onOpenCrashReport,
-    onCheckForUpdates,
     onBeforeReload,
     onZoomIn,
     onZoomOut,
@@ -88,31 +85,6 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
     webContents.reload()
   }
 
-  // Why: modifier-click update checks are hidden power-user affordances.
-  // Extracted so the macOS app-menu entry and Windows/Linux Help entry share
-  // identical RC/perf channel routing.
-  const checkForUpdatesClick: Electron.MenuItemConstructorOptions['click'] = (
-    _menuItem,
-    _window,
-    event
-  ) => {
-    const modifierClick = !event.triggeredByAccelerator
-    const localBuild = isMac && modifierClick && event.altKey === true
-    const includePerfPrerelease =
-      !localBuild && modifierClick && (isMac ? event.metaKey === true : event.ctrlKey === true)
-    const includePrerelease = !localBuild && modifierClick && event.shiftKey === true
-    onCheckForUpdates({
-      includePrerelease,
-      includePerfPrerelease,
-      ...(localBuild ? { localBuild: true } : {})
-    })
-  }
-
-  const checkForUpdatesItem: Electron.MenuItemConstructorOptions = {
-    label: translateMain('menu.checkForUpdates', 'Check for Updates...'),
-    click: checkForUpdatesClick
-  }
-
   const settingsBindings = getEffectiveKeybindingsForAction(
     'app.settings',
     process.platform,
@@ -141,7 +113,6 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
     click: (_menuItem, window) => onOpenCrashReport(window)
   }
 
-  // Why: the macOS app-menu (named after the app) is mandatory on darwin and
   // owns hide/hideOthers/unhide/services/quit roles that only make sense in
   // the system menu bar. On Windows/Linux that menu would render as a
   // redundant "Orca" entry with roles that don't apply, so we omit it there
@@ -150,7 +121,6 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
     label: options.appMenuLabel ?? app.name,
     submenu: [
       { role: 'about' },
-      checkForUpdatesItem,
       settingsItem,
       { type: 'separator' },
       { role: 'services' },
@@ -325,19 +295,7 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
 
   const helpMenu: Electron.MenuItemConstructorOptions = {
     label: translateMain('menu.help', 'Help'),
-    submenu: [
-      crashReportItem,
-      { type: 'separator' },
-      featureTourItem,
-      setupGuideItem,
-      ...(isMac
-        ? []
-        : ([
-            { type: 'separator' },
-            { role: 'about' },
-            checkForUpdatesItem
-          ] satisfies Electron.MenuItemConstructorOptions[]))
-    ]
+    submenu: [crashReportItem, { type: 'separator' }, featureTourItem, setupGuideItem]
   }
 
   const template: Electron.MenuItemConstructorOptions[] = [

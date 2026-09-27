@@ -1,6 +1,6 @@
 import { Loader2, Plus, RefreshCw } from 'lucide-react'
 import type { PublicKnownRuntimeEnvironment } from '../../../../shared/runtime-environments'
-import type { UpdateCheckOptions } from '../../../../shared/update-status-types'
+import type { RemoteServerUpdateCheckOptions } from '../../../../shared/remote-server-update'
 import type { RemoteServerUpdateEntry } from '@/runtime/remote-server-update-coordinator'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
@@ -33,7 +33,7 @@ type RuntimeServersConnectSectionProps = {
   onPairingCodeChange: (value: string) => void
   onAddEnvironment: (allowLoopback: boolean) => void
   onOpenUpdateDialog: () => void
-  refreshRemoteServerUpdates: (options?: UpdateCheckOptions) => Promise<void>
+  refreshRemoteServerUpdates: (options?: RemoteServerUpdateCheckOptions) => Promise<void>
   onConnect: (environment: PublicKnownRuntimeEnvironment) => void
   onDisconnect: (environment: PublicKnownRuntimeEnvironment) => void
   onRemove: (environment: PublicKnownRuntimeEnvironment) => void
