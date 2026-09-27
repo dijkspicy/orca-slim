@@ -1,0 +1,191 @@
+src/renderer/src/i18n/locales/en.json
+  s_93b1b060a4202e::t_67b369c463d0f5 2431-2432,4510-4513,5028-5029,16929-16930
+  s_93b1b060a4202e::t_a3322c7f760fee 350
+src/renderer/src/components/native-chat/native-chat-structured-send-composition-clear.test.tsx
+  s_93b1b060a4202e::t_e1e05899d68a51 21
+src/renderer/src/store/slices/settings-owner-hydration-write-fence.test.ts
+  s_93b1b060a4202e::t_5e20c20493a72a 3,23,240-245
+  s_93b1b060a4202e::t_d6543642f9e469 14,22,26,77,99,107,232,249
+src/preload/index.ts
+  s_93b1b060a4202e::t_720121ce694cd0 175
+src/shared/global-settings-test-fixture.ts
+  s_93b1b060a4202e::t_68af26ffaaeffa 2
+  s_93b1b060a4202e::t_27949f1187b4fe 21
+src/renderer/src/components/settings/ShortcutsPane.tsx
+  s_93b1b060a4202e::t_27949f1187b4fe 110
+src/renderer/src/components/native-chat/NativeChatComposerActions.test.tsx
+  s_93b1b060a4202e::t_5d90ef96ce814e 39,53-54
+src/renderer/src/app-shell/app-root-surface-settings.test.tsx
+  s_93b1b060a4202e::t_702ca6dc04d0ac 8,10
+src/main/i18n/main-i18n.ts
+  s_93b1b060a4202e::t_1e2a1476a4b33a 86
+config/scripts/verify-linux-glibc-floor.test.mjs
+  s_93b1b060a4202e::t_7a4a49d3126349 269
+  s_93b1b060a4202e::t_5419189519b134 212,265
+src/renderer/src/i18n/locales/es.json
+  s_93b1b060a4202e::t_a3322c7f760fee 169,3969
+src/renderer/src/components/right-sidebar/right-sidebar-activity-visibility.test.ts
+  s_93b1b060a4202e::t_a6e2f02355b6d6 29,40,48,58,66
+src/renderer/src/store/right-sidebar-route.ts
+  s_93b1b060a4202e::t_5a647cd66002b3 17
+src/renderer/src/i18n/I18nProvider.tsx
+  s_93b1b060a4202e::t_6ece2cbcfb452d 5,14,26
+src/renderer/src/components/feature-tips/feature-tip-modal-state.test.ts
+  s_93b1b060a4202e::t_eec8f76f93ff3b 6,16-17,23,56,69,82,84,90
+src/shared/feature-tips.ts
+  s_93b1b060a4202e::t_27949f1187b4fe 11
+  s_93b1b060a4202e::t_633ae5174293e6 7
+src/renderer/src/components/editor/rich-markdown-code-block-languages.test.ts
+  s_93b1b060a4202e::t_cbb4b228f6f49e 2
+src/main/window/createMainWindow-test-harness.ts
+  s_93b1b060a4202e::t_27949f1187b4fe 108
+src/renderer/src/components/native-chat/NativeChatComposer.test.tsx
+  s_93b1b060a4202e::t_e1e05899d68a51 59
+src/renderer/src/store/slices/worktree-visibility-settings-write.test.ts
+  s_93b1b060a4202e::t_d6543642f9e469 22,30,181,193,206,218
+  s_93b1b060a4202e::t_bde166371e1606 4,179,183
+src/renderer/src/components/feature-tips/FeatureTipsModal.tsx
+  s_93b1b060a4202e::t_f2ee53a03a2b91 271-272
+src/renderer/src/components/use-worktree-jump-palette-project-targets.ts
+  s_93b1b060a4202e::t_27949f1187b4fe 44
+src/renderer/src/components/settings/settings-capability-section-renderers.tsx
+  s_93b1b060a4202e::t_4f9360c05e9e5b 109-119
+src/main/startup/dev-education-suppression.test.ts
+  s_93b1b060a4202e::t_d0a280810408b5 120,137
+  s_93b1b060a4202e::t_e2e88fd4952e3e 139
+src/renderer/src/components/settings/shortcut-definition-catalog.ts
+  s_93b1b060a4202e::t_d0ee3657f2e932 30,40
+src/renderer/src/hooks/useMacosTccPromptNotice.ts
+  s_93b1b060a4202e::t_37be74233b6fba 22
+src/main/i18n/main-i18n-lazy-locale.test.ts
+  s_93b1b060a4202e::t_27949f1187b4fe 20
+src/renderer/src/store/slices/ui-hydration-view-layout.test.ts
+  s_93b1b060a4202e::t_5c5fed7b97b193 511
+src/shared/default-global-settings.ts
+  s_93b1b060a4202e::t_d6e643ddb11a3b 265
+src/main/cli/packaged-cli-assets.test.ts
+  s_93b1b060a4202e::t_e995bf610a50b1 65
+src/shared/rpc-contract/client-ui-params.ts
+  s_93b1b060a4202e::t_5e20c20493a72a 48-50
+src/renderer/src/components/settings/settings-page-renderer.tsx
+  s_93b1b060a4202e::t_f934e2fdcc4f03 51
+src/main/runtime/rpc/methods/client-ui.test.ts
+  s_93b1b060a4202e::t_d0a280810408b5 523,574,712
+  s_93b1b060a4202e::t_f5dd0155fb45a3 772
+src/shared/child-process/windows-console-visibility.test.ts
+  s_93b1b060a4202e::t_ed0b2114393eb6 53-55
+src/main/browser/browser-guest-shortcut-forwarding.ts
+  s_93b1b060a4202e::t_aaf72b34cc44fa 19
+src/renderer/src/components/right-sidebar/use-right-sidebar-tab-routing.ts
+  s_93b1b060a4202e::t_670663938c58eb 15,32
+src/main/persistence/loading-store/normalize-loaded-global-settings.ts
+  s_93b1b060a4202e::t_d53b15d2d2f58f 140
+src/renderer/src/components/right-sidebar/index.tsx
+  s_93b1b060a4202e::t_27949f1187b4fe 47-49
+  s_93b1b060a4202e::t_74cd988436d288 52
+src/shared/ui-language.ts
+  s_93b1b060a4202e::t_f3f25b37a8511c 9
+  s_93b1b060a4202e::t_5e20c20493a72a 18,26,29
+src/shared/feature-tips.test.ts
+  s_93b1b060a4202e::t_27949f1187b4fe 51-54
+  s_93b1b060a4202e::t_5de4464ab26863 14,19,40
+src/renderer/src/store/slices/ui/ui-slice-hydration-actions.ts
+  s_93b1b060a4202e::t_a269def7ff72c7 58
+src/renderer/src/components/settings/use-settings-page-effects.ts
+  s_93b1b060a4202e::t_36007cfe916c85 44
+src/renderer/src/hooks/useMacTccAttributionSeveredNotice.ts
+  s_93b1b060a4202e::t_00f6b7a1047af5 28
+src/renderer/src/components/feature-tips/feature-tip-startup-gate.test.ts
+  s_93b1b060a4202e::t_b06778b04b7450 2,108,137,154,171,207
+  s_93b1b060a4202e::t_ad4b0e57906a24 22,98,249
+src/main/startup/main-window-core-services.ts
+  s_93b1b060a4202e::t_07790bf2854a0d 119
+  s_93b1b060a4202e::t_27949f1187b4fe 9
+  s_93b1b060a4202e::t_947ce2d0f3bbfe 96
+src/main/ipc/register-core-handlers/register-core-handlers.ts
+  s_93b1b060a4202e::t_85e1fbd82de7f0 181
+  s_93b1b060a4202e::t_1a51c17bc416a1 120
+  s_93b1b060a4202e::t_bf3196eeb4b6ef 204
+src/renderer/src/components/right-sidebar/use-right-sidebar-activity-items.ts
+  s_93b1b060a4202e::t_c09972b16d8251 109
+  s_93b1b060a4202e::t_d443dbcd0a51dc 90,92
+src/renderer/src/app-shell/AppRootSurfaces.tsx
+  s_93b1b060a4202e::t_d46ad3c0c6d42d 16
+src/main/browser/browser-guest-shortcut-dispatch.ts
+  s_93b1b060a4202e::t_33c81d876a20de 46
+src/main/persistence-ui-state.test.ts
+  s_93b1b060a4202e::t_5e20c20493a72a 456-459,461
+  s_93b1b060a4202e::t_d0a280810408b5 159,173,375,390,463
+config/scripts/verify-linux-glibc-floor.cjs
+  s_93b1b060a4202e::t_5419189519b134 436
+  s_93b1b060a4202e::t_2b9617192db622 116-118
+config/electron-builder.config.cjs
+  s_93b1b060a4202e::t_aae4ea88cebe16 182-184
+src/renderer/src/i18n/supported-languages.ts
+  s_93b1b060a4202e::t_635ea78108a23f 18,32
+src/main/ipc/ephemeral-vm.ts
+  s_93b1b060a4202e::t_2e99b2210a0474 80
+  s_93b1b060a4202e::t_e322c52d59ea57 97
+  s_93b1b060a4202e::t_04690512a5db26 122
+  s_93b1b060a4202e::t_0c82dd0a90a2cb 65
+  s_93b1b060a4202e::t_04568bb701e2d2 74
+src/renderer/src/i18n/intl-locale.test.ts
+  s_93b1b060a4202e::t_30fb10a15038a0 2-3,9,12,47
+config/scripts/electron-builder-config.test.mjs
+  s_93b1b060a4202e::t_a3feff4ce0b748 42,446-450
+src/renderer/src/i18n/lazy-locale.test.ts
+  s_93b1b060a4202e::t_c3e792711302fe 8
+src/renderer/src/store/slices/ui-notice-dismissals.test.ts
+  s_93b1b060a4202e::t_5d90ef96ce814e 69-72
+  s_93b1b060a4202e::t_5c5fed7b97b193 58-59,61,63,74
+src/shared/constants.ts
+  s_93b1b060a4202e::t_0bcd2cbb5b3bf3 171
+src/renderer/src/i18n/locales/ja.json
+  s_93b1b060a4202e::t_a3322c7f760fee 234,4354
+src/renderer/src/i18n/locales/zh.json
+  s_93b1b060a4202e::t_a3322c7f760fee 234,4354
+src/renderer/src/store/slices/settings.test.ts
+  s_93b1b060a4202e::t_d6543642f9e469 194,197,209,225
+  s_93b1b060a4202e::t_818786a9993d84 186,203
+  s_93b1b060a4202e::t_d10ae28dff82c7 217
+  s_93b1b060a4202e::t_ce6495089400eb 190
+  s_93b1b060a4202e::t_32b3b2b444775b 3
+src/renderer/src/i18n/i18n.ts
+  s_93b1b060a4202e::t_7abee781d4b267 13
+  s_93b1b060a4202e::t_bd940f726aeedc 90,99,106
+src/renderer/src/i18n/locales/fr.json
+  s_93b1b060a4202e::t_a3322c7f760fee 333,4770
+src/shared/feature-interactions.test.ts
+  s_93b1b060a4202e::t_8ce417f5d28c99 103,108,188
+src/renderer/src/i18n/locales/ko.json
+  s_93b1b060a4202e::t_a3322c7f760fee 234,4354
+src/renderer/src/components/native-chat/NativeChatComposerActions.tsx
+  s_93b1b060a4202e::t_8f9a41d36e2b95 1
+  s_93b1b060a4202e::t_e055543d12f709 80
+src/renderer/src/i18n/en-runtime-required.json
+  s_581c39faf14fb9::t_e76300d0a103e2 75-85,193-203,205-212,214-234,715-723,1227,1231-1232,1253-1255,1257,1262-1263,1265-1277,1441-1443,1445-1459,1535,1540,1715,1718,1725-1726,1728-1729,1731-1733,1753,1759,1763,1765,1768,1771-1772,1892-1926,2025,2385-2394,2705-2707,2906-2921
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "49974c1f5efc307e9824fa6fcf33ef7cd8a1ed80",
+  "prompts": {},
+  "sessions": {
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_93b1b060a4202e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1f24e944ffeJudCUS1ZMw2udg",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
