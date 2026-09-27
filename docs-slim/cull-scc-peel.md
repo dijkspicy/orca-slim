@@ -2,60 +2,14 @@
 
 generated from HEAD
 
-- delete-set (current tree): 3627
-- peeled away leaf-first: 47
-- IRREDUCIBLE CORE: 3580
+- delete-set (current tree): 3578
+- peeled away leaf-first: 0
+- IRREDUCIBLE CORE: 3578
 - keep files importing the core: 2705
 
 ## Peelable (delete safely, leaf-first)
 
-- src/main/computer/computer-action-verification-normalization.ts
-- src/main/computer/computer-clipboard-paste-validation.ts
-- src/main/computer/computer-sidecar-diagnostics.ts
-- src/main/computer/computer-sidecar-paste-validation.ts
-- src/main/computer/macos-computer-use-permission-status.ts
-- src/main/computer/macos-computer-use-permissions.ts
-- src/main/computer/macos-native-provider-paths.ts
-- src/main/computer/runtime-client-error.ts
-- src/main/computer/sidecar-client.ts
-- src/main/ephemeral-vm-failed-start-cleanup.ts
-- src/main/ephemeral-vm-provisioned-root-source.ts
-- src/main/ephemeral-vm-recipe-runner.ts
-- src/main/ephemeral-vm-resume-integrity.ts
-- src/main/ephemeral-vm-runtime-attachment.ts
-- src/main/ephemeral-vm-runtime-cleanup-control.ts
-- src/main/ephemeral-vm-runtime-provisioning-persistence.ts
-- src/main/ephemeral-vm-runtime-service.ts
-- src/main/ephemeral-vm-runtime-ssh-cleanup.ts
-- src/main/ephemeral-vm-runtime-ssh.ts
-- src/main/ipc/computer-use-permissions.ts
-- src/main/ipc/ephemeral-vm-recipe-context.ts
-- src/main/ipc/ephemeral-vm-runtime-handlers.ts
-- src/main/ipc/ephemeral-vm.ts
-- src/main/ipc/orca-profile-auth-status-broadcast.ts
-- src/main/ipc/orca-profile-org-members-handlers.ts
-- src/main/ipc/orca-profile-project-transfer-args.ts
-- src/main/ipc/orca-profiles.ts
-- src/main/orca-profiles/profile-artifact-cloud-cleanup.test.ts
-- src/main/orca-profiles/profile-cloud-auth-status.ts
-- src/main/orca-profiles/profile-cloud-callback-page.ts
-- src/main/orca-profiles/profile-cloud-capability-refresh.ts
-- src/main/orca-profiles/profile-cloud-dev-auth.ts
-- src/main/orca-profiles/profile-cloud-dev-org-members.ts
-- src/main/orca-profiles/profile-cloud-dev-service.ts
-- src/main/orca-profiles/profile-cloud-org-members-client.ts
-- src/main/orca-profiles/profile-cloud-org-members-service.ts
-- src/main/orca-profiles/profile-cloud-org-selection.ts
-- src/main/orca-profiles/profile-cloud-pkce.ts
-- src/main/orca-profiles/profile-cloud-service.ts
-- src/main/provisioned-root-ssh-adoption.test.ts
-- src/main/runtime/rpc/methods/computer-actions.test.ts
-- src/main/runtime/rpc/methods/computer-schemas.ts
-- src/main/runtime/rpc/methods/computer.test.ts
-- src/shared/ephemeral-vm-recipe-repo-url.ts
-- src/shared/ephemeral-vm-runtime-feature-store.ts
-- src/shared/ephemeral-vm-runtime-rollback-projection.ts
-- src/shared/ephemeral-vm-runtime-store.ts
+
 
 ## Irreducible core (needs stubs or call-site edits)
 
@@ -1351,7 +1305,6 @@ generated from HEAD
 - src/main/providers/ssh-pty-spawn-repair.ts
 - src/main/providers/ssh-pty-spawn-request.ts
 - src/main/providers/ssh-pty-write.ts
-- src/main/provisioned-root-ssh-adoption.ts
 - src/main/rate-limits/account-runtime-target-sync.ts
 - src/main/rate-limits/antigravity-usage-mirror.ts
 - src/main/rate-limits/auth-filesystem-operation.ts
@@ -1491,7 +1444,6 @@ generated from HEAD
 - src/main/runtime/rpc/methods/browser-screencast.ts
 - src/main/runtime/rpc/methods/browser-tab-create-schema.ts
 - src/main/runtime/rpc/methods/browser-text-rpc-methods.ts
-- src/main/runtime/rpc/methods/computer.ts
 - src/main/runtime/rpc/methods/github-account-binding-methods.ts
 - src/main/runtime/rpc/methods/github-issue-methods.ts
 - src/main/runtime/rpc/methods/github-project-methods.ts
