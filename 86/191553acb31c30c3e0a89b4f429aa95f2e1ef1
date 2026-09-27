@@ -1,0 +1,23 @@
+docs-slim/cull-scc-peel.md
+  s_581c39faf14fb9::t_bbf65b44b26fb3 6-7,12-38,40-50,53,55-58
+  s_581c39faf14fb9::t_8c215faa90bc81 5,8,39,51-52,54,1281,1354,1494,1513
+src/main/ipc/worktrees/create/register-worktree-create-handlers.ts
+  s_581c39faf14fb9::t_4fb339f8d4390a 1
+  s_581c39faf14fb9::t_1dd1be11a177d7 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "86191553acb31c30c3e0a89b4f429aa95f2e1ef1",
+  "prompts": {},
+  "sessions": {
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
