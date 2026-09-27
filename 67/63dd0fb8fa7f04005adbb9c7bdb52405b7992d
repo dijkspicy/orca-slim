@@ -1,0 +1,112 @@
+src/preload/preload-runtime-support.ts
+  s_7949ac080b5592::t_10c68e93fd9013 183
+src/renderer/src/store/slices/remote-server-updates.ts
+  s_7949ac080b5592::t_f45edf6e475586 55,115
+  s_7949ac080b5592::t_dc64d07a27c538 61
+  s_581c39faf14fb9::t_a2feb7f682c138 3-6
+src/renderer/src/lib/startup-ui-hydration.ts
+  s_7949ac080b5592::t_ec6d18395b00c6 63
+src/renderer/src/components/tab-group/useTabGroupCreationCommands.local-shell.test.ts
+  s_7949ac080b5592::t_2d9e0f799a4d54 89,104
+src/renderer/src/components/use-terminal-window-lifecycle.ts
+  s_7949ac080b5592::t_6b6d5eaf8c9ebb 3
+src/renderer/src/web/preload-api/web-app-api.ts
+  s_7949ac080b5592::t_a78d9970fbee0d 11
+src/renderer/src/lib/client-environment-info.ts
+  s_7949ac080b5592::t_ea02b79fe245a3 42
+src/preload/app-restart-checkpoint-routing.test.ts
+  s_7949ac080b5592::t_f0a483a90d28d0 6
+src/renderer/src/lib/lazy-with-retry.test.ts
+  s_7949ac080b5592::t_e35de395e7eb84 14-18
+  s_7949ac080b5592::t_6b6d5eaf8c9ebb 13
+  s_7949ac080b5592::t_0e1b294ebbf2c9 383
+src/renderer/src/lib/app-restart-beforeunload.ts
+  s_7949ac080b5592::t_045db9e66b1040 5
+  s_7949ac080b5592::t_e5218538b3be21 3-4
+  s_7949ac080b5592::t_96fa06fa6a6081 1-2,6-34
+src/renderer/src/components/settings/use-settings-page-effects.ts
+  s_7949ac080b5592::t_6b6d5eaf8c9ebb 7
+src/renderer/src/runtime/remote-server-update-coordinator.ts
+  s_7949ac080b5592::t_dc64d07a27c538 56,77,103
+  s_581c39faf14fb9::t_e15a96de3a9ab1 8-13
+src/shared/remote-server-update.ts
+  s_7949ac080b5592::t_6dc13a7f946513 18,24-25,32-37,42
+  s_7949ac080b5592::t_678970a3cece1f 19-23,26-31
+src/main/startup/main-process-quit.ts
+  s_7949ac080b5592::t_f2a278be084cd2 122
+src/shared/renderer-restart-preparation.ts
+  s_7949ac080b5592::t_7e7f4db6c5ee32 70
+src/main/runtime/remote-server-updater.ts
+  s_7949ac080b5592::t_dc1e9fbeb15627 2,9
+  s_581c39faf14fb9::t_ccd72bbb43586b 10-12,51
+src/main/runtime/rpc/methods/index.ts
+  s_7949ac080b5592::t_9108c519182436 101
+src/renderer/src/app-shell/shutdown-checkpoint-restart-lifecycle.test.ts
+  s_7949ac080b5592::t_bb70ec94e24c7e 93-99,101-103,105-110
+  s_7949ac080b5592::t_3a9ad7f04aea47 132-133
+  s_7949ac080b5592::t_7f6559dcd2326b 16-17
+  s_7949ac080b5592::t_d66703337be20f 56
+src/main/startup/main-process-preflight.ts
+  s_7949ac080b5592::t_6f76fa1a86b95c 146
+src/main/crash-reporting/expected-teardown-state.ts
+  s_7949ac080b5592::t_e8429b863cdd4c 51
+src/main/crash-reporting/expected-teardown-state.test.ts
+  s_7949ac080b5592::t_d127272f8288b3 166
+src/shared/renderer-restart-preparation.test.ts
+  s_7949ac080b5592::t_6987bc898c47e3 8
+src/renderer/src/components/settings/runtime-servers-connect-section.tsx
+  s_7949ac080b5592::t_dc64d07a27c538 3,36
+src/preload/api/app-api.ts
+  s_7949ac080b5592::t_8df3ec23f8ec32 17-18
+src/renderer/src/components/UnexpectedSignoutCard.tsx
+  s_7949ac080b5592::t_9b1d6c98d127db 93
+src/renderer/src/components/unexpected-signout/unexpected-signout-card.test.tsx
+  s_7949ac080b5592::t_ea02b79fe245a3 33,68
+src/preload/api/app-bridge.ts
+  s_7949ac080b5592::t_8df3ec23f8ec32 16
+src/renderer/src/lib/typing-latency/diagnostic.ts
+  s_7949ac080b5592::t_ea02b79fe245a3 196
+src/preload/renderer-restart-wiring.test.ts
+  s_581c39faf14fb9::t_b77b860d0daefb 6
+  s_581c39faf14fb9::t_b87f7887219591 131
+  s_581c39faf14fb9::t_27b0e78e3af90c 7
+src/renderer/src/lib/lazy-chunk-recovery-reload.ts
+  s_7949ac080b5592::t_6b6d5eaf8c9ebb 6
+src/renderer/src/app-shell/use-app-session-persistence.ts
+  s_7949ac080b5592::t_d4d9d2aaf2505c 12-13
+  s_7949ac080b5592::t_90b44b922ad88d 117
+src/shared/renderer-shutdown-events.ts
+  s_7949ac080b5592::t_9807f257515c58 7-11
+src/preload/renderer-restart-wiring.ts
+  s_7949ac080b5592::t_541c167cf96aa0 5-7,23
+src/main/startup/main-window-actions.ts
+  s_7949ac080b5592::t_0438aa88b08354 46
+src/renderer/src/lib/update-check-click-options.ts
+  s_7949ac080b5592::t_4e21b5b9b374d6 1,13,19
+src/main/menu/register-app-menu.ts
+  s_581c39faf14fb9::t_501b9136fecc89 298
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6763dd0fb8fa7f04005adbb9c7bdb52405b7992d",
+  "prompts": {},
+  "sessions": {
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_7949ac080b5592": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1fc49e9affeE478hMEgc4J7aA",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
