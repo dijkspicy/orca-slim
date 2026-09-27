@@ -216,6 +216,28 @@
 - pre-commit（lint-staged → oxlint）会拦下 fixer 遗留的未使用变量与多余 `return`；提交前先跑 `npx oxlint <changed files>`
 - 巨型字符串字面量文件（如 `src/cli/bundled-skill-guides.ts`）用 `rg` 检索会灌满上下文 → 用 `rg -c` 或限制输出
 
+### F-7 stale `tsbuildinfo` 造成幻影错误（严重）
+
+`config/*.tsbuildinfo`（node / tc.web / tc.cli 三个）在源文件被删除后会残留过期引用，使 `pnpm tc` 报出**大量「Module X has no exported member Y」的幻影错误**——即使工作树内容正确、该导出确实存在。
+
+实测：一处工作树内容与好提交完全一致的状态下，`pnpm tc` 报 36 处此类错误；删除三个 `.tsbuildinfo` 后重跑，**0 错误**。
+
+**影响**：实施过程中两次错误计数被显著高估（521 / 473 → 真实 312）。
+
+**规则**：任何删除/移动源文件之后、测量 `pnpm tc` 之前，先 `rm -f config/*.tsbuildinfo`。
+
+### F-8 提交时后台写手仍在活动会污染提交
+
+`d5557a28e` 本应是 docs-only，却把后台 fixer 正在写入的 telemetry 删除一并提交了（lint-staged 的 "hiding/unstaging" stash-restore 与并发写冲突）。结果是 HEAD 处于 tc 红的状态，需要额外一个恢复提交。
+
+**规则**：`git commit` 之前确认没有后台 specialist 在写 `src/`；或在提交前先 `git status` 核对暂存内容与预期一致。
+
+### F-9 TS2307 是「模块已删」阶段的主导错误形态
+
+删除一簇模块后，真实错误几乎全是 `TS2307 Cannot find module`（实测 312 中 303 处），而**不是** `TS2304 Cannot find name`。原因：TS 把无法解析的 import 绑定当作 `any`，其使用点不会级联报错。
+
+**后果**：仅删除悬空 import 就能让 `pnpm tc` 变绿，但运行时会调用 `undefined` —— 所以修复必须**同时删掉调用点**，不能只删 import。这一点在派活时必须写清楚，否则会得到一个「编译过但运行时炸」的假绿。
+
 ## Migration Plan
 
 - 分支 `cull/local-ide`，WAVE 0 打 tag `pre-cull`

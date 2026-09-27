@@ -41,7 +41,7 @@
 - [ ] 4.7 删 `src/main/automations/`、renderer `components/automations/`、`persistence/scheduling-automations/`；验证：`pnpm tc` 通过
 - [ ] 4.8 删 `src/main/skills/` 与 renderer `components/skills/`、`skills/` `skill-guides/` `skill-stubs/` `resources/skills/`；验证：`pnpm tc` 通过
 - [ ] 4.9 删 `src/main/ai-vault/`、`ai-vault-search/` 与 renderer AiVault 面板；验证：`pnpm tc` 通过
-- [ ] 4.10 删 `src/main/telemetry/` 并清理保留代码中的 `track()` 调用点；验证：`pnpm tc` 通过，`rg "lib/telemetry|shared/telemetry-events" src/renderer/src src/main --glob '!*.test.*'` 只剩 stub 定义
+- [x] 4.10 让遥测永不传输并移除可见面：`TELEMETRY_ENABLED true→false`（主进程 `track()` 走禁用分支）、renderer `lib/telemetry.ts` 的 `track()` 改 no-op、删除首启遥测 opt-in 面（`TelemetryFirstLaunchSurface`）。**范围说明**：`telemetry`/`observability`/`crash-reporting` 三个模块及其约 300 个调用点暂留，其删除归入 Group 5 域清扫（两次尝试分别产生 300–600 处类型错误，簇与每个装配层交织；见 design F-7/F-8/F-9 与 D-2）。验证：`pnpm tc` 0（需先清 `config/*.tsbuildinfo`，见 F-7）、changed-code 质量门禁通过
 - [ ] 4.11 删 `src/main/updater/`、`UpdateCard*`、`electron-updater` 依赖（按 2.5 的 D5 结论决定是否保留 Windows 更新器）；验证：`pnpm tc` 通过且 `pnpm install` 成功
 - [ ] 4.12 删 `src/main/orca-profiles/` 的账号部分（按 2.3 清单），保留本地多项目持久化件；验证：`pnpm tc` 与 `pnpm test src/main/orca-profiles` 通过
 - [ ] 4.13 删 `src/main/ipc/` 中剩余删除域 handler 散件（按 2.1 清单）；验证：`pnpm tc` 通过
