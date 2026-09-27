@@ -1,0 +1,3900 @@
+# Cull Census
+
+> 由 `node /tmp/opencode/census.mjs` 生成（任务 2.1）。可重跑。
+>
+> **判定方法：可达性分析**，不是数直接引用者。
+> 从保留域入口（`src/main/index.ts`、`src/preload/index.ts`、`src/renderer/src/main.tsx`、`src/renderer/src/popout.tsx`
+> 与构建清单条目）出发做图遍历，**遍历时不进入删除域文件**。
+>
+> - `KEEP` = 可从未删除域的路径到达（删它需要先改调用点）
+> - `DELETE` = 属删除域，或不可达（孤儿）
+> - `ENTRY` = 不可达但被构建清单引用，需人工裁定
+> - `TEST-KEEP` / `TEST-DELETE` = 测试文件继承其被测对象的判定（测试无人 import，直接计数会全判删）
+>
+> **为什么用可达性**：`providers/index.ts` 这类 barrel 会 re-export 每个 provider，
+> 使每个 provider 都「有引用者」。直接计数会把 80 个 SSH provider 全判成 KEEP。
+>
+> 删除域模式集见脚本内 `DELETE_PATTERNS`；它是近似，本表用于**缩小人工裁定范围**，不替代逐文件复核。
+
+## 汇总
+
+| 目标 | 文件数 | KEEP | TEST-KEEP | ENTRY | TEST-DELETE | DELETE |
+| --- | --- | --- | --- | --- | --- | --- |
+| T1 src/shared/rpc-contract | 89 | 1 | 0 | 0 | 2 | 86 |
+| T2 src/shared structured-agent-session + native-chat | 128 | 0 | 0 | 0 | 58 | 70 |
+| T3 src/main/runtime | 2157 | 443 | 84 | 0 | 785 | 845 |
+| T4 src/main/orca-profiles | 73 | 12 | 4 | 0 | 25 | 32 |
+| T5 src/main/ipc | 1050 | 417 | 122 | 0 | 311 | 200 |
+| T6 src/main/providers | 210 | 70 | 26 | 0 | 77 | 37 |
+
+保留根（22）：
+
+- src/main/index.ts
+- src/preload/index.ts
+- src/renderer/src/main.tsx
+- src/renderer/src/popout.tsx
+- src/main/index.ts
+- src/preload/browser-window-close.ts
+- src/preload/doc-preview-link.ts
+- src/main/daemon/daemon-entry.ts
+- src/main/warp-themes/warp-theme-parser-worker.ts
+- src/main/ports/port-scan-command-worker-entry.ts
+- src/main/persistence/profile-state/profile-state-backup-worker-entry.ts
+- src/main/persistence/profile-state/profile-state-writer-worker-entry.ts
+- src/main/ipc/parcel-watcher-process-entry.ts
+- src/main/hang-watchdog/main-thread-hang-watchdog-entry.ts
+- src/preload/index.ts
+- src/main/agent-hooks/managed-agent-hook-controls.ts
+- src/renderer/src/main.tsx
+- src/renderer/src/popout.tsx
+- src/renderer/src/components/editor/combined-diff/review-controls/use-combined-diff-view-preferences.ts
+- src/renderer/src/components/editor/combined-diff/browse-files/use-combined-diff-tree-navigation.ts
+- src/renderer/src/components/editor/combined-diff/load-sections/combined-diff-section-load-registry.ts
+- src/renderer/src/components/editor/combined-diff/review-controls/use-combined-diff-section-actions.ts
+
+## 裁定结论（任务 2.2 / 2.3）
+
+### 2.2 `src/shared/rpc-contract`（89 文件）
+
+**保留子集 = 1 个文件**：`git-admission-tier-params.ts`（9 个直接引用者，全部来自保留的 git 层）。
+其余 86 个文件只被 `src/main/runtime/rpc/**`（删除域）引用——它们是 remote RPC 的线协议 schema，不是本地契约。
+
+连带影响（必须在任务 11.2 处理，否则 `pnpm lint` 失败）：
+
+- `src/shared/rpc-contract/rpc-params-catalog.generated.ts` 是生成物，随 rpc-contract 一起删
+- `config/scripts/generate-rpc-params-catalog.mjs` 与 `pnpm lint` 链中的 `verify:rpc-params-catalog` 同步移除
+- 任务 3.4 / 6.2 / 7.4 的「重生成 catalog」步骤随之取消，改为删除该门禁
+
+### 2.3 `src/main/orca-profiles`（73 文件，design D3 要求拆分）
+
+**保留 12**（本地多项目 / profile 持久化）：
+
+- `profile-storage-paths.ts`（22 引用者）
+- `profile-project-state-file.ts`（16）
+- `profile-index-store.ts`（25）
+- `profile-project-domain-state.ts`（8）
+- `profile-project-domain-changes.ts`（5）
+- `profile-project-domain-move-intent.ts`（3）
+- `profile-project-move-intent.ts`（8）
+- `profile-project-move-record.ts`（3）
+- `profile-project-session-state.ts`（5）
+- `profile-project-session-field-disposition.ts`（5）
+- `profile-project-worktree-identity.ts`（8）
+- `profile-legacy-state-import.ts`（1）
+
+**删除 32**（`profile-cloud-*` 19 个 + 账号/传输旁支 13 个）：
+`profile-cloud-*`、`profile-artifact-cloud-cleanup`、`profile-active-transfer`、`profile-persistence-deadline`、
+`profile-project-presence`、`profile-project-retired-name-transfer`、`profile-project-session-transfer`、
+`profile-project-source-removal`、`profile-project-transfer{,-migration,-payload,-worktree-ids}`、`profile-ui-scope`。
+
+⚠️ **二次复核要求**：这 32 个里 `profile-persistence-deadline`、`profile-ui-scope`、`profile-active-transfer`、
+`profile-project-transfer*` 名字像本地功能，其唯一引用者是账号 IPC（`src/main/ipc/orca-profiles.ts` 等，本身在删除域）。
+任务 4.12 删除前必须逐个确认它们不承载本地多项目状态，否则会误删。
+
+### 2.4 pre-cull 持久化 fixture
+
+**发现：基础设施已存在，不需要从零写。** `src/main/persistence/profile-state-cutover-fixture.ts`
+与 `profile-state-cutover-fixture.test.ts` 已经在做这件事：
+
+- 构造跨域状态（`ssh:build-host` 的 workspace session、`automation-fixture` 的 run、`linkedPR`、`opencodeSessionCookie`）
+- 断言未知顶层字段被容忍：`futureTopLevelExtension` 在 round-trip 后仍在（`profile-state-cutover-fixture.test.ts:95`、`:149`）
+- 断言通过真实 Store 归一化与 secret 边界导入导出（`:114`）
+
+**因此 2.4 的交付物是改造而非新建**：等 Group 4/7 删掉 `listAutomations()` / ssh 访问器后，
+把该 fixture 从「断言删除域状态可读」改成「断言含已移除域字段的旧状态仍可载入且不报错」。
+改动必须在删除域切片的同一个 commit 内完成，否则该测试会先红。
+
+### 2.5 六个 Open Question
+
+| # | 问题 | 状态 | 最晚决定时机 |
+| --- | --- | --- | --- |
+| D5 | 自动更新去留 | **待用户决定** | Group 4.11（updater 片） |
+| D6a | 防休眠 Windows 实现 | 延后 | Group 10.6（macOS 剥离） |
+| D7 | 未读 Dock 角标 | 延后 | Group 10.6 |
+| D8 | 界面语言数量（6–7 → en+zh？） | 延后 | Group 11.1（i18n 裁剪） |
+| D9 | iOS 模拟器 / iOS 发布流水线 | 延后 | Group 10.4 |
+| D6b | `observability` / `crash-reporting` 同删或同留 | **待用户决定** | Group 7.5 |
+
+D5 与 D6b 会改变要构建的内容，因此在对应切片开工前必须由用户裁定；其余四项不影响切片结构，可在对应阶段决定。
+
+## T1 src/shared/rpc-contract (89 文件)
+
+### KEEP (1)
+
+- src/shared/rpc-contract/git-admission-tier-params.ts (direct importers: 9)
+
+### TEST-DELETE (2)
+
+- src/shared/rpc-contract/agent-launch-params.test.ts
+- src/shared/rpc-contract/terminal-create-shell-param.test.ts
+
+### DELETE (86)
+
+- src/shared/rpc-contract/accounts-params.ts
+- src/shared/rpc-contract/agent-hooks-params.ts
+- src/shared/rpc-contract/agent-launch-params.ts
+- src/shared/rpc-contract/agent-session-params.ts
+- src/shared/rpc-contract/ai-vault-params.ts
+- src/shared/rpc-contract/artifacts-params.ts
+- src/shared/rpc-contract/automation-params.ts
+- src/shared/rpc-contract/browser-core-params.ts
+- src/shared/rpc-contract/browser-extras-params.ts
+- src/shared/rpc-contract/browser-identity-params.ts
+- src/shared/rpc-contract/browser-params.ts
+- src/shared/rpc-contract/browser-screencast-params.ts
+- src/shared/rpc-contract/browser-tab-create-params.ts
+- src/shared/rpc-contract/client-events-params.ts
+- src/shared/rpc-contract/client-settings-params.ts
+- src/shared/rpc-contract/client-ui-params.ts
+- src/shared/rpc-contract/client-ui-workspace-filter-fields-params.ts
+- src/shared/rpc-contract/clipboard-params.ts
+- src/shared/rpc-contract/computer-params.ts
+- src/shared/rpc-contract/computer-schemas-params.ts
+- src/shared/rpc-contract/emulator-params.ts
+- src/shared/rpc-contract/files-mutation-params.ts
+- src/shared/rpc-contract/files-params.ts
+- src/shared/rpc-contract/files-target-params.ts
+- src/shared/rpc-contract/files-terminal-artifact-params.ts
+- src/shared/rpc-contract/folder-workspace-params.ts
+- src/shared/rpc-contract/git-params.ts
+- src/shared/rpc-contract/github-account-binding-params.ts
+- src/shared/rpc-contract/github-issue-params.ts
+- src/shared/rpc-contract/github-issue-update-params.ts
+- src/shared/rpc-contract/github-project-params.ts
+- src/shared/rpc-contract/github-pull-request-params.ts
+- src/shared/rpc-contract/github-pull-request-update-params.ts
+- src/shared/rpc-contract/github-repo-target-params.ts
+- src/shared/rpc-contract/github-repo-work-item-params.ts
+- src/shared/rpc-contract/gitlab-params.ts
+- src/shared/rpc-contract/hosted-review-params.ts
+- src/shared/rpc-contract/jira-params.ts
+- src/shared/rpc-contract/linear-agent-access-params.ts
+- src/shared/rpc-contract/linear-issue-attribute-filter-params.ts
+- src/shared/rpc-contract/linear-issue-list-params.ts
+- src/shared/rpc-contract/linear-params.ts
+- src/shared/rpc-contract/linear-project-create-params.ts
+- src/shared/rpc-contract/native-chat-params.ts
+- src/shared/rpc-contract/notifications-params.ts
+- src/shared/rpc-contract/orchestration-federation-control-params.ts
+- src/shared/rpc-contract/orchestration-federation-relay-params.ts
+- src/shared/rpc-contract/orchestration-federation-start-params.ts
+- src/shared/rpc-contract/orchestration-gates-params.ts
+- src/shared/rpc-contract/orchestration-params.ts
+- src/shared/rpc-contract/orchestration-runs-mutation-request-show-params.ts
+- src/shared/rpc-contract/orchestration-runs-params.ts
+- src/shared/rpc-contract/orchestration-worker-control-params.ts
+- src/shared/rpc-contract/orchestration-worker-release-params.ts
+- src/shared/rpc-contract/orchestration-worker-release-schemas-params.ts
+- src/shared/rpc-contract/orchestration-worker-start-params.ts
+- src/shared/rpc-contract/orchestration-worker-stop-params.ts
+- src/shared/rpc-contract/plugins-params.ts
+- src/shared/rpc-contract/preflight-params.ts
+- src/shared/rpc-contract/project-runtime-params.ts
+- src/shared/rpc-contract/repo-params.ts
+- src/shared/rpc-contract/repo-update-params.ts
+- src/shared/rpc-contract/rpc-param-primitives.ts
+- src/shared/rpc-contract/rpc-params-catalog.generated.ts
+- src/shared/rpc-contract/rpc-send-params.ts
+- src/shared/rpc-contract/runtime-client-capabilities-params.ts
+- src/shared/rpc-contract/session-tabs-params.ts
+- src/shared/rpc-contract/session-tabs-schemas-params.ts
+- src/shared/rpc-contract/skills-params.ts
+- src/shared/rpc-contract/speech-params.ts
+- src/shared/rpc-contract/ssh-params.ts
+- src/shared/rpc-contract/structured-agent-session-params.ts
+- src/shared/rpc-contract/task-resume-state-params.ts
+- src/shared/rpc-contract/terminal-orphan-params.ts
+- src/shared/rpc-contract/terminal-quick-command-params.ts
+- src/shared/rpc-contract/terminal-stream-params.ts
+- src/shared/rpc-contract/terminal-unary-params.ts
+- src/shared/rpc-contract/terminal-viewport-methods-params.ts
+- src/shared/rpc-contract/terminal-viewport-schemas-params.ts
+- src/shared/rpc-contract/ui-update-value-tolerance-params.ts
+- src/shared/rpc-contract/updater-params.ts
+- src/shared/rpc-contract/workspace-cleanup-ui-params.ts
+- src/shared/rpc-contract/workspace-ports-params.ts
+- src/shared/rpc-contract/worktree-create-params.ts
+- src/shared/rpc-contract/worktree-params.ts
+- src/shared/rpc-contract/worktree-visibility-defaults-params.ts
+
+## T2 src/shared structured-agent-session + native-chat (128 文件)
+
+### TEST-DELETE (58)
+
+- src/shared/native-chat-activity-tail-line.test.ts
+- src/shared/native-chat-agent-profiles.test.ts
+- src/shared/native-chat-agent-support.test.ts
+- src/shared/native-chat-ask-fifo.test.ts
+- src/shared/native-chat-ask-row.test.ts
+- src/shared/native-chat-ask.test.ts
+- src/shared/native-chat-background-task-row.test.ts
+- src/shared/native-chat-command-envelope.test.ts
+- src/shared/native-chat-edit-normalize.test.ts
+- src/shared/native-chat-href-routing.test.ts
+- src/shared/native-chat-image-transcript-markers.test.ts
+- src/shared/native-chat-session-option-commands.test.ts
+- src/shared/native-chat-session-option-defaults.test.ts
+- src/shared/native-chat-session-option-snapshot.test.ts
+- src/shared/native-chat-session-option-state.test.ts
+- src/shared/native-chat-shell-environment.test.ts
+- src/shared/native-chat-slash-commands.omp.test.ts
+- src/shared/native-chat-slash-commands.test.ts
+- src/shared/native-chat-stream-unsubscribe.test.ts
+- src/shared/native-chat-streaming.test.ts
+- src/shared/native-chat-subagent-summary.test.ts
+- src/shared/native-chat-task-list.test.ts
+- src/shared/native-chat-tool-activity.test.ts
+- src/shared/native-chat-tool-attribution-allocation.test.ts
+- src/shared/native-chat-tool-icon.test.ts
+- src/shared/native-chat-tool-identity.test.ts
+- src/shared/native-chat-tool-pair-limit.test.ts
+- src/shared/native-chat-tool-pairing.test.ts
+- src/shared/native-chat-tool-preview-prefix.test.ts
+- src/shared/native-chat-tool-preview-scan.test.ts
+- src/shared/native-chat-tool-run-outcome.test.ts
+- src/shared/native-chat-tool-run-sentence.test.ts
+- src/shared/native-chat-tool-summary.test.ts
+- src/shared/native-chat-transcript-retention.test.ts
+- src/shared/native-chat-turn-activity.test.ts
+- src/shared/native-chat-turn-fold.test.ts
+- src/shared/native-chat-turn-status.test.ts
+- src/shared/native-chat-types.test.ts
+- src/shared/native-chat-unverifiable-turn-status.test.ts
+- src/shared/structured-agent-session-agent-status.test.ts
+- src/shared/structured-agent-session-coalescer.test.ts
+- src/shared/structured-agent-session-composer.test.ts
+- src/shared/structured-agent-session-context-usage.test.ts
+- src/shared/structured-agent-session-create.test.ts
+- src/shared/structured-agent-session-item-retention.test.ts
+- src/shared/structured-agent-session-live-turn.test.ts
+- src/shared/structured-agent-session-model-catalog-application.test.ts
+- src/shared/structured-agent-session-mutation.test.ts
+- src/shared/structured-agent-session-option-codec.test.ts
+- src/shared/structured-agent-session-option-picks.test.ts
+- src/shared/structured-agent-session-options.test.ts
+- src/shared/structured-agent-session-projection.test.ts
+- src/shared/structured-agent-session-reducer.test.ts
+- src/shared/structured-agent-session-send-disposition.test.ts
+- src/shared/structured-agent-session-status-started-at.test.ts
+- src/shared/structured-agent-session-status-tool-line.test.ts
+- src/shared/structured-agent-session-turn-timing-retention.test.ts
+- src/shared/structured-agent-session-turn-timing.test.ts
+
+### DELETE (70)
+
+- src/shared/native-chat-agent-profiles.ts
+- src/shared/native-chat-agent-support.ts
+- src/shared/native-chat-answer-stepping.ts
+- src/shared/native-chat-ask-row.ts
+- src/shared/native-chat-ask-types.ts
+- src/shared/native-chat-ask.ts
+- src/shared/native-chat-background-task-row.ts
+- src/shared/native-chat-begin-patch.ts
+- src/shared/native-chat-command-envelope.ts
+- src/shared/native-chat-diff.ts
+- src/shared/native-chat-edit-lcs.ts
+- src/shared/native-chat-edit-model.ts
+- src/shared/native-chat-edit-normalize.ts
+- src/shared/native-chat-edit-patch-files.ts
+- src/shared/native-chat-empty-state.ts
+- src/shared/native-chat-href-routing.ts
+- src/shared/native-chat-image-transcript-markers.ts
+- src/shared/native-chat-merge.ts
+- src/shared/native-chat-noise.ts
+- src/shared/native-chat-prose.ts
+- src/shared/native-chat-provider-frame-summary.ts
+- src/shared/native-chat-row-content.ts
+- src/shared/native-chat-session-option-commands.ts
+- src/shared/native-chat-session-option-defaults.ts
+- src/shared/native-chat-session-option-snapshot.ts
+- src/shared/native-chat-session-option-state.ts
+- src/shared/native-chat-session-options.ts
+- src/shared/native-chat-shell-environment.ts
+- src/shared/native-chat-slash-commands.ts
+- src/shared/native-chat-stream-unsubscribe.ts
+- src/shared/native-chat-streaming.ts
+- src/shared/native-chat-subagent-summary.ts
+- src/shared/native-chat-task-list.ts
+- src/shared/native-chat-tool-activity.ts
+- src/shared/native-chat-tool-fold.ts
+- src/shared/native-chat-tool-icon.ts
+- src/shared/native-chat-tool-identity.ts
+- src/shared/native-chat-tool-pairing.ts
+- src/shared/native-chat-tool-preview-prefix.ts
+- src/shared/native-chat-tool-run-outcome.ts
+- src/shared/native-chat-tool-run-sentence.ts
+- src/shared/native-chat-tool-summary.ts
+- src/shared/native-chat-transcript-projection.ts
+- src/shared/native-chat-transcript-retention.ts
+- src/shared/native-chat-turn-activity.ts
+- src/shared/native-chat-turn-fold.ts
+- src/shared/native-chat-turn-status.ts
+- src/shared/native-chat-types.ts
+- src/shared/native-chat-unified-patch.ts
+- src/shared/structured-agent-session-agent-status.ts
+- src/shared/structured-agent-session-coalescer.ts
+- src/shared/structured-agent-session-composer.ts
+- src/shared/structured-agent-session-context-usage.ts
+- src/shared/structured-agent-session-create.ts
+- src/shared/structured-agent-session-dispatch-rejection.ts
+- src/shared/structured-agent-session-holder.ts
+- src/shared/structured-agent-session-live-turn.ts
+- src/shared/structured-agent-session-message-projection.ts
+- src/shared/structured-agent-session-mutation.ts
+- src/shared/structured-agent-session-option-codec.ts
+- src/shared/structured-agent-session-options.ts
+- src/shared/structured-agent-session-outbox.ts
+- src/shared/structured-agent-session-projection.ts
+- src/shared/structured-agent-session-read-refusal.ts
+- src/shared/structured-agent-session-reducer.ts
+- src/shared/structured-agent-session-send-disposition.ts
+- src/shared/structured-agent-session-status-started-at.ts
+- src/shared/structured-agent-session-tool-call-block.ts
+- src/shared/structured-agent-session-turn-timing.ts
+- src/shared/structured-agent-session-unanswered-dispatch.ts
+
+## T3 src/main/runtime (2157 文件)
+
+### KEEP (443)
+
+- src/main/runtime/agent-prompt-request-correlation.ts (direct importers: 2)
+- src/main/runtime/agent-prompt-submission-verification.ts (direct importers: 11)
+- src/main/runtime/agent-session-claim-identity.ts (direct importers: 5)
+- src/main/runtime/agent-status-observed-pane-identity.ts (direct importers: 3)
+- src/main/runtime/antigravity-terminal-readiness.ts (direct importers: 3)
+- src/main/runtime/bundled-mobile-web-bundle.ts (direct importers: 7)
+- src/main/runtime/claude-agent-teams-pane-layout.ts (direct importers: 1)
+- src/main/runtime/claude-agent-teams-service.ts (direct importers: 5)
+- src/main/runtime/claude-agent-teams-shim-env.ts (direct importers: 3)
+- src/main/runtime/claude-agent-teams-tmux-dispatcher.ts (direct importers: 1)
+- src/main/runtime/claude-agent-teams-types.ts (direct importers: 3)
+- src/main/runtime/client-hosted-page-reconciliation-window.ts (direct importers: 2)
+- src/main/runtime/client-session-tab-closed-selection.ts (direct importers: 1)
+- src/main/runtime/client-session-tab-selection-persistence.ts (direct importers: 3)
+- src/main/runtime/client-session-tab-selection.ts (direct importers: 5)
+- src/main/runtime/decorative-title-fact-emission.ts (direct importers: 4)
+- src/main/runtime/device-registry.ts (direct importers: 33)
+- src/main/runtime/e2ee-keypair.ts (direct importers: 18)
+- src/main/runtime/file-watcher-host.ts (direct importers: 2)
+- src/main/runtime/folder-workspace-pty-teardown.ts (direct importers: 2)
+- src/main/runtime/forced-sweep-settlement.ts (direct importers: 2)
+- src/main/runtime/headless-tab-group-split-layout.ts (direct importers: 2)
+- src/main/runtime/headless-terminal-query-reply-policy.ts (direct importers: 2)
+- src/main/runtime/headless-terminal-split-layout.ts (direct importers: 6)
+- src/main/runtime/keyed-trailing-edge-coalescer.ts (direct importers: 2)
+- src/main/runtime/missing-worktree-terminal-reconciliation.ts (direct importers: 2)
+- src/main/runtime/mobile-pairing-files.ts (direct importers: 9)
+- src/main/runtime/mobile-session-browser-equality.ts (direct importers: 2)
+- src/main/runtime/mobile-session-browser-group-projection.ts (direct importers: 3)
+- src/main/runtime/mobile-session-layout-projection.ts (direct importers: 13)
+- src/main/runtime/mobile-session-lifecycle-close-adjudication.ts (direct importers: 1)
+- src/main/runtime/mobile-session-snapshot-equality.ts (direct importers: 1)
+- src/main/runtime/mobile-session-tab-close-outcome.ts (direct importers: 4)
+- src/main/runtime/mobile-session-tab-close-refusal-message.ts (direct importers: 2)
+- src/main/runtime/mobile-session-tab-merge.ts (direct importers: 7)
+- src/main/runtime/mobile-session-tabs-agent-status-heartbeat.ts (direct importers: 3)
+- src/main/runtime/mobile-session-tabs-notify-coalescer.ts (direct importers: 2)
+- src/main/runtime/mobile-session-terminal-persistence-retirement.ts (direct importers: 10)
+- src/main/runtime/mobile-session-terminal-projection.ts (direct importers: 3)
+- src/main/runtime/mobile-session-terminal-retirement-proof.ts (direct importers: 6)
+- src/main/runtime/mobile-session-terminal-retirement.ts (direct importers: 7)
+- src/main/runtime/native-terminal-availability.ts (direct importers: 4)
+- src/main/runtime/network-exposure-guidance.ts (direct importers: 3)
+- src/main/runtime/orca-runtime-activate-managed-worktree.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-adopt-terminal-orphans-from-inventory.ts (direct importers: 2)
+- src/main/runtime/orca-runtime-agent-prompt-request-correlation.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-agent-teams-launch-plan.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-apply-layout.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-apply-mobile-display-mode.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-apply-mobile-session-tab-navigation.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-apply-tracked-pty-title.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-attach-remote-terminal-source-range-consumer.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-attach-window.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-automation-operations.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-bind-pty-incarnation-handle.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-browser.ts (direct importers: 17)
+- src/main/runtime/orca-runtime-build-controller-terminal-identities.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-build-headless-mobile-session-browser-tabs.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-build-pty-terminal-summary.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-capture-provider-terminal-buffer.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-close-headless-mobile-terminal-tab.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-close-mobile-session-tab.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-close-structured-agent-session-tab.ts (direct importers: 2)
+- src/main/runtime/orca-runtime-collect-mobile-visible-graph-changed-worktrees.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-controller-knows-pty-is-live.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-core.ts (direct importers: 44)
+- src/main/runtime/orca-runtime-create-agent-prompt-render-gate.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-create-agent-session.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-create-managed-remote-worktree.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-create-managed-worktree.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-create-mobile-session-terminal.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-create-pty-headless-terminal-state.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-create-runtime-owned-mobile-session-terminal.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-create-terminal-dependencies.ts (direct importers: 3)
+- src/main/runtime/orca-runtime-create-terminal-desktop.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-create-terminal-side-effect-command-code-detector.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-create-terminal.ts (direct importers: 2)
+- src/main/runtime/orca-runtime-deliver-pending-messages.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-emit-daemon-pty-transient-fact.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-emulator.ts (direct importers: 2)
+- src/main/runtime/orca-runtime-file-commands.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-files.ts (direct importers: 13)
+- src/main/runtime/orca-runtime-fit-override-listeners.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-focus-terminal.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-get-agent-session-execution-namespace.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-get-orchestration-dispatch-authority.ts (direct importers: 4)
+- src/main/runtime/orca-runtime-get-pty-record-for-pane-key.ts (direct importers: 3)
+- src/main/runtime/orca-runtime-get-runtime-id.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-get-status.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-get-structured-agent-session-create-support.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-get-terminal-interactive-wait.ts (direct importers: 2)
+- src/main/runtime/orca-runtime-get-unpersisted-tracked-title-for-pty.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-get-worktree-ps.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-get-worktree-terminal-provisioning-host.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-git.ts (direct importers: 8)
+- src/main/runtime/orca-runtime-handle-mobile-subscribe-internal.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-handle-mobile-subscribe.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-handle-mobile-unsubscribe.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-has-exact-persisted-terminal-surface-identity.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-has-live-or-persisted-serve-or-ssh-owned-pty-binding.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-has-recent-terminal-output-path.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-has-terminals-for-worktree.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-hydrate-headless-mobile-session-tabs-from-workspace-session.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-invalidate-all-handles-for-pty.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-linear-commands.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-list-known-resolved-worktrees-for-explicit-target.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-list-managed-worktrees.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-mark-pty-liveness-unverifiable.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-maybe-hydrate-headless-from-renderer.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-merge-preserved-headless-mobile-session-tabs.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-mobile-took-floor.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-move-headless-mobile-session-tab.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-notify-ssh-state-changed.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-on-client-disconnected.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-on-pty-data.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-on-pty-exit.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-perform-mobile-session-pty-records-refresh.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-persist-headless-session-tab-props.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-persist-headless-terminal-title.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-persist-terminal-surface-retirements.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-pick-most-recent-actor.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-postlude.ts (direct importers: 19)
+- src/main/runtime/orca-runtime-prepare-pty-execution-context.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-preserved-branch-cleanup.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-prune-mobile-session-tab-group-layout.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-pty-foreground-process-reads.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-publish-pty-backed-mobile-session-terminal.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-reclaim-terminal-for-desktop.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-reconcile-headless-mobile-session-browser-tabs.ts (direct importers: 2)
+- src/main/runtime/orca-runtime-record-agent-prompt-lifecycle-state.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-record-pty-worktree.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-refresh-floating-workspace-pty-liveness.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-refresh-pty-worktree-records-from-controller.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-refresh-pty-worktree-records-with-controller-inventory.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-refresh-repo-worktree-scan.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-refuse-unattributed-mobile-session-tab-close.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-register-pty.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-remove-managed-worktree.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-remove-orphan-or-folder-worktree.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-report-pty-spawn-commit.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-resolve-authoritative-terminal-wait-permission.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-resolve-browser-network-execution-host-for-worktree.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-resolve-exit-waiters.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-resolve-known-workspace-file-target.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-resolve-mobile-session-terminal-command.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-resolve-terminal-pane.ts (direct importers: 2)
+- src/main/runtime/orca-runtime-resolve-terminal-split-source-authority.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-resolve-waiter.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-resolve-worktree-removal-target.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-resolve-worktree-selector.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-restore-live-paired-renderer-session-owned-mobile-terminals.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-restore-structured-agent-session-tabs-once.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-run-create-mobile-session-terminal.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-runtime-id.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-schedule-mobile-session-tabs-changed.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-schedule-wait-blocked-check.ts (direct importers: 2)
+- src/main/runtime/orca-runtime-serialize-agent-prompt-submission.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-serialize-headless-terminal-buffer.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-serialize-main-terminal-buffer.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-serialize-terminal-buffer-from-available-state.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-sleep-resolved-worktree-terminals.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-split-pty-backed-terminal.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-split-terminal.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-start-tui-idle-visible-read-probe.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-state-fields.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-stop-exact-terminals-for-worktree.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-stop-explicitly-closed-tab-ptys.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-stop-requested-pty-ids.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-stop-terminals-for-worktree.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-stored-mobile-snapshot-has-stale-preserved-tab.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-subscribe-to-terminal-resize.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-sync-mobile-session-tabs.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-sync-window-graph.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-terminal-create-deduplication.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-terminal-drivers.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-terminal-projection.ts (direct importers: 3)
+- src/main/runtime/orca-runtime-touch-mobile-session-tabs-for-worktree.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-transition-graph-reload-to-terminal-state.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-verify-orchestration-compatibility-caller.ts (direct importers: 2)
+- src/main/runtime/orca-runtime-visible-snapshot-preview.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-wait-for-leaf-pty-id.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-wait-for-mobile-terminal-surface.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-wait-for-session-tabs-inventory-publication.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-write-orchestration-pointer-pty.ts (direct importers: 1)
+- src/main/runtime/orca-runtime-write-terminal-agent-prompt.ts (direct importers: 1)
+- src/main/runtime/orca-runtime.ts (direct importers: 530)
+- src/main/runtime/orchestration-fleet-agent-status-snapshot.ts (direct importers: 1)
+- src/main/runtime/pairing-endpoint.ts (direct importers: 5)
+- src/main/runtime/proven-absent-leaf-pty-verdicts.ts (direct importers: 2)
+- src/main/runtime/prune-oldest-map-entry.ts (direct importers: 1)
+- src/main/runtime/pty-recorded-surface-topology.ts (direct importers: 9)
+- src/main/runtime/pty-shell-ownership-mirror.ts (direct importers: 4)
+- src/main/runtime/public-ssh-state.ts (direct importers: 4)
+- src/main/runtime/recent-pty-output-buffer.ts (direct importers: 5)
+- src/main/runtime/remote-desktop-terminal-floor.ts (direct importers: 1)
+- src/main/runtime/remote-runtime-terminal-create-idempotency.ts (direct importers: 2)
+- src/main/runtime/remote-runtime-terminal-create-identity.ts (direct importers: 2)
+- src/main/runtime/remote-server-updater.ts (direct importers: 5)
+- src/main/runtime/remote-terminal-source-range-consumer.ts (direct importers: 9)
+- src/main/runtime/repo-worktree-admin-fingerprint.ts (direct importers: 3)
+- src/main/runtime/repo-worktree-resolution-scan.ts (direct importers: 7)
+- src/main/runtime/repo-worktree-row-resolution.ts (direct importers: 5)
+- src/main/runtime/runtime-account-controller.ts (direct importers: 3)
+- src/main/runtime/runtime-agent-launch-resolution.ts (direct importers: 6)
+- src/main/runtime/runtime-agent-orchestration-projection.ts (direct importers: 2)
+- src/main/runtime/runtime-ai-vault-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-artifact-controller.ts (direct importers: 1)
+- src/main/runtime/runtime-async-boundaries.ts (direct importers: 14)
+- src/main/runtime/runtime-automation-controller.ts (direct importers: 6)
+- src/main/runtime/runtime-automation-run-context.ts (direct importers: 1)
+- src/main/runtime/runtime-automation-update-value.ts (direct importers: 1)
+- src/main/runtime/runtime-binary-message-router.ts (direct importers: 2)
+- src/main/runtime/runtime-client-event-bus.ts (direct importers: 2)
+- src/main/runtime/runtime-client-settings.ts (direct importers: 6)
+- src/main/runtime/runtime-desktop-surface.ts (direct importers: 9)
+- src/main/runtime/runtime-edge-command-controller.ts (direct importers: 2)
+- src/main/runtime/runtime-file-command-host.ts (direct importers: 10)
+- src/main/runtime/runtime-file-command-surface.ts (direct importers: 2)
+- src/main/runtime/runtime-file-command-target.ts (direct importers: 13)
+- src/main/runtime/runtime-file-commands-active-runtime-text-searches.ts (direct importers: 2)
+- src/main/runtime/runtime-file-commands-assert-remote-terminal-file-grant-path-still-canonical.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-constructor.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-create-file-explorer-dir-no-clobber.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-mobile-file-list-limit.ts (direct importers: 17)
+- src/main/runtime/runtime-file-commands-read-file-explorer-preview.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-read-mobile-file.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-resolve-allowed-terminal-artifact-path.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-resolve-terminal-path.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-revoke-terminal-file-grants-for-client.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-search-local-runtime-files.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-search-remote-quick-open-file-paths.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-search-runtime-files.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-ssh-file-watcher-rearm.ts (direct importers: 2)
+- src/main/runtime/runtime-file-commands-terminal-artifact-access.ts (direct importers: 5)
+- src/main/runtime/runtime-file-commands-terminal-file-paths.ts (direct importers: 6)
+- src/main/runtime/runtime-file-commands-write-file-explorer-file.ts (direct importers: 1)
+- src/main/runtime/runtime-file-commands-write-terminal-artifact-file.ts (direct importers: 1)
+- src/main/runtime/runtime-file-path-existence.ts (direct importers: 1)
+- src/main/runtime/runtime-file-paths.ts (direct importers: 3)
+- src/main/runtime/runtime-file-watcher-leases.ts (direct importers: 2)
+- src/main/runtime/runtime-file-watcher-removal.ts (direct importers: 1)
+- src/main/runtime/runtime-folder-workspace.ts (direct importers: 4)
+- src/main/runtime/runtime-folder-worktree-create.ts (direct importers: 2)
+- src/main/runtime/runtime-git-command-surface.ts (direct importers: 2)
+- src/main/runtime/runtime-git-command-target.ts (direct importers: 11)
+- src/main/runtime/runtime-git-diff-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-git-generation-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-git-generation-context.ts (direct importers: 1)
+- src/main/runtime/runtime-git-staging-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-git-status-commands.ts (direct importers: 3)
+- src/main/runtime/runtime-git-sync-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-github-issue-comment-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-github-project-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-github-repository-query-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-github-review-mutation-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-github-review-query-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-github-worktree-base.ts (direct importers: 1)
+- src/main/runtime/runtime-gitlab-fork-mr-base.ts (direct importers: 1)
+- src/main/runtime/runtime-gitlab-issue-source-remote.ts (direct importers: 1)
+- src/main/runtime/runtime-gitlab-mutation-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-gitlab-query-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-gitlab-worktree-base.ts (direct importers: 1)
+- src/main/runtime/runtime-graph-reload-lifecycle.ts (direct importers: 3)
+- src/main/runtime/runtime-hook-agent-row-selection.ts (direct importers: 6)
+- src/main/runtime/runtime-hosted-review-commands.ts (direct importers: 3)
+- src/main/runtime/runtime-jira-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-browse-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-linear-command-base.ts (direct importers: 2)
+- src/main/runtime/runtime-linear-command-dependencies.ts (direct importers: 18)
+- src/main/runtime/runtime-linear-command-surface.ts (direct importers: 2)
+- src/main/runtime/runtime-linear-comment-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-comment-lookup-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-connection-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-linear-context-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-create-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-dedupe-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-label-write-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-project-write-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-read-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-linear-retry-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-save-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-save-fields-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-state-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-task-fields-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-team-write-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-linear-write-result-commands.ts (direct importers: 1)
+- src/main/runtime/runtime-local-git-worktree-create.ts (direct importers: 1)
+- src/main/runtime/runtime-local-worktree-create-candidate.ts (direct importers: 1)
+- src/main/runtime/runtime-local-worktree-create.ts (direct importers: 2)
+- src/main/runtime/runtime-local-worktree-materialization.ts (direct importers: 2)
+- src/main/runtime/runtime-local-worktree-setup.ts (direct importers: 1)
+- src/main/runtime/runtime-local-worktree-terminal-startup.ts (direct importers: 2)
+- src/main/runtime/runtime-machine-name.ts (direct importers: 4)
+- src/main/runtime/runtime-managed-worktree-create-types.ts (direct importers: 11)
+- src/main/runtime/runtime-managed-worktree-metadata.ts (direct importers: 2)
+- src/main/runtime/runtime-managed-worktree-queries.ts (direct importers: 4)
+- src/main/runtime/runtime-message-waiters.ts (direct importers: 3)
+- src/main/runtime/runtime-metadata-ownership-watch.ts (direct importers: 3)
+- src/main/runtime/runtime-metadata.ts (direct importers: 13)
+- src/main/runtime/runtime-native-chat-draft-resolutions.ts (direct importers: 2)
+- src/main/runtime/runtime-nested-repo-import.ts (direct importers: 2)
+- src/main/runtime/runtime-notifier-contract.ts (direct importers: 4)
+- src/main/runtime/runtime-orchestration-federation.ts (direct importers: 2)
+- src/main/runtime/runtime-preserved-branch-cleanup.ts (direct importers: 1)
+- src/main/runtime/runtime-project-group-controller.ts (direct importers: 3)
+- src/main/runtime/runtime-project-host-setup-controller.ts (direct importers: 3)
+- src/main/runtime/runtime-pty-controller-contract.ts (direct importers: 17)
+- src/main/runtime/runtime-pty-foreground-agent.ts (direct importers: 1)
+- src/main/runtime/runtime-registered-local-worktree-removal.ts (direct importers: 1)
+- src/main/runtime/runtime-registered-remote-worktree-removal.ts (direct importers: 1)
+- src/main/runtime/runtime-relative-paths.ts (direct importers: 17)
+- src/main/runtime/runtime-remote-fetch-controller.ts (direct importers: 9)
+- src/main/runtime/runtime-remote-managed-worktree-create.ts (direct importers: 2)
+- src/main/runtime/runtime-remote-worktree-create-request.ts (direct importers: 3)
+- src/main/runtime/runtime-remote-worktree-create-result.ts (direct importers: 1)
+- src/main/runtime/runtime-repository-clone-controller.ts (direct importers: 2)
+- src/main/runtime/runtime-repository-command-surface.ts (direct importers: 2)
+- src/main/runtime/runtime-repository-fork-backfill.ts (direct importers: 1)
+- src/main/runtime/runtime-repository-hooks-commands.ts (direct importers: 2)
+- src/main/runtime/runtime-repository-issue-command.ts (direct importers: 3)
+- src/main/runtime/runtime-repository-ref-queries.ts (direct importers: 2)
+- src/main/runtime/runtime-repository-registration-controller.ts (direct importers: 2)
+- src/main/runtime/runtime-repository-settings-controller.ts (direct importers: 2)
+- src/main/runtime/runtime-repository-sparse-presets.ts (direct importers: 2)
+- src/main/runtime/runtime-resolved-worktree-cache.ts (direct importers: 5)
+- src/main/runtime/runtime-restored-orchestration-authority-sweep.ts (direct importers: 1)
+- src/main/runtime/runtime-review-command-surface.ts (direct importers: 2)
+- src/main/runtime/runtime-root-watch-ownership.ts (direct importers: 1)
+- src/main/runtime/runtime-root-watch-teardown.ts (direct importers: 1)
+- src/main/runtime/runtime-rpc/runtime-rpc-binary-routing.ts (direct importers: 1)
+- src/main/runtime/runtime-rpc/runtime-rpc-lifecycle.ts (direct importers: 1)
+- src/main/runtime/runtime-rpc/runtime-rpc-long-poll.ts (direct importers: 4)
+- src/main/runtime/runtime-rpc/runtime-rpc-mobile-method-allowlist.ts (direct importers: 6)
+- src/main/runtime/runtime-rpc/runtime-rpc-mobile-pairing.ts (direct importers: 1)
+- src/main/runtime/runtime-rpc/runtime-rpc-network-exposure.ts (direct importers: 1)
+- src/main/runtime/runtime-rpc/runtime-rpc-pairing-types.ts (direct importers: 7)
+- src/main/runtime/runtime-rpc/runtime-rpc-pairing.ts (direct importers: 1)
+- src/main/runtime/runtime-rpc/runtime-rpc-request-admission.ts (direct importers: 1)
+- src/main/runtime/runtime-rpc/runtime-rpc-shutdown.ts (direct importers: 1)
+- src/main/runtime/runtime-rpc/runtime-rpc-socket-metadata.ts (direct importers: 2)
+- src/main/runtime/runtime-rpc/runtime-rpc-state.ts (direct importers: 1)
+- src/main/runtime/runtime-rpc/runtime-rpc-websocket-dispatch.ts (direct importers: 1)
+- src/main/runtime/runtime-rpc-startup-failure.ts (direct importers: 2)
+- src/main/runtime/runtime-rpc.ts (direct importers: 39)
+- src/main/runtime/runtime-server-environment-commands.ts (direct importers: 3)
+- src/main/runtime/runtime-service-command-surface.ts (direct importers: 2)
+- src/main/runtime/runtime-session-search-settings.ts (direct importers: 3)
+- src/main/runtime/runtime-skill-command-contract.ts (direct importers: 4)
+- src/main/runtime/runtime-skill-command-surface.ts (direct importers: 6)
+- src/main/runtime/runtime-skill-types.ts (direct importers: 5)
+- src/main/runtime/runtime-store-contract.ts (direct importers: 51)
+- src/main/runtime/runtime-subscription-registry.ts (direct importers: 5)
+- src/main/runtime/runtime-terminal-agent-presence.ts (direct importers: 2)
+- src/main/runtime/runtime-terminal-agent-status-query.ts (direct importers: 4)
+- src/main/runtime/runtime-terminal-contracts.ts (direct importers: 36)
+- src/main/runtime/runtime-terminal-driver-controller.ts (direct importers: 1)
+- src/main/runtime/runtime-terminal-idle-polls.ts (direct importers: 4)
+- src/main/runtime/runtime-terminal-list.ts (direct importers: 1)
+- src/main/runtime/runtime-terminal-orphan-adoption.ts (direct importers: 1)
+- src/main/runtime/runtime-terminal-orphan-session-adoption.ts (direct importers: 1)
+- src/main/runtime/runtime-terminal-orphan-topology-validation.ts (direct importers: 2)
+- src/main/runtime/runtime-terminal-pane-identity.ts (direct importers: 5)
+- src/main/runtime/runtime-terminal-spawn-push-target-materialization.ts (direct importers: 3)
+- src/main/runtime/runtime-terminal-state-records.ts (direct importers: 55)
+- src/main/runtime/runtime-terminal-stream-consumers.ts (direct importers: 3)
+- src/main/runtime/runtime-terminal-view-subscribers.ts (direct importers: 1)
+- src/main/runtime/runtime-terminal-visual-layout.ts (direct importers: 1)
+- src/main/runtime/runtime-terminal-wait.ts (direct importers: 2)
+- src/main/runtime/runtime-terminal-waiter-registry.ts (direct importers: 3)
+- src/main/runtime/runtime-terminal-writer.ts (direct importers: 3)
+- src/main/runtime/runtime-unregistered-worktree-removal.ts (direct importers: 2)
+- src/main/runtime/runtime-witnessed-worktree-scan.ts (direct importers: 1)
+- src/main/runtime/runtime-workspace-session-controller.ts (direct importers: 2)
+- src/main/runtime/runtime-worktree-agent-rows.ts (direct importers: 7)
+- src/main/runtime/runtime-worktree-agent-source.ts (direct importers: 3)
+- src/main/runtime/runtime-worktree-agent-sources.ts (direct importers: 4)
+- src/main/runtime/runtime-worktree-agent-startup.ts (direct importers: 8)
+- src/main/runtime/runtime-worktree-base-reconciliation.ts (direct importers: 1)
+- src/main/runtime/runtime-worktree-binding-index.ts (direct importers: 2)
+- src/main/runtime/runtime-worktree-create-git.ts (direct importers: 1)
+- src/main/runtime/runtime-worktree-drift-probe.ts (direct importers: 1)
+- src/main/runtime/runtime-worktree-filesystem.ts (direct importers: 5)
+- src/main/runtime/runtime-worktree-lifecycle-events.ts (direct importers: 1)
+- src/main/runtime/runtime-worktree-lineage-controller.ts (direct importers: 1)
+- src/main/runtime/runtime-worktree-lineage-recording.ts (direct importers: 1)
+- src/main/runtime/runtime-worktree-lineage-resolution.ts (direct importers: 5)
+- src/main/runtime/runtime-worktree-path-identity.ts (direct importers: 49)
+- src/main/runtime/runtime-worktree-ps-activity.ts (direct importers: 2)
+- src/main/runtime/runtime-worktree-ps-summaries.ts (direct importers: 2)
+- src/main/runtime/runtime-worktree-pty-agent-sources.ts (direct importers: 1)
+- src/main/runtime/runtime-worktree-removal-in-flight.ts (direct importers: 1)
+- src/main/runtime/runtime-worktree-removal-target.ts (direct importers: 1)
+- src/main/runtime/runtime-worktree-scan-cache.ts (direct importers: 3)
+- src/main/runtime/runtime-worktree-selection.ts (direct importers: 15)
+- src/main/runtime/runtime-worktree-startup-readiness.ts (direct importers: 2)
+- src/main/runtime/runtime-worktree-status-projection.ts (direct importers: 18)
+- src/main/runtime/runtime-worktree-summary-paths.ts (direct importers: 4)
+- src/main/runtime/runtime-worktree-terminal-provisioning.ts (direct importers: 4)
+- src/main/runtime/saved-structured-agent-session-restoration.ts (direct importers: 3)
+- src/main/runtime/scrollback-limits.ts (direct importers: 3)
+- src/main/runtime/selected-review-branch.ts (direct importers: 3)
+- src/main/runtime/settle-before-deadline.ts (direct importers: 4)
+- src/main/runtime/ssh-file-explorer-chunk-read.ts (direct importers: 1)
+- src/main/runtime/terminal-ansi-normalization.ts (direct importers: 7)
+- src/main/runtime/terminal-focus-navigation-coalescer.ts (direct importers: 2)
+- src/main/runtime/terminal-identity-probe.ts (direct importers: 2)
+- src/main/runtime/terminal-model-query-authority.ts (direct importers: 9)
+- src/main/runtime/terminal-orphan-owner.ts (direct importers: 2)
+- src/main/runtime/terminal-orphan-topology.ts (direct importers: 3)
+- src/main/runtime/terminal-output-path-candidates.ts (direct importers: 5)
+- src/main/runtime/terminal-send-payload.ts (direct importers: 2)
+- src/main/runtime/terminal-shell-override-host-support.ts (direct importers: 2)
+- src/main/runtime/terminal-tail-buffer.ts (direct importers: 8)
+- src/main/runtime/terminal-tail-limits.ts (direct importers: 12)
+- src/main/runtime/terminal-tail-line-controls.ts (direct importers: 3)
+- src/main/runtime/terminal-tail-read.ts (direct importers: 5)
+- src/main/runtime/terminal-tail-redraw-buffer.ts (direct importers: 7)
+- src/main/runtime/terminal-tail-restore-seed.ts (direct importers: 2)
+- src/main/runtime/terminal-tail-sentinel-index.ts (direct importers: 3)
+- src/main/runtime/terminal-tail-state.ts (direct importers: 7)
+- src/main/runtime/terminal-view-attribute-store.ts (direct importers: 6)
+- src/main/runtime/terminal-viewport.ts (direct importers: 5)
+- src/main/runtime/terminal-wait-detection.ts (direct importers: 13)
+- src/main/runtime/terminal-wait-results.ts (direct importers: 8)
+- src/main/runtime/terminal-wait-tail-state.ts (direct importers: 12)
+- src/main/runtime/terminal-wait-tail-window.ts (direct importers: 3)
+- src/main/runtime/tui-idle-evidence.ts (direct importers: 6)
+- src/main/runtime/unstopped-pty-verification.ts (direct importers: 2)
+- src/main/runtime/wait-blocked-check-state.ts (direct importers: 4)
+- src/main/runtime/windows-drive-listing.ts (direct importers: 2)
+- src/main/runtime/workspace-session-terminal-membership-authority.ts (direct importers: 12)
+- src/main/runtime/workspace-session-terminal-tab-retirement-identity.ts (direct importers: 1)
+- src/main/runtime/workspace-session-worktree-id.ts (direct importers: 2)
+- src/main/runtime/worktree-browser-client-page-close.ts (direct importers: 1)
+- src/main/runtime/worktree-launch-host-repo.ts (direct importers: 5)
+- src/main/runtime/worktree-listing-host-scope.ts (direct importers: 2)
+- src/main/runtime/worktree-pty-host-fence.ts (direct importers: 2)
+- src/main/runtime/worktree-pty-stop-verdict.ts (direct importers: 1)
+- src/main/runtime/worktree-pty-surface-sweeps.ts (direct importers: 1)
+- src/main/runtime/worktree-removal-route-listing.ts (direct importers: 1)
+- src/main/runtime/worktree-teardown-deadline.ts (direct importers: 2)
+- src/main/runtime/worktree-teardown.ts (direct importers: 13)
+- src/main/runtime/worktree-terminal-mutation-lock.ts (direct importers: 3)
+
+### TEST-KEEP (84)
+
+- src/main/runtime/agent-prompt-request-correlation.test.ts (direct importers: 0)
+- src/main/runtime/agent-prompt-submission-verification.test.ts (direct importers: 0)
+- src/main/runtime/agent-session-claim-identity.test.ts (direct importers: 0)
+- src/main/runtime/antigravity-terminal-readiness.test.ts (direct importers: 0)
+- src/main/runtime/claude-agent-teams-service.test.ts (direct importers: 0)
+- src/main/runtime/claude-agent-teams-shim-env.test.ts (direct importers: 0)
+- src/main/runtime/client-hosted-page-reconciliation-window.test.ts (direct importers: 0)
+- src/main/runtime/client-session-tab-selection.test.ts (direct importers: 0)
+- src/main/runtime/decorative-title-fact-emission.test.ts (direct importers: 0)
+- src/main/runtime/file-watcher-host.test.ts (direct importers: 0)
+- src/main/runtime/headless-tab-group-split-layout.test.ts (direct importers: 0)
+- src/main/runtime/headless-terminal-query-reply-policy.test.ts (direct importers: 0)
+- src/main/runtime/headless-terminal-split-layout.test.ts (direct importers: 0)
+- src/main/runtime/missing-worktree-terminal-reconciliation.test.ts (direct importers: 0)
+- src/main/runtime/mobile-session-tab-close-refusal-message.test.ts (direct importers: 0)
+- src/main/runtime/mobile-session-tabs-agent-status-heartbeat.test.ts (direct importers: 0)
+- src/main/runtime/mobile-session-tabs-notify-coalescer.test.ts (direct importers: 0)
+- src/main/runtime/mobile-session-terminal-persistence-retirement.test.ts (direct importers: 0)
+- src/main/runtime/mobile-session-terminal-retirement-proof.test.ts (direct importers: 0)
+- src/main/runtime/mobile-session-terminal-retirement.test.ts (direct importers: 0)
+- src/main/runtime/orca-runtime-browser.test.ts (direct importers: 0)
+- src/main/runtime/orca-runtime-git.test.ts (direct importers: 0)
+- src/main/runtime/orca-runtime.test.ts (direct importers: 0)
+- src/main/runtime/pairing-endpoint.test.ts (direct importers: 0)
+- src/main/runtime/proven-absent-leaf-pty-verdicts.test.ts (direct importers: 0)
+- src/main/runtime/pty-recorded-surface-topology.test.ts (direct importers: 0)
+- src/main/runtime/pty-shell-ownership-mirror.test.ts (direct importers: 0)
+- src/main/runtime/public-ssh-state.test.ts (direct importers: 0)
+- src/main/runtime/recent-pty-output-buffer.test.ts (direct importers: 0)
+- src/main/runtime/remote-server-updater.test.ts (direct importers: 0)
+- src/main/runtime/repo-worktree-admin-fingerprint.test.ts (direct importers: 0)
+- src/main/runtime/repo-worktree-resolution-scan.test.ts (direct importers: 0)
+- src/main/runtime/repo-worktree-row-resolution.test.ts (direct importers: 0)
+- src/main/runtime/runtime-binary-message-router.test.ts (direct importers: 0)
+- src/main/runtime/runtime-file-path-existence.test.ts (direct importers: 0)
+- src/main/runtime/runtime-folder-workspace.test.ts (direct importers: 0)
+- src/main/runtime/runtime-folder-worktree-create.test.ts (direct importers: 0)
+- src/main/runtime/runtime-git-command-target.test.ts (direct importers: 0)
+- src/main/runtime/runtime-git-sync-commands.test.ts (direct importers: 0)
+- src/main/runtime/runtime-graph-reload-lifecycle.test.ts (direct importers: 0)
+- src/main/runtime/runtime-hook-agent-row-selection.test.ts (direct importers: 0)
+- src/main/runtime/runtime-linear-read-commands.test.ts (direct importers: 0)
+- src/main/runtime/runtime-local-worktree-create.test.ts (direct importers: 0)
+- src/main/runtime/runtime-local-worktree-materialization.test.ts (direct importers: 0)
+- src/main/runtime/runtime-local-worktree-terminal-startup.test.ts (direct importers: 0)
+- src/main/runtime/runtime-machine-name.test.ts (direct importers: 0)
+- src/main/runtime/runtime-managed-worktree-metadata.test.ts (direct importers: 0)
+- src/main/runtime/runtime-managed-worktree-queries.test.ts (direct importers: 0)
+- src/main/runtime/runtime-metadata-ownership-watch.test.ts (direct importers: 0)
+- src/main/runtime/runtime-metadata.test.ts (direct importers: 0)
+- src/main/runtime/runtime-project-host-setup-controller.test.ts (direct importers: 0)
+- src/main/runtime/runtime-remote-managed-worktree-create.test.ts (direct importers: 0)
+- src/main/runtime/runtime-repository-issue-command.test.ts (direct importers: 0)
+- src/main/runtime/runtime-resolved-worktree-cache.test.ts (direct importers: 0)
+- src/main/runtime/runtime-rpc-startup-failure.test.ts (direct importers: 0)
+- src/main/runtime/runtime-session-search-settings.test.ts (direct importers: 0)
+- src/main/runtime/runtime-subscription-registry.test.ts (direct importers: 0)
+- src/main/runtime/runtime-terminal-idle-polls.test.ts (direct importers: 0)
+- src/main/runtime/runtime-terminal-orphan-topology-validation.test.ts (direct importers: 0)
+- src/main/runtime/runtime-terminal-spawn-push-target-materialization.test.ts (direct importers: 0)
+- src/main/runtime/runtime-worktree-agent-sources.test.ts (direct importers: 0)
+- src/main/runtime/runtime-worktree-agent-startup.test.ts (direct importers: 0)
+- src/main/runtime/runtime-worktree-ps-summaries.test.ts (direct importers: 0)
+- src/main/runtime/runtime-worktree-selection.test.ts (direct importers: 0)
+- src/main/runtime/saved-structured-agent-session-restoration.test.ts (direct importers: 0)
+- src/main/runtime/selected-review-branch.test.ts (direct importers: 0)
+- src/main/runtime/terminal-focus-navigation-coalescer.test.ts (direct importers: 0)
+- src/main/runtime/terminal-identity-probe.test.ts (direct importers: 0)
+- src/main/runtime/terminal-model-query-authority.test.ts (direct importers: 0)
+- src/main/runtime/terminal-orphan-owner.test.ts (direct importers: 0)
+- src/main/runtime/terminal-orphan-topology.test.ts (direct importers: 0)
+- src/main/runtime/terminal-shell-override-host-support.test.ts (direct importers: 0)
+- src/main/runtime/terminal-tail-buffer.test.ts (direct importers: 0)
+- src/main/runtime/terminal-tail-sentinel-index.test.ts (direct importers: 0)
+- src/main/runtime/terminal-wait-detection.test.ts (direct importers: 0)
+- src/main/runtime/terminal-wait-results.test.ts (direct importers: 0)
+- src/main/runtime/terminal-wait-tail-window.test.ts (direct importers: 0)
+- src/main/runtime/tui-idle-evidence.test.ts (direct importers: 0)
+- src/main/runtime/wait-blocked-check-state.test.ts (direct importers: 0)
+- src/main/runtime/windows-drive-listing.test.ts (direct importers: 0)
+- src/main/runtime/workspace-session-worktree-id.test.ts (direct importers: 0)
+- src/main/runtime/worktree-launch-host-repo.test.ts (direct importers: 0)
+- src/main/runtime/worktree-teardown.test.ts (direct importers: 0)
+- src/main/runtime/worktree-terminal-mutation-lock.test.ts (direct importers: 0)
+
+### TEST-DELETE (785)
+
+- src/main/runtime/acknowledged-terminal-tab-retirement.test.ts
+- src/main/runtime/agent-prompt-line-settle.test.ts
+- src/main/runtime/agent-prompt-receipt-correlation.test.ts
+- src/main/runtime/agent-prompt-submission-runtime-hook-and-generation.test.ts
+- src/main/runtime/agent-prompt-submission-runtime.test.ts
+- src/main/runtime/agent-prompt-submission-windows-submit-delay.test.ts
+- src/main/runtime/agent-session-backup-recovery.test.ts
+- src/main/runtime/agent-session-conversation-name-store.test.ts
+- src/main/runtime/agent-session-launch-env-admission.test.ts
+- src/main/runtime/agent-session-launch-env-backfill.test.ts
+- src/main/runtime/agent-session-lease-renewal.test.ts
+- src/main/runtime/agent-session-operation-admission.test.ts
+- src/main/runtime/agent-session-orphan-child-reaper.test.ts
+- src/main/runtime/agent-session-process-identity-probe-windows-batch.test.ts
+- src/main/runtime/agent-session-process-identity-probe.test.ts
+- src/main/runtime/agent-session-provider-handle-transition.test.ts
+- src/main/runtime/agent-session-record-conversation-name.test.ts
+- src/main/runtime/agent-session-record-options.test.ts
+- src/main/runtime/agent-session-record-store-legacy-handoff-lease.test.ts
+- src/main/runtime/agent-session-record-store-security.test.ts
+- src/main/runtime/agent-session-record-store-tab-table.test.ts
+- src/main/runtime/agent-session-record-store.test.ts
+- src/main/runtime/agent-session-record-unsupported-schema.test.ts
+- src/main/runtime/agent-session-recovery-capsule.test.ts
+- src/main/runtime/agent-session-recovery-publish-fault.test.ts
+- src/main/runtime/agent-session-released-reservation-replay.test.ts
+- src/main/runtime/agent-session-reservation-admission.test.ts
+- src/main/runtime/agent-session-spawn-token-process-scan.test.ts
+- src/main/runtime/agent-session-spawn-token-readback.test.ts
+- src/main/runtime/agent-session-surface-release-transition.test.ts
+- src/main/runtime/agent-session-unreadable-record-salvage.test.ts
+- src/main/runtime/agent-session-unsaved-creation-supersession.test.ts
+- src/main/runtime/agent-startup-input-assembly-census.test.ts
+- src/main/runtime/agent-terminal-launch-trust-host.test.ts
+- src/main/runtime/agent-terminal-startup-prompt.test.ts
+- src/main/runtime/antigravity-readiness-transcripts.test.ts
+- src/main/runtime/automation-change-publication.test.ts
+- src/main/runtime/browser-client-download-transfers.test.ts
+- src/main/runtime/browser-dialog-settlement.test.ts
+- src/main/runtime/browser-execution-host-key-resolution.test.ts
+- src/main/runtime/browser-host-capability-selection.test.ts
+- src/main/runtime/browser-host-client-page-adoption-grants.test.ts
+- src/main/runtime/browser-host-client-page-adoption.test.ts
+- src/main/runtime/browser-host-client-page-creation.test.ts
+- src/main/runtime/browser-host-command-ledger-capacity.test.ts
+- src/main/runtime/browser-host-command-ledger.test.ts
+- src/main/runtime/browser-host-file-channel-admission.test.ts
+- src/main/runtime/browser-host-lease-download-transfer-cleanup.test.ts
+- src/main/runtime/browser-host-lease-fenced-page-release.test.ts
+- src/main/runtime/browser-host-lease-placement-retirement.test.ts
+- src/main/runtime/browser-host-lease-registry.test.ts
+- src/main/runtime/browser-host-page-placement-replacement.test.ts
+- src/main/runtime/browser-host-page-placement.test.ts
+- src/main/runtime/browser-host-page-reconciliation-executor.test.ts
+- src/main/runtime/browser-host-page-reconciliation-orchestration.test.ts
+- src/main/runtime/browser-host-page-reconciliation-plan.test.ts
+- src/main/runtime/browser-host-page-reconciliation-preconditions.test.ts
+- src/main/runtime/browser-host-page-retirement.test.ts
+- src/main/runtime/browser-network-tunnel-paired-runtime.integration.test.ts
+- src/main/runtime/browser-screencast-driver-attribution.test.ts
+- src/main/runtime/browser-screencast-driver-scope.test.ts
+- src/main/runtime/browser-screencast-ghost-subscriber-eviction.test.ts
+- src/main/runtime/browser-screencast-remote-viewer-retention.test.ts
+- src/main/runtime/browser-session-tab-selection-snapshot.test.ts
+- src/main/runtime/browser-tab-create-caller-navigation.test.ts
+- src/main/runtime/browser-tab-create-publication.test.ts
+- src/main/runtime/claude-agent-teams-pty-exit-leak.test.ts
+- src/main/runtime/claude-structured-failed-start-resume.test.ts
+- src/main/runtime/claude-structured-resumed-start-failure.test.ts
+- src/main/runtime/claude-structured-send-held-for-startup.test.ts
+- src/main/runtime/claude-structured-send-restart-dies-before-dispatch.test.ts
+- src/main/runtime/claude-structured-session-integration.test.ts
+- src/main/runtime/claude-structured-startup-unanswered-control-request.test.ts
+- src/main/runtime/cli-terminal-create-host-session-binding.test.ts
+- src/main/runtime/client-hosted-browser-page-persistence.integration.test.ts
+- src/main/runtime/client-hosted-browser-page-persistence.test.ts
+- src/main/runtime/client-hosted-browser-row-hydration-census.test.ts
+- src/main/runtime/client-hosted-browser-row-projection.test.ts
+- src/main/runtime/client-hosted-browser-row-publication.test.ts
+- src/main/runtime/client-hosted-browser-row-push.integration.test.ts
+- src/main/runtime/client-hosted-page-reconciliation-hold.integration.test.ts
+- src/main/runtime/exit-provenance-audit.test.ts
+- src/main/runtime/expired-ssh-lease-pane-candidacy.test.ts
+- src/main/runtime/external-worktree-paired-client-discovery.integration.test.ts
+- src/main/runtime/fetch-remote-cache.test.ts
+- src/main/runtime/fit-override-integration.test.ts
+- src/main/runtime/folder-workspace-pty-identity.test.ts
+- src/main/runtime/graph-sync-deletion-fence.test.ts
+- src/main/runtime/graph-sync-live-daemon-pty-tab-preservation.test.ts
+- src/main/runtime/graph-sync-mobile-snapshot-gating.test.ts
+- src/main/runtime/graph-sync-payload-partition.test.ts
+- src/main/runtime/headless-close-keeps-publication-epoch.test.ts
+- src/main/runtime/headless-hydration-ownership.test.ts
+- src/main/runtime/headless-placeholder-graph-surface-standing.test.ts
+- src/main/runtime/headless-seed-ownership.test.ts
+- src/main/runtime/headless-tab-order-stability.test.ts
+- src/main/runtime/headless-terminal-dispose-write-ordering.test.ts
+- src/main/runtime/hidden-output-restored-provider-snapshot.test.ts
+- src/main/runtime/host-terminal-close-persistence-durability.test.ts
+- src/main/runtime/leaf-pty-verdict-expiry.test.ts
+- src/main/runtime/linear-save-issue.test.ts
+- src/main/runtime/managed-worktree-create-execution-host.test.ts
+- src/main/runtime/mobile-agent-status-permission-renewal.test.ts
+- src/main/runtime/mobile-notification-dismissal-read-failure.test.ts
+- src/main/runtime/mobile-notification-dismissal-store.test.ts
+- src/main/runtime/mobile-notification-replay.test.ts
+- src/main/runtime/mobile-pairing-qr.test.ts
+- src/main/runtime/mobile-pairing-userdata-path.test.ts
+- src/main/runtime/mobile-presence-lock.test.ts
+- src/main/runtime/mobile-rpc-allowlist.test.ts
+- src/main/runtime/mobile-session-tabs-churn-coalescing.test.ts
+- src/main/runtime/mobile-subscribe-integration.test.ts
+- src/main/runtime/multi-client-navigation-isolation.integration.test.ts
+- src/main/runtime/muse-readiness-transcript.test.ts
+- src/main/runtime/opencode-finished-session-authority.test.ts
+- src/main/runtime/orca-runtime-agent-session-operation.test.ts
+- src/main/runtime/orca-runtime-agent-skill-share.test.ts
+- src/main/runtime/orca-runtime-automations.test.ts
+- src/main/runtime/orca-runtime-browser-client-hosted.test.ts
+- src/main/runtime/orca-runtime-browser-ghost-session-row-close.test.ts
+- src/main/runtime/orca-runtime-browser-headless.test.ts
+- src/main/runtime/orca-runtime-browser-screencast-fanout.test.ts
+- src/main/runtime/orca-runtime-create-base-prefetch.test.ts
+- src/main/runtime/orca-runtime-emulator-folder-workspace.test.ts
+- src/main/runtime/orca-runtime-exact-worker-provider-session.test.ts
+- src/main/runtime/orca-runtime-files-mobile-explorer-reads.test.ts
+- src/main/runtime/orca-runtime-files-preview-budget.test.ts
+- src/main/runtime/orca-runtime-files-rename-authority.test.ts
+- src/main/runtime/orca-runtime-files-search.test.ts
+- src/main/runtime/orca-runtime-files-ssh-chunk-reads.test.ts
+- src/main/runtime/orca-runtime-files-ssh-rearm.test.ts
+- src/main/runtime/orca-runtime-files-terminal-artifact-grants.test.ts
+- src/main/runtime/orca-runtime-files-terminal-artifact-io.test.ts
+- src/main/runtime/orca-runtime-files-terminal-artifact-swap-detection.test.ts
+- src/main/runtime/orca-runtime-files-terminal-link-host-translation.test.ts
+- src/main/runtime/orca-runtime-files-terminal-path-resolution.test.ts
+- src/main/runtime/orca-runtime-files-watch-host-scope.test.ts
+- src/main/runtime/orca-runtime-files-watch.test.ts
+- src/main/runtime/orca-runtime-git-branch-diff.test.ts
+- src/main/runtime/orca-runtime-git-diff-budget.test.ts
+- src/main/runtime/orca-runtime-headless-hydration-repo-gate.test.ts
+- src/main/runtime/orca-runtime-hook-agent-status-projection.test.ts
+- src/main/runtime/orca-runtime-linked-issue-live-meta.integration.test.ts
+- src/main/runtime/orca-runtime-mobile-agent-status-title-truthfulness.test.ts
+- src/main/runtime/orca-runtime-mobile-close-preserved-resurrection.test.ts
+- src/main/runtime/orca-runtime-module-size.test.ts
+- src/main/runtime/orca-runtime-path-candidate-history.test.ts
+- src/main/runtime/orca-runtime-process-incarnation-liveness.test.ts
+- src/main/runtime/orca-runtime-provider-reattach-launch-identity.test.ts
+- src/main/runtime/orca-runtime-skill-recovery.test.ts
+- src/main/runtime/orca-runtime-structured-agent-session-create-intent.test.ts
+- src/main/runtime/orca-runtime-structured-claude-account-gate.test.ts
+- src/main/runtime/orca-runtime-structured-claude-gate-wiring.test.ts
+- src/main/runtime/orca-runtime-structured-native-chat-settings.test.ts
+- src/main/runtime/orca-runtime-structured-session-restore.test.ts
+- src/main/runtime/orca-runtime-structured-status-sink-wiring.test.ts
+- src/main/runtime/orca-runtime-tab-id-collision.test.ts
+- src/main/runtime/orca-runtime-tail-wait-memo.test.ts
+- src/main/runtime/orca-runtime-terminal-close-continuity.test.ts
+- src/main/runtime/orca-runtime-terminal-create-idempotency.test.ts
+- src/main/runtime/orca-runtime-terminal-cwd.test.ts
+- src/main/runtime/orca-runtime-terminal-handle-incarnation.test.ts
+- src/main/runtime/orca-runtime-terminal-rename-retention.test.ts
+- src/main/runtime/orca-runtime-terminal-retirement-host-partition.test.ts
+- src/main/runtime/orca-runtime-terminal-retirement.test.ts
+- src/main/runtime/orca-runtime-terminal-split-authority.test.ts
+- src/main/runtime/orca-runtime-test-fragment-coverage.test.ts
+- src/main/runtime/orca-runtime-worktree-change-invalidation.test.ts
+- src/main/runtime/orchestration/cli-command.test.ts
+- src/main/runtime/orchestration/coordinator-decision-gates.test.ts
+- src/main/runtime/orchestration/coordinator-dispatch-unobserved-prompt.test.ts
+- src/main/runtime/orchestration/coordinator-drift-probe-coalescing.test.ts
+- src/main/runtime/orchestration/coordinator-escalation-triage.test.ts
+- src/main/runtime/orchestration/coordinator-stale-base-flag.test.ts
+- src/main/runtime/orchestration/coordinator-terminal-census-unavailable.test.ts
+- src/main/runtime/orchestration/coordinator.test.ts
+- src/main/runtime/orchestration/db/attempt-outcome-projection.test.ts
+- src/main/runtime/orchestration/db/decision-gate-lifecycle.test.ts
+- src/main/runtime/orchestration/db/dispatch-context/dispatch-capability.test.ts
+- src/main/runtime/orchestration/db/dispatch-depth.test.ts
+- src/main/runtime/orchestration/db/dispatch-mailbox-consumer-fencing.test.ts
+- src/main/runtime/orchestration/db/dispatch-row-writer-boundary.test.ts
+- src/main/runtime/orchestration/db/federated-worker-report-outcome.test.ts
+- src/main/runtime/orchestration/db/federation/federated-dispatch-observation-fence.test.ts
+- src/main/runtime/orchestration/db/federation/remote-dispatch-attachment-release.test.ts
+- src/main/runtime/orchestration/db/hot-path-statement-compilation.test.ts
+- src/main/runtime/orchestration/db/legacy-question-identity.test.ts
+- src/main/runtime/orchestration/db/lifecycle-rejection-marker.test.ts
+- src/main/runtime/orchestration/db/lifecycle-transition-boundary.test.ts
+- src/main/runtime/orchestration/db/lifecycle-transition.test.ts
+- src/main/runtime/orchestration/db/messages/mailbox-consumer-lifecycle-fencing.test.ts
+- src/main/runtime/orchestration/db/pane-key-match.test.ts
+- src/main/runtime/orchestration/db/row-column-lists.test.ts
+- src/main/runtime/orchestration/db/run-list-cursor.test.ts
+- src/main/runtime/orchestration/db/runs/run-coordinator-orca-session-binding.test.ts
+- src/main/runtime/orchestration/db/schema/derived-delivery-migration.test.ts
+- src/main/runtime/orchestration/db/schema/federated-home-run-migration.test.ts
+- src/main/runtime/orchestration/db/schema/structured-pointer-schema-migration.test.ts
+- src/main/runtime/orchestration/db/schema/structured-worker-orca-session-backfill.test.ts
+- src/main/runtime/orchestration/db/worker-dispatch/worker-dispatch-assignee-orca-session.test.ts
+- src/main/runtime/orchestration/db/writer-run-required.test.ts
+- src/main/runtime/orchestration/db-empty-dispatch-shortcircuit.benchmark.test.ts
+- src/main/runtime/orchestration/db-heartbeat-straggler-guard.test.ts
+- src/main/runtime/orchestration/db-message-timestamp.test.ts
+- src/main/runtime/orchestration/db-messages.test.ts
+- src/main/runtime/orchestration/db-stopping-worker-task-guard.test.ts
+- src/main/runtime/orchestration/db-task-create-readiness.test.ts
+- src/main/runtime/orchestration/db-task-dispatch-invariant.test.ts
+- src/main/runtime/orchestration/db-task-dispatch-lifecycle-guards.test.ts
+- src/main/runtime/orchestration/db-task-dispatch-races.test.ts
+- src/main/runtime/orchestration/db-undelivered-mailboxes.test.ts
+- src/main/runtime/orchestration/db.test.ts
+- src/main/runtime/orchestration/dispatch-consumer-generation-migration.test.ts
+- src/main/runtime/orchestration/dispatch-creator-identity-migration.test.ts
+- src/main/runtime/orchestration/dispatch-failure-idempotency.test.ts
+- src/main/runtime/orchestration/federation-ack-checkpoints.test.ts
+- src/main/runtime/orchestration/federation-acknowledgment-integrity.test.ts
+- src/main/runtime/orchestration/federation-acknowledgment-migration.test.ts
+- src/main/runtime/orchestration/federation-lifecycle-settlement.test.ts
+- src/main/runtime/orchestration/federation-sync.test.ts
+- src/main/runtime/orchestration/federation-terminal-recovery.test.ts
+- src/main/runtime/orchestration/formatter.test.ts
+- src/main/runtime/orchestration/groups.test.ts
+- src/main/runtime/orchestration/lifecycle-caller-edges.test.ts
+- src/main/runtime/orchestration/lifecycle-reconciliation.test.ts
+- src/main/runtime/orchestration/lightweight-run-worker-exit-escalation.test.ts
+- src/main/runtime/orchestration/mailbox-pointer-eligibility.test.ts
+- src/main/runtime/orchestration/mailbox-pointer-release-query.test.ts
+- src/main/runtime/orchestration/mailbox-pointer-stage.test.ts
+- src/main/runtime/orchestration/mailbox-pointer-submit.test.ts
+- src/main/runtime/orchestration/message-batch-atomicity.test.ts
+- src/main/runtime/orchestration/mutation-receipt-capacity.test.ts
+- src/main/runtime/orchestration/nested-worker-depth-migration.test.ts
+- src/main/runtime/orchestration/orchestration-adopted-run-binding.test.ts
+- src/main/runtime/orchestration/orchestration-all-start-versions-migration.test.ts
+- src/main/runtime/orchestration/orchestration-creator-authority-performance.test.ts
+- src/main/runtime/orchestration/orchestration-db-permissions.test.ts
+- src/main/runtime/orchestration/orchestration-db-retention-pagination.test.ts
+- src/main/runtime/orchestration/orchestration-delivery-consumption.test.ts
+- src/main/runtime/orchestration/orchestration-derived-delivery.test.ts
+- src/main/runtime/orchestration/orchestration-federated-legacy-probe.test.ts
+- src/main/runtime/orchestration/orchestration-legacy-coordinator-authority-db.test.ts
+- src/main/runtime/orchestration/orchestration-legacy-question-migration-db.test.ts
+- src/main/runtime/orchestration/orchestration-legacy-storage-db.test.ts
+- src/main/runtime/orchestration/orchestration-legacy-worker-terminal-recovery.test.ts
+- src/main/runtime/orchestration/orchestration-mutation-question-db.test.ts
+- src/main/runtime/orchestration/orchestration-orca-session-column-migration.test.ts
+- src/main/runtime/orchestration/orchestration-peer-capability-cache.test.ts
+- src/main/runtime/orchestration/orchestration-reset-db.test.ts
+- src/main/runtime/orchestration/orchestration-run-delivery-db.test.ts
+- src/main/runtime/orchestration/orchestration-run-list-compatibility.test.ts
+- src/main/runtime/orchestration/orchestration-version-skew-migration.test.ts
+- src/main/runtime/orchestration/orchestration-worker-dispatch-db.test.ts
+- src/main/runtime/orchestration/preamble.test.ts
+- src/main/runtime/orchestration/r1-identity-migration.test.ts
+- src/main/runtime/orchestration/run-coordinator-handle-migration.test.ts
+- src/main/runtime/orchestration/run-coordinator-orca-session-address.test.ts
+- src/main/runtime/orchestration/settled-question-threads-migration.test.ts
+- src/main/runtime/orchestration/setup-completion-signal.test.ts
+- src/main/runtime/orchestration/structured-mailbox-pointer-delivery.test.ts
+- src/main/runtime/orchestration/structured-mailbox-pointer-host.test.ts
+- src/main/runtime/orchestration/structured-pointer-operation-id.test.ts
+- src/main/runtime/orchestration/structured-session-pointer-delivery.test.ts
+- src/main/runtime/orchestration/structured-worker-direct-mailbox-target.test.ts
+- src/main/runtime/orchestration/structured-worker-group-addressing.test.ts
+- src/main/runtime/orchestration/structured-worker-journal-archive.test.ts
+- src/main/runtime/orchestration/task-deps-flag.test.ts
+- src/main/runtime/orchestration/worker-attention-context.test.ts
+- src/main/runtime/orchestration/worker-output-archive-bounding.test.ts
+- src/main/runtime/orchestration/worker-output-archive.test.ts
+- src/main/runtime/orchestration/worker-output-cursor.test.ts
+- src/main/runtime/orchestration/worker-provider-session.test.ts
+- src/main/runtime/orchestration/worker-start-unobserved-prompt-settlement.test.ts
+- src/main/runtime/orchestration/worker-transcript-payload.test.ts
+- src/main/runtime/orchestration/worker-transcript-read.test.ts
+- src/main/runtime/orchestration/worker-transcript-remote-read.test.ts
+- src/main/runtime/orchestration-cli-subprocess.test.ts
+- src/main/runtime/orchestration-codex-completion-title.test.ts
+- src/main/runtime/orchestration-codex-real-pty.integration.test.ts
+- src/main/runtime/orchestration-compatibility-authority.test.ts
+- src/main/runtime/orchestration-dispatch-mailbox-delivery.test.ts
+- src/main/runtime/orchestration-mailbox-cold-park-idle.test.ts
+- src/main/runtime/orchestration-mailbox-crash-recovery.test.ts
+- src/main/runtime/orchestration-mailbox-detached-routing.test.ts
+- src/main/runtime/orchestration-mailbox-filtered-waiters.test.ts
+- src/main/runtime/orchestration-mailbox-notification-consistency.test.ts
+- src/main/runtime/orchestration-mailbox-pointer-cli-command.test.ts
+- src/main/runtime/orchestration-mailbox-routing-races.test.ts
+- src/main/runtime/orchestration-mailbox-transport-settlement.test.ts
+- src/main/runtime/orchestration-message-delivery-identity.test.ts
+- src/main/runtime/orchestration-messages-fake-parity.test.ts
+- src/main/runtime/orchestration-worker-workspace-resolution.test.ts
+- src/main/runtime/paired-close-retirement-proof-publication-order.test.ts
+- src/main/runtime/pty-exit-agent-status-reconciliation.test.ts
+- src/main/runtime/pty-exit-per-pty-map-reaper-ratchet.test.ts
+- src/main/runtime/pty-inventory-lifecycle-admission.test.ts
+- src/main/runtime/pty-inventory-lifecycle-scope.test.ts
+- src/main/runtime/pty-inventory-liveness-verdict.test.ts
+- src/main/runtime/pty-inventory-partial-relay-liveness.test.ts
+- src/main/runtime/pty-transcript-prune-wait-cache.test.ts
+- src/main/runtime/pty-waiver-source-invariant.test.ts
+- src/main/runtime/push/desktop-push-service-unreadable-outbox.test.ts
+- src/main/runtime/push/desktop-push-service.test.ts
+- src/main/runtime/push/push-agent-state.test.ts
+- src/main/runtime/push/push-cleanup-auth-expiry.test.ts
+- src/main/runtime/push/push-delivery-policy.test.ts
+- src/main/runtime/push/push-device-registration-persistence.test.ts
+- src/main/runtime/push/push-dispatcher.test.ts
+- src/main/runtime/push/push-gateway-client.test.ts
+- src/main/runtime/push/push-gateway-session.test.ts
+- src/main/runtime/push/push-host-proof-vector.test.ts
+- src/main/runtime/push/push-host-proof.test.ts
+- src/main/runtime/push/push-outcome-counters.test.ts
+- src/main/runtime/push/push-policy-pipeline.integration.test.ts
+- src/main/runtime/push/push-preferences.test.ts
+- src/main/runtime/push/push-registration-races.test.ts
+- src/main/runtime/push/push-registration-rpc.test.ts
+- src/main/runtime/push/push-unpair-persistence.test.ts
+- src/main/runtime/push/push-unregister-outbox.test.ts
+- src/main/runtime/quarter-circle-title-send-authorization.test.ts
+- src/main/runtime/queued-terminal-graph-exit.test.ts
+- src/main/runtime/recent-pty-output-retention.test.ts
+- src/main/runtime/relay/desktop-relay-service-broker-liveness.test.ts
+- src/main/runtime/relay/desktop-relay-service.test.ts
+- src/main/runtime/relay/mobile-relay-e2ee.integration.test.ts
+- src/main/runtime/relay/relay-auth-coordinator-recovery.test.ts
+- src/main/runtime/relay/relay-auth-coordinator.test.ts
+- src/main/runtime/relay/relay-auth-host-close-reason.test.ts
+- src/main/runtime/relay/relay-control-client.test.ts
+- src/main/runtime/relay/relay-control-close-reason.test.ts
+- src/main/runtime/relay/relay-control-origin.test.ts
+- src/main/runtime/relay/relay-control-request-retirement.test.ts
+- src/main/runtime/relay/relay-control-timeout-classification.test.ts
+- src/main/runtime/relay/relay-demand-ledger.test.ts
+- src/main/runtime/relay/relay-host-proof.test.ts
+- src/main/runtime/relay/relay-http-client.test.ts
+- src/main/runtime/relay/relay-region-correction.test.ts
+- src/main/runtime/relay/relay-region-preference.test.ts
+- src/main/runtime/relay/relay-region-probe-log.test.ts
+- src/main/runtime/relay/relay-region-refresh.test.ts
+- src/main/runtime/relay/relay-renewal-jitter.test.ts
+- src/main/runtime/relay/relay-revoke-outbox.test.ts
+- src/main/runtime/relay/relay-session-broker.test.ts
+- src/main/runtime/remote-agent-session-host-authority.integration.test.ts
+- src/main/runtime/remote-browser-screencast-frame-admission.test.ts
+- src/main/runtime/remote-desktop-driver.test.ts
+- src/main/runtime/remote-runtime-close-intent.integration.test.ts
+- src/main/runtime/remote-runtime-request-connection.integration.test.ts
+- src/main/runtime/renderer-browser-session-reconciliation.test.ts
+- src/main/runtime/repo-icon-fork-backfill.test.ts
+- src/main/runtime/retained-tail-redraw-window.equivalence.test.ts
+- src/main/runtime/rpc/core-typed-method-contract.test.ts
+- src/main/runtime/rpc/dispatcher-browser-client-automation.test.ts
+- src/main/runtime/rpc/dispatcher-computer-errors.test.ts
+- src/main/runtime/rpc/dispatcher-feature-interactions.test.ts
+- src/main/runtime/rpc/dispatcher-request-parsing.test.ts
+- src/main/runtime/rpc/e2ee-channel-text-backpressure.test.ts
+- src/main/runtime/rpc/e2ee-channel-v2.test.ts
+- src/main/runtime/rpc/e2ee-channel.test.ts
+- src/main/runtime/rpc/e2ee-crypto.test.ts
+- src/main/runtime/rpc/e2ee-integration.test.ts
+- src/main/runtime/rpc/errors.test.ts
+- src/main/runtime/rpc/methods/accounts.test.ts
+- src/main/runtime/rpc/methods/agent-hooks.test.ts
+- src/main/runtime/rpc/methods/agent-launch-floating-workspace.test.ts
+- src/main/runtime/rpc/methods/agent-launch-pane-reservation.test.ts
+- src/main/runtime/rpc/methods/agent-launch-replay.test.ts
+- src/main/runtime/rpc/methods/agent-launch-session-reservation.test.ts
+- src/main/runtime/rpc/methods/agent-launch-structured-prompt.test.ts
+- src/main/runtime/rpc/methods/agent-launch-terminal-identity.test.ts
+- src/main/runtime/rpc/methods/agent-launch-terminal-preferences.test.ts
+- src/main/runtime/rpc/methods/agent-launch-terminal-prompt.test.ts
+- src/main/runtime/rpc/methods/agent-launch.test.ts
+- src/main/runtime/rpc/methods/agent-session.test.ts
+- src/main/runtime/rpc/methods/agent-skill-sharing-capability-grant.test.ts
+- src/main/runtime/rpc/methods/ai-vault-search.test.ts
+- src/main/runtime/rpc/methods/ai-vault.test.ts
+- src/main/runtime/rpc/methods/artifact-sharing-capability-grant.test.ts
+- src/main/runtime/rpc/methods/artifacts.test.ts
+- src/main/runtime/rpc/methods/automation-scoped-list-methods.test.ts
+- src/main/runtime/rpc/methods/automations.test.ts
+- src/main/runtime/rpc/methods/browser-client-host-attach-adoption.test.ts
+- src/main/runtime/rpc/methods/browser-client-host-reconciliation.test.ts
+- src/main/runtime/rpc/methods/browser-client-host.test.ts
+- src/main/runtime/rpc/methods/browser-client-page-metadata.test.ts
+- src/main/runtime/rpc/methods/browser-identity-rpc.test.ts
+- src/main/runtime/rpc/methods/browser-network-tunnel.test.ts
+- src/main/runtime/rpc/methods/browser-tab-create-schema.test.ts
+- src/main/runtime/rpc/methods/browser.test.ts
+- src/main/runtime/rpc/methods/client-events.test.ts
+- src/main/runtime/rpc/methods/client-native-chat-settings.test.ts
+- src/main/runtime/rpc/methods/client-ui-pairing-local-fields.test.ts
+- src/main/runtime/rpc/methods/client-ui-task-resume-state.test.ts
+- src/main/runtime/rpc/methods/client-ui.test.ts
+- src/main/runtime/rpc/methods/clipboard.test.ts
+- src/main/runtime/rpc/methods/computer-actions.test.ts
+- src/main/runtime/rpc/methods/computer.test.ts
+- src/main/runtime/rpc/methods/diagnostics.test.ts
+- src/main/runtime/rpc/methods/file-watch-event-batcher.test.ts
+- src/main/runtime/rpc/methods/files-base64-padding.test.ts
+- src/main/runtime/rpc/methods/files-doc-preview.test.ts
+- src/main/runtime/rpc/methods/files-list-all-page-size.test.ts
+- src/main/runtime/rpc/methods/files-path-search.test.ts
+- src/main/runtime/rpc/methods/files-preview-transport-budget.test.ts
+- src/main/runtime/rpc/methods/files-terminal-path-resolution.test.ts
+- src/main/runtime/rpc/methods/files-watch-cancellation.test.ts
+- src/main/runtime/rpc/methods/files-watch-cleanup.test.ts
+- src/main/runtime/rpc/methods/files.test.ts
+- src/main/runtime/rpc/methods/git-diff-transport-budget.test.ts
+- src/main/runtime/rpc/methods/git.test.ts
+- src/main/runtime/rpc/methods/github-pr-refresh-reason.test.ts
+- src/main/runtime/rpc/methods/github.test.ts
+- src/main/runtime/rpc/methods/gitlab.test.ts
+- src/main/runtime/rpc/methods/host-capabilities.test.ts
+- src/main/runtime/rpc/methods/hosted-review.test.ts
+- src/main/runtime/rpc/methods/jira.test.ts
+- src/main/runtime/rpc/methods/linear-agent-access.test.ts
+- src/main/runtime/rpc/methods/linear-agent-project-access.test.ts
+- src/main/runtime/rpc/methods/linear.test.ts
+- src/main/runtime/rpc/methods/mobile-web-bundle-range.test.ts
+- src/main/runtime/rpc/methods/mobile-web-bundle-read-concurrency.test.ts
+- src/main/runtime/rpc/methods/mobile-web-bundle-window-refusals.test.ts
+- src/main/runtime/rpc/methods/mobile-web-bundle.test.ts
+- src/main/runtime/rpc/methods/native-chat-rpc-block-sanitize.test.ts
+- src/main/runtime/rpc/methods/native-chat.test.ts
+- src/main/runtime/rpc/methods/notification-preferences.test.ts
+- src/main/runtime/rpc/methods/notification-reconnect-cooldown.test.ts
+- src/main/runtime/rpc/methods/orchestration/cli-runtime-boundary.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-attach-receipt.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-fleet-snapshot.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-message-targeting.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-release-safety.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-transport-safety.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-worker-start-receipt.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-agent-launch.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-control-mail.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-effects.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-folder-placement.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-lifecycle-settlement.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-liveness-verdict.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-output.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-setup.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-start-prompt-budget.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-start-schema.test.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation.test.ts
+- src/main/runtime/rpc/methods/orchestration/gates/gate-run-authorization.test.ts
+- src/main/runtime/rpc/methods/orchestration/gates/gates.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/ask.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/check-delivery-history.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/check-superseded-terminal.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/check-worker-consumer-fencing.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/check-worker-federated-attachment.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/check.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/recipient-routing.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/send-dispatch-authority.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/send-group.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/send-invalid-type.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/send-receipt-plumbing.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/send-unbound-terminals.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/send.test.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/settled-dispatch-mail.test.ts
+- src/main/runtime/rpc/methods/orchestration/runs/migration-behavior.test.ts
+- src/main/runtime/rpc/methods/orchestration/runs/run-receipt.test.ts
+- src/main/runtime/rpc/methods/orchestration/runs/runs.test.ts
+- src/main/runtime/rpc/methods/orchestration/runs/tasks-dispatch.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/agent-status-producer-census.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/antigravity-worker-lifecycle.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/composed-workers.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/context-only-dispatch-retry.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/fleet-status-observed-identity.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/fleet-status-terminal-identity.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/legacy-dispatch-projection.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/manual-dispatch-observation.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/manual-dispatch-release.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/self-dispatch-nesting-depth.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/structured-worker-launch-seed-options.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-interactive-wait.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-launch-preferences.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-list-pagination.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-list-run-scope-rpc.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-observation.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-output.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-read-projection.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release-archive.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release-inventory.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release-liveness-verdict.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release-mobile-report.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release-ownership-guard.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release-recovery.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-budgets.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-outcome-classification.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-prompt-budget.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-prompt-contract.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-terminal-target.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-turn-observation.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-stop-capability.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-stop-exit-race.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-stop-liveness-verdict.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-terminal-custody-at-creation.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/workers-new-worktree.test.ts
+- src/main/runtime/rpc/methods/orchestration/worker/workers-recovery.test.ts
+- src/main/runtime/rpc/methods/orchestration-dispatch-error-codes.test.ts
+- src/main/runtime/rpc/methods/orchestration-structured-worker-abandon.test.ts
+- src/main/runtime/rpc/methods/orchestration-structured-worker-lifecycle.test.ts
+- src/main/runtime/rpc/methods/orchestration-structured-worker-redrive.test.ts
+- src/main/runtime/rpc/methods/orchestration-structured-worker-session.test.ts
+- src/main/runtime/rpc/methods/orchestration-structured-worker-start-failure.test.ts
+- src/main/runtime/rpc/methods/orchestration-worker-mode-opacity.test.ts
+- src/main/runtime/rpc/methods/orchestration-worker-start-mode-selection.test.ts
+- src/main/runtime/rpc/methods/orchestration-worker-start-mode.test.ts
+- src/main/runtime/rpc/methods/orchestration-worker-start-receipt-wording.test.ts
+- src/main/runtime/rpc/methods/orchestration-worker-support-unknown.test.ts
+- src/main/runtime/rpc/methods/paired-caller-host-id.test.ts
+- src/main/runtime/rpc/methods/pairing.test.ts
+- src/main/runtime/rpc/methods/plugins.test.ts
+- src/main/runtime/rpc/methods/preflight.test.ts
+- src/main/runtime/rpc/methods/project-host-setup-self-host-stamp.test.ts
+- src/main/runtime/rpc/methods/repo-badge-color.test.ts
+- src/main/runtime/rpc/methods/repo.test.ts
+- src/main/runtime/rpc/methods/runtime-client-capabilities.test.ts
+- src/main/runtime/rpc/methods/session-tab-agent-capability-mutations.test.ts
+- src/main/runtime/rpc/methods/session-tab-agent-status-projection.test.ts
+- src/main/runtime/rpc/methods/session-tab-browser-placement-mutations.test.ts
+- src/main/runtime/rpc/methods/session-tab-browser-placement-projection.test.ts
+- src/main/runtime/rpc/methods/session-tabs-inventory-census-race.test.ts
+- src/main/runtime/rpc/methods/session-tabs-inventory-rpc.test.ts
+- src/main/runtime/rpc/methods/session-tabs-move-validation.test.ts
+- src/main/runtime/rpc/methods/session-tabs-retirement-proof-delta.test.ts
+- src/main/runtime/rpc/methods/session-tabs-schemas.test.ts
+- src/main/runtime/rpc/methods/session-tabs-structured-restore.test.ts
+- src/main/runtime/rpc/methods/session-tabs-unsubscribe.test.ts
+- src/main/runtime/rpc/methods/session-tabs.test.ts
+- src/main/runtime/rpc/methods/skills.test.ts
+- src/main/runtime/rpc/methods/speech.test.ts
+- src/main/runtime/rpc/methods/ssh.test.ts
+- src/main/runtime/rpc/methods/status-machine-name-publish-budget.test.ts
+- src/main/runtime/rpc/methods/status.test.ts
+- src/main/runtime/rpc/methods/structured-agent-session-admission.test.ts
+- src/main/runtime/rpc/methods/structured-agent-session-adoption-replay.test.ts
+- src/main/runtime/rpc/methods/structured-agent-session-background-task-capability.test.ts
+- src/main/runtime/rpc/methods/structured-agent-session-conversation-outline.test.ts
+- src/main/runtime/rpc/methods/structured-agent-session-hold.test.ts
+- src/main/runtime/rpc/methods/structured-agent-session-options-read.test.ts
+- src/main/runtime/rpc/methods/structured-agent-session-policy.test.ts
+- src/main/runtime/rpc/methods/structured-agent-session-precommit-refusal.test.ts
+- src/main/runtime/rpc/methods/structured-agent-session-respond-params.test.ts
+- src/main/runtime/rpc/methods/structured-agent-session-turn-item-capability.test.ts
+- src/main/runtime/rpc/methods/structured-agent-session.test.ts
+- src/main/runtime/rpc/methods/structured-chat-tab-table.test.ts
+- src/main/runtime/rpc/methods/structured-worker-read-cursor.test.ts
+- src/main/runtime/rpc/methods/structured-worker-stop-receipt.test.ts
+- src/main/runtime/rpc/methods/structured-worker-tab-retirement.test.ts
+- src/main/runtime/rpc/methods/task-provider-identity.test.ts
+- src/main/runtime/rpc/methods/terminal/terminal-inspect-process-params.test.ts
+- src/main/runtime/rpc/methods/terminal/terminal-output-batcher.test.ts
+- src/main/runtime/rpc/methods/terminal/terminal-snapshot-json-byte-budget.test.ts
+- src/main/runtime/rpc/methods/terminal-create-idempotency.test.ts
+- src/main/runtime/rpc/methods/terminal-legacy-stream-id-characterization.test.ts
+- src/main/runtime/rpc/methods/terminal-manifest-characterization.test.ts
+- src/main/runtime/rpc/methods/terminal-navigation.test.ts
+- src/main/runtime/rpc/methods/terminal-read-screen-cursor.test.ts
+- src/main/runtime/rpc/methods/terminal-stream-extraction-characterization.test.ts
+- src/main/runtime/rpc/methods/updater.test.ts
+- src/main/runtime/rpc/methods/workspace-cleanup-ui-schema.test.ts
+- src/main/runtime/rpc/methods/workspace-ports.test.ts
+- src/main/runtime/rpc/methods/worktree-catalog-snapshot-method.test.ts
+- src/main/runtime/rpc/methods/worktree-catalog-version-stamp.test.ts
+- src/main/runtime/rpc/methods/worktree-create-args.test.ts
+- src/main/runtime/rpc/methods/worktree-create-navigation.test.ts
+- src/main/runtime/rpc/methods/worktree-github-pr-suppression.test.ts
+- src/main/runtime/rpc/methods/worktree-missing-terminal-teardown.test.ts
+- src/main/runtime/rpc/methods/worktree-retired-names.test.ts
+- src/main/runtime/rpc/methods/worktree-rm-host-qualification.test.ts
+- src/main/runtime/rpc/methods/worktree-rm-pty-waiver.test.ts
+- src/main/runtime/rpc/methods/worktree-schemas.test.ts
+- src/main/runtime/rpc/methods/worktree.test.ts
+- src/main/runtime/rpc/mobile-auth-acl-critical-path.test.ts
+- src/main/runtime/rpc/mobile-clipboard-image-provenance.test.ts
+- src/main/runtime/rpc/mobile-e2ee-outbound-memory-budget.test.ts
+- src/main/runtime/rpc/mobile-e2ee-v2-desktop-session.test.ts
+- src/main/runtime/rpc/mobile-e2ee-v2-key-schedule.test.ts
+- src/main/runtime/rpc/mobile-socket-wiring.test.ts
+- src/main/runtime/rpc/orchestration-11745-regression-verification.test.ts
+- src/main/runtime/rpc/orchestration-commit-notify-characterization.test.ts
+- src/main/runtime/rpc/orchestration-contract-fence.test.ts
+- src/main/runtime/rpc/orchestration-current-authority-precedence.test.ts
+- src/main/runtime/rpc/orchestration-legacy-compatibility-dispatcher.test.ts
+- src/main/runtime/rpc/orchestration-legacy-coordinator-race.test.ts
+- src/main/runtime/rpc/orchestration-legacy-fence-jurisdiction.test.ts
+- src/main/runtime/rpc/orchestration-legacy-question-takeover.test.ts
+- src/main/runtime/rpc/orchestration-legacy-run-routing.test.ts
+- src/main/runtime/rpc/orchestration-legacy-takeover-current-authority.test.ts
+- src/main/runtime/rpc/orchestration-legacy-takeover-delivery.test.ts
+- src/main/runtime/rpc/orchestration-legacy-takeover-dispatcher.test.ts
+- src/main/runtime/rpc/orchestration-mutation-executor.test.ts
+- src/main/runtime/rpc/orchestration-mutation-ledger.test.ts
+- src/main/runtime/rpc/orchestration-mutation-request-show-legacy.test.ts
+- src/main/runtime/rpc/orchestration-mutation-request-show.test.ts
+- src/main/runtime/rpc/orchestration-party-addressing.test.ts
+- src/main/runtime/rpc/orchestration-party-agreement.test.ts
+- src/main/runtime/rpc/orchestration-runtime-update-settlement.test.ts
+- src/main/runtime/rpc/orchestration-session-caller.test.ts
+- src/main/runtime/rpc/orchestration-session-coordinator.test.ts
+- src/main/runtime/rpc/orchestration-session-recipient.test.ts
+- src/main/runtime/rpc/orchestration-task-dispatch-invariant.test.ts
+- src/main/runtime/rpc/relay-transport.test.ts
+- src/main/runtime/rpc/remote-runtime-server-heartbeat-missed-probe-tolerance.test.ts
+- src/main/runtime/rpc/remote-runtime-server-heartbeat.test.ts
+- src/main/runtime/rpc/runtime-client-capabilities.test.ts
+- src/main/runtime/rpc/runtime-close-attribution-topology.test.ts
+- src/main/runtime/rpc/runtime-close-attribution.test.ts
+- src/main/runtime/rpc/schemas.test.ts
+- src/main/runtime/rpc/streaming.test.ts
+- src/main/runtime/rpc/terminal-agent-prompt-send.test.ts
+- src/main/runtime/rpc/terminal-agent-send-guard.test.ts
+- src/main/runtime/rpc/terminal-geometry-stale-handle.test.ts
+- src/main/runtime/rpc/terminal-lease-stale-handle-survival.test.ts
+- src/main/runtime/rpc/terminal-list-host-scope-transport.test.ts
+- src/main/runtime/rpc/terminal-multiplex-ack-output-budget.test.ts
+- src/main/runtime/rpc/terminal-multiplex-ack-overflow-recovery.test.ts
+- src/main/runtime/rpc/terminal-multiplex-desktop-resize-routing.test.ts
+- src/main/runtime/rpc/terminal-multiplex-end-verdict.test.ts
+- src/main/runtime/rpc/terminal-multiplex-escape-tail.test.ts
+- src/main/runtime/rpc/terminal-multiplex-flow-control.bench.test.ts
+- src/main/runtime/rpc/terminal-multiplex-initial-snapshot-buffering.test.ts
+- src/main/runtime/rpc/terminal-multiplex-input-write-rejection.test.ts
+- src/main/runtime/rpc/terminal-multiplex-output-pause-and-viewport.test.ts
+- src/main/runtime/rpc/terminal-multiplex-pty-wait-capacity.test.ts
+- src/main/runtime/rpc/terminal-multiplex-resync-replay-trim.test.ts
+- src/main/runtime/rpc/terminal-multiplex-round-robin.test.ts
+- src/main/runtime/rpc/terminal-multiplex-snapshot-serialization.test.ts
+- src/main/runtime/rpc/terminal-multiplex-source-range-admission.test.ts
+- src/main/runtime/rpc/terminal-multiplex-subscribe-slot-recovery.test.ts
+- src/main/runtime/rpc/terminal-opencode-send-guard.integration.test.ts
+- src/main/runtime/rpc/terminal-output-batching.test.ts
+- src/main/runtime/rpc/terminal-output-frame-chunks-equivalence.test.ts
+- src/main/runtime/rpc/terminal-output-frame-source-ranges.test.ts
+- src/main/runtime/rpc/terminal-prompt-delivery-receipt.test.ts
+- src/main/runtime/rpc/terminal-provider-snapshot-sequence.test.ts
+- src/main/runtime/rpc/terminal-requested-snapshot-unavailability.test.ts
+- src/main/runtime/rpc/terminal-send-launch-draft-resolution.test.ts
+- src/main/runtime/rpc/terminal-send.test.ts
+- src/main/runtime/rpc/terminal-source-range-ledger.test.ts
+- src/main/runtime/rpc/terminal-stream-byte-length.test.ts
+- src/main/runtime/rpc/terminal-subscribe-blank-mount.test.ts
+- src/main/runtime/rpc/terminal-subscribe-buffer.test.ts
+- src/main/runtime/rpc/terminal-subscribe-lease-only.test.ts
+- src/main/runtime/rpc/terminal-subscribe-mount-replay.test.ts
+- src/main/runtime/rpc/terminal-subscribe-ownership.test.ts
+- src/main/runtime/rpc/terminal-subscribe-reconnect-rebind.test.ts
+- src/main/runtime/rpc/terminal-subscribe-relay-drop-lease-survival.test.ts
+- src/main/runtime/rpc/terminal-subscribe-renderer-recovery-output.test.ts
+- src/main/runtime/rpc/unix-socket-transport.test.ts
+- src/main/runtime/rpc/unpaired-device-auth-throttle.test.ts
+- src/main/runtime/rpc/worktree-catalog-snapshot.test.ts
+- src/main/runtime/rpc/ws-fallback-port-store.test.ts
+- src/main/runtime/rpc/ws-transport-accept-order.test.ts
+- src/main/runtime/rpc/ws-transport-static-web.test.ts
+- src/main/runtime/rpc/ws-transport-transient-packet-loss.test.ts
+- src/main/runtime/rpc/ws-transport.test.ts
+- src/main/runtime/runtime-agent-row-main-agent-projection.test.ts
+- src/main/runtime/runtime-browser-client-automation.test.ts
+- src/main/runtime/runtime-browser-client-page-adoption.test.ts
+- src/main/runtime/runtime-browser-client-page-creation.test.ts
+- src/main/runtime/runtime-browser-client-page-recovery.test.ts
+- src/main/runtime/runtime-browser-client-page-restored-recovery.test.ts
+- src/main/runtime/runtime-browser-network-execution-host.test.ts
+- src/main/runtime/runtime-browser-page-registry.test.ts
+- src/main/runtime/runtime-client-settings-linear-team-projection.test.ts
+- src/main/runtime/runtime-client-settings-minimax-projection.test.ts
+- src/main/runtime/runtime-client-settings-terminal-copy-projection.test.ts
+- src/main/runtime/runtime-extraction-regressions.test.ts
+- src/main/runtime/runtime-file-target-connection-field-ratchet.test.ts
+- src/main/runtime/runtime-file-target-execution-host.test.ts
+- src/main/runtime/runtime-git-api-contract.test.ts
+- src/main/runtime/runtime-git-branch-compare-admission.test.ts
+- src/main/runtime/runtime-git-conflict-operation-routing.test.ts
+- src/main/runtime/runtime-git-execution-host-ownership.test.ts
+- src/main/runtime/runtime-git-generation-admission.test.ts
+- src/main/runtime/runtime-git-status-admission.test.ts
+- src/main/runtime/runtime-git-target-execution-host.test.ts
+- src/main/runtime/runtime-legacy-worker-terminal-recovery-retry.test.ts
+- src/main/runtime/runtime-local-create-rearm-ordering.test.ts
+- src/main/runtime/runtime-managed-worktree-metadata-sweep.test.ts
+- src/main/runtime/runtime-mobile-agent-status-builder.test.ts
+- src/main/runtime/runtime-mobile-file-path-search.test.ts
+- src/main/runtime/runtime-owned-terminal-publication-lineage.test.ts
+- src/main/runtime/runtime-project-group-controller-folder-delete.test.ts
+- src/main/runtime/runtime-remote-fetch-ref-maintenance.test.ts
+- src/main/runtime/runtime-remove-project-host-scope.test.ts
+- src/main/runtime/runtime-rpc-browser-host-admission.test.ts
+- src/main/runtime/runtime-rpc-device-revocation.test.ts
+- src/main/runtime/runtime-rpc-long-poll-transport.test.ts
+- src/main/runtime/runtime-rpc-metadata-lifecycle.test.ts
+- src/main/runtime/runtime-rpc-mobile-method-allowlist.test.ts
+- src/main/runtime/runtime-rpc-mobile-native-chat-settings.test.ts
+- src/main/runtime/runtime-rpc-mobile-terminal-streaming.test.ts
+- src/main/runtime/runtime-rpc-mobile-unknown-method-scope-refusal.test.ts
+- src/main/runtime/runtime-rpc-orchestration-db-migration.test.ts
+- src/main/runtime/runtime-rpc-pairing-mode-persistence.test.ts
+- src/main/runtime/runtime-rpc-pairing-offer.test.ts
+- src/main/runtime/runtime-rpc-relay-pairing.test.ts
+- src/main/runtime/runtime-rpc-request-authorization.test.ts
+- src/main/runtime/runtime-rpc-terminal-list.test.ts
+- src/main/runtime/runtime-rpc-websocket-bind-host.test.ts
+- src/main/runtime/runtime-rpc-websocket-long-poll-caps.test.ts
+- src/main/runtime/runtime-rpc-worktree-queries.test.ts
+- src/main/runtime/runtime-search-line-fragments.test.ts
+- src/main/runtime/runtime-server-git-availability.test.ts
+- src/main/runtime/runtime-skill-install-authority.test.ts
+- src/main/runtime/runtime-skill-install-commands.test.ts
+- src/main/runtime/runtime-skill-install-queries.test.ts
+- src/main/runtime/runtime-socket-sweep.test.ts
+- src/main/runtime/runtime-unregistered-worktree-removal-host-home.test.ts
+- src/main/runtime/runtime-worktree-agent-rows-structured.test.ts
+- src/main/runtime/runtime-worktree-structured-agent-rows-liveness.test.ts
+- src/main/runtime/session-tabs-inventory-publication.test.ts
+- src/main/runtime/settled-worker-process-replacement.test.ts
+- src/main/runtime/structured-agent-session-close.test.ts
+- src/main/runtime/structured-agent-session-integration-replay.test.ts
+- src/main/runtime/structured-agent-session-integration.test.ts
+- src/main/runtime/structured-agent-session-rollback-compatibility.test.ts
+- src/main/runtime/structured-agent-session-runtime-exit.test.ts
+- src/main/runtime/structured-agent-session-runtime-provider-started.test.ts
+- src/main/runtime/structured-agent-session-runtime.test.ts
+- src/main/runtime/structured-agent-session-support-probe.test.ts
+- src/main/runtime/structured-agent-shell-environment.test.ts
+- src/main/runtime/structured-claude-auth-policy-wiring.test.ts
+- src/main/runtime/structured-claude-pending-rewind.test.ts
+- src/main/runtime/structured-conversation-tab-replacement.test.ts
+- src/main/runtime/structured-session-worktree-teardown.test.ts
+- src/main/runtime/structured-worker-agent-presence.test.ts
+- src/main/runtime/structured-worker-authority.test.ts
+- src/main/runtime/structured-worker-child-identity-env.test.ts
+- src/main/runtime/structured-worker-hook-attestation.test.ts
+- src/main/runtime/structured-worker-identity.test.ts
+- src/main/runtime/structured-worker-mail-routing.test.ts
+- src/main/runtime/structured-worker-takeover-pane-key.test.ts
+- src/main/runtime/structured-worker-terminal-read.test.ts
+- src/main/runtime/structured-worker-terminal-refusal.test.ts
+- src/main/runtime/terminal-ansi-pending-retention.test.ts
+- src/main/runtime/terminal-chat-owner-persistence.test.ts
+- src/main/runtime/terminal-close-observed-exit.test.ts
+- src/main/runtime/terminal-close-slow-agent-exit.test.ts
+- src/main/runtime/terminal-interactive-wait-visibility.test.ts
+- src/main/runtime/terminal-leaf-tab-resolution.test.ts
+- src/main/runtime/terminal-list-execution-host-scope.test.ts
+- src/main/runtime/terminal-list-payload-size.test.ts
+- src/main/runtime/terminal-list-pending-pty-registration.test.ts
+- src/main/runtime/terminal-list-stale-leaf-liveness.test.ts
+- src/main/runtime/terminal-list-surface-lost-orphan.test.ts
+- src/main/runtime/terminal-mobile-subscribe-tab-mount.test.ts
+- src/main/runtime/terminal-pane-recovery-liveness-gate.test.ts
+- src/main/runtime/terminal-projection.test.ts
+- src/main/runtime/terminal-pty-exit-waiter.test.ts
+- src/main/runtime/terminal-query-responder.test.ts
+- src/main/runtime/terminal-restore-record-seed.test.ts
+- src/main/runtime/terminal-retirement-async-durability.test.ts
+- src/main/runtime/terminal-retirement-proof-emitted-frame.test.ts
+- src/main/runtime/terminal-retirement-proof-publication.test.ts
+- src/main/runtime/terminal-send-stale-leaf-liveness.test.ts
+- src/main/runtime/terminal-subscribe-exit-waiter-leak.test.ts
+- src/main/runtime/terminal-subscriber-driven-daemon-attach.test.ts
+- src/main/runtime/terminal-tail-row-retention.test.ts
+- src/main/runtime/terminal-tail-whitespace.test.ts
+- src/main/runtime/terminal-vertical-control-scan.test.ts
+- src/main/runtime/terminal-wait-name-only-idle.test.ts
+- src/main/runtime/tui-idle-delivery-and-quiescence.test.ts
+- src/main/runtime/tui-idle-name-only-real-pty.integration.test.ts
+- src/main/runtime/unreadable-secret-store-preservation.win32.test.ts
+- src/main/runtime/wait-blocked-keyword-carry-retention.test.ts
+- src/main/runtime/windows-default-route-interfaces.test.ts
+- src/main/runtime/windows-firewall-remote-scope.test.ts
+- src/main/runtime/windows-mobile-firewall.test.ts
+- src/main/runtime/workspace-session-membership-scaling.test.ts
+- src/main/runtime/worktree-list-host-scope.test.ts
+- src/main/runtime/worktree-path-selector-wsl-posix.test.ts
+- src/main/runtime/worktree-ps-degraded-repo-scan.test.ts
+- src/main/runtime/worktree-ps-host-scope.test.ts
+- src/main/runtime/worktree-rm-id-selector-path-spelling.test.ts
+- src/main/runtime/worktree-scan-admin-fingerprint-gate.test.ts
+- src/main/runtime/worktree-scan-execution-host-routing.test.ts
+- src/main/runtime/worktree-teardown-unstopped-pty.test.ts
+- src/main/runtime/zcode-readiness-transcript.test.ts
+
+### DELETE (845)
+
+- src/main/runtime/acknowledged-terminal-tab-retirement-fixture.ts
+- src/main/runtime/agent-prompt-submission-runtime-test-fixture.ts
+- src/main/runtime/agent-session-acquisition-failure-settlement.ts
+- src/main/runtime/agent-session-backup-recovery-fence.ts
+- src/main/runtime/agent-session-claim-key-retention.ts
+- src/main/runtime/agent-session-conversation-command-record.ts
+- src/main/runtime/agent-session-lease-renewal.ts
+- src/main/runtime/agent-session-lease-transitions.ts
+- src/main/runtime/agent-session-older-build-lease.test-fixture.ts
+- src/main/runtime/agent-session-operation-admission.ts
+- src/main/runtime/agent-session-orphan-child-reaper.ts
+- src/main/runtime/agent-session-process-identity-probe.ts
+- src/main/runtime/agent-session-provider-handle-transition.ts
+- src/main/runtime/agent-session-reconciliation-target.ts
+- src/main/runtime/agent-session-record-conversation-name.ts
+- src/main/runtime/agent-session-record-options.ts
+- src/main/runtime/agent-session-record-store-file.ts
+- src/main/runtime/agent-session-record-store-security.ts
+- src/main/runtime/agent-session-record-store-write.ts
+- src/main/runtime/agent-session-record-store.ts
+- src/main/runtime/agent-session-recovery-capsule-entries.ts
+- src/main/runtime/agent-session-recovery-capsule.ts
+- src/main/runtime/agent-session-reservation-admission.ts
+- src/main/runtime/agent-session-restart-lease-transitions.ts
+- src/main/runtime/agent-session-restart-reconciliation.ts
+- src/main/runtime/agent-session-spawn-token-process-scan.ts
+- src/main/runtime/agent-session-spawn-token-readback.ts
+- src/main/runtime/agent-session-store-serialization.ts
+- src/main/runtime/agent-session-store-transaction-queue.ts
+- src/main/runtime/agent-session-surface-release-transition.ts
+- src/main/runtime/agent-session-tab-table.ts
+- src/main/runtime/agent-status-store-wiring.test-fixture.ts
+- src/main/runtime/agent-transcript-pane-test-harness.ts
+- src/main/runtime/browser-client-download-transfer-store.ts
+- src/main/runtime/browser-client-download-transfers.ts
+- src/main/runtime/browser-dialog-settlement.ts
+- src/main/runtime/browser-execution-host-grant-registry.ts
+- src/main/runtime/browser-host-capability-selection.ts
+- src/main/runtime/browser-host-client-page-adoption.ts
+- src/main/runtime/browser-host-client-page-command-issue.ts
+- src/main/runtime/browser-host-client-page-connection.ts
+- src/main/runtime/browser-host-client-page-creation.ts
+- src/main/runtime/browser-host-client-page-placement.ts
+- src/main/runtime/browser-host-command-ledger.ts
+- src/main/runtime/browser-host-command-replay.ts
+- src/main/runtime/browser-host-command-result-cache.ts
+- src/main/runtime/browser-host-command-result-replay.ts
+- src/main/runtime/browser-host-command-retirement.ts
+- src/main/runtime/browser-host-command-state.ts
+- src/main/runtime/browser-host-generation-counter.ts
+- src/main/runtime/browser-host-lease-attachment.ts
+- src/main/runtime/browser-host-lease-fence-dispatch.ts
+- src/main/runtime/browser-host-lease-fence.ts
+- src/main/runtime/browser-host-lease-fencing.ts
+- src/main/runtime/browser-host-lease-reconnect.ts
+- src/main/runtime/browser-host-lease-records.ts
+- src/main/runtime/browser-host-lease-registry-instance.ts
+- src/main/runtime/browser-host-lease-registry.ts
+- src/main/runtime/browser-host-lease-state-resolution.ts
+- src/main/runtime/browser-host-page-authority.ts
+- src/main/runtime/browser-host-page-command-admission.ts
+- src/main/runtime/browser-host-page-inventory-snapshot.ts
+- src/main/runtime/browser-host-page-placement-validation.ts
+- src/main/runtime/browser-host-page-placement.ts
+- src/main/runtime/browser-host-page-reconciliation-actions.ts
+- src/main/runtime/browser-host-page-reconciliation-executor.ts
+- src/main/runtime/browser-host-page-reconciliation-orchestration.ts
+- src/main/runtime/browser-host-page-reconciliation-plan.ts
+- src/main/runtime/browser-host-page-retirement-completion.ts
+- src/main/runtime/browser-host-tunnel-registry.ts
+- src/main/runtime/browser-screencast-driver-scope.ts
+- src/main/runtime/browser-screencast-ghost-subscriber-eviction.ts
+- src/main/runtime/browser-screencast-subscriber-test-harness.ts
+- src/main/runtime/browser-session-tab-selection-snapshot.ts
+- src/main/runtime/browser-tab-create-publication.ts
+- src/main/runtime/claude-structured-fake-connection-test-fixture.ts
+- src/main/runtime/client-hosted-browser-page-persistence.ts
+- src/main/runtime/client-hosted-browser-row-projection.ts
+- src/main/runtime/client-hosted-browser-row-publication.ts
+- src/main/runtime/headless-hydration-ownership-test-fixture.ts
+- src/main/runtime/host-challenge-envelope.ts
+- src/main/runtime/mobile-notification-dismissal-store.ts
+- src/main/runtime/mobile-notification-replay.ts
+- src/main/runtime/mobile-pairing-qr.ts
+- src/main/runtime/orca-runtime-files-mock-registry.ts
+- src/main/runtime/orca-runtime-files-terminal-artifact-fixtures.ts
+- src/main/runtime/orca-runtime-files-test-harness.ts
+- src/main/runtime/orca-runtime-test-fixtures.spec.ts
+- src/main/runtime/orca-runtime-test-lifecycle.spec.ts
+- src/main/runtime/orca-runtime-test-mocks/imported-values.spec.ts
+- src/main/runtime/orca-runtime-test-mocks/setup.spec.ts
+- src/main/runtime/orca-runtime-test-mocks.spec.ts
+- src/main/runtime/orca-runtime-test-orchestration-messages.spec.ts
+- src/main/runtime/orca-runtime-test-scenario-builders.spec.ts
+- src/main/runtime/orca-runtime-tests/agent-status-and-waits-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/agent-status-and-waits-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/agent-status-and-waits.spec.ts
+- src/main/runtime/orca-runtime-tests/browser-capabilities-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/browser-capabilities.spec.ts
+- src/main/runtime/orca-runtime-tests/decorative-title-fact-throttle.spec.ts
+- src/main/runtime/orca-runtime-tests/dedupe-worktree-create.spec.ts
+- src/main/runtime/orca-runtime-tests/gitlab-and-pr-bases-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/gitlab-and-pr-bases-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/gitlab-and-pr-bases.spec.ts
+- src/main/runtime/orca-runtime-tests/headless-snapshots-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/headless-snapshots.spec.ts
+- src/main/runtime/orca-runtime-tests/hooks-and-hosted-review-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/hooks-and-hosted-review-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/hooks-and-hosted-review.spec.ts
+- src/main/runtime/orca-runtime-tests/lineage-and-scan-cache-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/lineage-and-scan-cache-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/lineage-and-scan-cache-part-04.spec.ts
+- src/main/runtime/orca-runtime-tests/lineage-and-scan-cache-part-05.spec.ts
+- src/main/runtime/orca-runtime-tests/lineage-and-scan-cache-part-06.spec.ts
+- src/main/runtime/orca-runtime-tests/lineage-and-scan-cache-part-07.spec.ts
+- src/main/runtime/orca-runtime-tests/lineage-and-scan-cache.spec.ts
+- src/main/runtime/orca-runtime-tests/local-worktree-creation-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/local-worktree-creation.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-creation-and-orchestration-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-creation-and-orchestration-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-creation-and-orchestration-part-04.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-creation-and-orchestration.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-04.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-05.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-06.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-07.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-08.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-09.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-10.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-11.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-12.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs-part-13.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-session-tabs.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-summaries-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-summaries-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-summaries-part-04.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-summaries.spec.ts
+- src/main/runtime/orca-runtime-tests/mobile-web-bundle-capability.spec.ts
+- src/main/runtime/orca-runtime-tests/orchestration-attention-batching.spec.ts
+- src/main/runtime/orca-runtime-tests/paired-settings.spec.ts
+- src/main/runtime/orca-runtime-tests/pty-title-status.spec.ts
+- src/main/runtime/orca-runtime-tests/reattach-headless-grid.spec.ts
+- src/main/runtime/orca-runtime-tests/repository-project-operations-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/repository-project-operations.spec.ts
+- src/main/runtime/orca-runtime-tests/runtime-availability.spec.ts
+- src/main/runtime/orca-runtime-tests/ssh-worktree-lifecycle-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/ssh-worktree-lifecycle-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/ssh-worktree-lifecycle.spec.ts
+- src/main/runtime/orca-runtime-tests/targeting-and-resilience.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness-part-04.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness-part-05.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness-part-06.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness-part-07.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness-part-08.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness-part-09.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness-part-10.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness-part-11.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness-part-12.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-creation-and-readiness.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-handles-and-agent-status-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-handles-and-agent-status-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-handles-and-agent-status-part-04.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-handles-and-agent-status-part-05.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-handles-and-agent-status-part-06.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-handles-and-agent-status.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-handles-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-handles.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-listing.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-output-and-worker-recovery-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-output-and-worker-recovery-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-output-and-worker-recovery-part-04.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-output-and-worker-recovery-part-05.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-output-and-worker-recovery-part-06.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-output-and-worker-recovery-part-07.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-output-and-worker-recovery.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-settled-prompt-foreground-confirmation.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-side-effect-facts-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-side-effect-facts-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-side-effect-facts.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-sleep-and-teardown-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-sleep-and-teardown-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/terminal-sleep-and-teardown.spec.ts
+- src/main/runtime/orca-runtime-tests/window-authority.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-create-execution-host.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-ps-agent-row-dismissal.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-ps-structured-host.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-removal-and-reconciliation-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-removal-and-reconciliation-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-removal-and-reconciliation-part-04.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-removal-and-reconciliation.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-removal-archive-hook-gate.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-removal-execution-host.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-scan-cache-ttl.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-selector-resolution.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-setup-and-startup-part-02.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-setup-and-startup-part-03.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-setup-and-startup-part-04.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-setup-and-startup-part-05.spec.ts
+- src/main/runtime/orca-runtime-tests/worktree-setup-and-startup.spec.ts
+- src/main/runtime/orchestration/canonical-orca-session-id.ts
+- src/main/runtime/orchestration/cli-command.ts
+- src/main/runtime/orchestration/context-only-dispatch-release.ts
+- src/main/runtime/orchestration/coordinator-dag-convergence.ts
+- src/main/runtime/orchestration/coordinator-decision-gates.ts
+- src/main/runtime/orchestration/coordinator-escalation-triage.ts
+- src/main/runtime/orchestration/coordinator-runtime-contract.ts
+- src/main/runtime/orchestration/coordinator-stale-base-flag.ts
+- src/main/runtime/orchestration/coordinator-task-dispatch.ts
+- src/main/runtime/orchestration/coordinator.ts
+- src/main/runtime/orchestration/db/attach-orchestration-db-methods.ts
+- src/main/runtime/orchestration/db/attempt-observation-store.ts
+- src/main/runtime/orchestration/db/attempt-observation-types.ts
+- src/main/runtime/orchestration/db/attempt-outcome-projection.ts
+- src/main/runtime/orchestration/db/contract-constants.ts
+- src/main/runtime/orchestration/db/coordinator-runs/coordinator-run-store.ts
+- src/main/runtime/orchestration/db/database-file-permissions.ts
+- src/main/runtime/orchestration/db/decision-gates/decision-gate-store.ts
+- src/main/runtime/orchestration/db/dispatch-capability-hash.ts
+- src/main/runtime/orchestration/db/dispatch-context/dispatch-capability.ts
+- src/main/runtime/orchestration/db/dispatch-context/dispatch-circuit-breaker.ts
+- src/main/runtime/orchestration/db/dispatch-context/dispatch-completion.ts
+- src/main/runtime/orchestration/db/dispatch-context/dispatch-context-store.ts
+- src/main/runtime/orchestration/db/dispatch-context/dispatch-lookup.ts
+- src/main/runtime/orchestration/db/dispatch-context/task-dispatch-reconciliation.ts
+- src/main/runtime/orchestration/db/dispatch-context/worker-report-settlement.ts
+- src/main/runtime/orchestration/db/dispatch-depth.ts
+- src/main/runtime/orchestration/db/dispatch-row-writer.ts
+- src/main/runtime/orchestration/db/federated-worker-report-outcome.ts
+- src/main/runtime/orchestration/db/federation/federated-dispatch-observation-fence.ts
+- src/main/runtime/orchestration/db/federation/federated-dispatch-store.ts
+- src/main/runtime/orchestration/db/federation/federated-stub-home-run-backfill.ts
+- src/main/runtime/orchestration/db/federation/federation-relay-ack.ts
+- src/main/runtime/orchestration/db/federation/federation-relay-enqueue.ts
+- src/main/runtime/orchestration/db/federation/federation-relay-import.ts
+- src/main/runtime/orchestration/db/federation/federation-relay-item.ts
+- src/main/runtime/orchestration/db/federation/remote-attachment-liveness.ts
+- src/main/runtime/orchestration/db/federation/remote-dispatch-attachment-authority.ts
+- src/main/runtime/orchestration/db/federation/remote-dispatch-attachment-create.ts
+- src/main/runtime/orchestration/db/federation/remote-dispatch-attachment-release.ts
+- src/main/runtime/orchestration/db/federation/remote-dispatch-attachment-stop.ts
+- src/main/runtime/orchestration/db/federation/remote-question-store.ts
+- src/main/runtime/orchestration/db/generated-id.ts
+- src/main/runtime/orchestration/db/legacy/legacy-ask-operation.ts
+- src/main/runtime/orchestration/db/legacy/legacy-compatibility-candidates.ts
+- src/main/runtime/orchestration/db/legacy/legacy-compatibility-principals.ts
+- src/main/runtime/orchestration/db/legacy/legacy-lifecycle-operation.ts
+- src/main/runtime/orchestration/db/legacy/legacy-mail-acknowledge.ts
+- src/main/runtime/orchestration/db/legacy/legacy-question-acknowledge.ts
+- src/main/runtime/orchestration/db/legacy/legacy-question-lookup.ts
+- src/main/runtime/orchestration/db/legacy/legacy-recovery-cohort.ts
+- src/main/runtime/orchestration/db/legacy/legacy-reply-operation.ts
+- src/main/runtime/orchestration/db/legacy/legacy-worker-completion.ts
+- src/main/runtime/orchestration/db/legacy-question-identity.ts
+- src/main/runtime/orchestration/db/lifecycle-rejection-marker.ts
+- src/main/runtime/orchestration/db/lifecycle-transition.ts
+- src/main/runtime/orchestration/db/lifecycle-write-transaction-runner.ts
+- src/main/runtime/orchestration/db/messages/direct-mailbox-routing.ts
+- src/main/runtime/orchestration/db/messages/foreign-direct-mailbox-routing.ts
+- src/main/runtime/orchestration/db/messages/mailbox-consumer.ts
+- src/main/runtime/orchestration/db/messages/mailbox-pointer-enter-state.ts
+- src/main/runtime/orchestration/db/messages/mailbox-routing-page.ts
+- src/main/runtime/orchestration/db/messages/message-inbox.ts
+- src/main/runtime/orchestration/db/messages/message-insert.ts
+- src/main/runtime/orchestration/db/messages/role-mailbox-delivery.ts
+- src/main/runtime/orchestration/db/messages/structured-pointer-operation-store.ts
+- src/main/runtime/orchestration/db/mutation-receipts/mutation-receipt-store.ts
+- src/main/runtime/orchestration/db/orca-session-address-sql.ts
+- src/main/runtime/orchestration/db/orchestration-db-methods.ts
+- src/main/runtime/orchestration/db/orchestration-db.ts
+- src/main/runtime/orchestration/db/pane-key-match.ts
+- src/main/runtime/orchestration/db/questions/question-threads.ts
+- src/main/runtime/orchestration/db/reset/orchestration-reset.ts
+- src/main/runtime/orchestration/db/root-dispatch-test-fixture.ts
+- src/main/runtime/orchestration/db/row-column-lists.ts
+- src/main/runtime/orchestration/db/run-list-cursor.ts
+- src/main/runtime/orchestration/db/run-list-page.ts
+- src/main/runtime/orchestration/db/runs/legacy-coordinator-mail-takeover.ts
+- src/main/runtime/orchestration/db/runs/run-binding.ts
+- src/main/runtime/orchestration/db/runs/run-coordinator-mail-routing.ts
+- src/main/runtime/orchestration/db/runs/run-coordinator-orca-session.ts
+- src/main/runtime/orchestration/db/runs/run-create.ts
+- src/main/runtime/orchestration/db/runs/run-delivery.ts
+- src/main/runtime/orchestration/db/runs/run-lookup.ts
+- src/main/runtime/orchestration/db/schema/adopt-legacy-run.ts
+- src/main/runtime/orchestration/db/schema/backfill-legacy-question-threads.ts
+- src/main/runtime/orchestration/db/schema/create-core-tables-sql.ts
+- src/main/runtime/orchestration/db/schema/create-graph-tables-sql.ts
+- src/main/runtime/orchestration/db/schema/create-tables.ts
+- src/main/runtime/orchestration/db/schema/derived-delivery-test-fixture.ts
+- src/main/runtime/orchestration/db/schema/migrate-legacy-contract-storage.ts
+- src/main/runtime/orchestration/db/schema/migrate-mailbox-pointer-enter-v33.ts
+- src/main/runtime/orchestration/db/schema/migrate-role-mailbox-delivery-v34.ts
+- src/main/runtime/orchestration/db/schema/migrate-v13-v30.ts
+- src/main/runtime/orchestration/db/schema/migrate-v2-v12.ts
+- src/main/runtime/orchestration/db/schema/migrate-v35.ts
+- src/main/runtime/orchestration/db/schema/migrate-v36.ts
+- src/main/runtime/orchestration/db/schema/migrate-v37.ts
+- src/main/runtime/orchestration/db/schema/migrate-v38.ts
+- src/main/runtime/orchestration/db/schema/migrate-v39.ts
+- src/main/runtime/orchestration/db/schema/migrate-v40.ts
+- src/main/runtime/orchestration/db/schema/migrate-v41.ts
+- src/main/runtime/orchestration/db/schema/migrate-v42.ts
+- src/main/runtime/orchestration/db/schema/migrate.ts
+- src/main/runtime/orchestration/db/schema/schema-column-probes.ts
+- src/main/runtime/orchestration/db/schema/structured-worker-orca-session-backfill.ts
+- src/main/runtime/orchestration/db/tasks/task-status-transition.ts
+- src/main/runtime/orchestration/db/tasks/task-store.ts
+- src/main/runtime/orchestration/db/utc-timestamp.ts
+- src/main/runtime/orchestration/db/worker-dispatch/federated-worker-start-reconcile.ts
+- src/main/runtime/orchestration/db/worker-dispatch/worker-dispatch-abandon.ts
+- src/main/runtime/orchestration/db/worker-dispatch/worker-dispatch-authority.ts
+- src/main/runtime/orchestration/db/worker-dispatch/worker-dispatch-outcome.ts
+- src/main/runtime/orchestration/db/worker-dispatch/worker-dispatch-stage.ts
+- src/main/runtime/orchestration/db/worker-dispatch/worker-dispatch-start.ts
+- src/main/runtime/orchestration/db/worker-dispatch/worker-dispatch-stop.ts
+- src/main/runtime/orchestration/db/worker-dispatch/worker-terminal-recovery.ts
+- src/main/runtime/orchestration/db/worker-terminal/failed-start-dispatch-identity.ts
+- src/main/runtime/orchestration/db/worker-terminal/worker-terminal-archive.ts
+- src/main/runtime/orchestration/db/worker-terminal/worker-terminal-attention-query.ts
+- src/main/runtime/orchestration/db/worker-terminal/worker-terminal-inventory-counts.ts
+- src/main/runtime/orchestration/db/worker-terminal/worker-terminal-listing.ts
+- src/main/runtime/orchestration/db/worker-terminal/worker-terminal-release.ts
+- src/main/runtime/orchestration/db/worker-terminal/worker-terminal-resource-store.ts
+- src/main/runtime/orchestration/db/worker-terminal/worker-terminal-transfer.ts
+- src/main/runtime/orchestration/db/worker-terminal/worker-terminal-user-takeover.ts
+- src/main/runtime/orchestration/db.ts
+- src/main/runtime/orchestration/dispatch-message-binding.ts
+- src/main/runtime/orchestration/environment-transport.ts
+- src/main/runtime/orchestration/federation-ack-checkpoints.ts
+- src/main/runtime/orchestration/federation-control-message.ts
+- src/main/runtime/orchestration/federation-lifecycle-settlement.ts
+- src/main/runtime/orchestration/federation-sync-capability.ts
+- src/main/runtime/orchestration/federation-sync-message.ts
+- src/main/runtime/orchestration/federation-sync-test-harness.ts
+- src/main/runtime/orchestration/federation-sync.ts
+- src/main/runtime/orchestration/federation-worker-report-payload.ts
+- src/main/runtime/orchestration/formatter.ts
+- src/main/runtime/orchestration/groups.ts
+- src/main/runtime/orchestration/lifecycle-reconciliation.ts
+- src/main/runtime/orchestration/mail-pointer-repoint-scheduler.ts
+- src/main/runtime/orchestration/mailbox-delivery-target.ts
+- src/main/runtime/orchestration/mailbox-notification-coordinator.ts
+- src/main/runtime/orchestration/mailbox-owner.ts
+- src/main/runtime/orchestration/mailbox-pointer-delivery-contract.ts
+- src/main/runtime/orchestration/mailbox-pointer-delivery.ts
+- src/main/runtime/orchestration/mailbox-pointer-eligibility.ts
+- src/main/runtime/orchestration/mailbox-pointer-pty-write.ts
+- src/main/runtime/orchestration/mailbox-pointer-resume.ts
+- src/main/runtime/orchestration/mailbox-pointer-stage.ts
+- src/main/runtime/orchestration/mailbox-pointer-state.ts
+- src/main/runtime/orchestration/mailbox-pointer-submit.ts
+- src/main/runtime/orchestration/mutation-receipt-capacity.ts
+- src/main/runtime/orchestration/orchestration-caller-identity.ts
+- src/main/runtime/orchestration/orchestration-error.ts
+- src/main/runtime/orchestration/orchestration-legacy-storage-test-fixture.ts
+- src/main/runtime/orchestration/orchestration-legacy-worker-terminal-recovery.ts
+- src/main/runtime/orchestration/orchestration-party.ts
+- src/main/runtime/orchestration/orchestration-peer-capability-cache.ts
+- src/main/runtime/orchestration/orchestration-schema-version-skew.ts
+- src/main/runtime/orchestration/preamble.ts
+- src/main/runtime/orchestration/setup-completion-signal.ts
+- src/main/runtime/orchestration/structured-mailbox-pointer-delivery.ts
+- src/main/runtime/orchestration/structured-mailbox-pointer-host.ts
+- src/main/runtime/orchestration/structured-pointer-operation-id.ts
+- src/main/runtime/orchestration/structured-session-pointer-delivery.ts
+- src/main/runtime/orchestration/structured-worker-group-addressing.ts
+- src/main/runtime/orchestration/structured-worker-journal-archive.ts
+- src/main/runtime/orchestration/structured-worker-journal-page.ts
+- src/main/runtime/orchestration/task-deps-flag.ts
+- src/main/runtime/orchestration/task-dispatch-refusal.ts
+- src/main/runtime/orchestration/types.ts
+- src/main/runtime/orchestration/worker-attention-context.ts
+- src/main/runtime/orchestration/worker-output-archive.ts
+- src/main/runtime/orchestration/worker-output-cursor.ts
+- src/main/runtime/orchestration/worker-provider-session.ts
+- src/main/runtime/orchestration/worker-report-observation.ts
+- src/main/runtime/orchestration/worker-terminal-ownership.ts
+- src/main/runtime/orchestration/worker-terminal-process-liveness.ts
+- src/main/runtime/orchestration/worker-terminal-release-reconciliation.ts
+- src/main/runtime/orchestration/worker-transcript-activity-block-bounds.ts
+- src/main/runtime/orchestration/worker-transcript-local-checkpoint.ts
+- src/main/runtime/orchestration/worker-transcript-local-read.ts
+- src/main/runtime/orchestration/worker-transcript-payload.ts
+- src/main/runtime/orchestration/worker-transcript-read.ts
+- src/main/runtime/orchestration/worker-transcript-remote-range-read.ts
+- src/main/runtime/orchestration/worker-transcript-remote-read.ts
+- src/main/runtime/orchestration/worker-transcript-source-identity.ts
+- src/main/runtime/orchestration-mailbox-notification-test-harness.ts
+- src/main/runtime/paired-client-navigation-test-harness.ts
+- src/main/runtime/pairing-network-interfaces.ts
+- src/main/runtime/pty-inventory-lifecycle-fixture.ts
+- src/main/runtime/push/desktop-push-service.ts
+- src/main/runtime/push/push-dispatcher.test-fixture.ts
+- src/main/runtime/push/push-dispatcher.ts
+- src/main/runtime/push/push-gateway-client.ts
+- src/main/runtime/push/push-gateway-origin.ts
+- src/main/runtime/push/push-gateway-response.ts
+- src/main/runtime/push/push-gateway-session.ts
+- src/main/runtime/push/push-host-challenge-fixtures.ts
+- src/main/runtime/push/push-host-proof.ts
+- src/main/runtime/push/push-outcome-counters.ts
+- src/main/runtime/push/push-register-throttle.ts
+- src/main/runtime/push/push-unregister-outbox.ts
+- src/main/runtime/relay/desktop-relay-service.ts
+- src/main/runtime/relay/relay-assign-rate-gate.ts
+- src/main/runtime/relay/relay-auth-context.ts
+- src/main/runtime/relay/relay-auth-coordinator.ts
+- src/main/runtime/relay/relay-control-client-options.ts
+- src/main/runtime/relay/relay-control-client.ts
+- src/main/runtime/relay/relay-control-liveness.ts
+- src/main/runtime/relay/relay-control-origin-options.ts
+- src/main/runtime/relay/relay-control-origin.ts
+- src/main/runtime/relay/relay-control-protocol.ts
+- src/main/runtime/relay/relay-control-requests.ts
+- src/main/runtime/relay/relay-control-rotation.ts
+- src/main/runtime/relay/relay-control-socket-close.ts
+- src/main/runtime/relay/relay-control-url.ts
+- src/main/runtime/relay/relay-demand-ledger.ts
+- src/main/runtime/relay/relay-drain-retry-schedule.ts
+- src/main/runtime/relay/relay-host-proof.ts
+- src/main/runtime/relay/relay-http-client.ts
+- src/main/runtime/relay/relay-origin-pool-options.ts
+- src/main/runtime/relay/relay-origin-pool.ts
+- src/main/runtime/relay/relay-origin-retirement.ts
+- src/main/runtime/relay/relay-region-catalog-fetch.ts
+- src/main/runtime/relay/relay-region-correction-protocol.ts
+- src/main/runtime/relay/relay-region-decision.ts
+- src/main/runtime/relay/relay-region-preference-reader.ts
+- src/main/runtime/relay/relay-region-preference.ts
+- src/main/runtime/relay/relay-region-probe-log.ts
+- src/main/runtime/relay/relay-region-probe.ts
+- src/main/runtime/relay/relay-region-refresh.ts
+- src/main/runtime/relay/relay-renewal-jitter.ts
+- src/main/runtime/relay/relay-revoke-outbox.ts
+- src/main/runtime/relay/relay-session-broker-contract.ts
+- src/main/runtime/relay/relay-session-broker.ts
+- src/main/runtime/relay/simulated-mobile-e2ee-v2-peer.ts
+- src/main/runtime/remote-browser-screencast-frame-admission.ts
+- src/main/runtime/rpc/core.ts
+- src/main/runtime/rpc/dispatcher-caller-fingerprint.ts
+- src/main/runtime/rpc/dispatcher-client-browser-routing.ts
+- src/main/runtime/rpc/dispatcher-error-response.ts
+- src/main/runtime/rpc/dispatcher-request-parsing.ts
+- src/main/runtime/rpc/dispatcher-stream-options.ts
+- src/main/runtime/rpc/dispatcher-streaming-feature-emitter.ts
+- src/main/runtime/rpc/dispatcher-unary-method-invocation.ts
+- src/main/runtime/rpc/dispatcher.ts
+- src/main/runtime/rpc/e2ee-channel.ts
+- src/main/runtime/rpc/e2ee-crypto.ts
+- src/main/runtime/rpc/errors.ts
+- src/main/runtime/rpc/methods/accounts.ts
+- src/main/runtime/rpc/methods/agent-hooks.ts
+- src/main/runtime/rpc/methods/agent-launch-replay.ts
+- src/main/runtime/rpc/methods/agent-launch-schemas.ts
+- src/main/runtime/rpc/methods/agent-launch-structured-prompt.ts
+- src/main/runtime/rpc/methods/agent-launch-surfaces.ts
+- src/main/runtime/rpc/methods/agent-launch-terminal-prompt.ts
+- src/main/runtime/rpc/methods/agent-launch-worktree-creation.ts
+- src/main/runtime/rpc/methods/agent-launch.test-fixture.ts
+- src/main/runtime/rpc/methods/agent-launch.ts
+- src/main/runtime/rpc/methods/agent-session.ts
+- src/main/runtime/rpc/methods/ai-vault.ts
+- src/main/runtime/rpc/methods/artifacts.ts
+- src/main/runtime/rpc/methods/automation-schemas.ts
+- src/main/runtime/rpc/methods/automations.ts
+- src/main/runtime/rpc/methods/browser-client-file-channel.ts
+- src/main/runtime/rpc/methods/browser-client-host.ts
+- src/main/runtime/rpc/methods/browser-core.ts
+- src/main/runtime/rpc/methods/browser-extras.ts
+- src/main/runtime/rpc/methods/browser-identity-rpc.ts
+- src/main/runtime/rpc/methods/browser-network-tunnel.ts
+- src/main/runtime/rpc/methods/browser-schemas.ts
+- src/main/runtime/rpc/methods/browser-screencast.ts
+- src/main/runtime/rpc/methods/browser-tab-create-schema.ts
+- src/main/runtime/rpc/methods/browser-text-rpc-methods.ts
+- src/main/runtime/rpc/methods/client-events.ts
+- src/main/runtime/rpc/methods/client-settings-schemas.ts
+- src/main/runtime/rpc/methods/client-ui-schemas.ts
+- src/main/runtime/rpc/methods/client-ui-workspace-filter-fields.ts
+- src/main/runtime/rpc/methods/client-ui.ts
+- src/main/runtime/rpc/methods/clipboard.ts
+- src/main/runtime/rpc/methods/computer-schemas.ts
+- src/main/runtime/rpc/methods/computer.ts
+- src/main/runtime/rpc/methods/diagnostics.ts
+- src/main/runtime/rpc/methods/emulator.ts
+- src/main/runtime/rpc/methods/file-watch-event-batcher.ts
+- src/main/runtime/rpc/methods/file-watch-stream-lifecycle.ts
+- src/main/runtime/rpc/methods/files-mutation-methods.ts
+- src/main/runtime/rpc/methods/files-remote-content-budget.ts
+- src/main/runtime/rpc/methods/files-target-schemas.ts
+- src/main/runtime/rpc/methods/files-terminal-artifact-methods.ts
+- src/main/runtime/rpc/methods/files.ts
+- src/main/runtime/rpc/methods/folder-workspace.ts
+- src/main/runtime/rpc/methods/git-admission-tier-schema.ts
+- src/main/runtime/rpc/methods/git-commit-message-generation-methods.ts
+- src/main/runtime/rpc/methods/git-diff-methods.ts
+- src/main/runtime/rpc/methods/git-params.ts
+- src/main/runtime/rpc/methods/git.ts
+- src/main/runtime/rpc/methods/github-account-binding-methods.ts
+- src/main/runtime/rpc/methods/github-issue-methods.ts
+- src/main/runtime/rpc/methods/github-issue-update-schema.ts
+- src/main/runtime/rpc/methods/github-project-methods.ts
+- src/main/runtime/rpc/methods/github-pull-request-methods.ts
+- src/main/runtime/rpc/methods/github-pull-request-update-methods.ts
+- src/main/runtime/rpc/methods/github-repo-target-schemas.ts
+- src/main/runtime/rpc/methods/github-repo-work-item-methods.ts
+- src/main/runtime/rpc/methods/github.ts
+- src/main/runtime/rpc/methods/gitlab.ts
+- src/main/runtime/rpc/methods/host-capabilities.ts
+- src/main/runtime/rpc/methods/hosted-review.ts
+- src/main/runtime/rpc/methods/index.ts
+- src/main/runtime/rpc/methods/jira.ts
+- src/main/runtime/rpc/methods/linear-agent-access.ts
+- src/main/runtime/rpc/methods/linear-issue-attribute-filter-schema.ts
+- src/main/runtime/rpc/methods/linear-issue-list-method.ts
+- src/main/runtime/rpc/methods/linear-project-create.ts
+- src/main/runtime/rpc/methods/linear.ts
+- src/main/runtime/rpc/methods/mobile-markdown-tab-methods.ts
+- src/main/runtime/rpc/methods/mobile-web-bundle-asset-reader.ts
+- src/main/runtime/rpc/methods/mobile-web-bundle-range-encoding.ts
+- src/main/runtime/rpc/methods/mobile-web-bundle-read-admission.ts
+- src/main/runtime/rpc/methods/mobile-web-bundle.test-fixture.ts
+- src/main/runtime/rpc/methods/mobile-web-bundle.ts
+- src/main/runtime/rpc/methods/native-chat-rpc-block-sanitize.ts
+- src/main/runtime/rpc/methods/native-chat-rpc-image-block.ts
+- src/main/runtime/rpc/methods/native-chat.ts
+- src/main/runtime/rpc/methods/notification-stream-policy.ts
+- src/main/runtime/rpc/methods/notifications.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-attach-receipt.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-fleet-host-groups.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-fleet-snapshot.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-worker-read.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-worker-release-host.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-worker-release.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-worker-show.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-worker-start-receipts.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federated-worker-start.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-attachment-observation.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-control.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-effects.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-methods.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-relay.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-release-recovery-scenarios.test-support.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-request.test-support.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-runtime.test-support.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-setup.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-start-receipt.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-start-schema.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation-sync-barrier.test-support.ts
+- src/main/runtime/rpc/methods/orchestration/federation/federation.ts
+- src/main/runtime/rpc/methods/orchestration/gates/gates.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/ask-methods.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/ask-remote.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/check-direct.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/check-methods.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/check-run.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/check-worker.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/dispatch-mailbox-fence.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/mailbox-message-receipt.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/message-methods.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/mutation-replay-nudge.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/recipient-routing.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/send-control-mail.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/send-group.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/send-methods.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/send-point-to-point.ts
+- src/main/runtime/rpc/methods/orchestration/messaging/send-remote.ts
+- src/main/runtime/rpc/methods/orchestration/routing.ts
+- src/main/runtime/rpc/methods/orchestration/rpc-test-harness.ts
+- src/main/runtime/rpc/methods/orchestration/runs/dispatch-creator.ts
+- src/main/runtime/rpc/methods/orchestration/runs/dispatch-methods.ts
+- src/main/runtime/rpc/methods/orchestration/runs/mutation-request-show.ts
+- src/main/runtime/rpc/methods/orchestration/runs/reset-methods.ts
+- src/main/runtime/rpc/methods/orchestration/runs/run-receipt.ts
+- src/main/runtime/rpc/methods/orchestration/runs/run-scope.ts
+- src/main/runtime/rpc/methods/orchestration/runs/runs.ts
+- src/main/runtime/rpc/methods/orchestration/schemas.ts
+- src/main/runtime/rpc/methods/orchestration/worker/created-worker-terminal-custody.ts
+- src/main/runtime/rpc/methods/orchestration/worker/deliver-worker-dispatch-preamble.ts
+- src/main/runtime/rpc/methods/orchestration/worker/explicit-worker-terminal-validation.ts
+- src/main/runtime/rpc/methods/orchestration/worker/failed-worker-start-teardown.ts
+- src/main/runtime/rpc/methods/orchestration/worker/folder-worktree-placement.ts
+- src/main/runtime/rpc/methods/orchestration/worker/local-worker-start.ts
+- src/main/runtime/rpc/methods/orchestration/worker/structured-worker-release-stop.ts
+- src/main/runtime/rpc/methods/orchestration/worker/task-deps-argument.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-archive-read.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-control.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-launch-preferences.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-legacy-federated-read.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-list-cursor.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-list-method.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-list-projection.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-list-snapshot-store.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-methods.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-observation.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-output.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release-close-error.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release-completion.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release-schemas.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release.test-support.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-release.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-setup-gate.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-agent-placement.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-budgets.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-prompt-budget.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-readiness-settlement.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-receipt.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-schema.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-structured-setup-gate.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-turn-observation.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-start-validation.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-stop.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-terminal-release-lease.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-terminal-resource-presentation.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-topology.ts
+- src/main/runtime/rpc/methods/orchestration/worker/worker-worktree-creation.ts
+- src/main/runtime/rpc/methods/orchestration/worker/workers.ts
+- src/main/runtime/rpc/methods/orchestration-caller-workspace.ts
+- src/main/runtime/rpc/methods/orchestration-structured-worker-lifecycle.ts
+- src/main/runtime/rpc/methods/orchestration-structured-worker-session.ts
+- src/main/runtime/rpc/methods/orchestration-worker-start-mode.ts
+- src/main/runtime/rpc/methods/orchestration.ts
+- src/main/runtime/rpc/methods/paired-caller-host-id.ts
+- src/main/runtime/rpc/methods/pairing.ts
+- src/main/runtime/rpc/methods/plugins.ts
+- src/main/runtime/rpc/methods/preflight.ts
+- src/main/runtime/rpc/methods/project-runtime-rpc-methods.ts
+- src/main/runtime/rpc/methods/repo-update-schema.ts
+- src/main/runtime/rpc/methods/repo.ts
+- src/main/runtime/rpc/methods/runtime-client-capabilities.ts
+- src/main/runtime/rpc/methods/session-tab-agent-status-projection.ts
+- src/main/runtime/rpc/methods/session-tab-browser-placement-projection.ts
+- src/main/runtime/rpc/methods/session-tab-close-methods.ts
+- src/main/runtime/rpc/methods/session-tab-markdown-methods.ts
+- src/main/runtime/rpc/methods/session-tab-mutation-methods.ts
+- src/main/runtime/rpc/methods/session-tabs-inventory.ts
+- src/main/runtime/rpc/methods/session-tabs-retirement-proof-delta.ts
+- src/main/runtime/rpc/methods/session-tabs-schemas.ts
+- src/main/runtime/rpc/methods/session-tabs-snapshot.test-fixture.ts
+- src/main/runtime/rpc/methods/session-tabs.ts
+- src/main/runtime/rpc/methods/skills.ts
+- src/main/runtime/rpc/methods/speech.ts
+- src/main/runtime/rpc/methods/ssh.ts
+- src/main/runtime/rpc/methods/stats.ts
+- src/main/runtime/rpc/methods/status.ts
+- src/main/runtime/rpc/methods/structured-agent-session-background-task-capability.ts
+- src/main/runtime/rpc/methods/structured-agent-session-conversation-outline.ts
+- src/main/runtime/rpc/methods/structured-agent-session-create.ts
+- src/main/runtime/rpc/methods/structured-agent-session-gate-classification.test-fixture.ts
+- src/main/runtime/rpc/methods/structured-agent-session-gate.ts
+- src/main/runtime/rpc/methods/structured-agent-session-hold.ts
+- src/main/runtime/rpc/methods/structured-agent-session-options-read.ts
+- src/main/runtime/rpc/methods/structured-agent-session-policy.ts
+- src/main/runtime/rpc/methods/structured-agent-session-precommit-refusal.ts
+- src/main/runtime/rpc/methods/structured-agent-session-restart-resume.ts
+- src/main/runtime/rpc/methods/structured-agent-session-reveal.ts
+- src/main/runtime/rpc/methods/structured-agent-session-rpc.test-fixture.ts
+- src/main/runtime/rpc/methods/structured-agent-session-schemas.ts
+- src/main/runtime/rpc/methods/structured-agent-session-send-compatibility.ts
+- src/main/runtime/rpc/methods/structured-agent-session-status-stream.ts
+- src/main/runtime/rpc/methods/structured-agent-session-subscription-id.ts
+- src/main/runtime/rpc/methods/structured-agent-session-thread-goal.ts
+- src/main/runtime/rpc/methods/structured-agent-session-turn-completion-stream.ts
+- src/main/runtime/rpc/methods/structured-agent-session-turn-item-capability.ts
+- src/main/runtime/rpc/methods/structured-agent-session.ts
+- src/main/runtime/rpc/methods/structured-session-tab-restore.ts
+- src/main/runtime/rpc/methods/task-resume-state-schema.ts
+- src/main/runtime/rpc/methods/terminal/stream-schemas.ts
+- src/main/runtime/rpc/methods/terminal/terminal-input-delivery.ts
+- src/main/runtime/rpc/methods/terminal/terminal-legacy-binary-control-frames.ts
+- src/main/runtime/rpc/methods/terminal/terminal-legacy-simple-subscriptions.ts
+- src/main/runtime/rpc/methods/terminal/terminal-legacy-subscribe-binary.ts
+- src/main/runtime/rpc/methods/terminal/terminal-legacy-subscribe-live.ts
+- src/main/runtime/rpc/methods/terminal/terminal-legacy-subscribe-snapshot.ts
+- src/main/runtime/rpc/methods/terminal/terminal-legacy-subscription-types.ts
+- src/main/runtime/rpc/methods/terminal/terminal-lifecycle-methods.ts
+- src/main/runtime/rpc/methods/terminal/terminal-multiplex-cleanup.ts
+- src/main/runtime/rpc/methods/terminal/terminal-multiplex-connection.ts
+- src/main/runtime/rpc/methods/terminal/terminal-multiplex-flow-control.ts
+- src/main/runtime/rpc/methods/terminal/terminal-multiplex-frame-delivery.ts
+- src/main/runtime/rpc/methods/terminal/terminal-multiplex-initial-snapshot.ts
+- src/main/runtime/rpc/methods/terminal/terminal-multiplex-live-stream.ts
+- src/main/runtime/rpc/methods/terminal/terminal-multiplex-method.ts
+- src/main/runtime/rpc/methods/terminal/terminal-multiplex-slot-frames.ts
+- src/main/runtime/rpc/methods/terminal/terminal-multiplex-stream-initialization.ts
+- src/main/runtime/rpc/methods/terminal/terminal-multiplex-subscribe-frame.ts
+- src/main/runtime/rpc/methods/terminal/terminal-multiplex-subscribe-resolution.ts
+- src/main/runtime/rpc/methods/terminal/terminal-output-batcher.ts
+- src/main/runtime/rpc/methods/terminal/terminal-prompt-receipt.ts
+- src/main/runtime/rpc/methods/terminal/terminal-query-methods.ts
+- src/main/runtime/rpc/methods/terminal/terminal-send-method.ts
+- src/main/runtime/rpc/methods/terminal/terminal-snapshot-payload.ts
+- src/main/runtime/rpc/methods/terminal/terminal-snapshot-publication.ts
+- src/main/runtime/rpc/methods/terminal/terminal-stream-replay.ts
+- src/main/runtime/rpc/methods/terminal/terminal-stream-types.ts
+- src/main/runtime/rpc/methods/terminal/terminal-subscribe-method.ts
+- src/main/runtime/rpc/methods/terminal/terminal-subscription-stream-id.ts
+- src/main/runtime/rpc/methods/terminal/terminal-viewport-methods.ts
+- src/main/runtime/rpc/methods/terminal/terminal-viewport-update.ts
+- src/main/runtime/rpc/methods/terminal/unary-schemas.ts
+- src/main/runtime/rpc/methods/terminal/viewport-schemas.ts
+- src/main/runtime/rpc/methods/terminal-orphan.ts
+- src/main/runtime/rpc/methods/terminal-quick-command-rpc-schema.ts
+- src/main/runtime/rpc/methods/terminal.ts
+- src/main/runtime/rpc/methods/ui-state-schema-parity-checks.ts
+- src/main/runtime/rpc/methods/ui-state-schema-parity.ts
+- src/main/runtime/rpc/methods/ui-update-value-tolerance.ts
+- src/main/runtime/rpc/methods/updater.ts
+- src/main/runtime/rpc/methods/workspace-cleanup-ui-schema.ts
+- src/main/runtime/rpc/methods/workspace-ports.ts
+- src/main/runtime/rpc/methods/worktree-catalog-methods.ts
+- src/main/runtime/rpc/methods/worktree-create-args.ts
+- src/main/runtime/rpc/methods/worktree-create-schemas.ts
+- src/main/runtime/rpc/methods/worktree-schemas.ts
+- src/main/runtime/rpc/methods/worktree-visibility-defaults-schema.ts
+- src/main/runtime/rpc/methods/worktree.ts
+- src/main/runtime/rpc/mobile-clipboard-image-provenance.ts
+- src/main/runtime/rpc/mobile-e2ee-auth-validation.ts
+- src/main/runtime/rpc/mobile-e2ee-desktop-outbound-owner.ts
+- src/main/runtime/rpc/mobile-e2ee-outbound-admission.ts
+- src/main/runtime/rpc/mobile-e2ee-outbound-memory-budget.ts
+- src/main/runtime/rpc/mobile-e2ee-v2-client-capabilities.ts
+- src/main/runtime/rpc/mobile-e2ee-v2-desktop-inbound.ts
+- src/main/runtime/rpc/mobile-e2ee-v2-desktop-outbound.ts
+- src/main/runtime/rpc/mobile-e2ee-v2-desktop-session.ts
+- src/main/runtime/rpc/mobile-e2ee-v2-key-schedule.ts
+- src/main/runtime/rpc/mobile-socket-wiring.ts
+- src/main/runtime/rpc/orchestration-contract-fence.ts
+- src/main/runtime/rpc/orchestration-legacy-authority.ts
+- src/main/runtime/rpc/orchestration-legacy-compatibility-dispatcher-test-fixture.ts
+- src/main/runtime/rpc/orchestration-legacy-compatibility.ts
+- src/main/runtime/rpc/orchestration-legacy-coordinator-authority.ts
+- src/main/runtime/rpc/orchestration-legacy-lifecycle.ts
+- src/main/runtime/rpc/orchestration-legacy-mail.ts
+- src/main/runtime/rpc/orchestration-legacy-operation.ts
+- src/main/runtime/rpc/orchestration-legacy-process-identity.ts
+- src/main/runtime/rpc/orchestration-legacy-question.ts
+- src/main/runtime/rpc/orchestration-mutation-executor.ts
+- src/main/runtime/rpc/orchestration-mutation-receipt.ts
+- src/main/runtime/rpc/orchestration-session-caller-test-fixture.ts
+- src/main/runtime/rpc/orchestration-session-caller.ts
+- src/main/runtime/rpc/relay-transport.ts
+- src/main/runtime/rpc/remote-runtime-server-heartbeat.ts
+- src/main/runtime/rpc/repo-visibility-projection.ts
+- src/main/runtime/rpc/rpc-clipboard-text-validation.ts
+- src/main/runtime/rpc/rpc-params-type-parity.ts
+- src/main/runtime/rpc/rpc-streaming-dispatcher.ts
+- src/main/runtime/rpc/runtime-client-capabilities.ts
+- src/main/runtime/rpc/runtime-feature-interaction.ts
+- src/main/runtime/rpc/schemas.ts
+- src/main/runtime/rpc/static-web-client-handler.ts
+- src/main/runtime/rpc/subscription-registry-test-double.ts
+- src/main/runtime/rpc/terminal-agent-send-guard.ts
+- src/main/runtime/rpc/terminal-close-attribution.ts
+- src/main/runtime/rpc/terminal-multiplex-round-robin.ts
+- src/main/runtime/rpc/terminal-multiplex-source-range-fixtures.ts
+- src/main/runtime/rpc/terminal-multiplex-test-harness.ts
+- src/main/runtime/rpc/terminal-output-frame-chunks.ts
+- src/main/runtime/rpc/terminal-source-range-ledger.ts
+- src/main/runtime/rpc/terminal-source-range-registry.ts
+- src/main/runtime/rpc/terminal-source-range-validation.ts
+- src/main/runtime/rpc/terminal-stream-byte-length.ts
+- src/main/runtime/rpc/transport.ts
+- src/main/runtime/rpc/unix-socket-transport.ts
+- src/main/runtime/rpc/unpaired-device-auth-throttle.ts
+- src/main/runtime/rpc/workspace-creator-context.ts
+- src/main/runtime/rpc/worktree-catalog-snapshot.ts
+- src/main/runtime/rpc/worktree-visibility-client-capability.ts
+- src/main/runtime/rpc/ws-fallback-port-store.ts
+- src/main/runtime/rpc/ws-transport.ts
+- src/main/runtime/runtime-browser-client-automation.ts
+- src/main/runtime/runtime-browser-client-page-adoption.ts
+- src/main/runtime/runtime-browser-client-page-creation.ts
+- src/main/runtime/runtime-browser-client-page-recovery.ts
+- src/main/runtime/runtime-browser-client-page-release.ts
+- src/main/runtime/runtime-browser-commands-active-screencasts-by-page-id.ts
+- src/main/runtime/runtime-browser-commands-browser-clear.ts
+- src/main/runtime/runtime-browser-commands-browser-click.ts
+- src/main/runtime/runtime-browser-commands-browser-command-target-params.ts
+- src/main/runtime/runtime-browser-commands-browser-network-log.ts
+- src/main/runtime/runtime-browser-commands-browser-profile-import-from-browser.ts
+- src/main/runtime/runtime-browser-commands-browser-screencast.ts
+- src/main/runtime/runtime-browser-commands-browser-set-headers.ts
+- src/main/runtime/runtime-browser-commands-browser-tab-close.ts
+- src/main/runtime/runtime-browser-commands-browser-tab-create.ts
+- src/main/runtime/runtime-browser-commands-browser-tab-list.ts
+- src/main/runtime/runtime-browser-commands-browser-tab-set-profile.ts
+- src/main/runtime/runtime-browser-commands-factory.ts
+- src/main/runtime/runtime-browser-commands-list-logical-browser-tabs.ts
+- src/main/runtime/runtime-browser-commands-state.ts
+- src/main/runtime/runtime-browser-driver-controller.ts
+- src/main/runtime/runtime-browser-network-execution-host.ts
+- src/main/runtime/runtime-browser-page-registry.ts
+- src/main/runtime/runtime-browser-screencast-controller.ts
+- src/main/runtime/runtime-durable-store-fixture.ts
+- src/main/runtime/runtime-legacy-worker-terminal-recovery-candidate.ts
+- src/main/runtime/runtime-legacy-worker-terminal-recovery-controller.ts
+- src/main/runtime/runtime-legacy-worker-terminal-recovery-persistence.ts
+- src/main/runtime/runtime-legacy-worker-terminal-recovery-runner.ts
+- src/main/runtime/runtime-legacy-worker-terminal-recovery-types.ts
+- src/main/runtime/runtime-mobile-agent-status-builder.ts
+- src/main/runtime/runtime-mobile-agent-status-projection.ts
+- src/main/runtime/runtime-mobile-dictation-controller.ts
+- src/main/runtime/runtime-mobile-file-path-search.ts
+- src/main/runtime/runtime-mobile-notification-controller.ts
+- src/main/runtime/runtime-mobile-session-projection-contract.ts
+- src/main/runtime/runtime-mobile-session-projection.ts
+- src/main/runtime/runtime-mobile-session-result-finalization.ts
+- src/main/runtime/runtime-mobile-speech-catalog.ts
+- src/main/runtime/runtime-rpc-mobile-method-allowlist-fixtures.ts
+- src/main/runtime/runtime-rpc-mobile-ws-test-harness.ts
+- src/main/runtime/runtime-rpc-test-harness.ts
+- src/main/runtime/runtime-rpc-worktree-store-fixtures.ts
+- src/main/runtime/runtime-skill-install-authority.ts
+- src/main/runtime/runtime-skill-install-commands.ts
+- src/main/runtime/runtime-skill-install-queries.ts
+- src/main/runtime/structured-agent-account-home.ts
+- src/main/runtime/structured-agent-model-catalog-wiring.ts
+- src/main/runtime/structured-agent-session-close.ts
+- src/main/runtime/structured-agent-session-create-adoption.ts
+- src/main/runtime/structured-agent-session-lifecycle-delivery.ts
+- src/main/runtime/structured-agent-session-owner-probe.ts
+- src/main/runtime/structured-agent-session-runtime-teardown.ts
+- src/main/runtime/structured-agent-session-runtime.ts
+- src/main/runtime/structured-agent-session-tab-retirement.ts
+- src/main/runtime/structured-agent-shell-environment.ts
+- src/main/runtime/structured-claude-runtime-adapter.ts
+- src/main/runtime/structured-claude-scripted-runtime-test-support.ts
+- src/main/runtime/structured-conversation-tab-replacement.ts
+- src/main/runtime/structured-session-worktree-teardown.ts
+- src/main/runtime/structured-worker-authority.ts
+- src/main/runtime/structured-worker-child-identity-env.ts
+- src/main/runtime/structured-worker-identity.ts
+- src/main/runtime/structured-worker-terminal-read.ts
+- src/main/runtime/structured-worker-terminal-refusal.ts
+- src/main/runtime/terminal-close-observed-exit-test-fixture.ts
+- src/main/runtime/tls-certificate.ts
+- src/main/runtime/tui-idle-wait-test-harness.ts
+- src/main/runtime/windows-default-route-interfaces.ts
+- src/main/runtime/windows-firewall-remote-scope.ts
+- src/main/runtime/windows-mobile-firewall.ts
+
+## T4 src/main/orca-profiles (73 文件)
+
+### KEEP (12)
+
+- src/main/orca-profiles/profile-index-store.ts (direct importers: 25)
+- src/main/orca-profiles/profile-legacy-state-import.ts (direct importers: 1)
+- src/main/orca-profiles/profile-project-domain-changes.ts (direct importers: 5)
+- src/main/orca-profiles/profile-project-domain-move-intent.ts (direct importers: 3)
+- src/main/orca-profiles/profile-project-domain-state.ts (direct importers: 8)
+- src/main/orca-profiles/profile-project-move-intent.ts (direct importers: 8)
+- src/main/orca-profiles/profile-project-move-record.ts (direct importers: 3)
+- src/main/orca-profiles/profile-project-session-field-disposition.ts (direct importers: 5)
+- src/main/orca-profiles/profile-project-session-state.ts (direct importers: 5)
+- src/main/orca-profiles/profile-project-state-file.ts (direct importers: 16)
+- src/main/orca-profiles/profile-project-worktree-identity.ts (direct importers: 8)
+- src/main/orca-profiles/profile-storage-paths.ts (direct importers: 22)
+
+### TEST-KEEP (4)
+
+- src/main/orca-profiles/profile-index-store.test.ts (direct importers: 0)
+- src/main/orca-profiles/profile-project-session-field-disposition.test.ts (direct importers: 0)
+- src/main/orca-profiles/profile-project-session-state.test.ts (direct importers: 0)
+- src/main/orca-profiles/profile-project-state-file.test.ts (direct importers: 0)
+
+### TEST-DELETE (25)
+
+- src/main/orca-profiles/profile-active-transfer-worker.test.ts
+- src/main/orca-profiles/profile-active-transfer.test.ts
+- src/main/orca-profiles/profile-artifact-cloud-cleanup.test.ts
+- src/main/orca-profiles/profile-cloud-auth-config.test.ts
+- src/main/orca-profiles/profile-cloud-auth-status.test.ts
+- src/main/orca-profiles/profile-cloud-client.test.ts
+- src/main/orca-profiles/profile-cloud-dev-service.test.ts
+- src/main/orca-profiles/profile-cloud-org-members-client.test.ts
+- src/main/orca-profiles/profile-cloud-org-members-service.test.ts
+- src/main/orca-profiles/profile-cloud-pkce.test.ts
+- src/main/orca-profiles/profile-cloud-refresh-replay-guard.test.ts
+- src/main/orca-profiles/profile-cloud-service-auth-retry.test.ts
+- src/main/orca-profiles/profile-cloud-service-connect-overlap.test.ts
+- src/main/orca-profiles/profile-cloud-service-refresh.test.ts
+- src/main/orca-profiles/profile-cloud-service-sign-out-connect-race.test.ts
+- src/main/orca-profiles/profile-cloud-service.test.ts
+- src/main/orca-profiles/profile-cloud-session-mutation.test.ts
+- src/main/orca-profiles/profile-cloud-session-refresh.test.ts
+- src/main/orca-profiles/profile-cloud-session-store.test.ts
+- src/main/orca-profiles/profile-persistence-deadline.test.ts
+- src/main/orca-profiles/profile-project-domain-transfer.test.ts
+- src/main/orca-profiles/profile-project-presence.test.ts
+- src/main/orca-profiles/profile-project-transfer-migration.test.ts
+- src/main/orca-profiles/profile-project-transfer.test.ts
+- src/main/orca-profiles/profile-ui-scope.test.ts
+
+### DELETE (32)
+
+- src/main/orca-profiles/profile-active-transfer.ts
+- src/main/orca-profiles/profile-artifact-cloud-cleanup.ts
+- src/main/orca-profiles/profile-cloud-auth-config.ts
+- src/main/orca-profiles/profile-cloud-auth-status.ts
+- src/main/orca-profiles/profile-cloud-callback-page.ts
+- src/main/orca-profiles/profile-cloud-capability-refresh.ts
+- src/main/orca-profiles/profile-cloud-client.ts
+- src/main/orca-profiles/profile-cloud-dev-auth.ts
+- src/main/orca-profiles/profile-cloud-dev-org-members.ts
+- src/main/orca-profiles/profile-cloud-dev-service.ts
+- src/main/orca-profiles/profile-cloud-index.ts
+- src/main/orca-profiles/profile-cloud-org-members-client.ts
+- src/main/orca-profiles/profile-cloud-org-members-service.ts
+- src/main/orca-profiles/profile-cloud-org-selection.ts
+- src/main/orca-profiles/profile-cloud-pkce.ts
+- src/main/orca-profiles/profile-cloud-refresh-replay-guard.ts
+- src/main/orca-profiles/profile-cloud-service.ts
+- src/main/orca-profiles/profile-cloud-session-exchange.ts
+- src/main/orca-profiles/profile-cloud-session-invalidation.ts
+- src/main/orca-profiles/profile-cloud-session-mutation.ts
+- src/main/orca-profiles/profile-cloud-session-refresh.ts
+- src/main/orca-profiles/profile-cloud-session-store.ts
+- src/main/orca-profiles/profile-persistence-deadline.ts
+- src/main/orca-profiles/profile-project-presence.ts
+- src/main/orca-profiles/profile-project-retired-name-transfer.ts
+- src/main/orca-profiles/profile-project-session-transfer.ts
+- src/main/orca-profiles/profile-project-source-removal.ts
+- src/main/orca-profiles/profile-project-transfer-migration.ts
+- src/main/orca-profiles/profile-project-transfer-payload.ts
+- src/main/orca-profiles/profile-project-transfer-worktree-ids.ts
+- src/main/orca-profiles/profile-project-transfer.ts
+- src/main/orca-profiles/profile-ui-scope.ts
+
+## T5 src/main/ipc (1050 文件)
+
+### KEEP (417)
+
+- src/main/ipc/agent-detection-shell-path.ts (direct importers: 1)
+- src/main/ipc/agent-hooks.ts (direct importers: 3)
+- src/main/ipc/agent-pane-authority-ipc.ts (direct importers: 2)
+- src/main/ipc/agent-pane-authority-ownership.ts (direct importers: 2)
+- src/main/ipc/agent-status-ipc-boundary.ts (direct importers: 6)
+- src/main/ipc/agent-status-row-teardown-ipc.ts (direct importers: 1)
+- src/main/ipc/agent-trust.ts (direct importers: 1)
+- src/main/ipc/app.ts (direct importers: 2)
+- src/main/ipc/bitbucket.ts (direct importers: 1)
+- src/main/ipc/bounded-warning-dedupe.ts (direct importers: 3)
+- src/main/ipc/cli.ts (direct importers: 3)
+- src/main/ipc/codex-config-sync.ts (direct importers: 2)
+- src/main/ipc/command-path-resolver.ts (direct importers: 2)
+- src/main/ipc/crash-reporting-renderer-breadcrumbs.ts (direct importers: 2)
+- src/main/ipc/crash-reporting-renderer-error-report.ts (direct importers: 2)
+- src/main/ipc/crash-reporting-sendable-reports.ts (direct importers: 2)
+- src/main/ipc/crash-reporting-submission.ts (direct importers: 1)
+- src/main/ipc/crash-reporting.ts (direct importers: 3)
+- src/main/ipc/created-worktree-reconciliation.ts (direct importers: 4)
+- src/main/ipc/cursor-accounts.ts (direct importers: 1)
+- src/main/ipc/dashboard-agent-launch-validation.ts (direct importers: 1)
+- src/main/ipc/dashboard-filter-payload-validation.ts (direct importers: 1)
+- src/main/ipc/dashboard-payload-validation.ts (direct importers: 2)
+- src/main/ipc/dashboard-popout.ts (direct importers: 2)
+- src/main/ipc/dashboard-workspace-payload-validation.ts (direct importers: 1)
+- src/main/ipc/deferred-emoji-shortcode-dataset.ts (direct importers: 2)
+- src/main/ipc/desktop-renderer-runtime-capabilities.ts (direct importers: 2)
+- src/main/ipc/desktop-runtime-sender-lifecycle.ts (direct importers: 1)
+- src/main/ipc/developer-permissions.ts (direct importers: 2)
+- src/main/ipc/diagnostics.ts (direct importers: 2)
+- src/main/ipc/dropped-path-resolution.ts (direct importers: 2)
+- src/main/ipc/export.ts (direct importers: 1)
+- src/main/ipc/feedback-image-attachments.ts (direct importers: 4)
+- src/main/ipc/feedback-request.ts (direct importers: 1)
+- src/main/ipc/feedback.ts (direct importers: 4)
+- src/main/ipc/filesystem/filesystem-download-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-download-promotion.ts (direct importers: 2)
+- src/main/ipc/filesystem/filesystem-file-content-inspection.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-git-commit-generation-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-git-commit-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-git-diff-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-git-index-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-git-model-discovery-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-git-pull-request-generation-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-git-remote-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-git-status-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-git-url-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-handler-context.ts (direct importers: 17)
+- src/main/ipc/filesystem/filesystem-read-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-search-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/filesystem-source-control-ai-targets.ts (direct importers: 3)
+- src/main/ipc/filesystem/filesystem-write-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/git-remote/branch-mutation-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/git-remote/compare-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem/git-remote/sync-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem-allowed-roots.ts (direct importers: 3)
+- src/main/ipc/filesystem-auth.ts (direct importers: 45)
+- src/main/ipc/filesystem-create-path-guards.ts (direct importers: 1)
+- src/main/ipc/filesystem-download-folder.ts (direct importers: 1)
+- src/main/ipc/filesystem-import-local-tree-copy.ts (direct importers: 1)
+- src/main/ipc/filesystem-import-local.ts (direct importers: 1)
+- src/main/ipc/filesystem-import-ssh-directory.ts (direct importers: 1)
+- src/main/ipc/filesystem-import-ssh.ts (direct importers: 2)
+- src/main/ipc/filesystem-list-files.ts (direct importers: 5)
+- src/main/ipc/filesystem-mutations.ts (direct importers: 7)
+- src/main/ipc/filesystem-path-containment.ts (direct importers: 31)
+- src/main/ipc/filesystem-runtime-upload-staging.ts (direct importers: 3)
+- src/main/ipc/filesystem-search-file-paths.ts (direct importers: 2)
+- src/main/ipc/filesystem-watcher-batch-control.ts (direct importers: 9)
+- src/main/ipc/filesystem-watcher-event-batch.ts (direct importers: 6)
+- src/main/ipc/filesystem-watcher-handlers.ts (direct importers: 1)
+- src/main/ipc/filesystem-watcher-ignore.ts (direct importers: 5)
+- src/main/ipc/filesystem-watcher-lifecycle-state.ts (direct importers: 18)
+- src/main/ipc/filesystem-watcher-listener-lifecycle.ts (direct importers: 12)
+- src/main/ipc/filesystem-watcher-local-capacity.ts (direct importers: 1)
+- src/main/ipc/filesystem-watcher-local-events.ts (direct importers: 2)
+- src/main/ipc/filesystem-watcher-local-install.ts (direct importers: 1)
+- src/main/ipc/filesystem-watcher-local-removal.ts (direct importers: 1)
+- src/main/ipc/filesystem-watcher-local-subscription.ts (direct importers: 3)
+- src/main/ipc/filesystem-watcher-paths.ts (direct importers: 10)
+- src/main/ipc/filesystem-watcher-remote-controller.ts (direct importers: 2)
+- src/main/ipc/filesystem-watcher-remote-desired.ts (direct importers: 3)
+- src/main/ipc/filesystem-watcher-remote-dormant.ts (direct importers: 1)
+- src/main/ipc/filesystem-watcher-remote-install.ts (direct importers: 1)
+- src/main/ipc/filesystem-watcher-remote-provider-rearm.ts (direct importers: 1)
+- src/main/ipc/filesystem-watcher-remote-removal.ts (direct importers: 1)
+- src/main/ipc/filesystem-watcher-remote-resync.ts (direct importers: 1)
+- src/main/ipc/filesystem-watcher-remote-retry.ts (direct importers: 3)
+- src/main/ipc/filesystem-watcher-shutdown.ts (direct importers: 1)
+- src/main/ipc/filesystem-watcher-wsl.ts (direct importers: 7)
+- src/main/ipc/filesystem-watcher.ts (direct importers: 18)
+- src/main/ipc/filesystem.ts (direct importers: 13)
+- src/main/ipc/floating-workspace-directory.ts (direct importers: 5)
+- src/main/ipc/folder-repo-git-upgrade-wake.ts (direct importers: 4)
+- src/main/ipc/folder-repo-git-upgrade.ts (direct importers: 3)
+- src/main/ipc/git-status-upstream-ref-watch-request.ts (direct importers: 2)
+- src/main/ipc/grok-accounts.ts (direct importers: 1)
+- src/main/ipc/hooks/register-worktree-hook-check-handler.ts (direct importers: 1)
+- src/main/ipc/hooks/register-worktree-hook-file-handlers.ts (direct importers: 1)
+- src/main/ipc/hooks/register-worktree-hook-inspection-handler.ts (direct importers: 1)
+- src/main/ipc/hooks/register-worktree-hook-runner-handler.ts (direct importers: 1)
+- src/main/ipc/keybindings.ts (direct importers: 2)
+- src/main/ipc/local-agent-install-dir-detection.ts (direct importers: 1)
+- src/main/ipc/local-log-tail.ts (direct importers: 3)
+- src/main/ipc/local-worktree-runtime-options.ts (direct importers: 16)
+- src/main/ipc/localhost-worktree-labels.ts (direct importers: 1)
+- src/main/ipc/macos-keyboard-layout-change-notifications.ts (direct importers: 2)
+- src/main/ipc/macos-keyboard-layout-snapshot.ts (direct importers: 3)
+- src/main/ipc/macos-symbolic-hotkeys-probe.ts (direct importers: 1)
+- src/main/ipc/markdown-documents.ts (direct importers: 7)
+- src/main/ipc/memory.ts (direct importers: 1)
+- src/main/ipc/minimax-credentials.ts (direct importers: 2)
+- src/main/ipc/native-notification-delivery.ts (direct importers: 1)
+- src/main/ipc/native-notification-lifecycle.ts (direct importers: 4)
+- src/main/ipc/notification-authorization-status.ts (direct importers: 1)
+- src/main/ipc/notification-burst-cooldown.ts (direct importers: 1)
+- src/main/ipc/notification-options.ts (direct importers: 2)
+- src/main/ipc/notification-permission-probe.ts (direct importers: 3)
+- src/main/ipc/notification-sound-ipc.ts (direct importers: 1)
+- src/main/ipc/notification-sound-selection.ts (direct importers: 2)
+- src/main/ipc/notification-system-settings-link.ts (direct importers: 2)
+- src/main/ipc/notifications.ts (direct importers: 8)
+- src/main/ipc/onboarding.ts (direct importers: 1)
+- src/main/ipc/parcel-watcher-canary-directory.ts (direct importers: 3)
+- src/main/ipc/parcel-watcher-cancellation-restart.ts (direct importers: 1)
+- src/main/ipc/parcel-watcher-cancellation-tracker.ts (direct importers: 8)
+- src/main/ipc/parcel-watcher-child-launch.ts (direct importers: 2)
+- src/main/ipc/parcel-watcher-child-messaging.ts (direct importers: 2)
+- src/main/ipc/parcel-watcher-child-recovery.ts (direct importers: 1)
+- src/main/ipc/parcel-watcher-child-registry.ts (direct importers: 13)
+- src/main/ipc/parcel-watcher-child-termination.ts (direct importers: 8)
+- src/main/ipc/parcel-watcher-crash-fuse.ts (direct importers: 3)
+- src/main/ipc/parcel-watcher-entry-path.ts (direct importers: 4)
+- src/main/ipc/parcel-watcher-event-delivery.ts (direct importers: 4)
+- src/main/ipc/parcel-watcher-host-subscriptions.ts (direct importers: 8)
+- src/main/ipc/parcel-watcher-in-process-fallback.ts (direct importers: 1)
+- src/main/ipc/parcel-watcher-interrupted-cancellation.ts (direct importers: 1)
+- src/main/ipc/parcel-watcher-module-loader.ts (direct importers: 3)
+- src/main/ipc/parcel-watcher-pending-cancellation.ts (direct importers: 1)
+- src/main/ipc/parcel-watcher-pending-subscribe.ts (direct importers: 8)
+- src/main/ipc/parcel-watcher-process-entry.ts (direct importers: 1)
+- src/main/ipc/parcel-watcher-process-failure.ts (direct importers: 36)
+- src/main/ipc/parcel-watcher-process-protocol.ts (direct importers: 13)
+- src/main/ipc/parcel-watcher-process-subscription.ts (direct importers: 19)
+- src/main/ipc/parcel-watcher-process-supervisor-options.ts (direct importers: 1)
+- src/main/ipc/parcel-watcher-process-supervisor.ts (direct importers: 5)
+- src/main/ipc/parcel-watcher-process.ts (direct importers: 16)
+- src/main/ipc/parcel-watcher-shallow-subscription.ts (direct importers: 2)
+- src/main/ipc/parcel-watcher-supervisor-capacity-wait.ts (direct importers: 2)
+- src/main/ipc/parcel-watcher-supervisor-disposal.ts (direct importers: 1)
+- src/main/ipc/parcel-watcher-supervisor-message.ts (direct importers: 1)
+- src/main/ipc/parcel-watcher-supervisor-subscribe.ts (direct importers: 1)
+- src/main/ipc/plugin-marketplaces.ts (direct importers: 3)
+- src/main/ipc/preflight-command-exec.ts (direct importers: 3)
+- src/main/ipc/preflight-local-env.ts (direct importers: 1)
+- src/main/ipc/preflight-remote-windows-terminal-capabilities.ts (direct importers: 1)
+- src/main/ipc/preflight-runtime-target.ts (direct importers: 2)
+- src/main/ipc/preflight-wsl-agent-detection.ts (direct importers: 5)
+- src/main/ipc/preflight-wsl-command.ts (direct importers: 2)
+- src/main/ipc/preflight.ts (direct importers: 10)
+- src/main/ipc/pty/configured-terminal-shell-args.ts (direct importers: 3)
+- src/main/ipc/pty/delivery/accept.ts (direct importers: 1)
+- src/main/ipc/pty/delivery/accounting.ts (direct importers: 5)
+- src/main/ipc/pty/delivery/attached-pty-size.ts (direct importers: 6)
+- src/main/ipc/pty/delivery/constants.ts (direct importers: 7)
+- src/main/ipc/pty/delivery/debug-snapshot.ts (direct importers: 3)
+- src/main/ipc/pty/delivery/debug.ts (direct importers: 10)
+- src/main/ipc/pty/delivery/exit.ts (direct importers: 4)
+- src/main/ipc/pty/delivery/flush.ts (direct importers: 3)
+- src/main/ipc/pty/delivery/hidden-transition.ts (direct importers: 1)
+- src/main/ipc/pty/delivery/interactive.ts (direct importers: 1)
+- src/main/ipc/pty/delivery/lifecycle-reset.ts (direct importers: 1)
+- src/main/ipc/pty/delivery/payload.ts (direct importers: 5)
+- src/main/ipc/pty/delivery/pending.ts (direct importers: 2)
+- src/main/ipc/pty/delivery/producer-sync.ts (direct importers: 1)
+- src/main/ipc/pty/delivery/ssh-intake.ts (direct importers: 1)
+- src/main/ipc/pty/delivery/visibility-state.ts (direct importers: 33)
+- src/main/ipc/pty/delivery/wire-session.ts (direct importers: 1)
+- src/main/ipc/pty/host-env/assembly.ts (direct importers: 4)
+- src/main/ipc/pty/host-env/codex-home.ts (direct importers: 14)
+- src/main/ipc/pty/host-env/codex-resume.ts (direct importers: 4)
+- src/main/ipc/pty/host-env/fresh-spawn-routing.ts (direct importers: 5)
+- src/main/ipc/pty/host-env/omp-launch-environment.ts (direct importers: 4)
+- src/main/ipc/pty/host-env/path.ts (direct importers: 5)
+- src/main/ipc/pty/host-env/pi-agent.ts (direct importers: 3)
+- src/main/ipc/pty/host-env/spawn-cwd.ts (direct importers: 1)
+- src/main/ipc/pty/host-env/spawn-env-keys.ts (direct importers: 2)
+- src/main/ipc/pty/host-env/types.ts (direct importers: 13)
+- src/main/ipc/pty/ipc/inspect.ts (direct importers: 2)
+- src/main/ipc/pty/ipc/renderer-kill.ts (direct importers: 2)
+- src/main/ipc/pty/ipc/resize-visibility.ts (direct importers: 1)
+- src/main/ipc/pty/ipc/serialize-buffer.ts (direct importers: 2)
+- src/main/ipc/pty/ipc/snapshot.ts (direct importers: 1)
+- src/main/ipc/pty/ipc/spawn-begin.ts (direct importers: 1)
+- src/main/ipc/pty/ipc/spawn-commit-persist.ts (direct importers: 2)
+- src/main/ipc/pty/ipc/spawn-commit.ts (direct importers: 7)
+- src/main/ipc/pty/ipc/spawn-env-codex.ts (direct importers: 1)
+- src/main/ipc/pty/ipc/spawn-env.ts (direct importers: 1)
+- src/main/ipc/pty/ipc/spawn-execute.ts (direct importers: 1)
+- src/main/ipc/pty/ipc/spawn-options.ts (direct importers: 3)
+- src/main/ipc/pty/ipc/spawn-preflight.ts (direct importers: 1)
+- src/main/ipc/pty/ipc/spawn-push-target-materialization.ts (direct importers: 3)
+- src/main/ipc/pty/ipc/spawn-run.ts (direct importers: 1)
+- src/main/ipc/pty/ipc/spawn-state.ts (direct importers: 17)
+- src/main/ipc/pty/ipc/spawn-types.ts (direct importers: 17)
+- src/main/ipc/pty/ipc/spawn.ts (direct importers: 1)
+- src/main/ipc/pty/ipc/write-input.ts (direct importers: 4)
+- src/main/ipc/pty/ipc/write.ts (direct importers: 1)
+- src/main/ipc/pty/kill-all.ts (direct importers: 1)
+- src/main/ipc/pty/pane/adopt-stable.ts (direct importers: 2)
+- src/main/ipc/pty/pane/agent-session-owners.ts (direct importers: 5)
+- src/main/ipc/pty/pane/key-state.ts (direct importers: 7)
+- src/main/ipc/pty/pane/launch-authority.ts (direct importers: 4)
+- src/main/ipc/pty/pane/serializer-state.ts (direct importers: 6)
+- src/main/ipc/pty/pane/spawn-registration.ts (direct importers: 4)
+- src/main/ipc/pty/pane/spawn-reservation.ts (direct importers: 13)
+- src/main/ipc/pty/pane/spawn-telemetry.ts (direct importers: 2)
+- src/main/ipc/pty/pane/ssh-pane-lease-claim.ts (direct importers: 2)
+- src/main/ipc/pty/pane/stable-owner.ts (direct importers: 18)
+- src/main/ipc/pty/pane/terminal-spawn-restore.ts (direct importers: 2)
+- src/main/ipc/pty/provider/bind-listeners.ts (direct importers: 3)
+- src/main/ipc/pty/provider/listener-lifecycle.ts (direct importers: 8)
+- src/main/ipc/pty/provider/liveness.ts (direct importers: 13)
+- src/main/ipc/pty/provider/local-configure.ts (direct importers: 1)
+- src/main/ipc/pty/provider/ownership-state.ts (direct importers: 29)
+- src/main/ipc/pty/provider/registry.ts (direct importers: 36)
+- src/main/ipc/pty/provider/shutdown-detect.ts (direct importers: 4)
+- src/main/ipc/pty/provider/state-cleanup.ts (direct importers: 13)
+- src/main/ipc/pty/register-handlers.ts (direct importers: 2)
+- src/main/ipc/pty/register-headless-runtime.ts (direct importers: 3)
+- src/main/ipc/pty/runtime/controller-deps.ts (direct importers: 15)
+- src/main/ipc/pty/runtime/controller.ts (direct importers: 1)
+- src/main/ipc/pty/runtime/foreground-process-evidence-capability.ts (direct importers: 1)
+- src/main/ipc/pty/runtime/inventory-operations.ts (direct importers: 2)
+- src/main/ipc/pty/runtime/kill.ts (direct importers: 4)
+- src/main/ipc/pty/runtime/operations.ts (direct importers: 1)
+- src/main/ipc/pty/runtime/spawn-commit-pty-size.ts (direct importers: 1)
+- src/main/ipc/pty/runtime/spawn-commit.ts (direct importers: 7)
+- src/main/ipc/pty/runtime/spawn-early.ts (direct importers: 1)
+- src/main/ipc/pty/runtime/spawn-execute.ts (direct importers: 1)
+- src/main/ipc/pty/runtime/spawn-hidden-delivery.ts (direct importers: 2)
+- src/main/ipc/pty/runtime/spawn-options.ts (direct importers: 2)
+- src/main/ipc/pty/runtime/spawn-preflight.ts (direct importers: 2)
+- src/main/ipc/pty/runtime/spawn-state.ts (direct importers: 15)
+- src/main/ipc/pty/runtime/spawn.ts (direct importers: 1)
+- src/main/ipc/pty/runtime/undelivered-ssh-kill.ts (direct importers: 2)
+- src/main/ipc/pty/session.ts (direct importers: 21)
+- src/main/ipc/pty-hidden-delivery-gate.ts (direct importers: 19)
+- src/main/ipc/pty-host-bindings.ts (direct importers: 14)
+- src/main/ipc/pty-management.ts (direct importers: 2)
+- src/main/ipc/pty-pending-data-drain-contract.ts (direct importers: 1)
+- src/main/ipc/pty-pending-data-drain-queue.ts (direct importers: 8)
+- src/main/ipc/pty-pending-projection-admissions.ts (direct importers: 3)
+- src/main/ipc/pty-producer-flow-control.ts (direct importers: 2)
+- src/main/ipc/pty-spawn-timing.ts (direct importers: 3)
+- src/main/ipc/pty.ts (direct importers: 101)
+- src/main/ipc/readdir-error-diagnostics.ts (direct importers: 2)
+- src/main/ipc/register-core-handlers/register-core-handlers.ts (direct importers: 2)
+- src/main/ipc/registered-worktree-roots-cache.ts (direct importers: 48)
+- src/main/ipc/remote-watcher-event-batch.ts (direct importers: 3)
+- src/main/ipc/renderer-lifetime-abort.ts (direct importers: 4)
+- src/main/ipc/renderer-shutdown-checkpoint.ts (direct importers: 2)
+- src/main/ipc/renderer-terminal-serializer-readiness.ts (direct importers: 2)
+- src/main/ipc/repos/base-ref-query-handlers.ts (direct importers: 1)
+- src/main/ipc/repos/clone-path-lock.ts (direct importers: 1)
+- src/main/ipc/repos/folder-workspace-handlers.ts (direct importers: 1)
+- src/main/ipc/repos/host-repo-catalog-snapshot.ts (direct importers: 1)
+- src/main/ipc/repos/local-repo-registration.ts (direct importers: 2)
+- src/main/ipc/repos/nested-repo-import-handler.ts (direct importers: 1)
+- src/main/ipc/repos/nested-repo-scan-ipc.ts (direct importers: 2)
+- src/main/ipc/repos/project-group-handlers.ts (direct importers: 1)
+- src/main/ipc/repos/project-host-setup-handlers.ts (direct importers: 1)
+- src/main/ipc/repos/remote-home-path.ts (direct importers: 3)
+- src/main/ipc/repos/remote-repo-clone.ts (direct importers: 1)
+- src/main/ipc/repos/remote-repo-creation.ts (direct importers: 1)
+- src/main/ipc/repos/remote-repo-registration.ts (direct importers: 6)
+- src/main/ipc/repos/repo-added-telemetry.ts (direct importers: 6)
+- src/main/ipc/repos/repo-catalog-handlers.ts (direct importers: 1)
+- src/main/ipc/repos/repo-clone-lifecycle.ts (direct importers: 1)
+- src/main/ipc/repos/repo-creation-handlers.ts (direct importers: 2)
+- src/main/ipc/repos/repo-folder-picker-handlers.ts (direct importers: 1)
+- src/main/ipc/repos/repo-git-username-handler.ts (direct importers: 1)
+- src/main/ipc/repos/repo-ipc-arg-schemas.ts (direct importers: 6)
+- src/main/ipc/repos/repo-update-handler.ts (direct importers: 1)
+- src/main/ipc/repos/repos-changed-notification.ts (direct importers: 12)
+- src/main/ipc/repos/sparse-preset-handlers.ts (direct importers: 1)
+- src/main/ipc/repos.ts (direct importers: 14)
+- src/main/ipc/runtime-import-limits.ts (direct importers: 6)
+- src/main/ipc/runtime-watcher-pending-assignment.ts (direct importers: 2)
+- src/main/ipc/runtime-watcher-pool-lifecycle.ts (direct importers: 1)
+- src/main/ipc/runtime-watcher-pool-state.ts (direct importers: 1)
+- src/main/ipc/runtime-watcher-predecessor-barriers.ts (direct importers: 1)
+- src/main/ipc/runtime-watcher-process-pool.ts (direct importers: 2)
+- src/main/ipc/runtime-watcher-quarantine-queue.ts (direct importers: 1)
+- src/main/ipc/runtime-watcher-subscription-failure.ts (direct importers: 1)
+- src/main/ipc/runtime.ts (direct importers: 4)
+- src/main/ipc/sender-scoped-request-cancellation.ts (direct importers: 5)
+- src/main/ipc/session.ts (direct importers: 1)
+- src/main/ipc/settings.ts (direct importers: 2)
+- src/main/ipc/shallow-watch-delivery-probe.ts (direct importers: 2)
+- src/main/ipc/shell.ts (direct importers: 3)
+- src/main/ipc/single-flight-promise.ts (direct importers: 2)
+- src/main/ipc/skill-delete/handlers.ts (direct importers: 1)
+- src/main/ipc/skill-ipc-main-window.ts (direct importers: 5)
+- src/main/ipc/source-control-ai-linked-issue.ts (direct importers: 3)
+- src/main/ipc/sparse-checkout-directories.ts (direct importers: 4)
+- src/main/ipc/startup-notification-registration.ts (direct importers: 2)
+- src/main/ipc/stats.ts (direct importers: 1)
+- src/main/ipc/telemetry.ts (direct importers: 2)
+- src/main/ipc/terminal-git-credential-guard.ts (direct importers: 2)
+- src/main/ipc/terminal-preview-output-stream.ts (direct importers: 2)
+- src/main/ipc/terminal-preview.ts (direct importers: 2)
+- src/main/ipc/terminal-render-desync-evidence.ts (direct importers: 2)
+- src/main/ipc/terminal-startup-color-query-replies.ts (direct importers: 3)
+- src/main/ipc/tui-agent-detection-commands.ts (direct importers: 4)
+- src/main/ipc/ui.ts (direct importers: 13)
+- src/main/ipc/watched-worktree-catalog-notification.ts (direct importers: 4)
+- src/main/ipc/watcher-event-root-path-rewrite.ts (direct importers: 2)
+- src/main/ipc/watcher-removal-drain.ts (direct importers: 5)
+- src/main/ipc/watcher-removal-gate.ts (direct importers: 14)
+- src/main/ipc/workspace-cleanup-activity.ts (direct importers: 2)
+- src/main/ipc/workspace-cleanup-candidate.ts (direct importers: 3)
+- src/main/ipc/workspace-cleanup-disconnected-ssh.ts (direct importers: 1)
+- src/main/ipc/workspace-cleanup-folder-workspaces.ts (direct importers: 1)
+- src/main/ipc/workspace-cleanup-git-evidence.ts (direct importers: 1)
+- src/main/ipc/workspace-cleanup-git-route.ts (direct importers: 6)
+- src/main/ipc/workspace-cleanup-progress-emitter.ts (direct importers: 1)
+- src/main/ipc/workspace-cleanup-scan-eligibility.ts (direct importers: 1)
+- src/main/ipc/workspace-cleanup-scan-primitives.ts (direct importers: 5)
+- src/main/ipc/workspace-cleanup-scan-targets.ts (direct importers: 2)
+- src/main/ipc/workspace-cleanup-scan.ts (direct importers: 4)
+- src/main/ipc/workspace-cleanup-worktree-listing.ts (direct importers: 1)
+- src/main/ipc/workspace-cleanup.ts (direct importers: 3)
+- src/main/ipc/workspace-create-error-classifier.ts (direct importers: 2)
+- src/main/ipc/workspace-ports.ts (direct importers: 2)
+- src/main/ipc/workspace-space.ts (direct importers: 2)
+- src/main/ipc/worktree-apfs-clone.ts (direct importers: 1)
+- src/main/ipc/worktree-base-directory-change-collector.ts (direct importers: 3)
+- src/main/ipc/worktree-base-directory-event-filter.ts (direct importers: 15)
+- src/main/ipc/worktree-base-directory-marker-poller.ts (direct importers: 2)
+- src/main/ipc/worktree-base-directory-notifications.ts (direct importers: 3)
+- src/main/ipc/worktree-base-directory-poller.ts (direct importers: 15)
+- src/main/ipc/worktree-base-directory-watch-events.ts (direct importers: 1)
+- src/main/ipc/worktree-base-directory-watch-targets.ts (direct importers: 2)
+- src/main/ipc/worktree-base-directory-watcher.ts (direct importers: 6)
+- src/main/ipc/worktree-branch-name.ts (direct importers: 1)
+- src/main/ipc/worktree-change-invalidators.ts (direct importers: 13)
+- src/main/ipc/worktree-common-git-directory.ts (direct importers: 1)
+- src/main/ipc/worktree-display-name.ts (direct importers: 1)
+- src/main/ipc/worktree-folder-rename-target.ts (direct importers: 2)
+- src/main/ipc/worktree-git-common-entry-snapshot.ts (direct importers: 2)
+- src/main/ipc/worktree-git-common-metadata-files.ts (direct importers: 3)
+- src/main/ipc/worktree-git-common-narrow-watch.ts (direct importers: 1)
+- src/main/ipc/worktree-git-common-polling.ts (direct importers: 4)
+- src/main/ipc/worktree-git-common-primary-polling.ts (direct importers: 2)
+- src/main/ipc/worktree-git-common-primary-watch.ts (direct importers: 1)
+- src/main/ipc/worktree-git-common-snapshot-diff.ts (direct importers: 1)
+- src/main/ipc/worktree-git-common-watch-reconciliation.ts (direct importers: 1)
+- src/main/ipc/worktree-git-common-watch.ts (direct importers: 2)
+- src/main/ipc/worktree-git-status-ref-watch.ts (direct importers: 6)
+- src/main/ipc/worktree-head-identity-reader.ts (direct importers: 6)
+- src/main/ipc/worktree-head-identity-refresh.ts (direct importers: 4)
+- src/main/ipc/worktree-head-identity-scope.ts (direct importers: 11)
+- src/main/ipc/worktree-include-copy-budget.ts (direct importers: 4)
+- src/main/ipc/worktree-linked-work-item-metadata.ts (direct importers: 1)
+- src/main/ipc/worktree-logic.ts (direct importers: 49)
+- src/main/ipc/worktree-metadata-merge.ts (direct importers: 2)
+- src/main/ipc/worktree-path-comparison.ts (direct importers: 12)
+- src/main/ipc/worktree-push-target-cleanup.ts (direct importers: 12)
+- src/main/ipc/worktree-push-target-reconciliation.ts (direct importers: 3)
+- src/main/ipc/worktree-push-target-refspec-migration.ts (direct importers: 3)
+- src/main/ipc/worktree-push-target-setup.ts (direct importers: 4)
+- src/main/ipc/worktree-remote.ts (direct importers: 37)
+- src/main/ipc/worktree-symlinks.ts (direct importers: 7)
+- src/main/ipc/worktree-watcher-failure-refresh-cooldown.ts (direct importers: 2)
+- src/main/ipc/worktree-watcher-removal.ts (direct importers: 6)
+- src/main/ipc/worktrees/create/folder-workspace-creation.ts (direct importers: 1)
+- src/main/ipc/worktrees/create/register-review-base-handlers.ts (direct importers: 1)
+- src/main/ipc/worktrees/create/register-worktree-create-handlers.ts (direct importers: 1)
+- src/main/ipc/worktrees/create/register-worktree-prefetch-handler.ts (direct importers: 1)
+- src/main/ipc/worktrees/folder-workspace-model.ts (direct importers: 7)
+- src/main/ipc/worktrees/ipc-context-schemas.ts (direct importers: 13)
+- src/main/ipc/worktrees/listing/authoritative-local-worktree-metadata-pruning.ts (direct importers: 3)
+- src/main/ipc/worktrees/listing/detected-provider-listing.ts (direct importers: 9)
+- src/main/ipc/worktrees/listing/detected-worktree-scan-cache.ts (direct importers: 10)
+- src/main/ipc/worktrees/listing/folder-workspace-catalog.ts (direct importers: 3)
+- src/main/ipc/worktrees/listing/host-qualified-worktree-listing.ts (direct importers: 1)
+- src/main/ipc/worktrees/listing/overtaken-scan-rerun.ts (direct importers: 2)
+- src/main/ipc/worktrees/listing/register-detected-worktree-handlers.ts (direct importers: 2)
+- src/main/ipc/worktrees/listing/register-detected-worktree-scan-invalidation.ts (direct importers: 2)
+- src/main/ipc/worktrees/listing/register-host-catalog-handlers.ts (direct importers: 1)
+- src/main/ipc/worktrees/listing/register-sparse-checkout-cache-invalidation.ts (direct importers: 2)
+- src/main/ipc/worktrees/listing/register-worktree-catalog-handlers.ts (direct importers: 1)
+- src/main/ipc/worktrees/listing/ssh-worktree-fallback.ts (direct importers: 7)
+- src/main/ipc/worktrees/listing/worktree-discovery-metadata.ts (direct importers: 3)
+- src/main/ipc/worktrees/listing/worktree-host-ownership.ts (direct importers: 6)
+- src/main/ipc/worktrees/listing/worktree-listing-diagnostics.ts (direct importers: 3)
+- src/main/ipc/worktrees/metadata/host-lineage-listing.ts (direct importers: 2)
+- src/main/ipc/worktrees/metadata/lineage-owner-resolution.ts (direct importers: 1)
+- src/main/ipc/worktrees/metadata/register-worktree-metadata-handlers.ts (direct importers: 1)
+- src/main/ipc/worktrees/metadata/workspace-lineage-filtering.ts (direct importers: 1)
+- src/main/ipc/worktrees/removal/execute-worktree-removal.ts (direct importers: 1)
+- src/main/ipc/worktrees/removal/preserved-branch-cleanup.ts (direct importers: 6)
+- src/main/ipc/worktrees/removal/register-worktree-forget-handlers.ts (direct importers: 1)
+- src/main/ipc/worktrees/removal/register-worktree-removal-handlers.ts (direct importers: 1)
+- src/main/ipc/worktrees/removal/remove-folder-workspace.ts (direct importers: 1)
+- src/main/ipc/worktrees/removal/remove-registered-local-worktree.ts (direct importers: 1)
+- src/main/ipc/worktrees/removal/remove-registered-remote-worktree.ts (direct importers: 1)
+- src/main/ipc/worktrees/removal/remove-unregistered-worktree.ts (direct importers: 2)
+- src/main/ipc/worktrees/removal/worktree-archive-hook.ts (direct importers: 3)
+- src/main/ipc/worktrees/removal/worktree-removal-coordinator.ts (direct importers: 3)
+- src/main/ipc/worktrees/removal/worktree-removal-filesystem.ts (direct importers: 2)
+- src/main/ipc/worktrees/removal/worktree-removal-ownership.ts (direct importers: 6)
+- src/main/ipc/worktrees/repo-host-ownership.ts (direct importers: 5)
+- src/main/ipc/worktrees/worktree-ipc-context.ts (direct importers: 20)
+- src/main/ipc/worktrees.ts (direct importers: 3)
+- src/main/ipc/wsl-watcher-process-exit.ts (direct importers: 2)
+
+### TEST-KEEP (122)
+
+- src/main/ipc/agent-hooks.test.ts (direct importers: 0)
+- src/main/ipc/agent-pane-authority-ownership.test.ts (direct importers: 0)
+- src/main/ipc/app.test.ts (direct importers: 0)
+- src/main/ipc/bounded-warning-dedupe.test.ts (direct importers: 0)
+- src/main/ipc/cli.test.ts (direct importers: 0)
+- src/main/ipc/codex-config-sync.test.ts (direct importers: 0)
+- src/main/ipc/command-path-resolver.test.ts (direct importers: 0)
+- src/main/ipc/crash-reporting-renderer-breadcrumbs.test.ts (direct importers: 0)
+- src/main/ipc/crash-reporting.test.ts (direct importers: 0)
+- src/main/ipc/created-worktree-reconciliation.test.ts (direct importers: 0)
+- src/main/ipc/dashboard-payload-validation.test.ts (direct importers: 0)
+- src/main/ipc/dashboard-popout.test.ts (direct importers: 0)
+- src/main/ipc/deferred-emoji-shortcode-dataset.test.ts (direct importers: 0)
+- src/main/ipc/desktop-renderer-runtime-capabilities.test.ts (direct importers: 0)
+- src/main/ipc/developer-permissions.test.ts (direct importers: 0)
+- src/main/ipc/diagnostics.test.ts (direct importers: 0)
+- src/main/ipc/dropped-path-resolution.test.ts (direct importers: 0)
+- src/main/ipc/feedback-image-attachments.test.ts (direct importers: 0)
+- src/main/ipc/feedback.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-allowed-roots.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-auth.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-import-ssh.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-list-files.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-mutations.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-runtime-upload-staging.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-search-file-paths.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-watcher-event-batch.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-watcher-ignore.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-watcher-local-events.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-watcher-wsl.test.ts (direct importers: 0)
+- src/main/ipc/filesystem-watcher.test.ts (direct importers: 0)
+- src/main/ipc/filesystem.test.ts (direct importers: 0)
+- src/main/ipc/floating-workspace-directory.test.ts (direct importers: 0)
+- src/main/ipc/folder-repo-git-upgrade.test.ts (direct importers: 0)
+- src/main/ipc/git-status-upstream-ref-watch-request.test.ts (direct importers: 0)
+- src/main/ipc/keybindings.test.ts (direct importers: 0)
+- src/main/ipc/local-log-tail.test.ts (direct importers: 0)
+- src/main/ipc/local-worktree-runtime-options.test.ts (direct importers: 0)
+- src/main/ipc/macos-keyboard-layout-change-notifications.test.ts (direct importers: 0)
+- src/main/ipc/macos-keyboard-layout-snapshot.test.ts (direct importers: 0)
+- src/main/ipc/markdown-documents.test.ts (direct importers: 0)
+- src/main/ipc/minimax-credentials.test.ts (direct importers: 0)
+- src/main/ipc/parcel-watcher-child-launch.test.ts (direct importers: 0)
+- src/main/ipc/parcel-watcher-child-registry.test.ts (direct importers: 0)
+- src/main/ipc/parcel-watcher-crash-fuse.test.ts (direct importers: 0)
+- src/main/ipc/parcel-watcher-entry-path.test.ts (direct importers: 0)
+- src/main/ipc/parcel-watcher-event-delivery.test.ts (direct importers: 0)
+- src/main/ipc/parcel-watcher-module-loader.test.ts (direct importers: 0)
+- src/main/ipc/parcel-watcher-process-entry.test.ts (direct importers: 0)
+- src/main/ipc/parcel-watcher-process.test.ts (direct importers: 0)
+- src/main/ipc/parcel-watcher-shallow-subscription.test.ts (direct importers: 0)
+- src/main/ipc/parcel-watcher-supervisor-capacity-wait.test.ts (direct importers: 0)
+- src/main/ipc/plugin-marketplaces.test.ts (direct importers: 0)
+- src/main/ipc/preflight-command-exec.test.ts (direct importers: 0)
+- src/main/ipc/preflight-wsl-agent-detection.test.ts (direct importers: 0)
+- src/main/ipc/preflight-wsl-command.test.ts (direct importers: 0)
+- src/main/ipc/pty/configured-terminal-shell-args.test.ts (direct importers: 0)
+- src/main/ipc/pty/delivery/attached-pty-size.test.ts (direct importers: 0)
+- src/main/ipc/pty/host-env/omp-launch-environment.test.ts (direct importers: 0)
+- src/main/ipc/pty/ipc/spawn-push-target-materialization.test.ts (direct importers: 0)
+- src/main/ipc/pty/pane/launch-authority.test.ts (direct importers: 0)
+- src/main/ipc/pty/register-headless-runtime.test.ts (direct importers: 0)
+- src/main/ipc/pty/runtime/spawn-commit-pty-size.test.ts (direct importers: 0)
+- src/main/ipc/pty-hidden-delivery-gate.test.ts (direct importers: 0)
+- src/main/ipc/pty-management.test.ts (direct importers: 0)
+- src/main/ipc/pty-pending-data-drain-queue.test.ts (direct importers: 0)
+- src/main/ipc/pty-pending-projection-admissions.test.ts (direct importers: 0)
+- src/main/ipc/pty-producer-flow-control.test.ts (direct importers: 0)
+- src/main/ipc/pty-spawn-timing.test.ts (direct importers: 0)
+- src/main/ipc/readdir-error-diagnostics.test.ts (direct importers: 0)
+- src/main/ipc/register-core-handlers/register-core-handlers.test.ts (direct importers: 0)
+- src/main/ipc/remote-watcher-event-batch.test.ts (direct importers: 0)
+- src/main/ipc/renderer-lifetime-abort.test.ts (direct importers: 0)
+- src/main/ipc/renderer-shutdown-checkpoint.test.ts (direct importers: 0)
+- src/main/ipc/renderer-terminal-serializer-readiness.test.ts (direct importers: 0)
+- src/main/ipc/repos/remote-repo-registration.test.ts (direct importers: 0)
+- src/main/ipc/runtime-import-limits.test.ts (direct importers: 0)
+- src/main/ipc/runtime-watcher-pending-assignment.test.ts (direct importers: 0)
+- src/main/ipc/runtime-watcher-process-pool.test.ts (direct importers: 0)
+- src/main/ipc/runtime.test.ts (direct importers: 0)
+- src/main/ipc/settings.test.ts (direct importers: 0)
+- src/main/ipc/shallow-watch-delivery-probe.test.ts (direct importers: 0)
+- src/main/ipc/shell.test.ts (direct importers: 0)
+- src/main/ipc/skill-ipc-main-window.test.ts (direct importers: 0)
+- src/main/ipc/source-control-ai-linked-issue.test.ts (direct importers: 0)
+- src/main/ipc/telemetry.test.ts (direct importers: 0)
+- src/main/ipc/terminal-git-credential-guard.test.ts (direct importers: 0)
+- src/main/ipc/terminal-preview-output-stream.test.ts (direct importers: 0)
+- src/main/ipc/terminal-preview.test.ts (direct importers: 0)
+- src/main/ipc/terminal-render-desync-evidence.test.ts (direct importers: 0)
+- src/main/ipc/terminal-startup-color-query-replies.test.ts (direct importers: 0)
+- src/main/ipc/tui-agent-detection-commands.test.ts (direct importers: 0)
+- src/main/ipc/ui.test.ts (direct importers: 0)
+- src/main/ipc/watched-worktree-catalog-notification.test.ts (direct importers: 0)
+- src/main/ipc/watcher-event-root-path-rewrite.test.ts (direct importers: 0)
+- src/main/ipc/watcher-removal-gate.test.ts (direct importers: 0)
+- src/main/ipc/workspace-cleanup-activity.test.ts (direct importers: 0)
+- src/main/ipc/workspace-cleanup.test.ts (direct importers: 0)
+- src/main/ipc/workspace-create-error-classifier.test.ts (direct importers: 0)
+- src/main/ipc/workspace-ports.test.ts (direct importers: 0)
+- src/main/ipc/workspace-space.test.ts (direct importers: 0)
+- src/main/ipc/worktree-base-directory-change-collector.test.ts (direct importers: 0)
+- src/main/ipc/worktree-base-directory-event-filter.test.ts (direct importers: 0)
+- src/main/ipc/worktree-base-directory-poller.test.ts (direct importers: 0)
+- src/main/ipc/worktree-base-directory-watch-targets.test.ts (direct importers: 0)
+- src/main/ipc/worktree-base-directory-watcher.test.ts (direct importers: 0)
+- src/main/ipc/worktree-folder-rename-target.test.ts (direct importers: 0)
+- src/main/ipc/worktree-git-common-polling.test.ts (direct importers: 0)
+- src/main/ipc/worktree-git-common-watch.test.ts (direct importers: 0)
+- src/main/ipc/worktree-git-status-ref-watch.test.ts (direct importers: 0)
+- src/main/ipc/worktree-head-identity-reader.test.ts (direct importers: 0)
+- src/main/ipc/worktree-head-identity-refresh.test.ts (direct importers: 0)
+- src/main/ipc/worktree-include-copy-budget.test.ts (direct importers: 0)
+- src/main/ipc/worktree-logic.test.ts (direct importers: 0)
+- src/main/ipc/worktree-metadata-merge.test.ts (direct importers: 0)
+- src/main/ipc/worktree-push-target-cleanup.test.ts (direct importers: 0)
+- src/main/ipc/worktree-push-target-reconciliation.test.ts (direct importers: 0)
+- src/main/ipc/worktree-push-target-refspec-migration.test.ts (direct importers: 0)
+- src/main/ipc/worktree-push-target-setup.test.ts (direct importers: 0)
+- src/main/ipc/worktree-symlinks.test.ts (direct importers: 0)
+- src/main/ipc/worktrees/listing/register-sparse-checkout-cache-invalidation.test.ts (direct importers: 0)
+- src/main/ipc/worktrees/removal/worktree-archive-hook.test.ts (direct importers: 0)
+
+### TEST-DELETE (311)
+
+- src/main/ipc/agent-pane-retirement-ipc.test.ts
+- src/main/ipc/ai-vault-scan-coalescing.test.ts
+- src/main/ipc/ai-vault-search-all-hosts-real-index.test.ts
+- src/main/ipc/ai-vault-search-all-hosts.test.ts
+- src/main/ipc/ai-vault-search-merged-cursor.test.ts
+- src/main/ipc/ai-vault-search.test.ts
+- src/main/ipc/ai-vault.test.ts
+- src/main/ipc/automations-external-scope.test.ts
+- src/main/ipc/browser-client-page-metadata-ipc.test.ts
+- src/main/ipc/browser-preview-tool-authorization.test.ts
+- src/main/ipc/browser-session-profile-ipc.test.ts
+- src/main/ipc/browser-tab-registration-wait.test.ts
+- src/main/ipc/browser.test.ts
+- src/main/ipc/cli-appimage-stale-registration.test.ts
+- src/main/ipc/computer-use-permissions.test.ts
+- src/main/ipc/crash-reporting-renderer-error-report-attribution.test.ts
+- src/main/ipc/crash-reporting-replay-guard-wedge-burst.test.ts
+- src/main/ipc/created-worktree-root-prune.test.ts
+- src/main/ipc/doc-preview-grant-ipc.test.ts
+- src/main/ipc/emulator-stream-listener-cleanup.test.ts
+- src/main/ipc/ephemeral-vm-provision-cancel.test.ts
+- src/main/ipc/ephemeral-vm-provisioned-root-ref.test.ts
+- src/main/ipc/ephemeral-vm-runtime-handler-cleanup.test.ts
+- src/main/ipc/ephemeral-vm.test.ts
+- src/main/ipc/filesystem-branch-compare-diff.test.ts
+- src/main/ipc/filesystem-commit-message-generation.test.ts
+- src/main/ipc/filesystem-commit-message-model-discovery.test.ts
+- src/main/ipc/filesystem-conflict-operation-routing.test.ts
+- src/main/ipc/filesystem-download-transfers.test.ts
+- src/main/ipc/filesystem-git-commit-dispatch.test.ts
+- src/main/ipc/filesystem-git-status-staging.test.ts
+- src/main/ipc/filesystem-import-ssh-ops.test.ts
+- src/main/ipc/filesystem-import-ssh-path-safety.test.ts
+- src/main/ipc/filesystem-import.test.ts
+- src/main/ipc/filesystem-list-files-handler-name-filter.test.ts
+- src/main/ipc/filesystem-list-files-name-filter.test.ts
+- src/main/ipc/filesystem-markdown-document-listing.test.ts
+- src/main/ipc/filesystem-mutations-runtime-upload.test.ts
+- src/main/ipc/filesystem-path-containment-remote-enoent.test.ts
+- src/main/ipc/filesystem-path-containment-unicode-normalization.test.ts
+- src/main/ipc/filesystem-pull-request-field-generation.test.ts
+- src/main/ipc/filesystem-search-rg-timeout.test.ts
+- src/main/ipc/filesystem-watcher-canonical-root-paths.test.ts
+- src/main/ipc/filesystem-watcher-dormant-rearm.test.ts
+- src/main/ipc/filesystem-watcher-large-batch.test.ts
+- src/main/ipc/filesystem-watcher-local-unsubscribe.test.ts
+- src/main/ipc/filesystem-watcher-native-capacity.test.ts
+- src/main/ipc/filesystem-watcher-real.test.ts
+- src/main/ipc/filesystem-watcher-remote-batch.test.ts
+- src/main/ipc/filesystem-watcher-remote-cancellation.test.ts
+- src/main/ipc/filesystem-watcher-remote-capacity.test.ts
+- src/main/ipc/filesystem-watcher-remote-rearm.test.ts
+- src/main/ipc/filesystem-watcher-removal-deadline.test.ts
+- src/main/ipc/filesystem-watcher-terminal-resync.test.ts
+- src/main/ipc/filesystem-watcher-unwatchable-roots.test.ts
+- src/main/ipc/github-ipc-channel-parity.test.ts
+- src/main/ipc/github-issue-source-preference.test.ts
+- src/main/ipc/github-pr-refresh-routing.test.ts
+- src/main/ipc/github-repo-access-guards.test.ts
+- src/main/ipc/github-ssh-connection-routing.test.ts
+- src/main/ipc/github-star-telemetry.test.ts
+- src/main/ipc/github-work-item-args.test.ts
+- src/main/ipc/github-wsl-runtime-routing.test.ts
+- src/main/ipc/gitlab-repo-access.test.ts
+- src/main/ipc/gitlab.test.ts
+- src/main/ipc/hosted-review.test.ts
+- src/main/ipc/jira-cancellable-requests.test.ts
+- src/main/ipc/linear.test.ts
+- src/main/ipc/local-log-tail-lifetime.test.ts
+- src/main/ipc/local-network-connection-test.test.ts
+- src/main/ipc/mobile.test.ts
+- src/main/ipc/native-chat-subscribe-lifecycle.test.ts
+- src/main/ipc/native-chat.test.ts
+- src/main/ipc/notebook.test.ts
+- src/main/ipc/notifications-custom-sound.test.ts
+- src/main/ipc/notifications-delivery-gating.test.ts
+- src/main/ipc/notifications-message-formatting.test.ts
+- src/main/ipc/notifications-mobile-fanout.test.ts
+- src/main/ipc/notifications-permission-onboarding.test.ts
+- src/main/ipc/notifications-retention-lifecycle.test.ts
+- src/main/ipc/notifications-subject-retirement.test.ts
+- src/main/ipc/orca-profile-auth-handlers.test.ts
+- src/main/ipc/orca-profile-org-members-handlers.test.ts
+- src/main/ipc/orca-profiles-switch-persistence.test.ts
+- src/main/ipc/orca-profiles.test.ts
+- src/main/ipc/parcel-watcher-disconnect-termination.test.ts
+- src/main/ipc/parcel-watcher-event-cancellation.test.ts
+- src/main/ipc/parcel-watcher-root-path-rewrite.test.ts
+- src/main/ipc/parcel-watcher-supervisor-capacity.test.ts
+- src/main/ipc/parcel-watcher-unsubscribe-timeout.test.ts
+- src/main/ipc/pet-bundle.test.ts
+- src/main/ipc/pet.test.ts
+- src/main/ipc/plugins.test.ts
+- src/main/ipc/preflight-agent-detection-no-subprocess.test.ts
+- src/main/ipc/preflight-agent-detection.test.ts
+- src/main/ipc/preflight-agent-refresh.test.ts
+- src/main/ipc/preflight-host-cli-status.test.ts
+- src/main/ipc/preflight-remote-ssh.test.ts
+- src/main/ipc/preflight-windows-path-refresh.repro.test.ts
+- src/main/ipc/pty/daemon-late-exit.test.ts
+- src/main/ipc/pty/ipc/spawn-commit-ssh-lease-cardinality.test.ts
+- src/main/ipc/pty/ipc/spawn-options-terminal-shell-args.test.ts
+- src/main/ipc/pty/ipc/spawn-push-target-materialization-real-git.test.ts
+- src/main/ipc/pty/ipc/spawn-reattach-size-cache.test.ts
+- src/main/ipc/pty/ipc/write-input-chunk-yield.test.ts
+- src/main/ipc/pty/pane/stable-pane-absence-death-certificate.test.ts
+- src/main/ipc/pty/pane/stable-pane-relay-absence-respawn.test.ts
+- src/main/ipc/pty/pty-spawn-shell-override-parity.test.ts
+- src/main/ipc/pty/register-without-renderer.test.ts
+- src/main/ipc/pty/runtime/queried-host-kinds.test.ts
+- src/main/ipc/pty/runtime/spawn-preflight-requested-shell.test.ts
+- src/main/ipc/pty-activation-inventory-scope.test.ts
+- src/main/ipc/pty-applied-size-reporting.test.ts
+- src/main/ipc/pty-buffer-snapshot-dispatch.test.ts
+- src/main/ipc/pty-codex-account-attribution.test.ts
+- src/main/ipc/pty-controller-owner-recovery.test.ts
+- src/main/ipc/pty-controller-ownership-routing.test.ts
+- src/main/ipc/pty-controller-process-inventory.test.ts
+- src/main/ipc/pty-controller-spawn-admission.test.ts
+- src/main/ipc/pty-cumulative-ack-accounting.test.ts
+- src/main/ipc/pty-daemon-controller-teardown.test.ts
+- src/main/ipc/pty-daemon-spawn-agent-home-env.test.ts
+- src/main/ipc/pty-daemon-spawn-codex-auth.test.ts
+- src/main/ipc/pty-daemon-spawn-session-identity.test.ts
+- src/main/ipc/pty-daemon-spawn-wsl-runtime.test.ts
+- src/main/ipc/pty-daemon-ssh-lease-lifecycle.test.ts
+- src/main/ipc/pty-dead-owner-respawn.test.ts
+- src/main/ipc/pty-delivery-health-heal.test.ts
+- src/main/ipc/pty-dispatcher-handshake-osc-answers.test.ts
+- src/main/ipc/pty-encoding.test.ts
+- src/main/ipc/pty-global-renderer-credit.test.ts
+- src/main/ipc/pty-hidden-at-spawn-mark.test.ts
+- src/main/ipc/pty-ipc-hidden-delivery-gate.test.ts
+- src/main/ipc/pty-ipc-producer-flow-control.test.ts
+- src/main/ipc/pty-listener-teardown-and-orphans.test.ts
+- src/main/ipc/pty-login-shell-startup-commands.test.ts
+- src/main/ipc/pty-output-batching-drain.test.ts
+- src/main/ipc/pty-output-drain-rounds.test.ts
+- src/main/ipc/pty-pane-claim-arbitration.test.ts
+- src/main/ipc/pty-pane-materialization-race.test.ts
+- src/main/ipc/pty-pane-reservation-settlement.test.ts
+- src/main/ipc/pty-pane-restart-replace.test.ts
+- src/main/ipc/pty-pending-data-drain-queue-differential.test.ts
+- src/main/ipc/pty-pending-data-drain-scheduler-differential.test.ts
+- src/main/ipc/pty-pending-output-cap.test.ts
+- src/main/ipc/pty-persisted-incarnation-repair.test.ts
+- src/main/ipc/pty-renderer-inflight-credit.test.ts
+- src/main/ipc/pty-renderer-lifecycle-delivery-reset.test.ts
+- src/main/ipc/pty-renderer-liveness-guard.test.ts
+- src/main/ipc/pty-renderer-send-failure-recovery.test.ts
+- src/main/ipc/pty-restore-record-seeding.test.ts
+- src/main/ipc/pty-restored-appimage-cli-shim-refresh.test.ts
+- src/main/ipc/pty-runtime-hidden-at-spawn-mark.test.ts
+- src/main/ipc/pty-runtime-kill-and-exit.test.ts
+- src/main/ipc/pty-runtime-ssh-binding-persistence.test.ts
+- src/main/ipc/pty-serializer-settlement-mapping.test.ts
+- src/main/ipc/pty-session-liveness-and-ownership.test.ts
+- src/main/ipc/pty-spawn-codex-home-unavailable.test.ts
+- src/main/ipc/pty-spawn-cwd-fallback.test.ts
+- src/main/ipc/pty-spawn-env-agent-overlays.test.ts
+- src/main/ipc/pty-spawn-env-codex-home-routing.test.ts
+- src/main/ipc/pty-spawn-env-codex-resume-provenance.test.ts
+- src/main/ipc/pty-spawn-env-terminal-basics.test.ts
+- src/main/ipc/pty-spawn-pi-owner-env.test.ts
+- src/main/ipc/pty-spawn-runtime-handle-binding.test.ts
+- src/main/ipc/pty-ssh-stop-verdict.test.ts
+- src/main/ipc/pty-ssh-undelivered-kill.test.ts
+- src/main/ipc/pty-startup-barrier-and-listing.test.ts
+- src/main/ipc/pty-startup-barrier-ordering.test.ts
+- src/main/ipc/pty-startup-swap-window-presence.test.ts
+- src/main/ipc/pty-windows-shell-selection.test.ts
+- src/main/ipc/pty-write-ipc-validation.test.ts
+- src/main/ipc/pty-wsl-cwd-validation.test.ts
+- src/main/ipc/rate-limits.test.ts
+- src/main/ipc/remote-workspace-cache.test.ts
+- src/main/ipc/remote-workspace-connected-clients.test.ts
+- src/main/ipc/remote-workspace-patch-queue.test.ts
+- src/main/ipc/remote-workspace-snapshot-normalization.test.ts
+- src/main/ipc/remote-workspace-stale-resync.test.ts
+- src/main/ipc/remote-workspace.test.ts
+- src/main/ipc/repos/repo-creation-git-availability.test.ts
+- src/main/ipc/repos-add-linked-worktree.test.ts
+- src/main/ipc/repos-create.test.ts
+- src/main/ipc/repos-execution-host-catalog.test.ts
+- src/main/ipc/repos-local-add-and-project-setup.test.ts
+- src/main/ipc/repos-local-clone-lifecycle.test.ts
+- src/main/ipc/repos-nested-import.test.ts
+- src/main/ipc/repos-nested-scan.test.ts
+- src/main/ipc/repos-picker.test.ts
+- src/main/ipc/repos-remote-base-ref-queries.test.ts
+- src/main/ipc/repos-remote-client-events.test.ts
+- src/main/ipc/repos-remote-git-username.test.ts
+- src/main/ipc/repos-remote.test.ts
+- src/main/ipc/repos-sparse-presets.test.ts
+- src/main/ipc/runtime-agent-launch-capability.test.ts
+- src/main/ipc/runtime-environment-browser-client-host-handler.test.ts
+- src/main/ipc/runtime-environment-capability-evidence.test.ts
+- src/main/ipc/runtime-environment-cli-removal-routing.test.ts
+- src/main/ipc/runtime-environment-diagnostics-broadcast.test.ts
+- src/main/ipc/runtime-environment-federated-read-routing.test.ts
+- src/main/ipc/runtime-environment-federated-read-transport.bench.test.ts
+- src/main/ipc/runtime-environment-removal-storage.test.ts
+- src/main/ipc/runtime-environment-request-connections.test.ts
+- src/main/ipc/runtime-environment-revision-guard.test.ts
+- src/main/ipc/runtime-environment-status-connection.test.ts
+- src/main/ipc/runtime-environment-status-recovery.test.ts
+- src/main/ipc/runtime-environment-support-routing.test.ts
+- src/main/ipc/runtime-environment-transport-generation.test.ts
+- src/main/ipc/runtime-environment-transport-routing-tailscale-hint.test.ts
+- src/main/ipc/runtime-environments-call-routing.test.ts
+- src/main/ipc/runtime-environments-capability-cache.test.ts
+- src/main/ipc/runtime-environments-pairing.test.ts
+- src/main/ipc/runtime-environments-status-diagnostics.test.ts
+- src/main/ipc/runtime-environments-subscription-lifecycle.test.ts
+- src/main/ipc/runtime-environments-subscription-routing.test.ts
+- src/main/ipc/runtime-environments-subscription-teardown.test.ts
+- src/main/ipc/runtime-subscribe-lifecycle.test.ts
+- src/main/ipc/runtime-upload-file-stream.test.ts
+- src/main/ipc/runtime-upload-slice-boundaries.test.ts
+- src/main/ipc/runtime-upload-temp-sweep.test.ts
+- src/main/ipc/skill-cloud-install-ipc-schemas.test.ts
+- src/main/ipc/skill-cloud-ipc-handlers.test.ts
+- src/main/ipc/skill-install-management-ipc-handlers.test.ts
+- src/main/ipc/skill-install-progress-ipc.test.ts
+- src/main/ipc/skills.test.ts
+- src/main/ipc/speech.test.ts
+- src/main/ipc/ssh-active-relay-sessions.test.ts
+- src/main/ipc/ssh-app-shutdown.test.ts
+- src/main/ipc/ssh-browse.test.ts
+- src/main/ipc/ssh-disconnect-cancellation.test.ts
+- src/main/ipc/ssh-handler-reregistration.test.ts
+- src/main/ipc/ssh-host-partition-session-export.test.ts
+- src/main/ipc/ssh-passphrase.test.ts
+- src/main/ipc/ssh-pty-closed-generation-ranges.test.ts
+- src/main/ipc/ssh-pty-consumer-identity.test.ts
+- src/main/ipc/ssh-pty-legacy-projection.test.ts
+- src/main/ipc/ssh-pty-model-admission-generation-scope.test.ts
+- src/main/ipc/ssh-pty-model-admission.test.ts
+- src/main/ipc/ssh-pty-output-exit-deadline.test.ts
+- src/main/ipc/ssh-pty-output-generation-guard.test.ts
+- src/main/ipc/ssh-pty-output-intake.test.ts
+- src/main/ipc/ssh-pty-output-model-migration.test.ts
+- src/main/ipc/ssh-pty-remote-source-range-consumers.test.ts
+- src/main/ipc/ssh-pty-source-ack-coalescer.test.ts
+- src/main/ipc/ssh-pty-source-ack-session-contract.test.ts
+- src/main/ipc/ssh-pty-source-obligation-coordinator.test.ts
+- src/main/ipc/ssh-pty-source-obligation-ledger.test.ts
+- src/main/ipc/ssh-relay-reset-resume.test.ts
+- src/main/ipc/ssh-state-broadcast-fanout.test.ts
+- src/main/ipc/ssh-target-registry.test.ts
+- src/main/ipc/ssh-terminate-sessions.test.ts
+- src/main/ipc/ssh.test.ts
+- src/main/ipc/usage-provider-handlers.test.ts
+- src/main/ipc/workspace-cleanup-broad-scan.test.ts
+- src/main/ipc/workspace-cleanup-execution-host-routing.test.ts
+- src/main/ipc/workspace-cleanup-local-git-routing.test.ts
+- src/main/ipc/workspace-cleanup-snapshot-ipc.test.ts
+- src/main/ipc/worktree-base-directory-poller-marker-fanout.test.ts
+- src/main/ipc/worktree-create-lineage.test.ts
+- src/main/ipc/worktree-head-identity-reader-concurrency.test.ts
+- src/main/ipc/worktree-head-identity-reader-incremental.test.ts
+- src/main/ipc/worktree-logic-created-agent.test.ts
+- src/main/ipc/worktree-logic-wsl.test.ts
+- src/main/ipc/worktree-path-deduplication.test.ts
+- src/main/ipc/worktree-push-target-reconciliation-real-git.test.ts
+- src/main/ipc/worktree-push-target-refspec-real-git.test.ts
+- src/main/ipc/worktree-push-target-remote-scan.test.ts
+- src/main/ipc/worktree-remote-push-target-materialization.test.ts
+- src/main/ipc/worktree-remote-ssh-branch-conflict.test.ts
+- src/main/ipc/worktree-symlink-reconciliation.real.test.ts
+- src/main/ipc/worktree-watcher-removal-binding.test.ts
+- src/main/ipc/worktrees/listing/detected-provider-listing-catalog-version.test.ts
+- src/main/ipc/worktrees/listing/detected-provider-listing-meta-index.test.ts
+- src/main/ipc/worktrees/listing/detected-provider-listing-overtaken-scan.test.ts
+- src/main/ipc/worktrees/listing/detected-scan-failure-authority.test.ts
+- src/main/ipc/worktrees/listing/detected-worktree-classification.test.ts
+- src/main/ipc/worktrees/listing/detected-worktree-scan-hygiene-gate.test.ts
+- src/main/ipc/worktrees/listing/detected-worktree-scan-superseded.test.ts
+- src/main/ipc/worktrees/removal/remove-unregistered-worktree-host-home.test.ts
+- src/main/ipc/worktrees-authoritative-local-metadata-pruning.test.ts
+- src/main/ipc/worktrees-create-execution-host-routing.test.ts
+- src/main/ipc/worktrees-create-metadata-persistence.test.ts
+- src/main/ipc/worktrees-delete-pty-teardown.test.ts
+- src/main/ipc/worktrees-detected-scan-cache.test.ts
+- src/main/ipc/worktrees-discovery-metadata-backfill.test.ts
+- src/main/ipc/worktrees-existing-branch-checkout.test.ts
+- src/main/ipc/worktrees-forget-local.test.ts
+- src/main/ipc/worktrees-issue-command-overrides.test.ts
+- src/main/ipc/worktrees-lineage-hydration.test.ts
+- src/main/ipc/worktrees-listing-fallback-rows.test.ts
+- src/main/ipc/worktrees-local-base-ref-resolution.test.ts
+- src/main/ipc/worktrees-local-create-flow.test.ts
+- src/main/ipc/worktrees-mutation-scan-generation-order.test.ts
+- src/main/ipc/worktrees-orphan-directory-cleanup.test.ts
+- src/main/ipc/worktrees-preserved-branch-fork-remote.test.ts
+- src/main/ipc/worktrees-removal-recovery.test.ts
+- src/main/ipc/worktrees-remove-archive-hooks.test.ts
+- src/main/ipc/worktrees-remove-host-disambiguation.test.ts
+- src/main/ipc/worktrees-remove-preflight.test.ts
+- src/main/ipc/worktrees-setup-launch-sparse-checkout.test.ts
+- src/main/ipc/worktrees-ssh-base-ref-resolution.test.ts
+- src/main/ipc/worktrees-ssh-branch-conflict-suffixing.test.ts
+- src/main/ipc/worktrees-ssh-create-base-prefetch.test.ts
+- src/main/ipc/worktrees-ssh-fork-push-target-remote.test.ts
+- src/main/ipc/worktrees-ssh-local-base-refresh.test.ts
+- src/main/ipc/worktrees-ssh-pr-head-fetch.test.ts
+- src/main/ipc/worktrees-ssh-provider-authority.test.ts
+- src/main/ipc/worktrees-ssh-repo-owner-resolution.test.ts
+- src/main/ipc/worktrees-ssh-setup-launch.test.ts
+- src/main/ipc/worktrees-windows.test.ts
+- src/main/ipc/worktrees-wsl-runtime-routing.test.ts
+
+### DELETE (200)
+
+- src/main/ipc/ai-vault-all-host-timeouts.ts
+- src/main/ipc/ai-vault-delete.ts
+- src/main/ipc/ai-vault-host-discovery.ts
+- src/main/ipc/ai-vault-host-leg-cache.ts
+- src/main/ipc/ai-vault-resume.ts
+- src/main/ipc/ai-vault-runtime-scan.ts
+- src/main/ipc/ai-vault-search-all-hosts.ts
+- src/main/ipc/ai-vault-search-merged-cursor.ts
+- src/main/ipc/ai-vault-search.ts
+- src/main/ipc/ai-vault-session-title-routing.ts
+- src/main/ipc/ai-vault-subagent-list.ts
+- src/main/ipc/ai-vault.ts
+- src/main/ipc/automations.ts
+- src/main/ipc/browser-grab-ipc.ts
+- src/main/ipc/browser-guest-view-ipc.ts
+- src/main/ipc/browser-renderer-trust.ts
+- src/main/ipc/browser-session-profile-ipc.ts
+- src/main/ipc/browser-tab-registration-wait.ts
+- src/main/ipc/browser.ts
+- src/main/ipc/claude-accounts.ts
+- src/main/ipc/codex-accounts.ts
+- src/main/ipc/codex-pending-login-url-broadcast.ts
+- src/main/ipc/computer-use-permissions.ts
+- src/main/ipc/doc-preview-grant-ipc.ts
+- src/main/ipc/emulator-frame-stream.ts
+- src/main/ipc/emulator-video-stream.ts
+- src/main/ipc/ephemeral-vm-recipe-context.ts
+- src/main/ipc/ephemeral-vm-runtime-handlers.ts
+- src/main/ipc/ephemeral-vm.ts
+- src/main/ipc/filesystem-test-harness.ts
+- src/main/ipc/github-account-handlers.ts
+- src/main/ipc/github-ipc-module-mocks.ts
+- src/main/ipc/github-ipc-test-harness.ts
+- src/main/ipc/github-issue-mutation-handlers.ts
+- src/main/ipc/github-pr-mutation-handlers.ts
+- src/main/ipc/github-pr-read-handlers.ts
+- src/main/ipc/github-pr-refresh-handlers.ts
+- src/main/ipc/github-pr-review-handlers.ts
+- src/main/ipc/github-project-view-handlers.ts
+- src/main/ipc/github-repo-routing.ts
+- src/main/ipc/github-work-item-args.ts
+- src/main/ipc/github-work-item-handlers.ts
+- src/main/ipc/github-work-item-mutation-events.ts
+- src/main/ipc/github.ts
+- src/main/ipc/gitlab-ci-job-handlers.ts
+- src/main/ipc/gitlab-issue-handlers.ts
+- src/main/ipc/gitlab-merge-request-mutation-handlers.ts
+- src/main/ipc/gitlab-merge-request-query-handlers.ts
+- src/main/ipc/gitlab-repo-access.ts
+- src/main/ipc/gitlab-work-item-handlers.ts
+- src/main/ipc/gitlab.ts
+- src/main/ipc/hosted-review.ts
+- src/main/ipc/jira-cancellable-requests.ts
+- src/main/ipc/jira.ts
+- src/main/ipc/linear-custom-view-handlers.ts
+- src/main/ipc/linear-ipc-args.ts
+- src/main/ipc/linear-issue-handlers.ts
+- src/main/ipc/linear-project-handlers.ts
+- src/main/ipc/linear-team-handlers.ts
+- src/main/ipc/linear.ts
+- src/main/ipc/local-network-connection-test.ts
+- src/main/ipc/mobile.ts
+- src/main/ipc/native-chat.ts
+- src/main/ipc/notebook.ts
+- src/main/ipc/notifications-test-harness.ts
+- src/main/ipc/orca-profile-auth-status-broadcast.ts
+- src/main/ipc/orca-profile-org-members-handlers.ts
+- src/main/ipc/orca-profile-project-transfer-args.ts
+- src/main/ipc/orca-profiles.ts
+- src/main/ipc/parcel-watcher-process-test-child.ts
+- src/main/ipc/pet-bundle-import.ts
+- src/main/ipc/pet-bundle-manifest-schema.ts
+- src/main/ipc/pet-bundle-sprite-metadata.ts
+- src/main/ipc/pet-bundle-spritesheet-source.ts
+- src/main/ipc/pet-bundle.ts
+- src/main/ipc/pet-image-formats.ts
+- src/main/ipc/pet-import-size-limits.ts
+- src/main/ipc/pet-storage-paths.ts
+- src/main/ipc/pet-symlink-safe-copy.ts
+- src/main/ipc/pet.ts
+- src/main/ipc/plugins.ts
+- src/main/ipc/preflight-test-harness.ts
+- src/main/ipc/pty/daemon-late-exit-test-fixture.ts
+- src/main/ipc/pty-ipc-daemon-provider-fixtures.ts
+- src/main/ipc/pty-ipc-listener-accessors.ts
+- src/main/ipc/pty-ipc-mock-registry.ts
+- src/main/ipc/pty-ipc-process-env-scope.ts
+- src/main/ipc/pty-ipc-provider-fixtures.ts
+- src/main/ipc/pty-ipc-spawn-drivers.ts
+- src/main/ipc/pty-ipc-suite-environment.ts
+- src/main/ipc/pty-ipc-test-constants.ts
+- src/main/ipc/pty-ipc-test-harness.ts
+- src/main/ipc/pty-ipc-test-surface.ts
+- src/main/ipc/rate-limits.ts
+- src/main/ipc/remote-workspace-client-identity.ts
+- src/main/ipc/remote-workspace-connected-clients.ts
+- src/main/ipc/remote-workspace-events.ts
+- src/main/ipc/remote-workspace-namespace.ts
+- src/main/ipc/remote-workspace-patch-queue.ts
+- src/main/ipc/remote-workspace-relay-sync.ts
+- src/main/ipc/remote-workspace-snapshot-cache.ts
+- src/main/ipc/remote-workspace-snapshot-normalization.ts
+- src/main/ipc/remote-workspace-stale-resync.ts
+- src/main/ipc/remote-workspace-target-session-export.ts
+- src/main/ipc/remote-workspace.ts
+- src/main/ipc/repos-remote-test-harness.ts
+- src/main/ipc/runtime-environment-abortable-requests.ts
+- src/main/ipc/runtime-environment-browser-client-host-handler.ts
+- src/main/ipc/runtime-environment-call-queue.ts
+- src/main/ipc/runtime-environment-capability-evidence.ts
+- src/main/ipc/runtime-environment-connectivity-handlers.ts
+- src/main/ipc/runtime-environment-diagnostics-broadcast.ts
+- src/main/ipc/runtime-environment-handler-channels.ts
+- src/main/ipc/runtime-environment-manual-disconnect.ts
+- src/main/ipc/runtime-environment-pairing-verification.ts
+- src/main/ipc/runtime-environment-recovery-handler.ts
+- src/main/ipc/runtime-environment-request-connections.ts
+- src/main/ipc/runtime-environment-revision-guard.ts
+- src/main/ipc/runtime-environment-shared-control-support.ts
+- src/main/ipc/runtime-environment-status-diagnostics.ts
+- src/main/ipc/runtime-environment-status-owner.ts
+- src/main/ipc/runtime-environment-support-routing.ts
+- src/main/ipc/runtime-environment-tailscale-response.ts
+- src/main/ipc/runtime-environment-transport-generation.ts
+- src/main/ipc/runtime-environment-transport-routing.ts
+- src/main/ipc/runtime-environment-usage-record.ts
+- src/main/ipc/runtime-environments-ipc-test-harness.ts
+- src/main/ipc/runtime-environments.ts
+- src/main/ipc/runtime-upload-file-stream.ts
+- src/main/ipc/runtime-upload-temp-sweep.ts
+- src/main/ipc/skill-cloud-install-ipc-schemas.ts
+- src/main/ipc/skill-cloud-ipc-handlers.ts
+- src/main/ipc/skill-install-management-ipc-handlers.ts
+- src/main/ipc/skill-install-progress-ipc.ts
+- src/main/ipc/skill-share-publishing-ipc-schemas.ts
+- src/main/ipc/skills.ts
+- src/main/ipc/speech.ts
+- src/main/ipc/ssh-active-relay-sessions.ts
+- src/main/ipc/ssh-advertised-url-refresh.ts
+- src/main/ipc/ssh-browse.ts
+- src/main/ipc/ssh-connect-attempt-registry.ts
+- src/main/ipc/ssh-connect-flow.ts
+- src/main/ipc/ssh-connection-handlers.ts
+- src/main/ipc/ssh-connection-state-callbacks.ts
+- src/main/ipc/ssh-host-sleep-reconnect.ts
+- src/main/ipc/ssh-ipc-context.ts
+- src/main/ipc/ssh-ipc-mock-shapes.ts
+- src/main/ipc/ssh-ipc-module-mocks.ts
+- src/main/ipc/ssh-ipc-test-harness.ts
+- src/main/ipc/ssh-passphrase.ts
+- src/main/ipc/ssh-port-forward-handlers.ts
+- src/main/ipc/ssh-port-forward-persistence.ts
+- src/main/ipc/ssh-pty-closed-generation-ranges.ts
+- src/main/ipc/ssh-pty-legacy-projection-publication.ts
+- src/main/ipc/ssh-pty-legacy-projection-record.ts
+- src/main/ipc/ssh-pty-legacy-projection.ts
+- src/main/ipc/ssh-pty-model-admission-contract.ts
+- src/main/ipc/ssh-pty-model-admission-entry.ts
+- src/main/ipc/ssh-pty-model-admission-limits.ts
+- src/main/ipc/ssh-pty-model-admission-migration.ts
+- src/main/ipc/ssh-pty-model-admission-pressure.ts
+- src/main/ipc/ssh-pty-model-admission-snapshot.ts
+- src/main/ipc/ssh-pty-model-admission.ts
+- src/main/ipc/ssh-pty-output-exit-deadline.ts
+- src/main/ipc/ssh-pty-output-exit.ts
+- src/main/ipc/ssh-pty-output-generation-guard.ts
+- src/main/ipc/ssh-pty-output-intake-contract.ts
+- src/main/ipc/ssh-pty-output-intake-registry.ts
+- src/main/ipc/ssh-pty-output-intake-test-harness.ts
+- src/main/ipc/ssh-pty-output-intake-validation.ts
+- src/main/ipc/ssh-pty-output-intake.ts
+- src/main/ipc/ssh-pty-output-model-migration.ts
+- src/main/ipc/ssh-pty-output-source-obligations.ts
+- src/main/ipc/ssh-pty-projection-terminality.ts
+- src/main/ipc/ssh-pty-remote-source-range-consumers.ts
+- src/main/ipc/ssh-pty-remote-source-range-replacement.ts
+- src/main/ipc/ssh-pty-source-ack-coalescer.ts
+- src/main/ipc/ssh-pty-source-ack-publication.ts
+- src/main/ipc/ssh-pty-source-obligation-contract.ts
+- src/main/ipc/ssh-pty-source-obligation-coordinator.ts
+- src/main/ipc/ssh-pty-source-obligation-ledger.ts
+- src/main/ipc/ssh-pty-source-obligation-state.ts
+- src/main/ipc/ssh-pty-source-obligation-transitions.ts
+- src/main/ipc/ssh-relay-lost-backoff.ts
+- src/main/ipc/ssh-relay-session-callbacks.ts
+- src/main/ipc/ssh-renderer-broadcast.ts
+- src/main/ipc/ssh-session-teardown.ts
+- src/main/ipc/ssh-shutdown-drain.ts
+- src/main/ipc/ssh-target-crud-handlers.ts
+- src/main/ipc/ssh-target-lifecycle-queue.ts
+- src/main/ipc/ssh-worktree-create-root-registration.ts
+- src/main/ipc/ssh.ts
+- src/main/ipc/usage-provider-handlers.ts
+- src/main/ipc/watcher-aliased-root-fixture.ts
+- src/main/ipc/worktrees-test-fixtures.ts
+- src/main/ipc/worktrees-test-harness.ts
+- src/main/ipc/worktrees-test-ipc-surface.ts
+- src/main/ipc/worktrees-test-metadata-pruning-store.ts
+- src/main/ipc/worktrees-test-module-mocks.ts
+- src/main/ipc/worktrees-test-runtime-stub.ts
+
+## T6 src/main/providers (210 文件)
+
+### KEEP (70)
+
+- src/main/providers/agent-foreground-context-paths.ts (direct importers: 2)
+- src/main/providers/agent-foreground-process-batch.ts (direct importers: 5)
+- src/main/providers/agent-foreground-process-remote-evidence.ts (direct importers: 1)
+- src/main/providers/agent-foreground-process.ts (direct importers: 13)
+- src/main/providers/execution-host-provider-dispatch.ts (direct importers: 22)
+- src/main/providers/filesystem-provider-contract.ts (direct importers: 3)
+- src/main/providers/git-provider-contract.ts (direct importers: 1)
+- src/main/providers/git-provider-status-options.ts (direct importers: 1)
+- src/main/providers/local-pty-finalize-environment.ts (direct importers: 1)
+- src/main/providers/local-pty-foreground-inspection.ts (direct importers: 5)
+- src/main/providers/local-pty-launch-helpers.ts (direct importers: 7)
+- src/main/providers/local-pty-launch-plan.ts (direct importers: 8)
+- src/main/providers/local-pty-provider-state.ts (direct importers: 14)
+- src/main/providers/local-pty-provider-types.ts (direct importers: 7)
+- src/main/providers/local-pty-provider.ts (direct importers: 29)
+- src/main/providers/local-pty-runtime-spawn.ts (direct importers: 1)
+- src/main/providers/local-pty-session-activation.ts (direct importers: 1)
+- src/main/providers/local-pty-session-operations.ts (direct importers: 2)
+- src/main/providers/local-pty-shell-readiness-session.ts (direct importers: 1)
+- src/main/providers/local-pty-shell-ready-bash-rcfile.ts (direct importers: 3)
+- src/main/providers/local-pty-shell-ready-marker.ts (direct importers: 3)
+- src/main/providers/local-pty-shell-ready-startup-command.ts (direct importers: 3)
+- src/main/providers/local-pty-shell-ready-wrapper-fileset.ts (direct importers: 4)
+- src/main/providers/local-pty-shell-ready-wrapper-generation.ts (direct importers: 4)
+- src/main/providers/local-pty-shell-ready-wrapper-root.ts (direct importers: 11)
+- src/main/providers/local-pty-shell-ready.ts (direct importers: 10)
+- src/main/providers/local-pty-spawn-environment.ts (direct importers: 2)
+- src/main/providers/local-pty-spawn-state.ts (direct importers: 4)
+- src/main/providers/local-pty-spawn.ts (direct importers: 2)
+- src/main/providers/local-pty-termination.ts (direct importers: 3)
+- src/main/providers/local-pty-utils.ts (direct importers: 20)
+- src/main/providers/local-pty-windows-spawn-environment.ts (direct importers: 1)
+- src/main/providers/macos-login-session-pty-probe.ts (direct importers: 3)
+- src/main/providers/macos-tcc-login-shell.ts (direct importers: 17)
+- src/main/providers/posix-pane-foreground-fingerprint.ts (direct importers: 4)
+- src/main/providers/process-cwd.ts (direct importers: 3)
+- src/main/providers/pty-default-cwd.ts (direct importers: 7)
+- src/main/providers/pty-path-safety.ts (direct importers: 3)
+- src/main/providers/pty-process-info.ts (direct importers: 8)
+- src/main/providers/pty-process-inspection.ts (direct importers: 15)
+- src/main/providers/pty-process-list-admission.ts (direct importers: 3)
+- src/main/providers/pty-provider-contract.ts (direct importers: 6)
+- src/main/providers/pty-provider-events.ts (direct importers: 1)
+- src/main/providers/pty-spawn-result.ts (direct importers: 4)
+- src/main/providers/pty-write-unavailable-error.ts (direct importers: 5)
+- src/main/providers/ssh-filesystem-dispatch.ts (direct importers: 75)
+- src/main/providers/ssh-git-dispatch.ts (direct importers: 84)
+- src/main/providers/ssh-git-noninteractive-provider.ts (direct importers: 1)
+- src/main/providers/ssh-git-provider.ts (direct importers: 37)
+- src/main/providers/ssh-git-read-provider.ts (direct importers: 1)
+- src/main/providers/ssh-git-relay-errors.ts (direct importers: 4)
+- src/main/providers/ssh-git-remote-sync-provider.ts (direct importers: 1)
+- src/main/providers/ssh-git-review-head-provider.ts (direct importers: 1)
+- src/main/providers/ssh-git-working-tree-provider.ts (direct importers: 1)
+- src/main/providers/ssh-git-worktree-provider.ts (direct importers: 1)
+- src/main/providers/ssh-pty-errors.ts (direct importers: 20)
+- src/main/providers/ssh-pty-id.ts (direct importers: 16)
+- src/main/providers/stable-foreground-process.ts (direct importers: 2)
+- src/main/providers/types.ts (direct importers: 155)
+- src/main/providers/windows-agent-foreground-process.ts (direct importers: 1)
+- src/main/providers/windows-cached-agent-revalidation.ts (direct importers: 3)
+- src/main/providers/windows-console-attached-processes.ts (direct importers: 3)
+- src/main/providers/windows-foreground-process-rows.ts (direct importers: 7)
+- src/main/providers/windows-powershell-executable.ts (direct importers: 3)
+- src/main/providers/windows-powershell.ts (direct importers: 4)
+- src/main/providers/windows-pty-job-membership.ts (direct importers: 8)
+- src/main/providers/windows-shell-alone-in-job.ts (direct importers: 1)
+- src/main/providers/windows-shell-args.ts (direct importers: 12)
+- src/main/providers/windows-shell-fallback-chain.ts (direct importers: 4)
+- src/main/providers/working-directory-validation.ts (direct importers: 5)
+
+### TEST-KEEP (26)
+
+- src/main/providers/agent-foreground-process-batch.test.ts (direct importers: 0)
+- src/main/providers/agent-foreground-process-remote-evidence.test.ts (direct importers: 0)
+- src/main/providers/agent-foreground-process.test.ts (direct importers: 0)
+- src/main/providers/execution-host-provider-dispatch.test.ts (direct importers: 0)
+- src/main/providers/local-pty-shell-ready-startup-command.test.ts (direct importers: 0)
+- src/main/providers/local-pty-shell-ready-wrapper-generation.test.ts (direct importers: 0)
+- src/main/providers/local-pty-utils.test.ts (direct importers: 0)
+- src/main/providers/macos-login-session-pty-probe.test.ts (direct importers: 0)
+- src/main/providers/macos-tcc-login-shell.test.ts (direct importers: 0)
+- src/main/providers/posix-pane-foreground-fingerprint.test.ts (direct importers: 0)
+- src/main/providers/process-cwd.test.ts (direct importers: 0)
+- src/main/providers/pty-default-cwd.test.ts (direct importers: 0)
+- src/main/providers/pty-process-inspection.test.ts (direct importers: 0)
+- src/main/providers/pty-process-list-admission.test.ts (direct importers: 0)
+- src/main/providers/ssh-filesystem-dispatch.test.ts (direct importers: 0)
+- src/main/providers/ssh-git-dispatch.test.ts (direct importers: 0)
+- src/main/providers/stable-foreground-process.test.ts (direct importers: 0)
+- src/main/providers/windows-cached-agent-revalidation.test.ts (direct importers: 0)
+- src/main/providers/windows-console-attached-processes.test.ts (direct importers: 0)
+- src/main/providers/windows-foreground-process-rows.test.ts (direct importers: 0)
+- src/main/providers/windows-powershell-executable.test.ts (direct importers: 0)
+- src/main/providers/windows-powershell.test.ts (direct importers: 0)
+- src/main/providers/windows-pty-job-membership.test.ts (direct importers: 0)
+- src/main/providers/windows-shell-args.test.ts (direct importers: 0)
+- src/main/providers/windows-shell-fallback-chain.test.ts (direct importers: 0)
+- src/main/providers/working-directory-validation.test.ts (direct importers: 0)
+
+### TEST-DELETE (77)
+
+- src/main/providers/__tests__/shell-ready-framework-example.test.ts
+- src/main/providers/agent-foreground-process-git-bash-launcher.test.ts
+- src/main/providers/agent-foreground-process-git-bash.win32.test.ts
+- src/main/providers/agent-foreground-process-pi.test.ts
+- src/main/providers/agent-foreground-process-ps-scan-volume.test.ts
+- src/main/providers/agent-foreground-process-real-rows.test.ts
+- src/main/providers/agent-foreground-process-shell-path.test.ts
+- src/main/providers/agent-foreground-process-windows-job-rejection.test.ts
+- src/main/providers/agent-foreground-process-wsl-shell-proof.test.ts
+- src/main/providers/local-pty-bun-artifact.integration.test.ts
+- src/main/providers/local-pty-bun-posix-inspection.test.ts
+- src/main/providers/local-pty-bun-windows-identity.test.ts
+- src/main/providers/local-pty-child-process-verdict.test.ts
+- src/main/providers/local-pty-default-shell.test.ts
+- src/main/providers/local-pty-foreground-inspection-cheap-tier.test.ts
+- src/main/providers/local-pty-pending-native-spawn.test.ts
+- src/main/providers/local-pty-pi-owner-env.test.ts
+- src/main/providers/local-pty-provider-foreground-process.test.ts
+- src/main/providers/local-pty-provider-io-events.test.ts
+- src/main/providers/local-pty-provider-session-inventory.test.ts
+- src/main/providers/local-pty-provider-shell-readiness.test.ts
+- src/main/providers/local-pty-provider-shutdown.test.ts
+- src/main/providers/local-pty-provider-spawn-cwd-safety.test.ts
+- src/main/providers/local-pty-provider-spawn-env.test.ts
+- src/main/providers/local-pty-provider-spawn-session.test.ts
+- src/main/providers/local-pty-provider-windows-shell-launch.test.ts
+- src/main/providers/local-pty-shell-ready-marker-scan.test.ts
+- src/main/providers/local-pty-shell-ready-zsh-launch-environment.test.ts
+- src/main/providers/local-pty-shell-startup-command.node-pty.test.ts
+- src/main/providers/local-pty-utils-windows-fallback.test.ts
+- src/main/providers/provider-dispatch.test.ts
+- src/main/providers/pty-repaint-wide-char-buffer.node-pty.test.ts
+- src/main/providers/settled-pty-writer-census.test.ts
+- src/main/providers/ssh-filesystem-doc-preview.test.ts
+- src/main/providers/ssh-filesystem-download.test.ts
+- src/main/providers/ssh-filesystem-provider-capabilities.test.ts
+- src/main/providers/ssh-filesystem-provider-download-folder.test.ts
+- src/main/providers/ssh-filesystem-provider-range.test.ts
+- src/main/providers/ssh-filesystem-provider-stream.test.ts
+- src/main/providers/ssh-filesystem-provider-watch-waiters.test.ts
+- src/main/providers/ssh-filesystem-provider.test.ts
+- src/main/providers/ssh-filesystem-watch-notifications.test.ts
+- src/main/providers/ssh-git-provider-api.test.ts
+- src/main/providers/ssh-git-provider-commit-message.test.ts
+- src/main/providers/ssh-git-provider-diff.test.ts
+- src/main/providers/ssh-git-provider-exec.test.ts
+- src/main/providers/ssh-git-provider-merge.test.ts
+- src/main/providers/ssh-git-provider-remote-sync.test.ts
+- src/main/providers/ssh-git-provider-staging.test.ts
+- src/main/providers/ssh-git-provider-status-lease.test.ts
+- src/main/providers/ssh-git-provider-status.test.ts
+- src/main/providers/ssh-git-provider-upstream-lease.test.ts
+- src/main/providers/ssh-git-provider-worktree.test.ts
+- src/main/providers/ssh-git-worktree-list-dedupe.test.ts
+- src/main/providers/ssh-pty-inspect-observation-identity.test.ts
+- src/main/providers/ssh-pty-live-source-restore-respawn.test.ts
+- src/main/providers/ssh-pty-notification-rejection-routing.test.ts
+- src/main/providers/ssh-pty-notification-routing.test.ts
+- src/main/providers/ssh-pty-provider-agent-session-create-operation.test.ts
+- src/main/providers/ssh-pty-provider-claim-incarnation.test.ts
+- src/main/providers/ssh-pty-provider-exit-race.test.ts
+- src/main/providers/ssh-pty-provider-process-events.test.ts
+- src/main/providers/ssh-pty-provider-reattach-incarnation.test.ts
+- src/main/providers/ssh-pty-provider-spawn.test.ts
+- src/main/providers/ssh-pty-provider-terminal-repair.test.ts
+- src/main/providers/ssh-pty-provider.test.ts
+- src/main/providers/ssh-pty-reattach-absence-discrimination.test.ts
+- src/main/providers/ssh-pty-relay-absence-verdict.test.ts
+- src/main/providers/ssh-pty-source-delivery-ledger.test.ts
+- src/main/providers/ssh-pty-write.test.ts
+- src/main/providers/ssh-worktree-catalog-authority.test.ts
+- src/main/providers/terminal-path-existence-batch.integration.test.ts
+- src/main/providers/windows-agent-foreground-process-scan-volume.test.ts
+- src/main/providers/windows-conpty-wide-char-duplication.node-pty.test.ts
+- src/main/providers/windows-foreground-process-inspection-cost.test.ts
+- src/main/providers/windows-shell-preflight-runtime.windows.test.ts
+- src/main/providers/working-directory-validation-retention.test.ts
+
+### DELETE (37)
+
+- src/main/providers/__tests__/shell-ready-framework/shell-script-test.ts
+- src/main/providers/local-pty-provider-test-harness.ts
+- src/main/providers/local-pty-shell-ready-test-harness.ts
+- src/main/providers/settled-pty-write-stub.ts
+- src/main/providers/ssh-agent-session-capabilities.ts
+- src/main/providers/ssh-agent-session-claim-validation.ts
+- src/main/providers/ssh-agent-session-create-operation.ts
+- src/main/providers/ssh-agent-session-process-list.ts
+- src/main/providers/ssh-capability-probe-waiter.ts
+- src/main/providers/ssh-filesystem-doc-preview.ts
+- src/main/providers/ssh-filesystem-download.ts
+- src/main/providers/ssh-filesystem-file-upload.ts
+- src/main/providers/ssh-filesystem-path-existence.ts
+- src/main/providers/ssh-filesystem-provider-capabilities.ts
+- src/main/providers/ssh-filesystem-provider-sftp.ts
+- src/main/providers/ssh-filesystem-provider-watch.ts
+- src/main/providers/ssh-filesystem-provider.ts
+- src/main/providers/ssh-filesystem-range-read.ts
+- src/main/providers/ssh-filesystem-terminal-artifact.ts
+- src/main/providers/ssh-filesystem-watch-notifications.ts
+- src/main/providers/ssh-git-provider-test-harness.ts
+- src/main/providers/ssh-pty-applied-size.ts
+- src/main/providers/ssh-pty-notification-routing.ts
+- src/main/providers/ssh-pty-provider-contract.ts
+- src/main/providers/ssh-pty-provider-mock-multiplexer.ts
+- src/main/providers/ssh-pty-provider-output-state.ts
+- src/main/providers/ssh-pty-provider-rpc-operations.ts
+- src/main/providers/ssh-pty-provider.ts
+- src/main/providers/ssh-pty-session-reattach.ts
+- src/main/providers/ssh-pty-source-delivery-ledger.ts
+- src/main/providers/ssh-pty-source-delivery-state.ts
+- src/main/providers/ssh-pty-source-frame.ts
+- src/main/providers/ssh-pty-spawn-env.ts
+- src/main/providers/ssh-pty-spawn-exit-race.ts
+- src/main/providers/ssh-pty-spawn-repair.ts
+- src/main/providers/ssh-pty-spawn-request.ts
+- src/main/providers/ssh-pty-write.ts
