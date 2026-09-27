@@ -90,7 +90,7 @@
 - [ ] 9.2 删 `src/cli/`（保留 `src/cli/runtime-client`）并收窄 `config/tsconfig.cli.json` 只覆盖该子目录；验证：`pnpm tc` 通过，`pnpm test:e2e --project=electron-headless` 中 16 个依赖 `cli/runtime-client` 的 spec 仍可加载
 - [ ] 9.3 删 `native/computer-use-*`、`native/keyboard-layout-macos`、`native/notification-status-macos`、`native/windows-cli-launcher`、`Casks/`、`examples/plugins/`、`config/relay-assets/`；验证：路径不存在且 `pnpm tc` 通过
 - [ ] 9.4 收尾 `package.json`（`bin.orca`、~60 脚本、`build:desktop` 链）、`pnpm-workspace.yaml`、`electron.vite.config.ts`、`vite.web.config.ts`、`config/knip.json`；验证：`pnpm install`、`pnpm tc`、`pnpm run build:electron-vite` 通过
-- [ ] 9.5 CI：删 26 个 `cloud-*` 与 mac/mobile/computer/packaged-browser/skill-roundtrip workflow，摘 `pr.yml`/`e2e.yml`/`unit-tests.yml`/`release-cut.yml` 的对应 job；验证：`actionlint`（或本地 workflow 语法检查）无错，且 `.github/workflows` 中无引用 `cloud/` 或 `mobile/` 的 job
+- [x] 9.5 CI：删 26 个 `cloud-*` + mac 构建组（adhoc/daily/hourly/release + homebrew-bump）+ mobile 三件 + `computer-e2e` + `packaged-browser-e2e` + `skill-update-roundtrip` + 两个 win-update e2e，以及 `cloud-sql-rollout-lease` / `install-mobile-dependencies` 两个 composite action；并从存活的 workflow（pr / e2e / release-cut / windows-signing-rehearsal / win-crash-survival-e2e / daemon-relocation-spike / dev-channel-win-build / terminal-ime-e2e / windows-wsl-e2e）与 `install-node-dependencies` 中摘除 mobile/relay 引用。验证：剩余 29 个 workflow + 4 个 action 的 YAML 全部可解析，`.github/` 下已无 mobile/relay/ORCA_RELAY_PATH 引用
 
 ## 10. macOS 剥离（WAVE 6b）
 
