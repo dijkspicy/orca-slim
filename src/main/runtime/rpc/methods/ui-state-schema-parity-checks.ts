@@ -13,12 +13,6 @@ type MainOwnedUIState =
   | 'dashboardPopoutBounds'
   | '_expandedWorktreeCardPropertiesDefaulted'
   | '_jiraIssueWorktreeCardPropertyDefaulted'
-  | 'starNagBaselineAgents'
-  | 'starNagAppVersion'
-  | 'starNagNextThreshold'
-  | 'starNagCompleted'
-  | 'starNagDeferredUntil'
-  | 'starNagAgentValueMomentAppVersion'
 const _uiUpdateParity: AssertNoMissingKeys<
   Omit<PersistedUIState, MainOwnedUIState>,
   z.infer<UiUpdateFieldsSchema>
