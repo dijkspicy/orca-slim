@@ -503,8 +503,6 @@ function assertPackagedNativeVariantsInstalled(electronPlatformName, electronArc
   const isInstalled = (name) => existsSync(join(nodeModulesDir, name, 'package.json'))
   const missing = []
 
-  const rootOptionalDependencies =
-    JSON.parse(readFileSync(join(projectDir, 'package.json'), 'utf8')).optionalDependencies ?? {}
   // Why prefix, not equality: linux variants carry a libc suffix (watcher-linux-x64-glibc),
   // mirroring what prunePackagedParcelWatcher keeps.
   const watcherPrefix = `watcher-${electronPlatformName}-${architecture}`

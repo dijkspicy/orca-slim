@@ -214,3 +214,6 @@ export function isAgentSessionClaimedSpawnResult(
     result.owner.phase === 'live'
   )
 }
+
+/** How long a provider capability probe may take before the claim is rejected. */
+export const SSH_AGENT_SESSION_CAPABILITY_PROBE_TIMEOUT_MS = 5_000
