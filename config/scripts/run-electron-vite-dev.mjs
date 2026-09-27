@@ -313,48 +313,6 @@ function prepareMacDevElectronApp() {
     setPlistValue(helperPlistPath, key, value)
   }
 
-  // Why: the notification-status helper reads the app's real macOS
-  // notification authorization (UNUserNotificationCenter has no Electron
-  // API). It must live inside the bundle and carry the dev bundle id as its
-  // embedded/code-sign identifier — macOS keys notification records to the
-  // signing identifier. Non-fatal: without swiftc the permission card falls
-  // back to delivery-probe heuristics.
-  try {
-    execFileSync(
-      process.execPath,
-      [
-        path.join(repoRoot, 'config', 'scripts', 'build-notification-status-macos.mjs'),
-        '--bundle-id',
-        bundleId,
-        '--single-arch',
-        '--output',
-        path.join(appPath, 'Contents', 'MacOS', 'orca-notification-status')
-      ],
-      { stdio: 'inherit' }
-    )
-  } catch (error) {
-    console.warn(
-      `[orca-dev] notification-status helper build failed (permission card falls back to probes): ${error?.message ?? error}`
-    )
-  }
-
-  try {
-    execFileSync(
-      process.execPath,
-      [
-        path.join(repoRoot, 'config', 'scripts', 'build-keyboard-layout-macos.mjs'),
-        '--single-arch',
-        '--output',
-        path.join(appPath, 'Contents', 'MacOS', 'orca-keyboard-layout')
-      ],
-      { stdio: 'inherit' }
-    )
-  } catch (error) {
-    console.warn(
-      `[orca-dev] keyboard-layout helper build failed (shifted Option composition stays conservative): ${error?.message ?? error}`
-    )
-  }
-
   // Why: the plist edits above (and the copy itself) break the bundle's
   // ad-hoc seal, and macOS refuses Notification Center registration for
   // invalidly-signed apps — every dev notification fails with UNErrorDomain

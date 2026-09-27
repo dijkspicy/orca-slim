@@ -187,13 +187,13 @@ describe('per-job path classification', () => {
   })
 
   it('runs native package jobs only for the platform that ships the changed native', () => {
-    expectClassification(['native/windows-cli-launcher/OrcaCliLauncher.cs'], {
+    expectClassification(['resources/win32/bin/orca.cmd'], {
       package_windows: true
     })
-    expectClassification(['native/computer-use-linux/runtime.py'], {
+    expectClassification(['resources/linux/bin/orca-ide'], {
       package: true
     })
-    expectClassification(['native/computer-use-macos/Package.swift'], {})
+    expectClassification(['native/windows-registry/src/addon.cc'], {})
   })
 
   it('runs Linux packaging when an artifact contract changes', () => {

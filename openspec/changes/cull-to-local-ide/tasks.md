@@ -88,7 +88,7 @@
 
 - [x] 9.1 删 `cloud/`(525) 与 `mobile/`(3,394)：两者是独立 pnpm workspace（各自 lockfile），删除不触碰 src 的 SCC。同步修 `package.json` 的 `audit:code-quality:native` / `audit:anti-slop` 目标（去掉 `mobile`）、删 `src/main/runtime/push/push-host-proof-vector.test.ts`（引用 cloud 里的 JSON）。**注意**：`src/relay/` 与 `src/cli/` 属 SCC，未在本次删除。验证：`pnpm tc` 0；`cloud`/`mobile` 目录不存在
 - [ ] 9.2 删 `src/cli/`（保留 `src/cli/runtime-client`）并收窄 `config/tsconfig.cli.json` 只覆盖该子目录；验证：`pnpm tc` 通过，`pnpm test:e2e --project=electron-headless` 中 16 个依赖 `cli/runtime-client` 的 spec 仍可加载
-- [ ] 9.3 删 `native/computer-use-*`、`native/keyboard-layout-macos`、`native/notification-status-macos`、`native/windows-cli-launcher`、`Casks/`、`examples/plugins/`、`config/relay-assets/`；验证：路径不存在且 `pnpm tc` 通过
+- [x] 9.3 删 native 模块与资产：`native/computer-use-{linux,macos,windows}`(32)、`native/{keyboard-layout-macos,notification-status-macos,windows-cli-launcher}`、`Casks/`(2)、`examples/plugins/`(5)，以及只为它们存在的 18 个 `config/scripts/*.mjs`（含 computer-use 系列与 macos-computer-helper-owner-loss 系列）；同步更新 `package.json`（移除 7 个脚本 + 从 build 链摘除）、`config/electron-builder.config.cjs`（extraResources 与 entitlements）、两个受影响测试。**注意**：`config/relay-assets/` 属 `src/relay`（SCC），保留未删。验证：`pnpm tc` 0、`electron-builder-config.test.mjs` 28 passed、`package-electron-runtime-contract.test.mjs` 16 passed
 - [ ] 9.4 收尾 `package.json`（`bin.orca`、~60 脚本、`build:desktop` 链）、`pnpm-workspace.yaml`、`electron.vite.config.ts`、`vite.web.config.ts`、`config/knip.json`；验证：`pnpm install`、`pnpm tc`、`pnpm run build:electron-vite` 通过
 - [x] 9.5 CI：删 26 个 `cloud-*` + mac 构建组（adhoc/daily/hourly/release + homebrew-bump）+ mobile 三件 + `computer-e2e` + `packaged-browser-e2e` + `skill-update-roundtrip` + 两个 win-update e2e，以及 `cloud-sql-rollout-lease` / `install-mobile-dependencies` 两个 composite action；并从存活的 workflow（pr / e2e / release-cut / windows-signing-rehearsal / win-crash-survival-e2e / daemon-relocation-spike / dev-channel-win-build / terminal-ime-e2e / windows-wsl-e2e）与 `install-node-dependencies` 中摘除 mobile/relay 引用。验证：剩余 29 个 workflow + 4 个 action 的 YAML 全部可解析，`.github/` 下已无 mobile/relay/ORCA_RELAY_PATH 引用
 
@@ -106,7 +106,7 @@
 - [ ] 11.1 i18n 按顶层命名空间裁剪 `src/renderer/src/i18n/locales/*.json`，跑 `pnpm sync:localization-catalog`；验证：`pnpm run verify:localization-catalog`、`verify:localization-extraction`、`verify:localization-coverage` 均通过
 - [ ] 11.2 lint 链去 skill/rpc-catalog 相关 verify，oxlint 配置去 `mobile` 目标，prune `config/{max-lines,ts-nocheck,runtime-electron}-baseline.txt`；验证：`pnpm lint` 通过
 - [ ] 11.3 清理 husky/lint-staged globs（含 `!(cloud)`）、`resources/onboarding`、`orca.yaml`、`config/{docker,dev-app-update.yml}`；验证：`pnpm install` 与 `pnpm lint` 通过
-- [ ] 11.4 文档：`docs/site/content/docs` 删 ssh/remote-servers/mobile/android-apk/telemetry/cli/browser，`docs/reference` 删约 14 篇，README + `docs/readme/*` + `AGENTS.md` 去 mac/ssh/skills 段；验证：`pnpm run check:readme-local-links` 通过
+- [x] 11.4 文档裁剪：删 `docs/site/content/docs/{ssh,remote-servers,mobile,android-apk,telemetry}.mdx` + `cli/` + `browser/`，删 `docs/reference/` 12 篇（ssh×3、skill×5、headless-linux-server、macos-press-and-hold、relay-regional-placement、remote-wire-compatibility），重写 `docs/site/content/docs/meta.json` 导航，README 移除 cloud 段落与 headless 链接，AGENTS.md 移除 SSH 与 remote-wire 两节。**待续**：`docs/site/src` 正文交叉引用、多语言 README（`docs/readme/*`）、其余 reference 篇目。验证：`pnpm run check:readme-local-links` 通过、AGENTS.md 无悬空 docs 链接
 - [ ] 11.5 更新 `docs-slim/feature-tree.md` 为裁剪后功能树；验证：树中只含 6 个保留域，且深度不超过 5 层
 
 ## 12. 集成验证

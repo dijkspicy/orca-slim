@@ -225,17 +225,13 @@ const LINUX_PACKAGE_PREFIXES = [
   'config/scripts/run-headless-linux-pairing-docker',
   'config/scripts/run-daemon-shutdown-descendants-docker',
   'config/scripts/static-appimage-package-contract',
-  'native/computer-use-linux/',
   'resources/linux/',
   'config/scripts/run-headless-serve'
 ]
 
 const WINDOWS_PACKAGE_PREFIXES = [
   ...SHARED_PACKAGE_PREFIXES,
-  'native/windows-cli-launcher/',
-  'native/computer-use-windows/',
   'resources/win32/',
-  'config/scripts/build-windows-cli-launcher',
   'config/scripts/windows-pty-native-capability',
   'tests/tools/windows-pty-native-capability-smoke/'
 ]

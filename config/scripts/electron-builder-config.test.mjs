@@ -37,7 +37,6 @@ describe('electron-builder config', () => {
         '!examples{,/**/*}',
         '!pr-evidence{,/**/*}',
         '!{.claude,.grok,.agents,.codex}{,/**/*}',
-        '!Casks{,/**/*}',
         '!{AGENTS.md,CLAUDE.md,DEVELOPING.md,bundle-size-progress.md,ORCHESTRATION_IMPLEMENTATION_CHECKLIST.md,ORCHESTRATION_STRUCTURED_OUTPUT_DESIGN.md}',
         '!out/**/*.test.js'
       ])
@@ -110,34 +109,6 @@ describe('electron-builder config', () => {
         to: 'skills'
       })
     }
-    expect(electronBuilderConfig.mac.extraResources).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          from: 'native/computer-use-macos/.build/release/Orca Computer Use.app',
-          to: 'Orca Computer Use.app'
-        })
-      ])
-    )
-    expect(electronBuilderConfig.linux.extraResources).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          from: 'native/computer-use-linux/runtime.py',
-          to: 'computer-use-linux/runtime.py'
-        })
-      ])
-    )
-    expect(electronBuilderConfig.win.extraResources).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          from: 'native/computer-use-windows/runtime.ps1',
-          to: 'computer-use-windows/runtime.ps1'
-        }),
-        expect.objectContaining({
-          from: 'native/windows-cli-launcher/.build/orca.exe',
-          to: 'bin/orca.exe'
-        })
-      ])
-    )
   })
 
   it('ships one macOS serve-sim package through the runtime closure', () => {
@@ -151,10 +122,9 @@ describe('electron-builder config', () => {
   })
 
   // Why: the Windows CLI shim is delivered only via extraResources to
-  // resources/bin/orca.cmd (beside the native resources/bin/orca.exe). If the
-  // source tree is also packed into app.asar it gets extracted by
-  // asarUnpack:['resources/**'] to app.asar.unpacked/resources/win32/bin/orca.cmd,
-  // a duplicate with no adjacent orca.exe that fails to launch (#7351).
+  // resources/bin/orca.cmd. If the source tree is also packed into app.asar it
+  // gets extracted by asarUnpack:['resources/**'] to
+  // app.asar.unpacked/resources/win32/bin/orca.cmd, a duplicate of the packaged one.
   it('keeps the Windows CLI shim source tree out of app.asar', () => {
     expect(electronBuilderConfig.files).toEqual(
       expect.arrayContaining(['!resources/win32{,/**/*}'])
@@ -167,36 +137,6 @@ describe('electron-builder config', () => {
           to: 'bin/orca.cmd'
         })
       ])
-    )
-  })
-
-  // Why: on macOS 26 UNUserNotificationCenter aborts for executables launched
-  // from Contents/Resources, so the helper must ship in Contents/MacOS (#7929).
-  it('ships the mac notification-status helper in Contents/MacOS, not Resources', () => {
-    expect(electronBuilderConfig.mac.extraFiles).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          from: 'native/notification-status-macos/.build/release/orca-notification-status',
-          to: 'MacOS/orca-notification-status'
-        })
-      ])
-    )
-    expect(electronBuilderConfig.mac.extraResources).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ to: 'orca-notification-status' })])
-    )
-  })
-
-  it('ships the mac keyboard-layout helper in Contents/MacOS, not Resources', () => {
-    expect(electronBuilderConfig.mac.extraFiles).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          from: 'native/keyboard-layout-macos/.build/release/orca-keyboard-layout',
-          to: 'MacOS/orca-keyboard-layout'
-        })
-      ])
-    )
-    expect(electronBuilderConfig.mac.extraResources).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ to: 'orca-keyboard-layout' })])
     )
   })
 

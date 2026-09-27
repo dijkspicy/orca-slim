@@ -190,7 +190,6 @@ module.exports = {
     // Why: local agent/tooling directories may contain worktree symlink loops;
     // they are never runtime inputs and must not be traversed by electron-builder.
     '!{.claude,.grok,.agents,.codex}{,/**/*}',
-    '!Casks{,/**/*}',
     '!{AGENTS.md,CLAUDE.md,DEVELOPING.md,bundle-size-progress.md,ORCHESTRATION_IMPLEMENTATION_CHECKLIST.md,ORCHESTRATION_STRUCTURED_OUTPUT_DESIGN.md}',
     '!out/**/*.test.js',
     // Why: main builds with sourcemap:'hidden' so release CI can publish maps
@@ -210,11 +209,9 @@ module.exports = {
     // it from process.resourcesPath; exclude the source copy from app.asar.
     '!resources/onboarding/feature-wall/**',
     '!resources/skills/**',
-    // Why: the Windows CLI shim ships via extraResources to resources/bin/orca.cmd
-    // (beside the native resources/bin/orca.exe). Packing the source tree into
-    // app.asar too lets asarUnpack:['resources/**'] extract a second copy at
-    // app.asar.unpacked/resources/win32/bin/orca.cmd with no adjacent orca.exe,
-    // which fails to launch the CLI (#7351).
+    // Why: the Windows CLI shim ships via extraResources to resources/bin/orca.cmd;
+    // exclude the source copy so asarUnpack:['resources/**'] never extracts a
+    // second, divergent orca.cmd next to the packaged one.
     '!resources/win32{,/**/*}'
   ],
   // Why: the CLI entry-point lives in out/cli/ but imports shared modules
@@ -378,19 +375,6 @@ module.exports = {
       // the copied binary to be executable in packaged apps.
       chmodSync(join(resourcesDir, filename), 0o755)
     }
-    if (context.electronPlatformName === 'darwin') {
-      await signMacComputerUseHelper(join(resourcesDir, 'Orca Computer Use.app'), context.packager)
-      await signMacStandaloneHelper(
-        join(resourcesDir, '..', 'MacOS', 'orca-notification-status'),
-        'orca-notification-status',
-        context.packager
-      )
-      await signMacStandaloneHelper(
-        join(resourcesDir, '..', 'MacOS', 'orca-keyboard-layout'),
-        'orca-keyboard-layout',
-        context.packager
-      )
-    }
   },
   win: {
     executableName: 'Orca',
@@ -424,16 +408,8 @@ module.exports = {
         to: 'bin/orca.cmd'
       },
       {
-        from: 'native/windows-cli-launcher/.build/orca.exe',
-        to: 'bin/orca.exe'
-      },
-      {
         from: 'node_modules/agent-browser/bin/agent-browser-win32-x64.exe',
         to: 'agent-browser-win32-x64.exe'
-      },
-      {
-        from: 'native/computer-use-windows/runtime.ps1',
-        to: 'computer-use-windows/runtime.ps1'
       },
       featureWallResources
     ]
@@ -510,24 +486,7 @@ module.exports = {
         from: 'node_modules/agent-browser/bin/agent-browser-darwin-${arch}',
         to: 'agent-browser-darwin-${arch}'
       },
-      {
-        from: 'native/computer-use-macos/.build/release/Orca Computer Use.app',
-        to: 'Orca Computer Use.app'
-      },
       featureWallResources
-    ],
-    // Why: the notification-status helper must execute from Contents/MacOS —
-    // on macOS 26 UNUserNotificationCenter aborts (bundleProxyForCurrentProcess
-    // is nil) for executables launched out of Contents/Resources (#7929).
-    extraFiles: [
-      {
-        from: 'native/notification-status-macos/.build/release/orca-notification-status',
-        to: 'MacOS/orca-notification-status'
-      },
-      {
-        from: 'native/keyboard-layout-macos/.build/release/orca-keyboard-layout',
-        to: 'MacOS/orca-keyboard-layout'
-      }
     ],
     target: [
       {
@@ -576,10 +535,6 @@ module.exports = {
       {
         from: 'node_modules/agent-browser/bin/agent-browser-linux-${arch}',
         to: 'agent-browser-linux-${arch}'
-      },
-      {
-        from: 'native/computer-use-linux/runtime.py',
-        to: 'computer-use-linux/runtime.py'
       },
       featureWallResources
     ],
@@ -693,94 +648,3 @@ function chmodMacServeSimHelpers(resourcesDir, electronPlatformName) {
   }
 }
 
-async function signMacComputerUseHelper(helperAppPath, packager) {
-  if (!existsSync(helperAppPath)) {
-    if (isMacRelease) {
-      throw new Error(`Missing Orca Computer Use helper app at ${helperAppPath}`)
-    }
-    return
-  }
-  const codeSigningInfo =
-    isMacRelease && process.env.CSC_LINK && packager?.codeSigningInfo?.value
-      ? await packager.codeSigningInfo.value
-      : null
-  const identity =
-    process.env.ORCA_COMPUTER_MACOS_SIGN_IDENTITY ??
-    process.env.CSC_NAME ??
-    findInstalledMacSigningIdentity(codeSigningInfo?.keychainFile) ??
-    (isMacRelease ? null : '-')
-  if (!identity) {
-    throw new Error('Missing signing identity for Orca Computer Use helper app')
-  }
-  // Why: TCC grants attach to this nested app's code identity. Sign it before
-  // the outer Orca.app is sealed so production builds preserve that identity.
-  execFileSync('codesign', codesignArgs(identity, helperAppPath), { stdio: 'inherit' })
-  execFileSync('codesign', ['--verify', '--deep', '--strict', helperAppPath], {
-    stdio: 'inherit'
-  })
-}
-
-async function signMacStandaloneHelper(helperPath, helperName, packager) {
-  if (!existsSync(helperPath)) {
-    if (isMacRelease) {
-      throw new Error(`Missing ${helperName} helper at ${helperPath}`)
-    }
-    return
-  }
-  const codeSigningInfo =
-    isMacRelease && process.env.CSC_LINK && packager?.codeSigningInfo?.value
-      ? await packager.codeSigningInfo.value
-      : null
-  const identity =
-    process.env.CSC_NAME ??
-    findInstalledMacSigningIdentity(codeSigningInfo?.keychainFile) ??
-    (isMacRelease ? null : '-')
-  if (!identity) {
-    throw new Error(`Missing signing identity for ${helperName} helper`)
-  }
-  // Why: nested executables must be signed before the outer app bundle is sealed.
-  const args = ['--force', '--sign', identity]
-  if (isMacRelease) {
-    args.push('--options', 'runtime', '--timestamp')
-  }
-  args.push(helperPath)
-  execFileSync('codesign', args, { stdio: 'inherit' })
-  execFileSync('codesign', ['--verify', '--strict', helperPath], { stdio: 'inherit' })
-}
-
-function codesignArgs(identity, targetPath) {
-  const args = ['--force', '--deep', '--sign', identity]
-  if (isMacRelease) {
-    args.push(
-      '--options',
-      'runtime',
-      '--timestamp',
-      '--entitlements',
-      resolve(__dirname, '../resources/build/entitlements.computer-use.mac.plist')
-    )
-  }
-  args.push(targetPath)
-  return args
-}
-
-function findInstalledMacSigningIdentity(keychainFile) {
-  try {
-    const output = execFileSync(
-      'security',
-      ['find-identity', '-v', '-p', 'codesigning', ...(keychainFile ? [keychainFile] : [])],
-      {
-        encoding: 'utf8'
-      }
-    )
-    const releaseMatch =
-      output.match(/"([^"]*Developer ID Application:[^"]+)"/) ??
-      output.match(/"([^"]*Apple Distribution:[^"]+)"/)
-    if (releaseMatch?.[1]) {
-      return releaseMatch[1]
-    }
-    if (!isMacRelease) {
-      return output.match(/"([^"]*Apple Development:[^"]+)"/)?.[1] ?? null
-    }
-  } catch {}
-  return null
-}
