@@ -56,7 +56,6 @@ import { cacheApi } from './api/cache-bridge'
 import { sessionApi } from './api/session-bridge'
 import { remoteWorkspaceApi } from './api/remote-workspace-bridge'
 import { docPreviewApi } from './api/doc-preview-bridge'
-import { notebookApi } from './api/notebook-bridge'
 import { fsApi } from './api/fs-bridge'
 import { gitApi } from './api/git-bridge'
 import { uiApi } from './api/ui-bridge'
@@ -150,7 +149,6 @@ const api = {
   session: sessionApi,
   remoteWorkspace: remoteWorkspaceApi,
   docPreview: docPreviewApi,
-  notebook: notebookApi,
   fs: fsApi,
   git: gitApi,
   ui: uiApi,

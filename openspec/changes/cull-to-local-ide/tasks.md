@@ -48,7 +48,7 @@
 - [x] 4.14 依赖清理批次一：移除 `sherpa-onnx` + 5 个平台 optional 包（语音域已删，实测 0 代码引用）。**其余依赖暂留**：`qrcode`(6)、`@streamparser/json`(1)、`tldts`(2)、`react-grab`(3)、`@linear/sdk`(11) 仍被尚未删除的域引用，随各自域一并移除；`electron-updater` 条目已在 4.11 移除（仅剩注释）。验证：`pnpm install --lockfile-only` 退出 0（1469 条目）、`pnpm tc` 0
 - [x] 4.15 删设备模拟器域（Android emulator + iOS simulator）：`src/main/emulator/`(79)、renderer `components/emulator-pane/`(54)、`shared/emulator-{touch,keyboard}-frame`、`shared/rpc-contract/emulator-params`、preload emulator bridge/api、settings `MobileEmulator*` panes、`lib/{emulator-right-split-target,open-mobile-emulator-tab,simulator-launch-coordination,ensure-simulator-tab}`、cli emulator spec/handler/format、emulator skill bundle（guides/skills/stubs）。**实施中新增的任务**（原 tasks 未单列此域）；验证：`pnpm tc` 通过，`skill-guide-cli-parity` 3 passed，`verify:bundled-skill-guides` / `verify:skill-bundle-manifest` 退出 0。终端 headless emulator（`src/main/daemon/headless-emulator*`）保留
 - [x] 4.16 删桌面宠物域（`renderer/components/pet/`、main pet ipc bundle/manifest/sprite、preload pet api、`PetStatusSegment`、pet UI-state 字段）。**实施中新增的任务**（原 tasks 未单列此域）；验证：`pnpm tc` 通过
-- [ ] 4.17 删 Notebook 域（`src/main/notebook/`、`ipc/notebook.ts`、preload notebook bridge、`shared/notebook-*`、编辑器 ipynb 内核组件）。⚠️ 需先确认 `editor/IpynbViewer` 等文件查看器是否属保留侧，再决定边界；验证：`pnpm tc` 通过且 ipynb 文件查看行为按结论保留或移除
+- [x] 4.17 删 Notebook 域：`src/main/notebook/`(4)、`ipc/notebook.ts`(+test)、preload notebook bridge、`shared/notebook-{kernel-types,venv-location}`、renderer 内核与 ipynb 查看器全部文件（`ipynb-*`、`Ipynb*`、`useIpynb*`）。**边界结论**：内核删除后查看器的运行能力无意义，故整域移除而非保留查看器；挂载点 `editor-lazy-views.ts` 与 `EditorEditFileSurface.tsx` 已解引用，preload `FilesystemApi.notebook` 与 `PreloadApi.notebook` 已移除。验证：`pnpm tc` 0、changed-code 质量门禁通过
 
 ## 5. 域清扫（WAVE 2.5）
 

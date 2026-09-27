@@ -17,13 +17,6 @@ import type {
   LocalLogTailWatchArgs
 } from '../../shared/local-log-tail-types'
 import type { SshMutationExpectation } from '../../shared/ssh-types'
-import type {
-  CreateVenvResult,
-  KernelFrameEvent,
-  KernelStartResult,
-  PythonEnvironment,
-  PythonEnvironments
-} from '../../shared/notebook-kernel-types'
 import type { RuntimeUploadFileStreamRequest } from '../../shared/runtime-upload-staging-contract'
 
 export type ExportApi = {
@@ -165,26 +158,6 @@ export type FilesystemApi = {
     watchWorktree: (args: { worktreePath: string; connectionId?: string }) => Promise<void>
     unwatchWorktree: (args: { worktreePath: string; connectionId?: string }) => Promise<void>
     onFsChanged: (callback: (payload: FsChangedPayload) => void) => () => void
-  }
-  notebook: {
-    listPythonEnvironments: (args: {
-      filePath: string
-      rootPath: string | null
-      /** False until the notebook is trusted: workspace envs are then listed without running them. */
-      runWorkspaceInterpreters: boolean
-    }) => Promise<PythonEnvironments>
-    describePython: (args: { path: string }) => Promise<PythonEnvironment | null>
-    startKernel: (args: { filePath: string; python: string }) => Promise<KernelStartResult>
-    installIpykernel: (args: { python: string }) => Promise<{ ok: boolean; detail: string }>
-    createVenv: (args: {
-      filePath: string
-      rootPath: string | null
-      python: string
-    }) => Promise<CreateVenvResult>
-    execute: (args: { filePath: string; code: string }) => Promise<void>
-    interrupt: (args: { filePath: string }) => Promise<void>
-    shutdownKernel: (args: { filePath: string }) => Promise<void>
-    onKernelFrame: (callback: (event: KernelFrameEvent) => void) => () => void
   }
   export: ExportApi
 }

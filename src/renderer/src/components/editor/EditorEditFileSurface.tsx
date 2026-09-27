@@ -4,13 +4,7 @@ import type { GitDiffResult } from '../../../../shared/git-diff-compare-types'
 import type { GitStatusEntry } from '../../../../shared/git-status-types'
 import { ChangesModeView } from './ChangesModeView'
 import { ConflictBanner, ConflictPlaceholderView } from './ConflictComponents'
-import {
-  CsvViewer,
-  ImageViewer,
-  IpynbViewer,
-  MermaidViewer,
-  MonacoEditor
-} from './editor-lazy-views'
+import { CsvViewer, ImageViewer, MermaidViewer, MonacoEditor } from './editor-lazy-views'
 import type { EditorConflictNavigation } from './useEditorConflictNavigation'
 import { EditorFileLoadErrorView } from './EditorFileLoadErrorView'
 import { RecoverableRenderErrorBoundary } from '../error-boundaries/RecoverableRenderErrorBoundary'
@@ -40,7 +34,6 @@ export function EditorEditFileSurface({
   isMarkdown,
   isMermaid,
   isCsv,
-  isNotebook,
   mdViewMode,
   inlineMarkdownRenderState,
   isChangesMode,
@@ -244,18 +237,6 @@ export function EditorEditFileSurface({
     <MermaidViewer key={activeFile.id} content={currentContent} filePath={activeFile.filePath} />
   ) : isCsv && mdViewMode === 'rich' ? (
     <CsvViewer key={activeFile.id} content={currentContent} filePath={activeFile.filePath} />
-  ) : isNotebook && mdViewMode === 'rich' ? (
-    <IpynbViewer
-      key={activeFile.id}
-      content={currentContent}
-      fileId={activeFile.id}
-      filePath={activeFile.filePath}
-      worktreeId={activeFile.worktreeId}
-      scrollCacheKey={`${editorViewStateKey}:notebook`}
-      onContentChange={handleContentChange}
-      onDirtyStateHint={handleDirtyStateHint}
-      onSave={handleSave}
-    />
   ) : (
     monacoEditor
   )
