@@ -1,0 +1,21 @@
+src/main/telemetry/client.ts
+  s_581c39faf14fb9::t_82f20dfb6f8b9f 21
+src/renderer/src/lib/telemetry.ts
+  s_581c39faf14fb9::t_0c5f53e7b99cd7 30-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "79e224b5f97ac8339a3d8727fefbe8263a51a9a7",
+  "prompts": {},
+  "sessions": {
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
