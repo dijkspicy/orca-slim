@@ -33,7 +33,7 @@
 每片动作：删域目录与其测试、`runtime/rpc/methods/<域>`、`providers/<域>`、preload bridge/api、store slice、renderer 组件、构建清单条目，并移除本域在 `src/main/startup/*` 与 `src/preload/index.ts` / `api-types.ts` 的注册行。
 
 - [x] 4.1 删 `src/main/star-nag/`；验证：`pnpm tc` 通过，`find src/main/star-nag` 无输出
-- [ ] 4.2 删 `src/main/server/`、`src/main/ephemeral-vm-*.ts`、`runtime/push/`；验证：`pnpm tc` 通过，三者路径均不存在
+- [ ] 4.2 删 `src/main/server/`、`src/main/ephemeral-vm-*.ts`、`runtime/push/`；验证：`pnpm tc` 通过，三者路径均不存在。**⚠️ 见 design.md F-1：本任务不能独立执行**——`server ↔ orcad ↔ ssh ↔ relay` 互相咬合，已合并为「远程宿主集群」切片（含 tasks 8.1 的 ssh 与 relay/serve-mode）
 - [ ] 4.3 删 `src/main/artifacts/` 与 renderer `components/artifacts/`；验证：`pnpm tc` 通过
 - [ ] 4.4 删 `src/main/jira/`、`src/main/linear/` 与 renderer 对应任务页；验证：`pnpm tc` 通过
 - [ ] 4.5 删 `src/main/speech/` 与 renderer `components/dictation/`、`sherpa-onnx` 依赖；验证：`pnpm tc` 通过且 `pnpm install` 成功
@@ -46,6 +46,7 @@
 - [ ] 4.12 删 `src/main/orca-profiles/` 的账号部分（按 2.3 清单），保留本地多项目持久化件；验证：`pnpm tc` 与 `pnpm test src/main/orca-profiles` 通过
 - [ ] 4.13 删 `src/main/ipc/` 中剩余删除域 handler 散件（按 2.1 清单）；验证：`pnpm tc` 通过
 - [ ] 4.14 依赖清理批次一（`qrcode`、`@streamparser/json`、`tldts`、`react-grab`、`@linear/sdk`）；验证：`pnpm install` 与 `pnpm tc` 通过
+- [x] 4.15 删设备模拟器域（Android emulator + iOS simulator）：`src/main/emulator/`(79)、renderer `components/emulator-pane/`(54)、`shared/emulator-{touch,keyboard}-frame`、`shared/rpc-contract/emulator-params`、preload emulator bridge/api、settings `MobileEmulator*` panes、`lib/{emulator-right-split-target,open-mobile-emulator-tab,simulator-launch-coordination,ensure-simulator-tab}`、cli emulator spec/handler/format、emulator skill bundle（guides/skills/stubs）。**实施中新增的任务**（原 tasks 未单列此域）；验证：`pnpm tc` 通过，`skill-guide-cli-parity` 3 passed，`verify:bundled-skill-guides` / `verify:skill-bundle-manifest` 退出 0。终端 headless emulator（`src/main/daemon/headless-emulator*`）保留
 
 ## 5. 域清扫（WAVE 2.5）
 

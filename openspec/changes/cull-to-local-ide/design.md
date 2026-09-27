@@ -139,6 +139,54 @@
 - **`observability` / `crash-reporting` 归属未定** → `crash-reporting`(59) 只 4 处依赖 `observability`(21)。两者同删或同留，不能只删一个。列为开放问题。
 - **工时估算易偏低** → 保留集 9,100 个非测试文件，主工作是给保留代码做手术而非删文件。
 
+## Implementation Findings
+
+实施中发现的事实，修正计划（D-1 的垂直切片粒度需要按实际耦合调整）。
+
+### F-1 远程宿主集群互相咬合，tasks 4.2 无法独立执行
+
+实测依赖：`src/main/ssh/` → `src/main/orcad/` → `src/main/server/`，且 `src/main/runtime/relay/` → `src/main/orcad/`。
+删 `server/` 会断 `orcad/`，删 `orcad/` 会断 `ssh/` 与 `relay/`。
+
+**修正**：把 tasks 4.2（server + ephemeral-vm + push）与 8.1（ssh）与 relay/serve-mode 合并为一个「远程宿主集群」切片：
+
+```
+集群成员（898 文件）
+  src/relay/                        378
+  src/main/ssh/                     359
+  src/main/orcad/                   ~60
+  src/main/runtime/relay/           55
+  src/main/runtime/push/            30
+  src/main/server/                  4
+  src/main/runtime/remote-server-updater.ts
+  src/main/startup/{serve-mode-argv,main-process-serve,serve-options,
+                   serve-desktop-activation,serve-signal-handlers,
+                   main-process-push-startup}.ts
+```
+
+真正的保留域手术面只有 **18 个文件**（其余 70 个引用者是 SSH 域散件，随集群一起删）：
+
+- `src/main/startup/main-process-runtime-launch.ts`（6 处）
+- `src/main/startup/main-process-state.ts`（6 处）
+- `src/main/startup/main-process-preflight.ts`（4 处）
+- `src/main/agent-hooks/wsl-hook-relay-*` + `wsl-guest-plugin-install` + `wsl-hook-fs-adapter`（7 个文件，见 F-2）
+- `src/main/ipc/{filesystem/filesystem-write-handlers,filesystem-mutations,shell}.ts`、`ipc/worktrees/listing/*`（5 处）
+- `src/main/runtime/runtime-file-commands-mobile-file-list-limit.ts`、`runtime-rpc/runtime-rpc-{pairing,state}.ts`（3 处）
+
+### F-2 WSL hook relay 复用 SSH 传输原语（硬耦合）
+
+`src/main/agent-hooks/wsl-hook-relay-*`（WSL，**保留**）导入 `src/main/ssh/ssh-channel-multiplexer.ts` 与 `src/main/ssh/relay-protocol.ts`（SSH，**删除**）。
+
+**处置**：删除前必须把这两个文件里的**通用传输原语**提取到保留侧（例如 `src/shared/hook-channel-multiplexer.ts`），再删 SSH 连接层。不能直接删，否则 WSL hook relay 编译不过、功能失效。
+
+### F-3 删除域散件实测
+
+`src/main/ipc/`(58 ssh)、`src/main/providers/`(45 ssh)、`persistence/leasing-ssh-ptys/`(12)、`src/main/runtime/`(mobile/browser 命名约 140)、renderer `hooks`/`store`/`lib`/`settings`(~48) —— 与 D-4 的估计一致。
+
+### F-4 其余域的自足性（待验证）
+
+`jira` / `linear` / `speech` / `emulator` / `notebook` 未出现在集群引用者中，可能是自足域，可先行整删。
+
 ## Migration Plan
 
 - 分支 `cull/local-ide`，WAVE 0 打 tag `pre-cull`
