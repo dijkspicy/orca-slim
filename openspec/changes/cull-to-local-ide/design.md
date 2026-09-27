@@ -183,9 +183,38 @@
 
 `src/main/ipc/`(58 ssh)、`src/main/providers/`(45 ssh)、`persistence/leasing-ssh-ptys/`(12)、`src/main/runtime/`(mobile/browser 命名约 140)、renderer `hooks`/`store`/`lib`/`settings`(~48) —— 与 D-4 的估计一致。
 
-### F-4 其余域的自足性（待验证）
+### F-4 其余域的自足性（实测修正）
 
-`jira` / `linear` / `speech` / `emulator` / `notebook` 未出现在集群引用者中，可能是自足域，可先行整删。
+原判断「`jira` / `linear` / `speech` / `emulator` / `notebook` 可能自足」只对一半成立：
+
+- `emulator` **自足**（仅删除域内部引用）→ 已作为 4.15 完成
+- `speech` **自足**（零集群耦合）→ 已并入 4.5 完成
+- `plugins` / `pet` **自足** → 已并入 4.6 / 4.16 完成
+- `jira` + `linear` + 六家 forge 集成 **不自足**：实测 **323 个保留域文件**引用它们（`src/main/github` 218、`gitlab` 53、`linear` 63、`jira` 32、`bitbucket`/`gitea`/`azure-devops` 35、`shared/github` 35、`shared/linear` 22、renderer 任务页/评审页 264）
+
+### F-5 接线边密度是本工程的主导成本
+
+实测每个删除域到保留装配层（`startup` / `preload` / `store` / `settings` 导航 / i18n / status-bar）的接线边数：
+
+| 域 | 域自身文件 | 保留域引用者 |
+| --- | --- | --- |
+| telemetry + observability + crash-reporting | ~100 | ~240 |
+| 六家 forge + jira/linear | ~780 | ~323 |
+| plugins + speech + pet | ~290 | ~250（估算，实际修改 157 文件） |
+| updater | ~50 | ~20 |
+| emulator | ~180 | ~20 |
+
+**结论**：切片成本由「接线拆除」决定，而非域自身大小。`emulator`(180 文件) 比 `telemetry`(~100 文件) 便宜一个量级。
+
+**对 plan 的影响**：D-2 的「薄而广脊柱走 stub」策略适用范围比原判断更宽——telemetry 的全量调用点拆除（606 处 tc 错误）证明「完整拆除」在这类脊柱上不经济。后续遇到同类高扇入脊柱（如 `shared/execution-host` 883 引用）应**优先就地收窄/保留最小类型**，把完整拆除留给 Group 5 域清扫。
+
+### F-6 工具链陷阱（实施中踩到）
+
+- `pkill -f <pattern>` 会匹配到执行它的 shell 自身命令行 → 用 `pgrep`/`pkill` 时避免模式与当前命令字符串重合
+- `nohup ... &` 在工具调用超时后会被连带杀死 → 长任务用 `setsid nohup ... < /dev/null &`
+- 后台 fixer 会话可能被中断，中断时文件改动**已落盘**（不是原子的）；恢复前必须先 `git status` + `pnpm tc` 判断真实状态
+- pre-commit（lint-staged → oxlint）会拦下 fixer 遗留的未使用变量与多余 `return`；提交前先跑 `npx oxlint <changed files>`
+- 巨型字符串字面量文件（如 `src/cli/bundled-skill-guides.ts`）用 `rg` 检索会灌满上下文 → 用 `rg -c` 或限制输出
 
 ## Migration Plan
 
