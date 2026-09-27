@@ -1,0 +1,22 @@
+docs-slim/cull-scc-peel.md
+  s_581c39faf14fb9::t_79fc17df59c77e 5-7
+  s_581c39faf14fb9::t_adb86c74721717 12
+src/main/startup/main-process-runtime-launch.ts
+  s_581c39faf14fb9::t_310b8633bd040f 1,14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fec575f28f46e5f6ebdb51292f49bfa6335f20a0",
+  "prompts": {},
+  "sessions": {
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
