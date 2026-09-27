@@ -1,0 +1,21 @@
+package.json
+  s_581c39faf14fb9::t_6a2e67033c3790 315
+openspec/changes/cull-to-local-ide/tasks.md
+  s_581c39faf14fb9::t_c6541e2091e684 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7ad66332bcc184cb2f92dcb767d168fa546956a9",
+  "prompts": {},
+  "sessions": {
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
