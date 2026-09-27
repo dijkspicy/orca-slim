@@ -342,6 +342,30 @@ src/main/agent-hooks/first-work-branch-rename.ts: Property 'renameCurrentBranch'
 
 **结论**：本 cull 需要的是**导出符号级**的依赖分析（哪些类型被保留代码消费），而不是模块级 import 图。这是执行剩余 6,725 文件删除的先决条件；在此之前，任何删除策略（按域、按簇、stub、剥离）都无法收敛——这解释了 F-12、F-10、以及四次失败的共同根因。
 
+
+### F-15 可达性剥离成功一半；shim 配方实测失败（symbol kind 决定成败）
+
+**成功的部分（F-14 的修正）**：把「叶子」定义从「直接 import 者都在删除集内」改为「**不从任何幸存文件传递可达**」，SCC 删除首次收敛：
+
+| 轮次 | 删除 | 结果 |
+| --- | --- | --- |
+| 1 | 3,107 文件 | **`pnpm tc` EXIT 0** |
+| 2 | 剩余 3,618 全部可达，可删 0 | 达极限 |
+
+失败原因（F-14 的机制）：旧规则会保留「被幸存者 import 的域文件 A」，却删掉 A 自己的依赖 → A 的 re-export 悬空 → TS 不降级为 `any`，而是把其导出类型塌缩成 `{}`/`unknown`/`never`。
+
+**失败的部分（shim）**：对剩余 3,572 个核心中「被幸存者直接导入」的 787 个模块生成 no-op shim（每个符号 = `export type X<...> = any` + `export function X<...>(...)`）+ 删除其余 2,797 个 → **14,500 处错误**。
+
+根因：**符号的种类（kind）不能伪造**。
+```
+Type '(...) => any' is not assignable to type 'string'      // 消费方要的是字符串常量，不是函数
+'"../../shared/artifact-sharing-gate"' has no exported member named
+  'ARTIFACT_SHARING_DISABLED_NEXT_STEPS'. Did you mean 'ARTIFACT_SHARING_DISABLED_MESSAGE'?
+```
+即：const 必须仍是 const（且类型正确）、type 必须仍是 type、enum 必须有成员。用「统一函数」冒充一切符号在 787 个模块 / 2,466 个符号的规模上必然崩溃。
+
+**结论**：剩余 3,618 个可达文件**必须逐个裁定**（保留原文件，或把符号按正确 kind 迁移到 keep 侧），不能靠生成 shim。这一步是人工/长任务的活，规模为 787 个模块 × 2,466 个符号 × 4,582 条 import 语句。
+
 ## Migration Plan
 
 - 分支 `cull/local-ide`，WAVE 0 打 tag `pre-cull`
