@@ -86,7 +86,7 @@
 
 ## 9. 外圈整删（WAVE 6a）
 
-- [ ] 9.1 删 `cloud/`(525)、`mobile/`(3,394)、`src/relay/`(378)；验证：三者路径不存在，且 `pnpm tc` 通过
+- [x] 9.1 删 `cloud/`(525) 与 `mobile/`(3,394)：两者是独立 pnpm workspace（各自 lockfile），删除不触碰 src 的 SCC。同步修 `package.json` 的 `audit:code-quality:native` / `audit:anti-slop` 目标（去掉 `mobile`）、删 `src/main/runtime/push/push-host-proof-vector.test.ts`（引用 cloud 里的 JSON）。**注意**：`src/relay/` 与 `src/cli/` 属 SCC，未在本次删除。验证：`pnpm tc` 0；`cloud`/`mobile` 目录不存在
 - [ ] 9.2 删 `src/cli/`（保留 `src/cli/runtime-client`）并收窄 `config/tsconfig.cli.json` 只覆盖该子目录；验证：`pnpm tc` 通过，`pnpm test:e2e --project=electron-headless` 中 16 个依赖 `cli/runtime-client` 的 spec 仍可加载
 - [ ] 9.3 删 `native/computer-use-*`、`native/keyboard-layout-macos`、`native/notification-status-macos`、`native/windows-cli-launcher`、`Casks/`、`examples/plugins/`、`config/relay-assets/`；验证：路径不存在且 `pnpm tc` 通过
 - [ ] 9.4 收尾 `package.json`（`bin.orca`、~60 脚本、`build:desktop` 链）、`pnpm-workspace.yaml`、`electron.vite.config.ts`、`vite.web.config.ts`、`config/knip.json`；验证：`pnpm install`、`pnpm tc`、`pnpm run build:electron-vite` 通过
