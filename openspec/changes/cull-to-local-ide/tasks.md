@@ -112,6 +112,7 @@
 ## 12. 集成验证
 
 - [ ] 12.1 强门禁：`pnpm tc` 与 `pnpm lint` 退出码均为 0；`pnpm test` 失败集合不超出 `docs-slim/cull-baseline.md` 记录的基线集合；验证：tc/lint 为 0，且 test 无新增失败
+  > 状态（本轮）：`pnpm tc` EXIT 0、`pnpm lint` EXIT 0（17 阶段全过）。`pnpm test` 的「失败集合不超基线」尚未复测——基线集合见 `docs-slim/cull-baseline.md`（41 处失败）。
 - [ ] 12.2 headless e2e：`ORCA_BACKGROUND_LAUNCH=1 pnpm test:e2e`；验证：保留功能 spec 全通过，无依赖已删模块的失败
 - [ ] 12.3 构建产物：`pnpm build:linux`；验证：产物存在且可启动到主界面。`build:win` 本机无工具链，移交 CI
 - [ ] 12.4 手动冒烟 6 项：git 提交/分支/diff、文件树与编辑、多仓库切换与项目分组、终端多标签分屏与重启保活、WSL 发行版终端、agent CLI 启动 + 状态点；验证：6 项逐条记录结果，任一失败回到对应切片
