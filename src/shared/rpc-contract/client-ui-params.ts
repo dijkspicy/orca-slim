@@ -4,7 +4,6 @@ import {
   WORKTREE_CARD_PROPERTIES,
   normalizeWorktreeCardProperties
 } from '../worktree/card-properties'
-import { isPluginPanelTabKey } from '../plugins/plugin-manifest'
 import { isFeatureInteractionId } from '../feature-interactions'
 import type { FeatureInteractionId } from '../feature-interactions'
 import { ACTIVITY_GROUP_BY_VALUES, THREAD_READ_FILTER_VALUES } from '../agents-view-thread-filters'
@@ -46,15 +45,9 @@ export const STATIC_RIGHT_SIDEBAR_TABS = [
   'ports'
 ] as const
 
-// Plugin panels are open-ended `plugin:<publisher>.<id>/<panel>` keys, so the
-// schema validates their shape rather than enumerating them.
-export const RightSidebarTabParam = z.custom<StaticRightSidebarTab | `plugin:${string}`>(
-  (value) =>
-    typeof value === 'string' &&
-    (STATIC_RIGHT_SIDEBAR_TABS.includes(value as StaticRightSidebarTab) ||
-      isPluginPanelTabKey(value)),
-  { message: 'Unknown right sidebar tab' }
-)
+export const RightSidebarTabParam = z.enum(STATIC_RIGHT_SIDEBAR_TABS, {
+  message: 'Unknown right sidebar tab'
+})
 
 export const AgentActivityDisplayMode = z.enum(['compact', 'full'])
 
@@ -224,14 +217,6 @@ export const UiUpdateFields = z
     projectOrderManualDefaultNoticeDismissed: z.boolean().optional(),
     usagePercentageDisplayChangeNoticeDismissed: z.boolean().optional(),
     usageEmptyStateDismissed: z.boolean().optional(),
-    petVisible: z.boolean().optional(),
-    petId: z.string().optional(),
-    customPets: UnknownRecordArray.optional(),
-    petSize: z.number().finite().optional(),
-    sidekickVisible: z.boolean().optional(),
-    sidekickId: z.string().optional(),
-    customSidekicks: UnknownRecordArray.optional(),
-    sidekickSize: z.number().finite().optional(),
     taskResumeState: TaskResumeState.optional(),
     workspaceCleanup: WorkspaceCleanup.optional(),
     featureTipsSeenIds: FeatureTipIds.optional(),

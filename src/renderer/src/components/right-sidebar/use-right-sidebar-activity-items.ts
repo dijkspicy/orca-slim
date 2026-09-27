@@ -5,13 +5,6 @@ import { useRepoById } from '@/store/selectors'
 import { isFolderRepo } from '../../../../shared/repo-kind'
 import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
 import { getVisibleRightSidebarActivityItems } from './right-sidebar-activity-visibility'
-import { getPluginPanelActivityItems } from './plugin-panel-activity-items'
-import {
-  collectInstalledPluginTabKeys,
-  usePluginPanels,
-  usePluginPanelsStore,
-  type PluginPanelsFetchStatus
-} from '@/store/plugin-panels'
 import { useShortcutLabel } from '@/hooks/useShortcutLabel'
 import { translate } from '@/i18n/i18n'
 import { AgentSessionHistoryIcon } from './agent-session-history-icon'
@@ -20,9 +13,6 @@ import type { ActivityBarItem } from './activity-bar-buttons'
 export type RightSidebarActivityItems = {
   visibleItems: ActivityBarItem[]
   activeFolderWorkspaceKey: string | null
-  pluginSystemEnabled: boolean
-  pluginFetchStatus: PluginPanelsFetchStatus
-  installedPluginTabKeys: Set<string>
 }
 
 export function useRightSidebarActivityItems({
@@ -45,19 +35,6 @@ export function useRightSidebarActivityItems({
   const isFolderWorkspace = activeWorkspaceScope?.type === 'folder'
   const isFolder = isFolderWorkspace || (activeRepo ? isFolderRepo(activeRepo) : false)
   const isSshRepo = Boolean(activeRepo?.connectionId)
-  const pluginSystemEnabled = useAppStore((s) => s.settings?.pluginSystemEnabled === true)
-  const pluginPanels = usePluginPanels()
-  const visiblePluginPanels = useMemo(
-    () => (pluginSystemEnabled ? pluginPanels : []),
-    [pluginPanels, pluginSystemEnabled]
-  )
-  const installedPlugins = usePluginPanelsStore((s) => s.plugins)
-  const pluginFetchStatus = usePluginPanelsStore((s) => s.fetchStatus)
-  const pluginPanelErrors = usePluginPanelsStore((s) => s.panelErrors)
-  const installedPluginTabKeys = useMemo(
-    () => collectInstalledPluginTabKeys(installedPlugins),
-    [installedPlugins]
-  )
 
   const activityItems = useMemo<ActivityBarItem[]>(
     () => [
@@ -110,19 +87,9 @@ export function useRightSidebarActivityItems({
         title: translate('auto.components.right.sidebar.index.441733b630', 'Ports'),
         shortcut: portsShortcut === 'Unassigned' ? '' : portsShortcut,
         sshOnly: true
-      },
-      // Why: plugin panels append after the built-in tabs so core navigation
-      // keeps stable positions regardless of which plugins are installed.
-      ...getPluginPanelActivityItems(visiblePluginPanels, pluginPanelErrors)
+      }
     ],
-    [
-      checksShortcut,
-      explorerShortcut,
-      pluginPanelErrors,
-      visiblePluginPanels,
-      portsShortcut,
-      sourceControlShortcut
-    ]
+    [checksShortcut, explorerShortcut, portsShortcut, sourceControlShortcut]
   )
 
   const visibleItems = useMemo(
@@ -139,9 +106,6 @@ export function useRightSidebarActivityItems({
 
   return {
     visibleItems,
-    activeFolderWorkspaceKey,
-    pluginSystemEnabled,
-    pluginFetchStatus,
-    installedPluginTabKeys
+    activeFolderWorkspaceKey
   }
 }

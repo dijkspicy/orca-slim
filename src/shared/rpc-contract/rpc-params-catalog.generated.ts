@@ -23,7 +23,6 @@ import {
   PairingProvisionRelayParamsSchema
 } from '../mobile-relay-credential-contract'
 import { MobileWebBundleChunkParamsSchema } from '../mobile-web-bundle/bundle-rpc-contract'
-import { pluginConsentRequestSchema } from '../plugins/plugin-consent-request'
 import {
   AccountsUnsubscribeParams,
   AddClaudeFromConfigDirParams,
@@ -379,12 +378,6 @@ import {
 import { WorkerStartParams } from './orchestration-worker-start-params'
 import { WorkerDispatchParams as WorkerDispatchParamsOfOrchestrationWorkerStopParams } from './orchestration-worker-stop-params'
 import {
-  PluginInvokeCommandParams,
-  PluginReadPanelEntryParams,
-  PluginSetEnabledParams,
-  PluginsPanelActionParams
-} from './plugins-params'
-import {
   PreflightCheck,
   PreflightDetectRemoteAgents,
   PreflightDetectRemoteWindowsTerminalCapabilities
@@ -434,13 +427,6 @@ import {
   SkillsDiscoverParams,
   SkillsGetInstallProgressParams
 } from './skills-params'
-import {
-  DictationChunk,
-  DictationHandle,
-  DictationSetup,
-  DictationStart,
-  SpeechModelAction
-} from './speech-params'
 import { SshTarget } from './ssh-params'
 import {
   AttachParams,
@@ -981,12 +967,6 @@ export const RPC_PARAMS_BY_METHOD = {
   'orchestration.workerTerminalUserInput': OrchestrationWorkerTerminalUserInputParams,
   'pairing.getEndpoints': PairingGetEndpointsParamsSchema,
   'pairing.provisionRelay': PairingProvisionRelayParamsSchema,
-  'plugins.consent': pluginConsentRequestSchema,
-  'plugins.invokeCommand': PluginInvokeCommandParams,
-  'plugins.list': null,
-  'plugins.panelAction': PluginsPanelActionParams,
-  'plugins.readPanelEntry': PluginReadPanelEntryParams,
-  'plugins.setEnabled': PluginSetEnabledParams,
   'preflight.check': PreflightCheck,
   'preflight.detectAgents': null,
   'preflight.detectRemoteAgents': PreflightDetectRemoteAgents,
@@ -1064,14 +1044,6 @@ export const RPC_PARAMS_BY_METHOD = {
   'skills.removeInstall': SkillRemoveRequestSchema,
   'skills.share': AgentSkillShareRequestSchema,
   'skills.uploadChunk': SkillUploadChunkRequestSchema,
-  'speech.dictation.cancel': DictationHandle,
-  'speech.dictation.chunk': DictationChunk,
-  'speech.dictation.finish': DictationHandle,
-  'speech.dictation.setup': DictationSetup,
-  'speech.dictation.start': DictationStart,
-  'speech.models.delete': SpeechModelAction,
-  'speech.models.download': SpeechModelAction,
-  'speech.models.list': null,
   'ssh.connect': SshTarget,
   'ssh.getState': SshTarget,
   'ssh.listRemovedTargetLabels': null,

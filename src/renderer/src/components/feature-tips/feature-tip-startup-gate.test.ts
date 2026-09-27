@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getDefaultOnboardingState, getDefaultVoiceSettings } from '../../../../shared/constants'
+import { getDefaultOnboardingState } from '../../../../shared/constants'
 import type { CliInstallStatus } from '../../../../shared/cli-install-types'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { OnboardingState } from '../../../../shared/onboarding-state-types'
@@ -19,15 +19,8 @@ const existingUserOnboarding: OnboardingState = {
 const firstTimeOnboarding: OnboardingState = getDefaultOnboardingState()
 
 // Session search defaults on so tests about the older tips don't see the session-search tip first.
-function makeSettings(
-  voiceEnabled = false,
-  sessionSearchEnabled = true
-): Pick<GlobalSettings, 'voice' | 'aiVaultSearch'> {
+function makeSettings(sessionSearchEnabled = true): Pick<GlobalSettings, 'aiVaultSearch'> {
   return {
-    voice: {
-      ...getDefaultVoiceSettings(),
-      enabled: voiceEnabled
-    },
     aiVaultSearch: { enabled: sessionSearchEnabled, historyDays: null }
   }
 }
@@ -102,24 +95,7 @@ describe('feature tip startup gate', () => {
     ).toEqual({ kind: 'skip' })
   })
 
-  it('opens the CLI tip after the voice tip was marked seen', () => {
-    expect(
-      getFeatureTipsAppOpenDecision({
-        activeModal: 'none',
-        cliInstalled: false,
-        featureTipsSeenIds: ['voice-dictation'],
-        featureInteractions: {},
-        onboarding: existingUserOnboarding,
-        persistedUIReady: true,
-        promptedThisSession: false,
-        settings: makeSettings(),
-        suppressedByOnboardingThisSession: false,
-        webClient: false
-      })
-    ).toEqual({ kind: 'open', tipId: 'orca-cli' })
-  })
-
-  it('opens the CLI tip after voice dictation is already enabled', () => {
+  it('opens the CLI tip after another tip was marked seen', () => {
     expect(
       getFeatureTipsAppOpenDecision({
         activeModal: 'none',
@@ -129,7 +105,7 @@ describe('feature tip startup gate', () => {
         onboarding: existingUserOnboarding,
         persistedUIReady: true,
         promptedThisSession: false,
-        settings: makeSettings(true),
+        settings: makeSettings(),
         suppressedByOnboardingThisSession: false,
         webClient: false
       })
@@ -158,7 +134,7 @@ describe('feature tip startup gate', () => {
       getFeatureTipsAppOpenDecision({
         activeModal: 'none',
         cliInstalled: false,
-        featureTipsSeenIds: ['voice-dictation', 'orca-cli', 'cmd-j-palette'],
+        featureTipsSeenIds: ['orca-cli', 'cmd-j-palette'],
         featureInteractions: {},
         onboarding: existingUserOnboarding,
         persistedUIReady: true,
@@ -170,29 +146,12 @@ describe('feature tip startup gate', () => {
     ).toEqual({ kind: 'skip' })
   })
 
-  it('does not open the voice tip after Settings marked it seen and dictation is disabled', () => {
-    expect(
-      getFeatureTipsAppOpenDecision({
-        activeModal: 'none',
-        cliInstalled: true,
-        featureTipsSeenIds: ['voice-dictation', 'cmd-j-palette'],
-        featureInteractions: {},
-        onboarding: existingUserOnboarding,
-        persistedUIReady: true,
-        promptedThisSession: false,
-        settings: makeSettings(false),
-        suppressedByOnboardingThisSession: false,
-        webClient: false
-      })
-    ).toEqual({ kind: 'skip' })
-  })
-
   it('does not open the CLI tip after the CLI is installed', () => {
     expect(
       getFeatureTipsAppOpenDecision({
         activeModal: 'none',
         cliInstalled: true,
-        featureTipsSeenIds: ['voice-dictation', 'cmd-j-palette'],
+        featureTipsSeenIds: ['cmd-j-palette'],
         featureInteractions: {},
         onboarding: existingUserOnboarding,
         persistedUIReady: true,
@@ -209,7 +168,7 @@ describe('feature tip startup gate', () => {
       getFeatureTipsAppOpenDecision({
         activeModal: 'none',
         cliInstalled: null,
-        featureTipsSeenIds: ['voice-dictation'],
+        featureTipsSeenIds: [],
         featureInteractions: {},
         onboarding: existingUserOnboarding,
         persistedUIReady: true,
@@ -245,7 +204,7 @@ describe('feature tip startup gate', () => {
         cliInstalled: true,
         featureTipsSeenIds: ['cmd-j-palette'],
         featureInteractions: {
-          'voice-dictation': { firstInteractedAt: 100, interactionCount: 1 }
+          'ai-commit-generation': { firstInteractedAt: 100, interactionCount: 1 }
         },
         onboarding: existingUserOnboarding,
         persistedUIReady: true,
@@ -287,7 +246,7 @@ describe('feature tip startup gate', () => {
       onboarding: existingUserOnboarding,
       persistedUIReady: true,
       promptedThisSession: false,
-      settings: makeSettings(false, args.sessionSearchEnabled),
+      settings: makeSettings(args.sessionSearchEnabled),
       suppressedByOnboardingThisSession: false,
       webClient: args.webClient
     })

@@ -14,7 +14,6 @@ export const FEATURE_INTERACTION_CATEGORIES = [
   'terminal',
   'collaboration',
   'resource_management',
-  'voice',
   'source_control'
 ] as const
 export type FeatureInteractionCategory = (typeof FEATURE_INTERACTION_CATEGORIES)[number]
@@ -50,7 +49,6 @@ export const FEATURE_INTERACTION_CATEGORY_BY_ID = {
   'ephemeral-vm-setup': 'setup',
   'agent-orchestration-setup': 'setup',
   'agent-orchestration': 'collaboration',
-  'mobile-emulator-agent-setup': 'setup',
   'ai-commit-generation': 'source_control',
   'ai-pr-generation': 'source_control',
   'claude-account-switching': 'settings',
@@ -72,7 +70,6 @@ export const FEATURE_INTERACTION_CATEGORY_BY_ID = {
   'terminal-tabs': 'terminal',
   'tab-splits': 'terminal',
   'usage-tracking': 'settings',
-  'voice-dictation': 'voice',
   'workspace-cleanup': 'workspace'
 } as const satisfies Record<FeatureInteractionId, FeatureInteractionCategory>
 

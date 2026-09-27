@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { createTestStore, makeWorktree } from './store-test-helpers'
+import { createGlobalSettingsFixture } from '../../../../shared/global-settings-test-fixture'
 import type { AppState } from '../types'
 import type { WorktreeLineage } from '../../../../shared/worktree/lineage-types'
 import type { PublicKnownRuntimeEnvironment } from '../../../../shared/runtime-environments'
@@ -182,39 +183,30 @@ beforeEach(() => {
 
 describe('createSettingsSlice checked persistence', () => {
   it('stores the authoritative settings after a successful checked update', async () => {
-    const authoritativeSettings = {
-      pluginSystemEnabled: true,
-      notifications: {}
-    } as unknown as NonNullable<AppState['settings']>
+    const authoritativeSettings = createGlobalSettingsFixture({ experimentalNativeChat: true })
     settingsSet.mockResolvedValueOnce(authoritativeSettings)
     const store = createTestStore()
     store.setState({
-      settings: {
-        pluginSystemEnabled: false,
-        notifications: {}
-      } as unknown as AppState['settings']
+      settings: createGlobalSettingsFixture({ experimentalNativeChat: false })
     })
 
     await expect(
-      store.getState().updateSettingsOrThrow({ pluginSystemEnabled: true })
+      store.getState().updateSettingsOrThrow({ experimentalNativeChat: true })
     ).resolves.toBeUndefined()
 
-    expect(settingsSet).toHaveBeenCalledWith({ pluginSystemEnabled: true })
+    expect(settingsSet).toHaveBeenCalledWith({ experimentalNativeChat: true })
     expect(store.getState().settings).toBe(authoritativeSettings)
   })
 
   it('rejects a failed checked update without changing local settings', async () => {
     const persistenceError = new Error('settings IPC failed')
-    const currentSettings = {
-      pluginSystemEnabled: false,
-      notifications: {}
-    } as unknown as NonNullable<AppState['settings']>
+    const currentSettings = createGlobalSettingsFixture({ experimentalNativeChat: false })
     settingsSet.mockRejectedValueOnce(persistenceError)
     const store = createTestStore()
     store.setState({ settings: currentSettings })
 
     await expect(
-      store.getState().updateSettingsOrThrow({ pluginSystemEnabled: true })
+      store.getState().updateSettingsOrThrow({ experimentalNativeChat: true })
     ).rejects.toBe(persistenceError)
 
     expect(store.getState().settings).toBe(currentSettings)
@@ -222,10 +214,7 @@ describe('createSettingsSlice checked persistence', () => {
 
   it('keeps the existing update action best-effort and logs persistence failures', async () => {
     const persistenceError = new Error('settings IPC failed')
-    const currentSettings = {
-      pluginSystemEnabled: false,
-      notifications: {}
-    } as unknown as NonNullable<AppState['settings']>
+    const currentSettings = createGlobalSettingsFixture({ experimentalNativeChat: false })
     settingsSet.mockRejectedValueOnce(persistenceError)
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const store = createTestStore()
@@ -233,7 +222,7 @@ describe('createSettingsSlice checked persistence', () => {
 
     try {
       await expect(
-        store.getState().updateSettings({ pluginSystemEnabled: true })
+        store.getState().updateSettings({ experimentalNativeChat: true })
       ).resolves.toBeUndefined()
 
       expect(consoleError).toHaveBeenCalledWith('Failed to update settings:', persistenceError)

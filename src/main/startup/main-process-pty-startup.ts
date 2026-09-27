@@ -28,17 +28,7 @@ import {
 import { startFirstWindowStartupServices } from './first-window-startup-services'
 import { logStartupMilestone } from './startup-diagnostics'
 import type { WindowsDesktopStartupServices } from './windows-desktop-shell-path-startup'
-import type { RuntimeWorktreeLifecycleEvent } from '../runtime/orca-runtime'
 import { mainProcessState as state } from './main-process-state'
-
-export function emitPluginWorktreeLifecycle(event: RuntimeWorktreeLifecycleEvent): void {
-  state.pluginService?.emitEvent(
-    event.kind === 'created' ? 'worktree.created' : 'worktree.removed',
-    event.kind === 'created'
-      ? { worktreeId: event.worktreeId, path: event.path, branch: event.branch }
-      : { worktreeId: event.worktreeId, path: event.path }
-  )
-}
 
 export function handleCodexHomePtySpawned(args: {
   id: string

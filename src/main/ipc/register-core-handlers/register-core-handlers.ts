@@ -48,10 +48,7 @@ import { registerAutomationHandlers } from '../automations'
 import { registerKeybindingHandlers } from '../keybindings'
 import { registerTelemetryHandlers } from '../telemetry'
 import { registerShellHandlers } from '../shell'
-import { registerPetHandlers } from '../pet'
-import { registerPluginHandlers } from '../plugins'
 import { registerUIHandlers, setTrustedUIRendererWebContentsId } from '../ui'
-import { registerSpeechHandlers } from '../speech'
 import { registerTerminalRenderDesyncEvidenceHandler } from '../terminal-render-desync-evidence'
 import { registerOrcaProfileHandlers } from '../orca-profiles'
 import { registerCodexAccountHandlers } from '../codex-accounts'
@@ -90,8 +87,6 @@ import {
   scanRuntimeAiVaultSessions
 } from '../../ai-vault/runtime-session-scanner'
 import { callRuntimeSessionSearch } from '../../ai-vault/runtime-session-search-call'
-import type { PluginService } from '../../plugins/plugin-service'
-import type { PluginMarketplaceHandlerServices } from '../plugin-marketplaces'
 
 let registered = false
 
@@ -122,9 +117,7 @@ export function registerCoreHandlers(
   agentAwakeService?: AgentAwakeService,
   crashReports?: CrashReportStore,
   keybindings?: KeybindingService,
-  lifecycleOptions: CoreHandlerLifecycleOptions = {},
-  pluginService?: PluginService,
-  marketplaceServices?: PluginMarketplaceHandlerServices
+  lifecycleOptions: CoreHandlerLifecycleOptions = {}
 ): void {
   // Why: on macOS the app can stay alive after all windows close, then
   // openMainWindow() is called again on 'activate'. ipcMain.handle() throws
@@ -185,12 +178,7 @@ export function registerCoreHandlers(
     registerAutomationHandlers(store, automations)
   }
   if (keybindings) {
-    registerKeybindingHandlers(keybindings, () => {
-      void pluginService?.reconcileActivationState()
-    })
-  }
-  if (pluginService) {
-    registerPluginHandlers(store, pluginService, runtime, marketplaceServices)
+    registerKeybindingHandlers(keybindings)
   }
   registerTelemetryHandlers(store)
   registerOrcaProfileHandlers(store, {
@@ -200,7 +188,6 @@ export function registerCoreHandlers(
   })
   registerBrowserHandlers()
   registerShellHandlers(store)
-  registerPetHandlers()
   registerSessionHandlers(store)
   registerUIHandlers(store, { isDashboardPopoutRenderer })
   registerWorkspaceSpaceHandlers(store)
@@ -214,7 +201,7 @@ export function registerCoreHandlers(
   registerFilesystemWatcherHandlers()
   registerRuntimeHandlers(runtime)
   registerRuntimeEnvironmentHandlers(store)
-  registerEphemeralVmHandlers(store, pluginService)
+  registerEphemeralVmHandlers(store)
   registerAiVaultSearchHandlers({
     callRuntimeSearch: (environmentId, method, params) =>
       callRuntimeSessionSearch(app.getPath('userData'), environmentId, method, params)
@@ -234,5 +221,4 @@ export function registerCoreHandlers(
   })
   registerNativeChatHandlers()
   registerClipboardHandlers(store)
-  registerSpeechHandlers(store)
 }

@@ -18,7 +18,6 @@ import { AgentExecHandler } from './agent-exec-handler'
 import { WorkspaceSessionHandler } from './workspace-session-handler'
 import { AiVaultHandler } from './ai-vault-handler'
 import { createRelayAiVaultService } from './ai-vault-service-factory'
-import { registerRelayPluginHostCallHandlers } from './plugin-host-call-handler'
 import { SshPtyConsumerSessionAdapter } from './ssh-pty-consumer-session-adapter'
 import { RelayPtySourcePublication } from './relay-pty-source-publication'
 import { SkillInstallHandler } from './skill-install-handler'
@@ -111,11 +110,6 @@ export class RelayRuntimeServices {
       })
     ]
 
-    registerRelayPluginHostCallHandlers(
-      dispatcher,
-      () => null,
-      () => ({ grantedCapabilities: null, services: null })
-    )
     this.registerRemoteCliRoutes()
   }
 

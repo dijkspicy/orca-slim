@@ -1,5 +1,6 @@
 import { expect, it, vi } from 'vitest'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
+import { createGlobalSettingsFixture } from '../../../../shared/global-settings-test-fixture'
 import { createTestStore } from './store-test-helpers'
 import { markRuntimeEnvironmentCompatible } from '@/runtime/runtime-rpc-client'
 
@@ -10,7 +11,7 @@ it('does not overwrite a settings write with an older owner hydration', async ()
     api: {
       settings: {
         get: vi.fn().mockReturnValue(settingsRead),
-        set: vi.fn().mockResolvedValue({ pluginSystemEnabled: true })
+        set: vi.fn().mockResolvedValue({ experimentalNativeChat: true })
       },
       runtimeEnvironments: { list: vi.fn().mockResolvedValue([]) }
     }
@@ -18,11 +19,11 @@ it('does not overwrite a settings write with an older owner hydration', async ()
   const store = createTestStore()
   const hydration = store.getState().fetchSettings()
 
-  await store.getState().updateSettingsOrThrow({ pluginSystemEnabled: true })
-  resolveSettingsRead({ pluginSystemEnabled: false } as GlobalSettings)
+  await store.getState().updateSettingsOrThrow({ experimentalNativeChat: true })
+  resolveSettingsRead(createGlobalSettingsFixture({ experimentalNativeChat: false }))
   await hydration
 
-  expect(store.getState().settings?.pluginSystemEnabled).toBe(true)
+  expect(store.getState().settings?.experimentalNativeChat).toBe(true)
 })
 
 it('preserves host defaults added while owner hydration is in flight', async () => {
@@ -73,7 +74,7 @@ it('publishes startup settings before remote owner hydration and local catalog w
         }),
         set: vi.fn().mockResolvedValue({
           activeRuntimeEnvironmentId: 'env-1',
-          pluginSystemEnabled: true,
+          experimentalNativeChat: true,
           worktreeVisibilityDefaults: { external: 'show' }
         })
       },
@@ -95,7 +96,7 @@ it('publishes startup settings before remote owner hydration and local catalog w
   expect(store.getState().worktreeVisibilityDefaultsByHost.local).toEqual({ external: 'show' })
   expect(localCatalogStarted).toBe(true)
 
-  await store.getState().updateSettingsOrThrow({ pluginSystemEnabled: true })
+  await store.getState().updateSettingsOrThrow({ experimentalNativeChat: true })
   resolveOwnerRead({
     ok: true,
     result: { settings: { worktreeVisibilityDefaults: { external: 'hide' } } },
@@ -103,7 +104,7 @@ it('publishes startup settings before remote owner hydration and local catalog w
   })
   await startup
   await store.getState().awaitOwnerWorktreeVisibilityDefaultsHydration()
-  expect(store.getState().settings?.pluginSystemEnabled).toBe(true)
+  expect(store.getState().settings?.experimentalNativeChat).toBe(true)
   expect(store.getState().worktreeVisibilityDefaultsByHost['runtime:env-1']).toEqual({
     external: 'hide'
   })
@@ -228,7 +229,7 @@ it('preserves owner defaults when an unrelated settings write settles after hydr
   })
   const store = createTestStore()
   await store.getState().fetchSettings({ deferOwnerWorktreeVisibilityDefaults: true })
-  const update = store.getState().updateSettingsOrThrow({ pluginSystemEnabled: true })
+  const update = store.getState().updateSettingsOrThrow({ experimentalNativeChat: true })
 
   resolveOwnerRead({
     ok: true,
@@ -236,14 +237,16 @@ it('preserves owner defaults when an unrelated settings write settles after hydr
     _meta: { runtimeId: 'runtime-write-race' }
   })
   await store.getState().awaitOwnerWorktreeVisibilityDefaultsHydration()
-  resolveSettingsWrite({
-    activeRuntimeEnvironmentId: 'env-write-race',
-    pluginSystemEnabled: true
-  } as GlobalSettings)
+  resolveSettingsWrite(
+    createGlobalSettingsFixture({
+      activeRuntimeEnvironmentId: 'env-write-race',
+      experimentalNativeChat: true
+    })
+  )
   await update
 
   expect(store.getState().settings).toMatchObject({
-    pluginSystemEnabled: true,
+    experimentalNativeChat: true,
     worktreeVisibilityDefaults: { external: 'hide' }
   })
 })

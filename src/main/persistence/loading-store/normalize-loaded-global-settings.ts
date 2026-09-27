@@ -1,4 +1,3 @@
-import { getDefaultVoiceSettings } from '../../../shared/constants'
 import { normalizePRBotAuthorOverrides } from '../../../shared/pr-bot-author-overrides'
 import { normalizeTerminalQuickCommands } from '../../../shared/terminal-quick-commands'
 import { normalizeOpenInApplications } from '../../../shared/open-in-applications'
@@ -9,7 +8,6 @@ import { projectSourceControlAiToLegacyCommitMessageAi } from '../../../shared/s
 import { normalizeUiLanguage } from '../../../shared/ui-language'
 import { normalizeNativeChatShellEnvironmentVariables } from '../../../shared/native-chat-shell-environment'
 import { stripRetiredGlobalSettings } from '../applying-settings/terminal-settings-migrations'
-import { readLegacySidekickFlag } from '../applying-settings/onboarding-normalization'
 import { normalizeMachineName } from '../../../shared/machine-name'
 import type { PersistedState } from '../../../shared/persisted-state-types'
 import type { PreparedLoadedTerminalSettings } from './prepare-loaded-terminal-settings'
@@ -62,8 +60,6 @@ export function normalizeLoadedGlobalSettings(
     ...stripRetiredGlobalSettings(parsed.settings),
     worktreeVisibilityDefaults: migratedExternalVisibility.defaults,
     prBotAuthorOverrides: normalizePRBotAuthorOverrides(parsed.settings?.prBotAuthorOverrides),
-    // Why: v1.3.42 renamed the sidekick setting to pet; carry the old flag forward once so enabled users don't lose it.
-    experimentalPet: parsed.settings?.experimentalPet ?? readLegacySidekickFlag(parsed) ?? false,
     // Why: early builds saved the disabled default; flip Linux/macOS profiles once to match platform, guards keep opt-outs.
     primarySelectionMiddleClickPaste: migratePrimarySelectionPlatformDefault
       ? true
@@ -141,10 +137,6 @@ export function normalizeLoadedGlobalSettings(
     commitMessageAi: projectSourceControlAiToLegacyCommitMessageAi(
       migratedSourceControlAi,
       parsed.settings?.commitMessageAi ?? defaults.settings.commitMessageAi
-    ),
-    voice: {
-      ...getDefaultVoiceSettings(),
-      ...parsed.settings?.voice
-    }
+    )
   }
 }

@@ -6,11 +6,7 @@ import { mainProcessState as state } from './main-process-state'
 import { prepareCodexAiVaultSessionResume } from '../codex/codex-ai-vault-session-resume'
 import { resolveHostCodexSessionSourceHome } from '../codex/codex-session-source-home'
 import { preserveAgentAuthBeforeRestart } from '../agent-auth-restart-preservation'
-import {
-  emitPluginWorktreeLifecycle,
-  handleCodexHomePtySpawned,
-  handlePtyExit
-} from './main-process-pty-startup'
+import { handleCodexHomePtySpawned, handlePtyExit } from './main-process-pty-startup'
 import { prepareCodexRuntimeHomeForLaunch } from './codex-launch-preparation'
 import { prepareCodexSessionResumeForLaunch } from './codex-session-resume-launch'
 import { isRecoveryReloadInFlight } from './main-window-lifecycle-flags'
@@ -97,11 +93,7 @@ export function attachMainWindowCoreServices(
       // relaunch above stay reasonless so a restart never reads as signed out.
       onBeforeOrcaProfileSignOut: () =>
         state.desktopRelayService?.fenceAndCloseNow(RELAY_HOST_CLOSE_REASON.SIGNED_OUT)
-    },
-    state.pluginService ?? undefined,
-    state.pluginMarketplaceService && state.pluginMarketplaceInstaller
-      ? { marketplace: state.pluginMarketplaceService, installer: state.pluginMarketplaceInstaller }
-      : undefined
+    }
   )
   automations.setWebContents(window.webContents)
   automations.start()
@@ -124,8 +116,7 @@ export function attachMainWindowCoreServices(
       // Why: let the PTY layer skip its orphan sweep on the recovery reload that re-fires did-finish-load, so live local sessions survive (#5787).
       isRecoveryReloadInFlight,
       onCodexHomePtySpawned: handleCodexHomePtySpawned,
-      onPtyExit: handlePtyExit,
-      onWorktreeLifecycle: emitPluginWorktreeLifecycle
+      onPtyExit: handlePtyExit
     }
   )
   // Why: attach the durable renderer pull now, but launch the diagnostic process after first paint.

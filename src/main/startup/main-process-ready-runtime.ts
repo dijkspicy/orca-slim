@@ -28,7 +28,6 @@ import {
   configureRuntimeServices
 } from './main-process-runtime-service'
 import { initializeMainProcessAutomations } from './main-process-automations'
-import { initializeMainProcessPlugins } from './main-process-plugins'
 import { collectWorktreeTrashSweepRoots, sweepStaleWorktreeTrash } from '../worktree-trash'
 import { runAfterFirstWindowShown } from './first-window-deferral'
 import { logStartupMilestone } from './startup-diagnostics'
@@ -46,7 +45,6 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
   const runtime = initializeMainProcessRuntime()
   initializeMainProcessAutomations()
   configureRuntimeServices(runtime)
-  await initializeMainProcessPlugins(runtime)
   state.agentBrowserBridge = new AgentBrowserBridge(browserManager, {
     onTabsChanged: (worktreeId) => runtime.notifyMobileSessionTabsChanged(worktreeId)
   })

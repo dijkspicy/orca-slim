@@ -108,20 +108,11 @@ function installWillQuitHandler(): void {
     destroySystemTray()
     // Why: an agent still working at quit gets no terminating hook, so stats.flushAsync() closes those sessions out synchronously (only the write is deferred) — otherwise their duration is lost.
     state.automations?.stop()
-    // Why: plugin hosts are forked children; dispose sends shutdown and
-    // escalates to SIGKILL so they cannot outlive the app. The promise joins
-    // the teardown barrier below — quitting before it resolves would let
-    // Electron exit first and orphan the hosts.
-    state.pluginKillListService = null
-    state.pluginMarketplaceService = null
-    state.pluginMarketplaceInstaller = null
-    const pluginHostShutdown = state.pluginService?.dispose() ?? Promise.resolve()
     const codexBackfillRecoveryShutdown = stopCodexStateDbBackfillRecoveries()
     // Why before the stop: teardown stamps each working session's resume marker with why the app
     // went away, and an update install is a restart the user never chose.
     setStructuredAgentSessionTeardownTrigger('quit')
     const structuredAgentSessionShutdown = stopStructuredAgentSessionRuntime()
-    state.pluginService = null
     setUnreadDockBadgeCount(0)
     // Why wait rather than kill: the child finishes fine orphaned, and signalling
     // it mid-prune strands a ref lock Git never clears. The wait is only for the
@@ -237,7 +228,6 @@ function installWillQuitHandler(): void {
       { name: 'browser-client-hosts', promise: browserClientHostShutdown },
       { name: 'local-ssh-browser-routes', promise: localSshRouteShutdown },
       { name: 'ssh', promise: sshShutdown },
-      { name: 'plugin-hosts', promise: pluginHostShutdown },
       { name: 'skill-uploads', promise: skillUploadShutdown },
       { name: 'grok-hooks', promise: grokHookCleanup },
       { name: 'ref-maintenance', promise: refMaintenanceShutdown },

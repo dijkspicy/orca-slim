@@ -1,6 +1,5 @@
 import type { ExecutionHostId } from './execution-host'
 import type { GitHubProjectSettings } from './github/project-types'
-import type { VoiceSettings } from './speech-types'
 import type { AiVaultSearchSettings } from './ai-vault-search-settings'
 import type { GitLabProjectSettings } from './gitlab-types'
 import type { TaskProvider } from './task-providers'
@@ -346,19 +345,6 @@ export type GlobalSettings = {
   defaultTuiAgent: TuiAgent | 'blank' | null
   /** Agents hidden from picker/auto-launch; detection stays a raw PATH snapshot. */
   disabledTuiAgents: TuiAgent[]
-  /** Master switch for the experimental plugin system. Off by default: no
-   *  discovery, no panels, no plugin code paths run at all. */
-  pluginSystemEnabled: boolean
-  /** Qualified plugin keys (`publisher.id`) the user disabled. Discovered
-   *  plugins stay listed but are not activated. */
-  disabledPlugins: string[]
-  /** Consent records: qualified plugin key → capability/worker-trust fingerprint.
-   *  A plugin whose current fingerprint differs is pending again, so an update
-   *  crossing either trust boundary re-prompts before code runs. Absent key =
-   *  never consented. */
-  pluginConsents: Record<string, string>
-  /** Local directories loaded as dev-mode plugins (manifest hot-reload). */
-  devPluginPaths: string[]
   /** One-shot guard: start Claude Agent Teams hidden for existing profiles without overriding later opt-ins. */
   claudeAgentTeamsDefaultDisabledMigrated?: boolean
   /** Why: worktree deletion is destructive (rm -rf of the working dir), so confirm by default. */
@@ -459,11 +445,6 @@ export type GlobalSettings = {
   mobilePairingCustomAddresses?: string[]
   /** Name this runtime reports to paired clients; empty uses the host's detected name. */
   machineName: string
-  /** Experimental: floating animated pet in the bottom-right corner. Opt-in cosmetic;
-   *  off never mounts the overlay, and toggling takes effect instantly (renderer-side). */
-  experimentalPet: boolean
-  /** Legacy persisted key from before the sidekick -> pet rename; read only during migration, new writes use experimentalPet. */
-  experimentalSidekick?: boolean
   /** Experimental: left-sidebar Agents view — threaded feed of agent completions, blocking/unread state, worktree creation. */
   experimentalActivity: boolean
   /** Experimental: pop-out Kanban dashboard for monitoring and opening agent terminals across worktrees. */
@@ -516,8 +497,6 @@ export type GlobalSettings = {
   /** One-shot cohort marker for the tab-switch keybinding swap. 'pending' =
    *  pre-existing install (seed pins old chords, then flips to 'done'); 'done' = fresh install. */
   tabSwitchKeybindingSeed?: 'pending' | 'done'
-  /** Local voice/dictation config. Optional for pre-voice profiles; getDefaultSettings() hydrates defaults via the persistence merge. */
-  voice?: VoiceSettings
   /** Transcript full-text search consent + retention. Absent means off; nothing indexes until the user opts in. */
   aiVaultSearch?: AiVaultSearchSettings
 }

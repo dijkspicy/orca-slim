@@ -66,11 +66,6 @@ vi.mock('@/store', () => ({
     })
 }))
 
-vi.mock('@/store/plugin-language-packs', () => ({
-  usePluginLanguagePackStore: (selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ packs: [], loaded: true })
-}))
-
 vi.mock('@/i18n/i18n', () => ({
   translate: (_key: string, fallback: string, options?: Record<string, string>) =>
     fallback.replace(/\{\{(\w+)\}\}/g, (match, name: string) => options?.[name] ?? match)

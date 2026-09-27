@@ -347,8 +347,7 @@
       "fe21e8f6f5": "Go back ({{value0}})",
       "064bd07810": "Go back",
       "ce37cf5279": "Toggle sidebar ({{value0}})",
-      "e4b9e7dff7": "Toggle sidebar",
-      "pluginCommandFailed": "Could not run the plugin command."
+      "e4b9e7dff7": "Toggle sidebar"
     },
     "web": {
       "WebConnect": {
@@ -966,9 +965,6 @@
           }
         }
       },
-      "pluginCommandKeybindings": {
-        "group": "Plugins"
-      },
       "feedback": {
         "image": {
           "attachments": {
@@ -1137,8 +1133,6 @@
         "projectHostsSummary": "{{value0}} hosts",
         "linearTitle": "Linear",
         "linearDescription": "How Linear works in Orca, setup checklist, agent skill, and example prompts.",
-        "pluginsTitle": "Plugins",
-        "pluginsDescription": "Install and manage experimental Orca plugins.",
         "tasksDescription": "Connect providers, install the Linear skill, and choose what appears in Tasks.",
         "artifactsTitle": "Artifacts",
         "artifactsDescription": "Share HTML and Markdown files with your team and manage their public links.",
@@ -2431,11 +2425,11 @@
         "projectsGroupsHeader": "Projects & Groups",
         "projectBadge": "Project",
         "repoGroupBadge": "Repo group",
-        "pluginCommandFailed": "Could not run the plugin command.",
         "recentChatsTerminalsHeader": "Recent Chats & Terminals",
         "27f10cca63": "Search chats, terminals, worktrees, settings, and actions...",
         "2770f02910": "Search chats, terminals, worktrees, settings, and actions",
-        "lastActiveTime": "Last active {{value0}} ago"
+        "lastActiveTime": "Last active {{value0}} ago",
+        "pluginCommandFailed": "Could not run the plugin command."
       },
       "github": {
         "pr": {
@@ -3616,24 +3610,6 @@
       },
       "status": {
         "bar": {
-          "PetStatusSegment": {
-            "3668339495": "Remove {{value0}}",
-            "cd8c6c654c": "Pet settings…",
-            "ed176ad68f": "Import .codex-pet bundle…",
-            "59b5955621": "Upload your own…",
-            "0608ad02a2": "Choose pet",
-            "b75484a01a": "Pet size",
-            "c6aa805b1b": "px",
-            "2f7bbaa457": "Size",
-            "34c25dfe9c": "Pet",
-            "aec479308a": "Pet menu",
-            "cef0ab4636": "Failed to import pet bundle",
-            "2021d4f6db": "Pet bundle import needs a full app restart (not just reload).",
-            "f395c9a685": "Failed to import file",
-            "e6234bcc17": "Custom pet upload needs a full app restart (not just reload).",
-            "6d0a8cd179": "Show pet",
-            "1fbc51cc77": "Hide pet"
-          },
           "PortsStatusSegment": {
             "4ebf90c12e": "No external ports detected",
             "7dac3ecc9d": "External Ports",
@@ -4509,7 +4485,6 @@
           "skippedReasonReadOnly": "This copy is in a read-only location, so Orca left it out of the update. Change its permissions to let Orca update it.",
           "skippedReasonInaccessible": "Orca couldn’t read this copy, so it left the skill out of the update.",
           "skippedReasonInRepo": "This is a project skill, not a global one — Orca only updates your global skills, so it left this out of the update.",
-          "skippedReasonPluginCache": "A plugin manages this skill, so Orca left it out of the update — update the plugin instead.",
           "skippedReasonExternalLink": "This copy is a shortcut pointing outside Orca’s skill folders, so Orca left it out of the update.",
           "skippedReasonBrokenLink": "This copy is a shortcut to something that no longer exists, so Orca left it out — you can safely delete it.",
           "chipCurrent": "Current",
@@ -4520,7 +4495,6 @@
           "chipBrokenLink": "Broken link",
           "chipReadOnly": "Read only",
           "chipInRepo": "In a repo",
-          "chipPluginCache": "Plugin cache",
           "tipCurrent": "This copy matches the current official version.",
           "tipUnrecognized": "This copy doesn’t match any official version — it may be modified, or a different skill with the same name.",
           "tipInaccessible": "Orca couldn’t read this copy (a permissions or file error).",
@@ -4529,12 +4503,14 @@
           "tipBrokenLink": "A shortcut to something that no longer exists.",
           "tipReadOnly": "This copy is in a read-only location.",
           "tipInRepo": "This copy lives inside a project, not your global skills.",
-          "tipPluginCache": "This copy is managed by a plugin.",
           "skippedReasonDuplicate": "This is a separate copy, so the update won’t reach it — the command only refreshes the main copy. Remove this copy, then reinstall the skill so this location follows the main one.",
           "skippedReasonNewer": "This copy is a later version than the one this build of Orca ships, so Orca left it alone rather than roll it back. Updating Orca will bring the two back in line.",
           "skippedReasonStaleRecord": "The skills updater has no usable record of this copy, so it reports the skill as already up to date and changes nothing. Reinstall it to bring the record back in line: {{value0}}",
           "chipNewer": "Newer",
-          "tipNewer": "This copy is a later version than the one this build of Orca ships."
+          "tipNewer": "This copy is a later version than the one this build of Orca ships.",
+          "skippedReasonPluginCache": "A plugin manages this skill, so Orca left it out of the update — update the plugin instead.",
+          "chipPluginCache": "Plugin cache",
+          "tipPluginCache": "This copy is managed by a plugin."
         },
         "SkillFreshnessUpdateDialog": {
           "title": "Update skills",
@@ -5029,7 +5005,6 @@
         "SkillDelete": {
           "dismissResults": "Dismiss",
           "reasonBundled": "Bundled with Orca — it would be restored",
-          "reasonPlugin": "Installed by a plugin — remove the plugin instead",
           "reasonUnowned": "This skill lives outside Orca’s skill folders — delete it where it is stored",
           "reasonMissing": "This skill is no longer on disk",
           "reasonStale": "This skill changed since the list was loaded — refresh and try again",
@@ -5050,7 +5025,8 @@
           "nothingOther": "None of the {{count}} selected skills can be deleted from here.",
           "placementSummaryParts": "Removes {{parts}} across {{roots}}.",
           "placementJoin": " and ",
-          "retainedSource": "The skill itself stays at {{path}}."
+          "retainedSource": "The skill itself stays at {{path}}.",
+          "reasonPlugin": "Installed by a plugin — remove the plugin instead"
         }
       },
       "sidebar": {
@@ -8891,38 +8867,6 @@
         "UIZoomControl": {
           "c2c64b24d0": "Reset"
         },
-        "VoicePane": {
-          "6fa734ed95": "Delete {{value0}}",
-          "68de13f72c": "Failed to delete model.",
-          "1ba81c0ff0": "recommended",
-          "cfde55c7b0": "Failed to download model.",
-          "43fd4f454b": "Speech Model",
-          "7cf715f891": "is held.",
-          "295d84b849": "once to start, again to stop. Hold: dictate while",
-          "ff9a680010": "Toggle: press",
-          "ba4a900d1d": "Dictation Mode",
-          "0121960365": "Enable Voice Dictation",
-          "366e1b4f36": "to dictate text into any focused pane.",
-          "4465596675": "Press",
-          "62d2a84d31": "Failed to clear OpenAI API key",
-          "37aba8bb63": "OpenAI API key cleared",
-          "8572bbb537": "Failed to save OpenAI API key",
-          "506df81ba6": "OpenAI API key saved",
-          "91980ce124": "{{value0}} MB",
-          "61a16c8141": "Extracting...",
-          "b6536a1d12": "extracting",
-          "8f4d2a51d7": "offline",
-          "d504ab05f0": "streaming",
-          "fbe5990716": "Select Model",
-          "e24f7d43d2": "Select a speech model. Local models run offline; cloud models require an API key.",
-          "174da92062": "Hold",
-          "118b3c2dee": "Toggle",
-          "901985625d": "toggle",
-          "ad5d036ecc": "Could not request microphone permission. Voice dictation was not enabled.",
-          "f9a9cf6928": "Microphone permission is required before enabling voice dictation.",
-          "1eac933202": "Opened macOS Privacy & Security. Enable dictation again after granting access.",
-          "cd9fe37556": "Microphone permission granted"
-        },
         "WorktreeSymlinksSection": {
           "1c1e35b219": "Remove {{value0}}",
           "b814c618e2": "Linked paths",
@@ -11410,256 +11354,6 @@
           "openUrlLabel": "Open URL",
           "leaveToTerminalLabel": "Leave to terminal"
         },
-        "PluginConsentDialog": {
-          "workerTrust": "Background worker — runs its own process",
-          "instructionalTrust": "Instructional content — runs later under user or agent authority",
-          "declarativeTrust": "Declarative content — no plugin code",
-          "panelTrust": "Panel or host-integrated content — no worker process",
-          "trustShortWorker": "Worker",
-          "trustShortInstructional": "Instructional",
-          "trustShortPanel": "Panel",
-          "trustShortDeclarative": "Declarative",
-          "reviewTitle": "Review plugin",
-          "title": "Review permissions",
-          "mixedTitle": "Review access and content",
-          "instructionalTitle": "Review plugin content",
-          "subtitle": "{{value0}} v{{value1}} · {{value2}}",
-          "reconsent": "Permissions, the worker trust tier, or instructional content changed since you last reviewed this plugin. Review it again before it can run.",
-          "capabilities": "This plugin can",
-          "warning": "These permissions limit how the plugin uses Orca's API. Its worker still runs as a normal process on your computer with full access to your files, network, and other processes.",
-          "instructionalWarning": "This plugin has no worker process. Its instructional content can still cause actions when you or an agent use it. Review the instructions and commands below before enabling it.",
-          "panelWarning": "These permissions limit how the plugin uses Orca's API. This plugin has no background worker.",
-          "declarativeWarning": "This plugin contributes validated content only. It does not run a background worker or receive access to Orca's API.",
-          "keepDisabled": "Keep Disabled",
-          "enable": "Enable plugin",
-          "capability": {
-            "workspaceRead": "Read the name, branch, and terminal list of your focused worktree",
-            "terminalSend": "Type text into a terminal you can see (always a specific terminal)",
-            "notificationsShow": "Show desktop notifications labeled with the plugin name",
-            "storage": "Store data in the plugin's own storage folder",
-            "secrets": "Store and read secrets in the plugin's own encrypted vault",
-            "eventsSubscribe": "Get notified when worktrees are created or removed and when agent status changes",
-            "settingsOwn": "Read and change the plugin's own settings"
-          },
-          "decisionFailed": "Could not save the permission decision. Try again."
-        },
-        "PluginConsentProvenance": {
-          "official": "Official",
-          "bundled": "Bundled with Orca",
-          "local": "Local folder",
-          "community": "Community",
-          "source": "Source",
-          "sourceLabel": "Source",
-          "commit": "Pinned commit",
-          "localCommit": "Local folder — no commit",
-          "indexCommit": "Index commit"
-        },
-        "PluginDevelopmentSection": {
-          "saveFailed": "Could not save development plugin paths.",
-          "pathRequired": "Enter a plugin folder path.",
-          "title": "Development",
-          "help": "Load plugins directly from folders on this computer while you develop them. Dev plugins still require permission review. Workers run on this desktop host; SSH workspace actions route through Orca, so paths here are desktop paths.",
-          "remove": "Remove",
-          "pathLabel": "Development plugin folder path",
-          "placeholder": "/Users/you/plugins/my-plugin or C:\\Users\\you\\plugins\\my-plugin",
-          "add": "Add path"
-        },
-        "PluginInstallDialog": {
-          "localRequired": "Enter the plugin folder path.",
-          "gitUrlRequired": "Enter a repository URL.",
-          "gitUrlInvalid": "Use an HTTPS or SSH Git URL. Executable Git helper protocols are not allowed.",
-          "gitRefRequired": "Add an explicit #ref (tag or commit) so the install is pinned — for example #v0.1.0.",
-          "title": "Install plugin",
-          "description": "Installing copies the plugin into Orca and shows its permissions for review. No plugin code runs until you enable it.",
-          "source": "Install source",
-          "localTab": "Local folder",
-          "gitTab": "Git URL",
-          "localLabel": "Plugin folder path",
-          "localPlaceholder": "/Users/you/plugins/my-plugin or C:\\Users\\you\\plugins\\my-plugin",
-          "localHelp": "Full path to a folder containing orca-plugin.json on this computer. The path is used exactly as entered.",
-          "gitLabel": "Repository URL with #ref",
-          "gitPlaceholder": "https://git.example/acme/orca-notes#v0.1.0",
-          "gitHelp": "Append an explicit #ref — a tag or commit — so the install is pinned. Works with GitHub, GitLab, and any git host.",
-          "cancel": "Cancel",
-          "installing": "Installing…",
-          "install": "Install",
-          "installFailed": "Plugin installation failed. Check the source and try again."
-        },
-        "PluginKeybindingConsentPreview": {
-          "heading": "Keyboard shortcuts",
-          "worktree": "Runs only while a workspace is active.",
-          "global": "Runs in the app without requiring an active workspace.",
-          "shadows": "Replaces: {{value0}}"
-        },
-        "PluginMarketplaceBrowser": {
-          "loadFailed": "Could not load marketplace plugins.",
-          "refreshFailed": "Could not refresh marketplaces. Cached listings remain available.",
-          "previewFailed": "Could not prepare this plugin for review. Refresh the marketplace and try again.",
-          "installFailed": "Could not install this plugin. The reviewed source may have changed.",
-          "manageSources": "Manage sources",
-          "refreshing": "Refreshing…",
-          "refresh": "Refresh",
-          "noInstalledTitle": "No plugins installed",
-          "noInstalled": "Plugins you install appear here.",
-          "loading": "Loading marketplace plugins…",
-          "tryAgain": "Try again",
-          "noSourcesTitle": "No marketplaces configured",
-          "noSources": "Add an official, community, or private Git marketplace to browse plugins.",
-          "addSource": "Add marketplace",
-          "noResultsTitle": "No matching plugins",
-          "noResults": "No marketplace plugins match this search.",
-          "clearSearch": "Clear search",
-          "emptyTitle": "Nothing listed yet",
-          "empty": "The configured marketplaces do not list any plugins."
-        },
-        "PluginMarketplaceListingRow": {
-          "official": "Official",
-          "installed": "Installed",
-          "noDescription": "No description provided.",
-          "blocked": "Blocked by Orca's safety list: {{value0}}",
-          "blockedAction": "Blocked",
-          "checkUpdate": "Check for update",
-          "install": "Install"
-        },
-        "PluginMarketplacePreviewDialog": {
-          "languagePacksOne": "1 language pack",
-          "languagePacks": "{{value0}} language packs",
-          "commandsOne": "1 command",
-          "commands": "{{value0}} commands",
-          "keybindingsOne": "1 keyboard shortcut",
-          "keybindings": "{{value0}} keyboard shortcuts",
-          "vmRecipesOne": "1 VM recipe",
-          "vmRecipes": "{{value0}} VM recipes",
-          "panelsOne": "1 panel",
-          "panels": "{{value0}} panels",
-          "eventsOne": "1 event subscription",
-          "events": "{{value0}} event subscriptions",
-          "worker": "Background worker",
-          "versionLine": "v{{value0}} · {{value1}}",
-          "includes": "Includes",
-          "noContributions": "Manifest metadata only",
-          "capabilities": "Requested access",
-          "workerWarning": "Capabilities limit how this plugin uses Orca's API. Its worker still runs as a normal process on this computer with full access to your files, network, and other processes.",
-          "blocked": "Orca's safety list blocks this plugin: {{value0}}",
-          "current": "This exact plugin content is already installed.",
-          "close": "Close",
-          "cancel": "Cancel",
-          "update": "Update plugin",
-          "install": "Install plugin"
-        },
-        "PluginMarketplaceSourceDialog": {
-          "addFailed": "Could not add this marketplace. Check the Git URL, ref, and your Git credentials.",
-          "refreshFailed": "Could not refresh this marketplace. Its last valid cached index is still available.",
-          "removeFailed": "Could not remove this marketplace.",
-          "title": "Marketplace sources",
-          "description": "Marketplaces are pinned Git repositories. Orca uses your existing system Git credentials for private repositories.",
-          "urlLabel": "Git URL",
-          "urlDescription": "Use an HTTPS or SSH repository URL containing orca-marketplace.json.",
-          "urlPlaceholder": "https://git.example.com/team/plugins.git",
-          "refLabel": "Git ref",
-          "refDescription": "Choose a branch, tag, or commit. Every fetched index is recorded at an exact commit.",
-          "adding": "Adding…",
-          "add": "Add source",
-          "configured": "Configured sources",
-          "empty": "No marketplace sources configured.",
-          "official": "Official",
-          "owner": "Owner: {{value0}}",
-          "pinnedCommit": "Pinned at {{value0}}",
-          "stale": "Refresh failed. Browsing the last valid cached index.",
-          "refreshLabel": "Refresh {{value0}}",
-          "removeLabel": "Remove {{value0}}",
-          "done": "Done"
-        },
-        "PluginRemoveDialog": {
-          "title": "Remove plugin?",
-          "description": "This removes {{value0}} and its stored plugin data from this computer. You can install it again later.",
-          "cancel": "Cancel",
-          "remove": "Remove plugin"
-        },
-        "PluginRollbackDialog": {
-          "title": "Roll back plugin?",
-          "description": "This deactivates {{value0}} and restores its previous immutable version. If that version requests different access or instructional content, Orca will require another review.",
-          "cancel": "Cancel",
-          "confirm": "Roll back plugin"
-        },
-        "PluginsSettingsSection": {
-          "systemLabel": "Plugin system",
-          "systemDescription": "Discovers installed plugins and lets you enable them individually. Nothing runs until you review and enable it. Workers always run on this computer; SSH workspace actions route through Orca.",
-          "featureOff": "Turn on the plugin system to see and manage installed plugins. Anything already installed stays on disk and stays disabled while the system is off.",
-          "loading": "Loading plugins…",
-          "noInstalledResultsTitle": "No matching plugins",
-          "noInstalledResults": "No installed plugins match this search.",
-          "emptyTitle": "No plugins installed yet",
-          "empty": "Browse the All tab to install plugins from a marketplace.",
-          "loadFailed": "Could not load plugins.",
-          "settingsUpdateFailed": "Could not save plugin settings.",
-          "install": "Install plugin",
-          "title": "Plugins",
-          "experimental": "Experimental",
-          "description": "Install and manage Orca plugins. Plugins run on this computer, even for SSH workspaces.",
-          "logsFailed": "Could not load plugin logs.",
-          "rollbackFailed": "Could not roll back this plugin. A previous immutable version may not be available."
-        },
-        "PluginSettingsRow": {
-          "blocked": "Blocked",
-          "needsReview": "Needs review",
-          "restarting": "Restarting",
-          "invalid": "Invalid",
-          "error": "Error",
-          "disabled": "Disabled",
-          "running": "Running",
-          "enabled": "Enabled",
-          "loadingLogs": "Loading logs…",
-          "noLogs": "No log lines recorded.",
-          "logCount": "Last {{value0}} of up to 200 retained lines",
-          "reviewAndEnable": "Review & enable",
-          "official": "Official",
-          "dev": "Dev",
-          "bundled": "Bundled",
-          "noDescription": "No description provided.",
-          "killListMessage": "Orca's safety list disabled this plugin: {{value0}}",
-          "viewAdvisory": "View advisory",
-          "runtimeError": "The plugin stopped after an activation or worker error.",
-          "restartCount": " · {{value0}} restarts",
-          "moreActions": "More actions for {{value0}}",
-          "hideLogs": "Hide logs",
-          "viewLogs": "View logs",
-          "rollback": "Roll back",
-          "remove": "Remove",
-          "disableLabel": "Disable {{value0}}",
-          "enableLabel": "Enable {{value0}}",
-          "invalidPluginError": "The plugin manifest or installed files are invalid. Fix the plugin, then refresh."
-        },
-        "PluginVmRecipeConsentPreview": {
-          "create": "Create",
-          "suspend": "Suspend",
-          "resume": "Resume",
-          "destroy": "Destroy",
-          "heading": "VM recipe commands",
-          "commandLabel": "{{value0}} · {{value1}} command"
-        },
-        "pluginError": {
-          "installManifestMissing": "No readable orca-plugin.json was found. Choose the plugin's root folder.",
-          "installManifestInvalid": "orca-plugin.json is invalid. Ask the plugin author to fix the manifest.",
-          "incompatible": "This plugin requires a different Orca version.",
-          "installUnsafePath": "The plugin contains an unsafe file path or symlink and was not installed.",
-          "installLimit": "The plugin exceeds Orca's install size or file-count limits.",
-          "installGit": "Orca could not fetch the pinned Git revision. Check the URL, #ref, access, and system Git setup.",
-          "invalidManifestMissing": "The plugin root is missing orca-plugin.json. Add it, then refresh plugins.",
-          "invalidManifest": "orca-plugin.json is invalid. Fix it, then refresh plugins.",
-          "invalidArtifact": "A declared worker or panel file is missing or unsafe. Fix the plugin files, then refresh.",
-          "consentChanged": "The plugin changed while you were reviewing it. Close this dialog and review the updated permissions."
-        },
-        "plugins": {
-          "search": {
-            "title": "Plugins",
-            "description": "Install and manage experimental Orca plugins.",
-            "install": "install plugin",
-            "permissions": "plugin permissions",
-            "logs": "plugin logs",
-            "development": "development plugins"
-          }
-        },
         "LinearAgentSkillGuide": {
           "setupConnectTitle": "1. Connect Linear",
           "setupConnectBody": "Personal API key so Orca can list issues and open linked workspaces.",
@@ -11792,19 +11486,6 @@
           "devChannelUnsupported": "{{value0}} builds are produced only for {{value1}}. Linux stays on Stable or RC.",
           "downloadInstaller": "Download installer",
           "manualInstallHint": "{{value0}} builds are unsigned on Windows, so the in-app updater cannot install one over a signed build. Run the downloaded installer once — Windows will warn about an unknown publisher — and every later switch, including back to Stable, works from here."
-        },
-        "VoiceMicrophoneSetting": {
-          "systemDefault": "System default",
-          "unavailable": "unavailable",
-          "label": "Microphone",
-          "description": "Input device used for voice dictation. System default follows the OS microphone setting.",
-          "accessHint": "Allow microphone access to list input devices.",
-          "allowAccess": "Allow access",
-          "noMicrophoneFound": "No microphone was found. Connect one, then try again.",
-          "openFailedDetail": "Could not open the microphone. {{value0}}",
-          "openFailed": "Could not open the microphone.",
-          "openedSystemSettings": "Opened macOS Privacy & Security. Grant microphone access, then try again.",
-          "permissionDenied": "Microphone access is blocked. Grant it in your system settings, then try again."
         },
         "TerminalTccAttributionNotice": {
           "body": "The terminal daemon was started by an Orca install that no longer exists, so macOS can’t attribute its commands to Orca — Accessibility and Automation grants are silently ignored (osascript fails with error -25211). Restarting the daemon fixes this; running terminal sessions will close.",
@@ -13542,12 +13223,6 @@
                 }
               }
             }
-          },
-          "PluginPanel": {
-            "unavailable": "This plugin panel is no longer available.",
-            "loading": "Loading plugin panel...",
-            "unresponsive": "This plugin panel stopped responding and was suspended.",
-            "loadFailed": "The plugin panel could not be loaded."
           },
           "activityBar": {
             "error": "Error"
@@ -15411,26 +15086,6 @@
           }
         }
       },
-      "dictation": {
-        "DictationController": {
-          "de136f1199": "Speech error: {{value0}}",
-          "7afff43472": "Dictation finished, but no text field was focused.",
-          "55127a3706": "Dictation failed: {{value0}}",
-          "bb7f599ee7": "Open Settings",
-          "2d5b9fabf9": "Microphone access denied. Grant access in system settings, then restart Orca.",
-          "5d2c3e7ae3": "No speech detected.",
-          "micFallback": "Selected microphone unavailable. Using system default.",
-          "micDisconnected": "Microphone disconnected. Dictation stopped."
-        },
-        "DictationIndicator": {
-          "335e1bc6cb": "Stop dictation",
-          "7f3660a7ba": "Starting mic…",
-          "f082d0cb9d": "Processing…",
-          "3de5a129e7": "Listening",
-          "4977162383": "Too loud",
-          "25f2b7a6a5": "Speaking"
-        }
-      },
       "dashboard": {
         "DashboardAgentChildDisclosure": {
           "1b57ce9fa4": "{{value0}} {{value1}} child {{value2}}"
@@ -15593,10 +15248,6 @@
                 "project": "Project"
               }
             }
-          },
-          "pluginQuickActions": {
-            "description": "{{value0}} plugin command",
-            "keyword": "plugin command"
           }
         }
       },
@@ -16575,11 +16226,6 @@
             "noPr": "No PR",
             "unavailable": "Unavailable"
           }
-        },
-        "pluginPanelBridgeHost": {
-          "actionsUnavailable": "Plugin actions are not available in this client.",
-          "messageTooLarge": "Message exceeds the size limit.",
-          "tooManyRequests": "Too many requests."
         }
       },
       "link": {
@@ -16846,16 +16492,6 @@
           "errorNotAuthorized": "Browser access was denied.",
           "errorAlreadyActive": "Element selection is already active.",
           "errorInjectionFailed": "Could not start element selection on this page."
-        }
-      },
-      "pluginCatalog": {
-        "PluginCatalogLayout": {
-          "title": "Plugins",
-          "filter": "Plugin filter",
-          "all": "All",
-          "installed": "Installed",
-          "searchLabel": "Search plugins",
-          "searchPlaceholder": "Search plugins, categories, or publishers"
         }
       },
       "terminalPane": {
@@ -17237,8 +16873,6 @@
         "placeholder": "Send a message…",
         "mentionHint": "Referencing file:",
         "attach": "Attach file",
-        "startDictation": "Start dictation",
-        "stopDictation": "Stop dictation",
         "noSkills": "No matching skills",
         "noCommandsOrSkills": "No matching commands or skills",
         "noCommands": "No matching commands",
@@ -17254,7 +16888,6 @@
         "skillScopeProject": "Project",
         "skillScopePersonal": "Personal",
         "skillScopeBuiltIn": "Built-in",
-        "skillScopePlugin": "Plugin",
         "localAttachmentUnsupported": "Local attachments are not available for remote sessions.",
         "removeAttachment": "Remove attachment",
         "pastedImageLabel": "Pasted image",
@@ -17293,7 +16926,8 @@
         "imagePreviewUnavailable": "Preview unavailable",
         "workspaceAttachmentMismatch": "Files can only be attached to their source workspace.",
         "attachmentOwnerChanged": "This workspace changed hosts while attaching — drop the files again.",
-        "attachmentUnreadable": "Couldn't read the dropped files."
+        "attachmentUnreadable": "Couldn't read the dropped files.",
+        "skillScopePlugin": "Plugin"
       },
       "tool": {
         "exitCode": "exit {{value0}}",
@@ -17969,7 +17603,6 @@
   "featureTips": {
     "voice": {
       "demoPrompt": "Review this diff for edge cases and add tests for anything you find.",
-      "startDictation": "Start dictation",
       "agentPromptTitle": "Agent prompt",
       "listening": "Listening...",
       "focusPaneInstruction": "Focus a terminal, editor, or agent prompt, then press",

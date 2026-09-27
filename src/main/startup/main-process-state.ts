@@ -18,10 +18,6 @@ import type { DesktopPushService } from '../runtime/push/desktop-push-service'
 import type { AgentAwakeService } from '../agent-awake-service'
 import type { CrashReportStore } from '../crash-reporting/crash-report-store'
 import type { AutomationService } from '../automations/service'
-import type { PluginService } from '../plugins/plugin-service'
-import type { PluginKillListService } from '../plugins/plugin-kill-list-service'
-import type { PluginMarketplaceService } from '../plugins/plugin-marketplace-service'
-import type { PluginMarketplaceInstaller } from '../plugins/plugin-marketplace-installer'
 import type { KeybindingService } from '../keybindings/keybinding-service'
 import type { RelayBrokerStatus } from '../runtime/relay/relay-session-broker'
 import type { AgentBrowserBridge } from '../browser/agent-browser-bridge'
@@ -102,10 +98,6 @@ export const mainProcessState = {
   watcherShutdownPromise: null as Promise<void> | null,
   watcherShutdownDone: false,
   automations: null as AutomationService | null,
-  pluginService: null as PluginService | null,
-  pluginKillListService: null as PluginKillListService | null,
-  pluginMarketplaceService: null as PluginMarketplaceService | null,
-  pluginMarketplaceInstaller: null as PluginMarketplaceInstaller | null,
   keybindings: null as KeybindingService | null,
   // Why: a reload intent must not leak to a later load; the recovery reload re-fires did-finish-load, so its flag spares live PTYs from the orphan sweep (#5787).
   expectedRendererReload: createWebContentsTimedFlag(),

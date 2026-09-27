@@ -146,21 +146,4 @@ export class RuntimeMobileNotificationController {
   dismiss(notificationId: string): void {
     this.dispatch({ type: 'dismiss', notificationId })
   }
-
-  async dispatchPlugin(input: {
-    pluginId: string
-    title: string
-    body?: string
-  }): Promise<{ delivered: boolean }> {
-    const title = `${input.pluginId}: ${input.title}`
-    const body = input.body ?? ''
-    let delivered = false
-    try {
-      delivered = getRuntimeDesktopSurface().showNotification({ title, body })
-    } catch {
-      // Headless runtimes still relay the notification to mobile clients.
-    }
-    this.dispatch({ type: 'notification', source: 'plugin', title, body })
-    return { delivered }
-  }
 }

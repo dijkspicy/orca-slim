@@ -50,9 +50,9 @@ const SOURCE_ROOT = resolve(__dirname, '../..')
  * implementation.
  *
  * `fork` is deliberately absent from SPAWN_CALL. Node forwards the option to
- * spawn at runtime, but `ForkOptions` does not declare it, so the two live
- * sites (`daemon/daemon-init.ts`, `plugins/plugin-host-process.ts`) cannot be
- * fixed without a cast. Recorded here rather than silently unscanned.
+ * spawn at runtime, but `ForkOptions` does not declare it, so the live site
+ * (`daemon/daemon-init.ts`) cannot be fixed without a cast. Recorded here
+ * rather than silently unscanned.
  */
 const OWNER_FILE = 'shared/child-process/run-process.ts'
 

@@ -1,6 +1,5 @@
 import type { PersistedState } from '../../../shared/persisted-state-types'
 import { getDefaultUIState } from '../../../shared/constants'
-import { isPluginPanelTabKey } from '../../../shared/plugins/plugin-manifest'
 
 export function normalizeGroupBy(groupBy: unknown): PersistedState['ui']['groupBy'] {
   if (
@@ -70,11 +69,6 @@ export function normalizeRightSidebarTab(tab: unknown): PersistedState['ui']['ri
     tab === 'checks' ||
     tab === 'ports'
   ) {
-    return tab
-  }
-  // Why: plugin tabs are open-ended `plugin:<publisher>.<id>/<panel>` keys; validate the
-  // shape so a persisted plugin tab doesn't reset to Explorer on restart.
-  if (typeof tab === 'string' && isPluginPanelTabKey(tab)) {
     return tab
   }
   return getDefaultUIState().rightSidebarTab

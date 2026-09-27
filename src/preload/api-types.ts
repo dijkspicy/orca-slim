@@ -45,15 +45,12 @@ import type {
   MacosTccPromptsApi,
   NotificationsApi
 } from './api/os-permission-api'
-import type { PetApi } from './api/pet-api'
-import type { PluginsApi } from './api/plugin-host-api'
 import type { PreflightApi } from './api/preflight-api'
 import type { PtyApi } from './api/pty-api'
 import type { ProjectGroupsApi, ProjectsApi, RepositoryApi } from './api/repository-api'
 import type { RuntimeApi } from './api/runtime-api'
 import type { KeybindingsApi, SettingsApi } from './api/settings-api'
 import type { ShellApi } from './api/shell-api'
-import type { SpeechApi } from './api/speech-api'
 import type { SshApi } from './api/ssh-api'
 import type { DiagnosticsApi, MemoryApi, StatsApi, TelemetryApi } from './api/telemetry-api'
 import type { UiCommandEventApi } from './api/ui-command-event-api'
@@ -114,7 +111,6 @@ export type PreloadApi = {
   computerUsePermissions: ComputerUsePermissionsApi
   shell: ShellApi
   skills: SkillsApi
-  pet: PetApi
   browser: BrowserApi
   hooks: HooksApi
   ephemeralVm: EphemeralVmApi
@@ -145,10 +141,8 @@ export type PreloadApi = {
   wsl: RuntimeApi['wsl']
   pwsh: RuntimeApi['pwsh']
   gitBash: RuntimeApi['gitBash']
-  plugins: PluginsApi
   agentStatus: AgentStatusApi
   mobile: MobileApi
-  speech: SpeechApi
 }
 
 export type {
@@ -170,17 +164,6 @@ export type {
   NativeChatSubscribeArgs,
   NativeChatSubscriptionFrame
 } from './api/native-chat-api'
-export type {
-  PluginHostInstallResult,
-  PluginHostInstallSource,
-  PluginHostListEntry,
-  PluginHostLogLine,
-  PluginHostPanel,
-  PluginHostStatus,
-  PluginMarketplaceHostInstallPreview,
-  PluginMarketplaceHostListing,
-  PluginMarketplaceHostSourceState
-} from './api/plugin-host-api'
 export type {
   PreflightApi,
   PreflightRuntimeContext,

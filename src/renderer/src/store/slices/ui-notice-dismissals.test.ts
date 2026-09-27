@@ -55,24 +55,23 @@ describe('createUISlice feature tips', () => {
     })
     const store = createUIStore()
 
-    store.getState().markFeatureTipsSeen(['voice-dictation'])
-    store.getState().markFeatureTipsSeen(['voice-dictation'])
+    store.getState().markFeatureTipsSeen(['cmd-j-palette'])
+    store.getState().markFeatureTipsSeen(['cmd-j-palette'])
 
-    expect(store.getState().featureTipsSeenIds).toEqual(['voice-dictation'])
+    expect(store.getState().featureTipsSeenIds).toEqual(['cmd-j-palette'])
     expect(setMock).toHaveBeenCalledTimes(1)
-    expect(setMock).toHaveBeenCalledWith({ featureTipsSeenIds: ['voice-dictation'] })
+    expect(setMock).toHaveBeenCalledWith({ featureTipsSeenIds: ['cmd-j-palette'] })
   })
 
   it('normalizes persisted feature tip ids during hydration', () => {
     const store = createUIStore()
 
-    store.getState().hydratePersistedUI(
-      makePersistedUI({
-        featureTipsSeenIds: ['voice-dictation', 'unknown', 'voice-dictation'] as never
-      })
-    )
+    const ui = makePersistedUI({})
+    // Feed a stale id the way a paired client would send it: through the wire, untyped.
+    Object.assign(ui, { featureTipsSeenIds: ['cmd-j-palette', 'unknown', 'cmd-j-palette'] })
+    store.getState().hydratePersistedUI(ui)
 
-    expect(store.getState().featureTipsSeenIds).toEqual(['voice-dictation'])
+    expect(store.getState().featureTipsSeenIds).toEqual(['cmd-j-palette'])
   })
 })
 

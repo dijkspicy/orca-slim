@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { AdvancedPane } from './AdvancedPane'
 import { ExperimentalPane } from './ExperimentalPane'
-import { PluginsSettingsSection } from './PluginsSettingsSection'
 import { SettingsSection } from './SettingsSection'
 import { translate } from '@/i18n/i18n'
 import type { SettingsRenderContext } from './settings-render-context'
@@ -82,17 +81,4 @@ export function renderExperimentalSettingsSection(
       ) : null}
     </SettingsSection>
   )
-}
-
-export function renderPluginsSettingsSection(
-  context: SettingsRenderContext
-): React.JSX.Element | null {
-  const { model, view } = context
-  return model.showDesktopOnlySettings ? (
-    <PluginsSettingsSection
-      mounted={view.isSectionMounted('plugins')}
-      settings={model.settings}
-      updateSettings={model.updateSettingsOrThrow}
-    />
-  ) : null
 }

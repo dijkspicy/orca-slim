@@ -23,7 +23,6 @@ export function isCliFeatureTipCompleted(status: CliInstallStatus): boolean {
 }
 
 export type FeatureTipSettings = {
-  voice?: GlobalSettings['voice']
   aiVaultSearch?: GlobalSettings['aiVaultSearch']
 }
 
@@ -47,7 +46,6 @@ export function getPendingFeatureTips(args: {
     seenTipIds: new Set(args.seenTipIds),
     completedTipIds: getCompletedFeatureTipIds({
       cliInstalled: args.cliInstalled,
-      voiceDictationEnabled: args.settings?.voice?.enabled === true,
       sessionSearchTipCompleted: isSessionSearchFeatureTipCompleted(args.settings, args.webClient),
       featureInteractions: args.featureInteractions
     })

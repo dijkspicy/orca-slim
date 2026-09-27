@@ -11,22 +11,12 @@ describe('feature tips', () => {
   it('orders new unseen tips before older unseen tips', () => {
     const tips = getOrderedUnseenFeatureTips({ seenTipIds: new Set<FeatureTipId>() })
 
-    expect(tips.map((tip) => tip.id)).toEqual([
-      'agent-session-search',
-      'orca-cli',
-      'cmd-j-palette',
-      'voice-dictation'
-    ])
+    expect(tips.map((tip) => tip.id)).toEqual(['agent-session-search', 'orca-cli', 'cmd-j-palette'])
   })
 
   it('skips tips the user has already seen', () => {
     const tips = getOrderedUnseenFeatureTips({
-      seenTipIds: new Set<FeatureTipId>([
-        'voice-dictation',
-        'orca-cli',
-        'cmd-j-palette',
-        'agent-session-search'
-      ])
+      seenTipIds: new Set<FeatureTipId>(['orca-cli', 'cmd-j-palette', 'agent-session-search'])
     })
 
     expect(tips.map((tip) => tip.id)).toEqual([])
@@ -38,7 +28,6 @@ describe('feature tips', () => {
       seenTipIds: new Set<FeatureTipId>(['cmd-j-palette']),
       completedTipIds: getCompletedFeatureTipIds({
         cliInstalled: true,
-        voiceDictationEnabled: true,
         sessionSearchTipCompleted: true
       })
     })
@@ -48,10 +37,9 @@ describe('feature tips', () => {
 
   it('skips the CLI tip when the CLI is already installed', () => {
     const tips = getOrderedUnseenFeatureTips({
-      seenTipIds: new Set<FeatureTipId>(['voice-dictation', 'cmd-j-palette']),
+      seenTipIds: new Set<FeatureTipId>(['cmd-j-palette']),
       completedTipIds: getCompletedFeatureTipIds({
         cliInstalled: true,
-        voiceDictationEnabled: false,
         sessionSearchTipCompleted: true
       })
     })
@@ -59,32 +47,11 @@ describe('feature tips', () => {
     expect(tips.map((tip) => tip.id)).toEqual([])
   })
 
-  it('skips tips for features the user has already interacted with', () => {
-    const tips = getOrderedUnseenFeatureTips({
-      seenTipIds: new Set<FeatureTipId>(),
-      completedTipIds: getCompletedFeatureTipIds({
-        cliInstalled: false,
-        voiceDictationEnabled: false,
-        sessionSearchTipCompleted: true,
-        featureInteractions: {
-          'voice-dictation': { firstInteractedAt: 100, interactionCount: 1 }
-        }
-      })
-    })
-
-    expect(tips.map((tip) => tip.id)).toEqual(['orca-cli', 'cmd-j-palette'])
-  })
-
   it('normalizes persisted tip ids', () => {
-    expect(
-      normalizeFeatureTipIds([
-        'feature-tour',
-        'orca-cli',
-        'bogus',
-        'cmd-j-palette',
-        'voice-dictation'
-      ])
-    ).toEqual(['orca-cli', 'cmd-j-palette', 'voice-dictation'])
+    expect(normalizeFeatureTipIds(['feature-tour', 'orca-cli', 'bogus', 'cmd-j-palette'])).toEqual([
+      'orca-cli',
+      'cmd-j-palette'
+    ])
   })
 
   it('describes the command palette tip as a passive acknowledgement', () => {
@@ -110,14 +77,5 @@ describe('feature tips', () => {
     })
     expect(cliTip?.description).toContain('coordinate child worktrees')
     expect(cliTip?.description).toContain('communicate between worktrees')
-  })
-
-  it('does not label the voice dictation tip as new', () => {
-    const voiceTip = FEATURE_TIPS.find((tip) => tip.id === 'voice-dictation')
-
-    expect(voiceTip?.eyebrow).toBe('Tip')
-    expect(voiceTip?.priority).toBe('unseen')
-    expect(voiceTip?.title).toBe('Dictate into any pane')
-    expect(voiceTip?.ctaLabel).toBe('Set up voice dictation')
   })
 })

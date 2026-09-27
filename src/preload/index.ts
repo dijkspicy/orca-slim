@@ -10,7 +10,6 @@ import { platformApi } from './api/platform-bridge'
 import { wslApi } from './api/wsl-bridge'
 import { pwshApi } from './api/pwsh-bridge'
 import { gitBashApi } from './api/git-bash-bridge'
-import { pluginsApi } from './api/plugins-bridge'
 import { reposApi } from './api/repos-bridge'
 import { projectsApi } from './api/projects-bridge'
 import { projectGroupsApi } from './api/project-groups-bridge'
@@ -50,7 +49,6 @@ import { developerPermissionsApi } from './api/developer-permissions-bridge'
 import { computerUsePermissionsApi } from './api/computer-use-permissions-bridge'
 import { shellApi } from './api/shell-bridge'
 import { skillsApi } from './api/skills-bridge'
-import { petApi } from './api/pet-bridge'
 import { browserApi } from './api/browser-bridge'
 import { hooksApi } from './api/hooks-bridge'
 import { ephemeralVmApi } from './api/ephemeral-vm-bridge'
@@ -81,7 +79,6 @@ import { automationsApi } from './api/automations-bridge'
 import { e2eApi } from './api/e2e-bridge'
 import { mobileApi } from './api/mobile-bridge'
 import { agentStatusApi } from './api/agent-status-bridge'
-import { speechApi } from './api/speech-bridge'
 
 installNativeFileDropHandlers()
 installBrowserFindListener()
@@ -103,7 +100,6 @@ const api = {
   wsl: wslApi,
   pwsh: pwshApi,
   gitBash: gitBashApi,
-  plugins: pluginsApi,
   repos: reposApi,
   projects: projectsApi,
   projectGroups: projectGroupsApi,
@@ -147,7 +143,6 @@ const api = {
   computerUsePermissions: computerUsePermissionsApi,
   shell: shellApi,
   skills: skillsApi,
-  pet: petApi,
   browser: browserApi,
   hooks: hooksApi,
   ephemeralVm: ephemeralVmApi,
@@ -177,8 +172,7 @@ const api = {
   automations: automationsApi,
   e2e: e2eApi,
   mobile: mobileApi,
-  agentStatus: agentStatusApi,
-  speech: speechApi
+  agentStatus: agentStatusApi
 } satisfies PreloadApi
 
 if (process.contextIsolated) {

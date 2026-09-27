@@ -16,7 +16,6 @@ const {
   packageNameFromSpecifier,
   prunePackagedNodePty,
   prunePackagedParcelWatcher,
-  prunePackagedSherpaOnnx,
   prunePackagedRuntimeTypeAndSourceMapArtifacts,
   prunePackagedZodSources,
   verifyPackagedMainRuntimeDeps
@@ -347,26 +346,6 @@ describe('packaged runtime resources', () => {
     }
   })
 
-  it('prunes duplicate darwin sherpa-onnx runtime dylib aliases', async () => {
-    const resourcesDir = await mkdtemp(join(tmpdir(), 'orca-sherpa-prune-'))
-    try {
-      const packageDir = join(resourcesDir, 'node_modules', 'sherpa-onnx-darwin-arm64')
-      await mkdir(packageDir, { recursive: true })
-      await writeFile(join(packageDir, 'sherpa-onnx.node'), '', 'utf8')
-      await writeFile(join(packageDir, 'libonnxruntime.1.23.2.dylib'), '', 'utf8')
-      await writeFile(join(packageDir, 'libonnxruntime.dylib'), '', 'utf8')
-
-      prunePackagedSherpaOnnx(resourcesDir, 'darwin')
-
-      await expect(readdir(packageDir).then((entries) => entries.sort())).resolves.toEqual([
-        'libonnxruntime.1.23.2.dylib',
-        'sherpa-onnx.node'
-      ])
-    } finally {
-      await removeTree(resourcesDir)
-    }
-  })
-
   it('prunes zod TypeScript sources from packaged runtime resources', async () => {
     const resourcesDir = await mkdtemp(join(tmpdir(), 'orca-zod-prune-'))
     try {
@@ -405,11 +384,6 @@ describe('packaged runtime resources', () => {
       try {
         const appOutDir = join(root, 'linux-unpacked')
         const resourcesDir = join(appOutDir, 'resources')
-        await cp(
-          join(process.cwd(), 'resources', 'plugins', 'launch'),
-          join(resourcesDir, 'plugins', 'launch'),
-          { recursive: true }
-        )
         await seedBundledRipgrep(resourcesDir)
 
         const unpackedMainDir = join(resourcesDir, 'app.asar.unpacked', 'out', 'main')
@@ -472,11 +446,6 @@ describe('packaged runtime resources', () => {
         const resourcesDir = join(root, 'linux-unpacked', 'resources')
         const launcherPath = join(resourcesDir, 'bin', 'orca-ide')
         await mkdir(join(resourcesDir, 'bin'), { recursive: true })
-        await cp(
-          join(process.cwd(), 'resources', 'plugins', 'launch'),
-          join(resourcesDir, 'plugins', 'launch'),
-          { recursive: true }
-        )
         await seedBundledRipgrep(resourcesDir)
         await mkdir(join(resourcesDir, 'node_modules', 'zod', 'src'), { recursive: true })
         // Why: afterPack now fails hard when the unpacked daemon entry is

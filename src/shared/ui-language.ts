@@ -6,7 +6,7 @@ export const UI_LANGUAGE_JAPANESE = 'ja'
 export const UI_LANGUAGE_SPANISH = 'es'
 export const UI_LANGUAGE_FRENCH = 'fr'
 
-export type BuiltInUiLanguage =
+export type UiLanguage =
   | typeof UI_LANGUAGE_SYSTEM
   | typeof UI_LANGUAGE_ENGLISH
   | typeof UI_LANGUAGE_CHINESE
@@ -15,10 +15,7 @@ export type BuiltInUiLanguage =
   | typeof UI_LANGUAGE_SPANISH
   | typeof UI_LANGUAGE_FRENCH
 
-export type PluginUiLanguage = `plugin:${string}`
-export type UiLanguage = BuiltInUiLanguage | PluginUiLanguage
-
-const UI_LANGUAGE_VALUES = new Set<BuiltInUiLanguage>([
+const UI_LANGUAGE_VALUES: readonly UiLanguage[] = [
   UI_LANGUAGE_SYSTEM,
   UI_LANGUAGE_ENGLISH,
   UI_LANGUAGE_CHINESE,
@@ -26,20 +23,8 @@ const UI_LANGUAGE_VALUES = new Set<BuiltInUiLanguage>([
   UI_LANGUAGE_JAPANESE,
   UI_LANGUAGE_SPANISH,
   UI_LANGUAGE_FRENCH
-])
-
-const PLUGIN_UI_LANGUAGE_RE =
-  /^plugin:[a-z0-9]+(?:-[a-z0-9]+)*\.[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i
-
-export function isPluginUiLanguage(value: unknown): value is PluginUiLanguage {
-  return typeof value === 'string' && PLUGIN_UI_LANGUAGE_RE.test(value)
-}
+]
 
 export function normalizeUiLanguage(value: unknown): UiLanguage {
-  if (isPluginUiLanguage(value)) {
-    return value
-  }
-  return UI_LANGUAGE_VALUES.has(value as BuiltInUiLanguage)
-    ? (value as BuiltInUiLanguage)
-    : UI_LANGUAGE_SYSTEM
+  return UI_LANGUAGE_VALUES.find((language) => language === value) ?? UI_LANGUAGE_SYSTEM
 }

@@ -29,7 +29,6 @@ export type FeatureInteractionId =
   | 'agent-orchestration-setup'
   | 'agent-orchestration'
   | 'ephemeral-vm-setup'
-  | 'mobile-emulator-agent-setup'
   | 'ai-commit-generation'
   | 'ai-pr-generation'
   | 'claude-account-switching'
@@ -51,7 +50,6 @@ export type FeatureInteractionId =
   | 'terminal-tabs'
   | 'tab-splits'
   | 'usage-tracking'
-  | 'voice-dictation'
   | 'workspace-cleanup'
 
 export type FeatureInteractionDefinition = {
@@ -106,10 +104,6 @@ export const FEATURE_INTERACTIONS = [
   },
   { id: 'agent-orchestration', interaction: 'agent orchestration runtime method used' },
   {
-    id: 'mobile-emulator-agent-setup',
-    interaction: 'Mobile Emulator agent CLI or skill setup opened'
-  },
-  {
     id: 'ai-commit-generation',
     interaction: 'AI commit message generation enabled or used'
   },
@@ -160,7 +154,6 @@ export const FEATURE_INTERACTIONS = [
     id: 'usage-tracking',
     interaction: 'Stats & Usage or provider usage details opened or configured'
   },
-  { id: 'voice-dictation', interaction: 'dictation session started' },
   {
     id: 'workspace-cleanup',
     interaction: 'workspace disk space scan, review, or cleanup action used'

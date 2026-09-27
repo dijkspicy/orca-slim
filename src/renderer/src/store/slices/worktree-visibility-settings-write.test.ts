@@ -1,6 +1,7 @@
 import { expect, it, vi } from 'vitest'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { AppState } from '../types'
+import { createGlobalSettingsFixture } from '../../../../shared/global-settings-test-fixture'
 import { markRuntimeEnvironmentCompatible } from '@/runtime/runtime-rpc-client'
 import { createTestStore } from './store-test-helpers'
 import { persistVisibilityAwareSettings } from './worktree-visibility-settings-write'
@@ -18,7 +19,7 @@ it('preserves the active runtime default during unrelated local settings writes'
     api: {
       settings: {
         set: vi.fn().mockResolvedValue({
-          pluginSystemEnabled: true,
+          experimentalNativeChat: true,
           worktreeVisibilityDefaults: { external: 'hide' }
         })
       }
@@ -26,7 +27,7 @@ it('preserves the active runtime default during unrelated local settings writes'
   })
 
   await persistVisibilityAwareSettings({
-    normalizedUpdates: { pluginSystemEnabled: true },
+    normalizedUpdates: { experimentalNativeChat: true },
     currentSettings,
     supportedRuntimeEnvironmentId: 'env-1',
     set: (updater) => {
@@ -175,11 +176,11 @@ it('does not publish a visibility write after a newer hydration starts', async (
 
 it('publishes successful local fields when the paired runtime write fails', async () => {
   markRuntimeEnvironmentCompatible('env-a')
-  const currentSettings = {
+  const currentSettings = createGlobalSettingsFixture({
     activeRuntimeEnvironmentId: 'env-a',
-    pluginSystemEnabled: false,
+    experimentalNativeChat: false,
     worktreeVisibilityDefaults: { external: 'show' }
-  } as GlobalSettings
+  })
   let state = {
     settings: currentSettings,
     worktreeVisibilityDefaultsByHost: { 'runtime:env-a': { external: 'show' } }
@@ -189,7 +190,7 @@ it('publishes successful local fields when the paired runtime write fails', asyn
       settings: {
         set: vi.fn().mockResolvedValue({
           activeRuntimeEnvironmentId: 'env-a',
-          pluginSystemEnabled: true,
+          experimentalNativeChat: true,
           worktreeVisibilityDefaults: { external: 'hide' }
         })
       },
@@ -202,7 +203,7 @@ it('publishes successful local fields when the paired runtime write fails', asyn
   await expect(
     persistVisibilityAwareSettings({
       normalizedUpdates: {
-        pluginSystemEnabled: true,
+        experimentalNativeChat: true,
         worktreeVisibilityDefaults: { external: 'hide' }
       },
       currentSettings,
@@ -214,7 +215,7 @@ it('publishes successful local fields when the paired runtime write fails', asyn
   ).rejects.toThrow('offline')
 
   expect(state.settings).toMatchObject({
-    pluginSystemEnabled: true,
+    experimentalNativeChat: true,
     worktreeVisibilityDefaults: { external: 'show' }
   })
 })

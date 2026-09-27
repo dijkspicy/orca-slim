@@ -1,6 +1,5 @@
 import type { GlobalSettings } from './global-settings-types'
 import type { NotificationSettings } from './notification-settings-types'
-import type { VoiceSettings } from './speech-types'
 import { DEFAULT_TERMINAL_FONT_WEIGHT, DEFAULT_TERMINAL_FONT_WEIGHT_BOLD } from './terminal-fonts'
 import { getDefaultTerminalQuickCommands } from './terminal-quick-commands'
 import { TASK_PROVIDERS } from './task-providers'
@@ -27,7 +26,6 @@ export function buildDefaultSettings(args: {
   terminalInactivePaneOpacity: number
   terminalRightClickToPaste: boolean
   notifications: NotificationSettings
-  voice: VoiceSettings
 }): GlobalSettings {
   return {
     workspaceDir: args.workspaceDir,
@@ -192,10 +190,6 @@ export function buildDefaultSettings(args: {
     terminalModelQueryAuthority: true,
     defaultTuiAgent: null,
     disabledTuiAgents: [...DEFAULT_DISABLED_TUI_AGENTS],
-    pluginSystemEnabled: false,
-    disabledPlugins: [],
-    pluginConsents: {},
-    devPluginPaths: [],
     claudeAgentTeamsDefaultDisabledMigrated: true,
     skipDeleteWorktreeConfirm: false,
     skipCloseTerminalWithRunningProcessConfirm: false,
@@ -239,8 +233,6 @@ export function buildDefaultSettings(args: {
     mobilePairingCustomAddress: null,
     mobilePairingCustomAddresses: [],
     machineName: '',
-    // Why: off keeps the cosmetic overlay unmounted for users who never opt in.
-    experimentalPet: false,
     experimentalActivity: false,
     experimentalActivityDefaultedOffForAllUsers: true,
     experimentalTerminalAttention: false,
@@ -270,7 +262,6 @@ export function buildDefaultSettings(args: {
       customPrompt: '',
       customAgentCommand: ''
     },
-    sourceControlAi: getDefaultSourceControlAiSettings(),
-    voice: args.voice
+    sourceControlAi: getDefaultSourceControlAiSettings()
   }
 }
