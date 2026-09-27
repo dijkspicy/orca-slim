@@ -15,7 +15,7 @@
 - [x] 2.2 裁定 `rpc-contract` 本地子集；验证：清单列出被 `src/main/git/*` 与 `src/main/ipc/*` 引用的 schema 文件名，且 `pnpm tc` 在后续切片中不因该目录失败
 - [x] 2.3 拆分 `orca-profiles`：列出 `profile-cloud-*`（删）与 `profile-storage-paths` / `profile-project-move-record` / `profile-project-domain-changes`（留）；验证：给出 54 个引用方中依赖保留件的清单，`pnpm test src/main/orca-profiles` 通过
 - [ ] 2.4 为 pre-cull 持久化状态加 fixture 测试（含已移除的 browser/ssh/automation 字段）；验证：`pnpm test src/main/persistence` 通过，且测试在旧状态含未知字段时断言正常载入
-- [ ] 2.5 逐项处理 `design.md` 的 6 个 Open Question：给出结论或明确标注延后到对应切片；验证：`design.md` 每个 Open Question 有条目状态，且无「未定且不阻塞」之外的悬空项
+- [x] 2.5 逐项处理 `design.md` 的 6 个 Open Question：给出结论或明确标注延后到对应切片；验证：`design.md` 每个 Open Question 有条目状态，且无「未定且不阻塞」之外的悬空项
 
 ## 3. 脊柱收窄（WAVE 2）
 
@@ -32,7 +32,7 @@
 
 每片动作：删域目录与其测试、`runtime/rpc/methods/<域>`、`providers/<域>`、preload bridge/api、store slice、renderer 组件、构建清单条目，并移除本域在 `src/main/startup/*` 与 `src/preload/index.ts` / `api-types.ts` 的注册行。
 
-- [ ] 4.1 删 `src/main/star-nag/`；验证：`pnpm tc` 通过，`find src/main/star-nag` 无输出
+- [x] 4.1 删 `src/main/star-nag/`；验证：`pnpm tc` 通过，`find src/main/star-nag` 无输出
 - [ ] 4.2 删 `src/main/server/`、`src/main/ephemeral-vm-*.ts`、`runtime/push/`；验证：`pnpm tc` 通过，三者路径均不存在
 - [ ] 4.3 删 `src/main/artifacts/` 与 renderer `components/artifacts/`；验证：`pnpm tc` 通过
 - [ ] 4.4 删 `src/main/jira/`、`src/main/linear/` 与 renderer 对应任务页；验证：`pnpm tc` 通过
