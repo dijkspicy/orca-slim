@@ -225,3 +225,36 @@ Git（本地操作 / 源控制面板 / diff / worktree）· 文件与目录管�
 | **合计** | **约 35–55 人日** |
 
 > v1 的 13–23 人日是错的：它没算 `providers/`、`rpc/methods/`、`ipc/` 逐文件分类，也没算垂直切片后每片的构建清单同步。若只做 Phase 0–2 + 外圈（得到一个「保留面自洽、功能仍在」的中间态），约 11–17 人日。
+
+
+---
+
+## 实施状态与阻断（2026-09-27 实测）
+
+**进度**：30 commit · 4,791 文件已删 · `pnpm tc` EXIT 0 · `pnpm lint` EXIT 0（17 阶段全过）· 任务 20/74。
+
+**已完成且完全删除的域**：star-nag、emulator(+skill bundle)、updater、plugins、speech/dictation、pet、notebook(+ipynb 查看器)、`cloud/`(525)、`mobile/`(3,394)、native computer-use 三平台、`Casks/`、`examples/plugins`，以及它们的 CI、文档、构建清单条目。遥测已失效（发射端 no-op + 删除 opt-in 面）。
+
+**阻断项（F-12）**：剩余 15 个删除域之间存在**环**（`agent-stack ↔ ai-vault`、`remote-host ↔ ai-vault`、`remote-host ↔ browser`），构成一个**强连通分量**：
+
+| 删除集 | 6,345 文件（当前树） |
+| --- | --- |
+| 保留侧调用点 | 2,711 文件（1,871 非测试） |
+
+**不存在能保持 `pnpm tc` 绿的增量删除顺序。** 四次实测：
+1. 删远程集群 890 文件 → 264 错；再删 199 个散件 → **4,543 错**（barrel 级联，F-10）
+2. 对 143 个模块做 no-op shim → **1,870 错**（`any` 传播冲垮类型契约）
+3. 删 artifacts 13 文件 → 15 错，但其依赖 browser/skills，无法单独收敛
+4. 本次 SCC dry-run：幸存文件 import **787 个**域模块 —— 按 2 的教训，shim 化必然失败
+
+**结论**：剩余工作是一次 **~6,345 删 + ~1,871 改的单次原子变更**。它需要：
+- 对每个保留文件人工判断「删调用 vs 保留」，或
+- 长时间（数小时）带类型检查反馈的连续 agent 工作
+
+本环境的 agent 任务在 10–40 分钟内被中止（8/8 次），无法承载这种连续工作。因此该原子变更应在允许长任务的环境（或人工结对）中执行。
+
+**可复用资产**（已在仓库中，供后续执行者直接用）：
+- `docs-slim/cull-scc-plan.md`：6,345 删除文件 + 2,711 调用点的逐文件清单
+- `docs-slim/cull-census.md`：可达性普查（保留/删除判定）
+- `openspec/changes/cull-to-local-ide/design.md` 的 F-1…F-13：全部实测陷阱与配方
+- `/tmp/opencode/gen-scc-shims.mjs`、`scc-plan.mjs`：删除集与 shim 生成器（已修好别名解析与原始文件表两处 bug）
