@@ -11,7 +11,6 @@ inputs:
     required: false
     default: ''
   cache-dependency-path:
-    description: Lockfiles for the pnpm download store; include mobile/pnpm-lock.yaml only when the job installs mobile dependencies.
     required: false
     default: pnpm-lock.yaml
   persist-native-cache:

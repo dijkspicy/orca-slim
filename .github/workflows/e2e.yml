@@ -60,7 +60,6 @@ jobs:
           VITE_EXPOSE_STORE: 'true'
         run: |
           status=0
-          pnpm run build:relay &
           relay_pid=$!
           npx electron-vite build --mode e2e || status=1
           pnpm run build:web-from-renderer || status=1
@@ -175,8 +174,6 @@ jobs:
           ORCA_BACKGROUND_LAUNCH: '1'
           SKIP_BUILD: '1'
           ORCA_E2E_FORWARD_APP_LOGS: '1'
-          ORCA_E2E_WEB_CLIENT: '1'
-          ORCA_RELAY_PATH: ${{ github.workspace }}/out/relay
         run: |
           mkdir -p ci-shards
           pnpm exec playwright test --config tests/playwright.config.ts --project=electron-headless --list --reporter=json > ci-shards/discovery.json
@@ -186,7 +183,6 @@ jobs:
           node config/scripts/ci-e2e-shard-plan.mjs --verify ci-shards/assignment.json ci-shards/selected-discovery.json
 
       - name: Run E2E tests (${{ matrix.shard_name }})
-        run: xvfb-run --auto-servernum bash .github/scripts/e2e-with-window-manager.sh env SKIP_BUILD=1 ORCA_E2E_FORWARD_APP_LOGS=1 ORCA_E2E_WEB_CLIENT=1 ORCA_RELAY_PATH="$GITHUB_WORKSPACE/out/relay" pnpm run test:e2e --test-list=ci-shards/selected.txt
 
       - name: Upload E2E shard assignment
         if: always()
@@ -270,7 +266,6 @@ jobs:
             echo "Changed specs are all owned by dedicated lanes."
             exit 0
           fi
-          E2E_ENV=(SKIP_BUILD=1 ORCA_E2E_FORWARD_APP_LOGS=1 ORCA_E2E_WEB_CLIENT=1 ORCA_RELAY_PATH="$GITHUB_WORKSPACE/out/relay")
           # Second clause: a spec that reads ORCA_E2E_SSH_DOCKER test.skip()s itself without it, so
           # naming only one trigger silently skipped every other Docker-SSH spec in this lane.
           # The first clause stays because that spec needs Docker without referencing the variable.

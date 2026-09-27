@@ -166,7 +166,6 @@ jobs:
           native-runtime: node
           cache-dependency-path: |
             pnpm-lock.yaml
-            mobile/pnpm-lock.yaml
 
       - name: Lint
         run: pnpm exec oxlint --format github
@@ -179,11 +178,6 @@ jobs:
 
       - name: Enforce type-aware code-quality baseline
         run: pnpm run audit:code-quality:type-aware
-
-      # Why here: the changed-code gate lints mobile files too, and its type-aware pass
-      # resolves types from mobile/node_modules. Without the install every mobile type
-      # degrades to an `error` type — reported as phantom findings against the changed lines.
-      - uses: ./.github/actions/install-mobile-dependencies
         if: needs.code_paths.outputs.mobile_dependencies == 'true'
 
       - name: Enforce changed-code quality
@@ -629,7 +623,6 @@ jobs:
           pnpm exec vitest run --config config/vitest.config.ts \
             src/main/orcad/external-chromium-browser-process.integration.test.ts
 
-  # Why its own job: it needs mobile/node_modules and a real browser, and the sharded `test`
   # matrix would pay for both on every shard to run two files. It builds the same bundle the
   # package job ships, and adds the render and census checks packaging does not run.
   mobile_web_app:
@@ -651,10 +644,6 @@ jobs:
           native-runtime: node
           cache-dependency-path: |
             pnpm-lock.yaml
-            mobile/pnpm-lock.yaml
-
-      # The entry lives in mobile/ so one React resolves; without this every RN import is nothing.
-      - uses: ./.github/actions/install-mobile-dependencies
 
       # Why the runner's Google Chrome and not a downloaded chromium: same reason as the orcad
       # browser job -- Ubuntu 24.04 only ships an AppArmor userns profile for the Chrome .deb.
@@ -678,7 +667,6 @@ jobs:
         run: pnpm exec playwright install --with-deps webkit
 
       - name: Build and verify the app bundle
-        run: pnpm run build:mobile-web
 
       # The bundling tests skip themselves where mobile dependencies are absent, which is how they
       # stay green in the sharded `test` job. This is the job that installs them, so here a missing
@@ -754,7 +742,6 @@ jobs:
       - uses: ./.github/actions/install-node-dependencies
 
       - name: Build relay companions
-        run: pnpm run build:relay
 
       - name: Setup Node 18 runtime
         uses: actions/setup-node@v6
@@ -791,11 +778,6 @@ jobs:
           native-runtime: electron
           cache-dependency-path: |
             pnpm-lock.yaml
-            mobile/pnpm-lock.yaml
-
-      # Why here: electron-builder's beforePack requires out/mobile-web, and the bundle
-      # build resolves React Native and Expo from mobile/node_modules.
-      - uses: ./.github/actions/install-mobile-dependencies
 
       # The checkout must pass without depending on a historical baseline that leaks.
       - name: Verify Linux daemon shutdown descendant cleanup
@@ -821,7 +803,6 @@ jobs:
           status=0
           pnpm run build:cli || status=1
 
-          scripts=(build:relay build:electron-vite:parallel)
           pids=()
           for script in "${scripts[@]}"; do
             pnpm run "$script" &
@@ -840,7 +821,6 @@ jobs:
       # step instead of calling build:release, and electron-builder's beforePack guard hard-fails
       # without out/mobile-web. This is the real page, ~8 MB, not a bootstrap document.
       - name: Build mobile web bundle
-        run: pnpm run build:mobile-web
 
       - name: Build native components
         run: pnpm run build:native
@@ -918,11 +898,6 @@ jobs:
           persist-native-cache: 'false'
           cache-dependency-path: |
             pnpm-lock.yaml
-            mobile/pnpm-lock.yaml
-
-      # Why here: electron-builder's beforePack requires out/mobile-web, and the bundle
-      # build resolves React Native and Expo from mobile/node_modules.
-      - uses: ./.github/actions/install-mobile-dependencies
 
       - name: Save compiled Node native modules
         if: steps.deps.outputs.native-cache-hit != 'true'
