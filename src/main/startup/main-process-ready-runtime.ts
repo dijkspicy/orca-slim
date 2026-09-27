@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto'
 import { performance } from 'node:perf_hooks'
 import { is } from '@electron-toolkit/utils'
 import { AgentBrowserBridge } from '../browser/agent-browser-bridge'
-import { EmulatorBridge } from '../emulator/emulator-bridge'
 import { RpcDispatcher } from '../runtime/rpc/dispatcher'
 import { browserManager } from '../browser/browser-manager'
 import { configureBrowserClientPageAutomationRuntime } from '../browser/browser-client-page-automation-runtime'
@@ -69,10 +68,6 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
       return response.result
     }
   })
-  // Emulator bridge (serve-sim). macOS-only feature (gated in CLI/runtime); always ship like agent-browser.
-  // Why: externally started serve-sim processes must stay independent — only Orca-managed/attached helpers belong to a workspace.
-  state.emulatorBridge = new EmulatorBridge()
-  runtime.setEmulatorBridge(state.emulatorBridge)
   // Why: worktree deletion renames the checkout aside and deletes it in the background, so a quit or
   // crash mid-delete can leave the moved directory on disk. Why deferred: the sweep's recursive
   // readdir/rm runs on the same libuv threadpool the window's first paint and worktree-catalog

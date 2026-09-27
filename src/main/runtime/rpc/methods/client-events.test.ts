@@ -11,8 +11,12 @@ import {
 import { ALL_RPC_METHODS } from './index'
 
 const subscribeMethod = eraseRpcMethods(ALL_RPC_METHODS).find(
-  (method) => method.name === 'runtime.clientEvents.subscribe' && isStreamingMethod(method)
-) as RpcStreamingMethod
+  (method): method is RpcStreamingMethod =>
+    method.name === 'runtime.clientEvents.subscribe' && isStreamingMethod(method)
+)
+if (!subscribeMethod) {
+  throw new Error('runtime.clientEvents.subscribe must be a registered streaming method')
+}
 
 function makeRuntime(): {
   runtime: OrcaRuntimeService

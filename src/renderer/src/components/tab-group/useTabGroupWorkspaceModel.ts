@@ -80,7 +80,7 @@ export function useTabGroupWorkspaceModel({
     activateAgentSession
   } = useTabGroupActivationCommands({ groupId, worktreeId, groupTabs, worktreeState })
 
-  const creationCommands = useTabGroupCreationCommands({ groupId, worktreeId, worktreeState })
+  const creationCommands = useTabGroupCreationCommands({ groupId, worktreeId })
 
   return {
     group,

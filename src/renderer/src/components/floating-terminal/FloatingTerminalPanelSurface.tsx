@@ -1,6 +1,5 @@
 import { Suspense } from 'react'
 import { lazyWithRetry as lazy } from '@/lib/lazy-with-retry'
-import EmulatorPane from '@/components/emulator-pane/EmulatorPane'
 import TabBar from '@/components/tab-bar/TabBar'
 import TerminalPane from '@/components/terminal-pane/TerminalPane'
 import { shouldDeferParkedPtyExitTabClose } from '@/components/terminal-pane/terminal-parked-tab-watchers'
@@ -74,7 +73,6 @@ export function renderFloatingTerminalPanelSurface({
   parkedTerminalTabIds,
   terminalPaneRegistry,
   activeBrowserTab,
-  simulatorItems,
   activeEditorFile,
   focusPanelForShortcuts,
   newTerminalShortcut,
@@ -264,18 +262,6 @@ export function renderFloatingTerminalPanelSurface({
                 aria-hidden={!isActive}
               >
                 <FloatingBrowserSlot browserTab={tab} isActive={open && isActive} />
-              </div>
-            )
-          })}
-          {simulatorItems.map((tab) => {
-            const isActive = tab.id === activeTab?.id
-            return (
-              <div
-                key={tab.id}
-                className={isActive ? 'absolute inset-0 flex' : 'absolute inset-0 hidden'}
-                aria-hidden={!isActive}
-              >
-                <EmulatorPane tab={tab} worktreeId={tab.worktreeId} isActive={open && isActive} />
               </div>
             )
           })}

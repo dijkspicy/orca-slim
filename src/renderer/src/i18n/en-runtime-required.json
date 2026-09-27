@@ -413,23 +413,6 @@
           "e2e12b0e98": "component"
         }
       },
-      "emulator": {
-        "pane": {
-          "emulator": {
-            "device": {
-              "frame": {
-                "0022420df0": "phone"
-              }
-            },
-            "unavailable": {
-              "pane": {
-                "b2c268a0b9": "Mobile Emulator is macOS only",
-                "f630b9ca9f": "Mobile Emulator requires a Mac with Xcode and the iOS Simulator runtime. On Linux or Windows, use a physical device or a remote Mac build host."
-              }
-            }
-          }
-        }
-      },
       "feature": {
         "tips": {
           "CmdJPaletteFeatureTipVisual": {
@@ -1307,14 +1290,6 @@
         "McpConfigFileRow": {
           "845ae248e8": "valid"
         },
-        "MobileEmulatorAgentControlRow": {
-          "1861982430": "Failed to load CLI status.",
-          "cdeaed9e37": "Registered the Orca CLI in PATH."
-        },
-        "MobileEmulatorSdkStatus": {
-          "536026130e": "Emulator SDKs",
-          "dde0ec1cd8": "Toolchains Orca uses to run emulators. Android works on any OS via the Android SDK; iOS Simulators need Xcode on macOS."
-        },
         "MobileNetworkInterfaceSection": {
           "1dc87a7fbc": "Tailscale",
           "1e64659126": "Regenerate",
@@ -1455,6 +1430,7 @@
           "de6d5cff95": "This computer ("
         },
         "Settings": {
+          "01f9d36292": "Configure mobile emulator support for Orca and coding agents.",
           "084d8fac5b": "Privacy & Security",
           "2309068a6f": "destructive",
           "23931df7e8": "Remote Hosts",
@@ -1463,6 +1439,7 @@
           "9abb9be3bc": "Set Up",
           "dd72ed437a": "Choose which task providers appear in the Tasks page and sidebar.",
           "e1578cd4bc": "Workflows",
+          "f75daf1002": "Mobile Emulator",
           "mobile_group": "Mobile"
         },
         "SettingsFormControls": {
@@ -2567,6 +2544,8 @@
         "f6300deb8b": "New Browser Tab"
       },
       "useSettingsNavigationMetadata": {
+        "1e761cff2b": "Mobile Emulator",
+        "3d65d3f1b9": "Configure mobile emulator support for Orca and coding agents.",
         "5235c215ca": "Choose which task providers appear in the Tasks page and sidebar."
       }
     },
@@ -2577,6 +2556,13 @@
             "toast": {
               "googleCookiesSkipped": "Google cookies were not imported. Open a browser in Orca on {{value0}} with this profile, then sign into Google."
             }
+          }
+        }
+      },
+      "ensure": {
+        "simulator": {
+          "tab": {
+            "372d21d428": "Mobile Emulator"
           }
         }
       },

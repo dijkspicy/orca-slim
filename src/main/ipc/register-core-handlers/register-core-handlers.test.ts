@@ -65,9 +65,7 @@ const {
   registerWorkspaceSpaceHandlersMock,
   registerWorkspacePortHandlersMock,
   registerLocalhostWorktreeLabelHandlersMock,
-  registerNativeChatHandlersMock,
-  registerEmulatorFrameStreamHandlersMock,
-  registerEmulatorVideoStreamHandlersMock
+  registerNativeChatHandlersMock
 } = vi.hoisted(() => ({
   getPathMock: vi.fn(() => '/test/user-data'),
   listEnvironmentsMock: vi.fn(() => []),
@@ -133,9 +131,7 @@ const {
   registerWorkspaceSpaceHandlersMock: vi.fn(),
   registerWorkspacePortHandlersMock: vi.fn(),
   registerLocalhostWorktreeLabelHandlersMock: vi.fn(),
-  registerNativeChatHandlersMock: vi.fn(),
-  registerEmulatorFrameStreamHandlersMock: vi.fn(),
-  registerEmulatorVideoStreamHandlersMock: vi.fn()
+  registerNativeChatHandlersMock: vi.fn()
 }))
 
 vi.mock('electron', () => ({
@@ -276,14 +272,6 @@ vi.mock('../session', () => ({
 vi.mock('../ui', () => ({
   registerUIHandlers: registerUIHandlersMock,
   setTrustedUIRendererWebContentsId: setTrustedUIRendererWebContentsIdMock
-}))
-
-vi.mock('../emulator-frame-stream', () => ({
-  registerEmulatorFrameStreamHandlers: registerEmulatorFrameStreamHandlersMock
-}))
-
-vi.mock('../emulator-video-stream', () => ({
-  registerEmulatorVideoStreamHandlers: registerEmulatorVideoStreamHandlersMock
 }))
 
 vi.mock('../filesystem', () => ({
@@ -465,8 +453,6 @@ describe('registerCoreHandlers', () => {
     registerWorkspacePortHandlersMock.mockReset()
     registerLocalhostWorktreeLabelHandlersMock.mockReset()
     registerNativeChatHandlersMock.mockReset()
-    registerEmulatorFrameStreamHandlersMock.mockReset()
-    registerEmulatorVideoStreamHandlersMock.mockReset()
   })
 
   it('passes the store through to handler registrars that need it', async () => {
@@ -563,8 +549,6 @@ describe('registerCoreHandlers', () => {
     expect(registerUIHandlersMock).toHaveBeenCalledWith(store, {
       isDashboardPopoutRenderer: isDashboardPopoutRendererMock
     })
-    expect(registerEmulatorFrameStreamHandlersMock).toHaveBeenCalled()
-    expect(registerEmulatorVideoStreamHandlersMock).toHaveBeenCalled()
     expect(registerFilesystemHandlersMock).toHaveBeenCalledWith(store)
     expect(registerRuntimeHandlersMock).toHaveBeenCalledWith(runtime)
     expect(registerRuntimeEnvironmentHandlersMock).toHaveBeenCalledWith(store)

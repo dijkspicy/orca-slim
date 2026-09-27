@@ -75,10 +75,8 @@ const controller = {
   handleNewAgentTab: vi.fn(),
   handleNewBrowserTab: vi.fn(),
   handleNewFile: vi.fn(),
-  handleNewSimulatorTab: vi.fn(),
   handleNewTab: vi.fn(),
   keybindings: undefined,
-  mobileEmulatorEnabled: false,
   terminalShortcutPolicy: 'orca-first'
 } as unknown as TerminalActivationController
 

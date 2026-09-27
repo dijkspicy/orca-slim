@@ -6,8 +6,8 @@ import { specPaths } from './command-spec'
 import { COMMAND_SPECS } from './specs'
 
 // Why: a guide is the version-matched surface for the binary that shipped it, so a command
-// path or flag it names must exist in COMMAND_SPECS. `orca emulator camera --webcam` was
-// documented for months without ever existing (#16904 review C1).
+// path or flag it names must exist in COMMAND_SPECS; a guide that documents a flag the CLI
+// never implemented ships broken guidance to every agent (#16904 review C1).
 
 // Why __dirname: it works under both Vitest and the CommonJS tsc emit that build:cli type-checks
 // this file against; import.meta.dirname does not (TS1470).
@@ -29,8 +29,8 @@ function guideFiles(directory: string): string[] {
 
 /**
  * The invocation span is the command text only — never the surrounding prose or table cell.
- * `skill-guides/orca-emulator.md` describes serve-sim's own `--detach` in a Notes column beside
- * an `ORCA ...` cell, and that is correct prose a line-scoped check would flag.
+ * A guide can describe a nested tool's own flags in a Notes column beside an `ORCA ...` cell,
+ * and that is correct prose a line-scoped check would flag.
  */
 function invocationSpans(contents: string, file: string): Invocation[] {
   const found: Invocation[] = []
@@ -139,7 +139,7 @@ function parityFailures(invocation: Invocation): string[] {
     }
   }
   if (command === null) {
-    // A prefix reference such as `ORCA emulator ...` or `ORCA linear --help` names no exact
+    // A prefix reference such as `ORCA worktree ...` or `ORCA linear --help` names no exact
     // path, but its flags still have to belong to some command under that prefix.
     if (pathPrefixes.has(tokens.join(' '))) {
       command = tokens.join(' ')
@@ -180,10 +180,10 @@ describe('skill guides only name commands and flags the CLI defines', () => {
 
   it('checks flags on a prefix reference against every command under it', () => {
     const at = (text: string) => parityFailures({ file: 'x.md', line: 1, text })
-    expect(at('ORCA emulator ...')).toEqual([])
+    expect(at('ORCA worktree ...')).toEqual([])
     expect(at('ORCA linear --help')).toEqual([])
-    expect(at('ORCA emulator --webcam')).toEqual([
-      expect.stringContaining('--webcam is not a flag of "emulator"')
+    expect(at('ORCA worktree --webcam')).toEqual([
+      expect.stringContaining('--webcam is not a flag of "worktree"')
     ])
   })
 })

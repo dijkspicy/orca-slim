@@ -3,13 +3,9 @@ import { FilePlus, FileText, Globe, Smartphone, TerminalSquare } from 'lucide-re
 import { translate } from '@/i18n/i18n'
 import { DropdownMenuItem, DropdownMenuShortcut } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { MobileEmulatorTabIntroCallout } from '../emulator-pane/MobileEmulatorTabIntroCallout'
 import { ShellIcon } from './shell-icons'
 import type { WindowsShellMenuEntry } from './tab-bar-windows-shell-options'
-import {
-  isMacOs,
-  type resolveWindowsPowerShellImplementationSetting
-} from './use-tab-bar-runtime-model'
+import type { resolveWindowsPowerShellImplementationSetting } from './use-tab-bar-runtime-model'
 import type { TabBarProps } from './tab-bar-props'
 import { resolveWindowsShellLaunchTarget } from './windows-shell-launch'
 
@@ -19,7 +15,6 @@ export function TabBarStaticCreateMenu({
   managedBrowserCreationEnabled,
   mobileEmulatorCreationEnabled,
   workspaceHasSimulatorTab,
-  showMobileEmulatorIntroCallout,
   props,
   windowsShellEntries,
   defaultWindowsPowerShellImplementation,
@@ -37,7 +32,6 @@ export function TabBarStaticCreateMenu({
   managedBrowserCreationEnabled: boolean
   mobileEmulatorCreationEnabled: boolean
   workspaceHasSimulatorTab: boolean
-  showMobileEmulatorIntroCallout: boolean
   windowsShellEntries: WindowsShellMenuEntry[] | undefined
   defaultWindowsPowerShellImplementation: ReturnType<
     typeof resolveWindowsPowerShellImplementationSetting
@@ -168,15 +162,6 @@ export function TabBarStaticCreateMenu({
         ) : null}
       </DropdownMenuItem>
     ) : null
-  const mobileEmulatorIntroMenuBlock =
-    showMobileEmulatorIntroCallout &&
-    !terminalOnly &&
-    isMacOs &&
-    mobileEmulatorEnabled &&
-    mobileEmulatorCreationEnabled &&
-    onNewSimulatorTab ? (
-      <MobileEmulatorTabIntroCallout />
-    ) : null
 
   return newTabMenuOrder === 'markdown-first' ? (
     <>
@@ -185,7 +170,6 @@ export function TabBarStaticCreateMenu({
       {defaultTerminalMenuItems}
       {newBrowserMenuItem}
       {newSimulatorMenuItem}
-      {mobileEmulatorIntroMenuBlock}
     </>
   ) : (
     <>
@@ -194,7 +178,6 @@ export function TabBarStaticCreateMenu({
       {newMarkdownMenuItem}
       {openMarkdownMenuItem}
       {newSimulatorMenuItem}
-      {mobileEmulatorIntroMenuBlock}
     </>
   )
 }

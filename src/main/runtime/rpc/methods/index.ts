@@ -40,7 +40,6 @@ import { CLIPBOARD_METHODS } from './clipboard'
 import { HOST_CAPABILITY_METHODS } from './host-capabilities'
 import { MOBILE_WEB_BUNDLE_METHODS } from './mobile-web-bundle'
 import { RUNTIME_CLIENT_CAPABILITY_METHODS } from './runtime-client-capabilities'
-import { EMULATOR_METHODS } from './emulator'
 import { PAIRING_METHODS } from './pairing'
 import { UPDATER_METHODS } from './updater'
 import { AGENT_SESSION_METHODS } from './agent-session'
@@ -100,7 +99,6 @@ export const ALL_RPC_METHODS = [
   ...RUNTIME_CLIENT_CAPABILITY_METHODS,
   ...CLIENT_EVENT_METHODS,
   ...CLIENT_UI_METHODS,
-  ...EMULATOR_METHODS,
   ...PAIRING_METHODS,
   ...UPDATER_METHODS
 ]

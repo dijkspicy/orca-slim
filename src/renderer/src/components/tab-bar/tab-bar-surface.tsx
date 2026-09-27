@@ -61,7 +61,6 @@ export function renderTabBarSurface({
     managedBrowserCreationEnabled,
     mobileEmulatorCreationEnabled,
     workspaceHasSimulatorTab,
-    showMobileEmulatorIntroCallout,
     windowsTerminalCapabilities,
     defaultWindowsPowerShellImplementation,
     agentLaunchOptions,
@@ -199,7 +198,7 @@ export function renderTabBarSurface({
       <DropdownMenu
         open={newTabMenuOpen}
         onOpenChange={setNewTabMenuOpen}
-        // Why: modal would disable body pointer events, making the Mobile Emulator "Hide" re-enable toast unclickable.
+        // Why: modal would disable body pointer events, so toasts (e.g. a hidden-tab re-enable) stay unclickable while the menu is open.
         modal={false}
       >
         <DropdownMenuTrigger asChild>
@@ -253,7 +252,6 @@ export function renderTabBarSurface({
               managedBrowserCreationEnabled={managedBrowserCreationEnabled}
               mobileEmulatorCreationEnabled={mobileEmulatorCreationEnabled}
               workspaceHasSimulatorTab={workspaceHasSimulatorTab}
-              showMobileEmulatorIntroCallout={showMobileEmulatorIntroCallout}
               windowsShellEntries={windowsShellEntries}
               defaultWindowsPowerShellImplementation={defaultWindowsPowerShellImplementation}
               pwshAvailable={windowsTerminalCapabilities.pwshAvailable}

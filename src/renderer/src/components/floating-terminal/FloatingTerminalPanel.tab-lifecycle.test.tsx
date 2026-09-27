@@ -72,10 +72,6 @@ vi.mock('@/components/browser-pane/BrowserPane', async () => {
   return (await import('./floating-terminal-panel-component-stubs')).createBrowserPaneModule()
 })
 
-vi.mock('@/components/emulator-pane/EmulatorPane', async () => {
-  return (await import('./floating-terminal-panel-component-stubs')).createEmulatorPaneModule()
-})
-
 vi.mock('@/components/editor/EditorPanel', async () => {
   return (await import('./floating-terminal-panel-component-stubs')).createEditorPanelModule()
 })
@@ -357,12 +353,10 @@ describe('FloatingTerminalPanel close behavior', () => {
 
     const element = await renderPanel(true)
     const tabBar = findByTypeName(element, 'TabBar')
-    const emulatorPane = findByTypeName(element, 'EmulatorPane')
     ;(tabBar.props.onCloseFile as (tabId: string) => void)(tab.id)
 
     expect(tabBar.props.activeTabType).toBe('simulator')
     expect(tabBar.props.activeSimulatorTabId).toBe(tab.id)
-    expect(emulatorPane.props.tab).toBe(tab)
     expect(mocks.closeUnifiedTab).toHaveBeenCalledWith(tab.id)
     expect(mocks.closeFile).not.toHaveBeenCalledWith(tab.id)
   })

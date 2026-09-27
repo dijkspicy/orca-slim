@@ -11,7 +11,7 @@ import { resolveRuntimeBrowserNetworkExecutionHost } from './runtime-browser-net
 import { resolveLocalProjectRuntimeForWorktreeId } from '../local-project-runtime-resolution'
 import { getRegisteredSshState } from '../ssh/ssh-target-registry'
 import { resolveWorktreeLaunchHost } from './worktree-launch-host-repo'
-import { folderWorkspaceKey, parseWorkspaceKey } from '../../shared/workspace-scope'
+import { parseWorkspaceKey } from '../../shared/workspace-scope'
 import type { FolderWorkspace } from '../../shared/folder-workspace-types'
 import type { ResolvedWorktree } from './runtime-worktree-path-identity'
 import { folderWorkspaceToWorktree } from '../../shared/folder-workspace-worktree'
@@ -53,14 +53,6 @@ export class OrcaRuntimeWithResolveBrowserNetworkExecutionHostForWorktree extend
         ? { sshState: getRegisteredSshState(parsedHost.targetId) }
         : {})
     })
-  }
-
-  protected async resolveEmulatorCleanupWorkspaceId(selector: string): Promise<string> {
-    const workspaceSelector = selector.startsWith('id:') ? selector.slice(3) : selector
-    const parsed = parseWorkspaceKey(workspaceSelector)
-    return parsed?.type === 'folder'
-      ? folderWorkspaceKey(parsed.folderWorkspaceId)
-      : this.resolveEmulatorWorkspaceId(selector)
   }
 
   protected folderWorkspaceToResolvedWorktree(folderWorkspace: FolderWorkspace): ResolvedWorktree {

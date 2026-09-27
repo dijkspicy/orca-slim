@@ -51,8 +51,6 @@ import { registerShellHandlers } from '../shell'
 import { registerPetHandlers } from '../pet'
 import { registerPluginHandlers } from '../plugins'
 import { registerUIHandlers, setTrustedUIRendererWebContentsId } from '../ui'
-import { registerEmulatorFrameStreamHandlers } from '../emulator-frame-stream'
-import { registerEmulatorVideoStreamHandlers } from '../emulator-video-stream'
 import { registerSpeechHandlers } from '../speech'
 import { registerTerminalRenderDesyncEvidenceHandler } from '../terminal-render-desync-evidence'
 import { registerOrcaProfileHandlers } from '../orca-profiles'
@@ -206,8 +204,6 @@ export function registerCoreHandlers(
   registerPetHandlers()
   registerSessionHandlers(store)
   registerUIHandlers(store, { isDashboardPopoutRenderer })
-  registerEmulatorFrameStreamHandlers()
-  registerEmulatorVideoStreamHandlers()
   registerWorkspaceSpaceHandlers(store)
   registerWorkspacePortHandlers(store)
   registerLocalhostWorktreeLabelHandlers(store)

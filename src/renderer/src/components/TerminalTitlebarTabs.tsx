@@ -39,12 +39,10 @@ export function TerminalTitlebarTabs({
     handleDuplicateBrowserTab,
     handleNewBrowserTab,
     handleNewFile,
-    handleNewSimulatorTab,
     handleNewTab,
     handleOpenEntry,
     handleTogglePaneExpand,
     makePreviewFilePermanent,
-    mobileEmulatorEnabled,
     pinFile,
     renderedActiveWorktreeId,
     setActiveFile,
@@ -73,7 +71,6 @@ export function TerminalTitlebarTabs({
       onNewTerminalTab={() => handleNewTab()}
       onNewTerminalWithShell={handleNewTab}
       onNewBrowserTab={handleNewBrowserTab}
-      onNewSimulatorTab={mobileEmulatorEnabled ? handleNewSimulatorTab : undefined}
       onOpenEntry={handleOpenEntry}
       onNewFileTab={handleNewFile}
       onSetCustomTitle={setTabCustomTitle}

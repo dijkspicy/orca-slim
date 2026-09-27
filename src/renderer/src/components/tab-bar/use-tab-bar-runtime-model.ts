@@ -20,7 +20,6 @@ import {
   useWindowsTerminalCapabilities,
   type WindowsTerminalCapabilities
 } from '@/lib/windows-terminal-capabilities'
-import { shouldShowMobileEmulatorTabIntro } from '../emulator-pane/mobile-emulator-tab-intro-visibility'
 import {
   selectTabBarAgentProjections,
   type TabBarAgentProjections
@@ -67,7 +66,6 @@ export type TabBarRuntimeModel = {
   openMarkdownShortcut: string | null
   generatedTabTitlesEnabled: boolean
   mobileEmulatorEnabled: boolean
-  showMobileEmulatorIntroCallout: boolean
   unifiedTabs: readonly Tab[]
   pinTab: (tabId: string) => void
   unpinTab: (tabId: string) => void
@@ -103,14 +101,6 @@ export function useTabBarRuntimeModel({
   const openMarkdownShortcut = useOptionalShortcutLabel('tab.openMarkdown')
   const generatedTabTitlesEnabled = useAppStore((s) => s.settings?.tabAutoGenerateTitle === true)
   const mobileEmulatorEnabled = useAppStore((s) => s.settings?.mobileEmulatorEnabled !== false)
-  const persistedUIReady = useAppStore((s) => s.persistedUIReady)
-  const mobileEmulatorTabIntroDismissed = useAppStore((s) => s.mobileEmulatorTabIntroDismissed)
-  const showMobileEmulatorIntroCallout = shouldShowMobileEmulatorTabIntro({
-    persistedUIReady,
-    mobileEmulatorTabIntroDismissed,
-    mobileEmulatorEnabled,
-    isMacOs
-  })
   const gitStatusEntries = useAppStore(
     (s) => s.gitStatusByWorktree[worktreeId] ?? EMPTY_GIT_STATUS_ENTRIES
   )
@@ -264,7 +254,6 @@ export function useTabBarRuntimeModel({
     openMarkdownShortcut,
     generatedTabTitlesEnabled,
     mobileEmulatorEnabled,
-    showMobileEmulatorIntroCallout,
     unifiedTabs,
     pinTab,
     unpinTab,
