@@ -264,6 +264,38 @@
   它们的外部依赖只有 `src/shared/pty-write-settlement.ts` 与 `src/shared/relay-frame-decoder.ts`（均已在保留侧）。
   把这 4 个文件移到 `src/main/hook-relay/` 并改指 11 个 `agent-hooks/wsl-*` 的相对引用即可（已验证可行，本次回滚时一并撤销）。
 
+### F-12 删除域构成强连通分量：不存在合法的增量删除顺序（阻断性）
+
+实测域间依赖边（`A -> B` 表示 A 的代码 import 了 B）：
+
+```
+agent-stack    -> ai-vault, telemetry-stack
+ai-vault       -> agent-stack, remote-host, telemetry-stack
+artifacts      -> cloud-profiles
+automations    -> agent-stack, remote-host
+browser        -> agent-stack, remote-host
+cloud-profiles -> remote-host
+forge-task     -> remote-host, telemetry-stack
+remote-host    -> ai-vault, browser, cloud-profiles
+skills         -> artifacts, cloud-profiles, telemetry-stack
+```
+
+**存在环**：`agent-stack ↔ ai-vault`、`remote-host ↔ ai-vault`、`remote-host ↔ browser`、`ai-vault ↔ remote-host`。
+
+**结论**：这 15 个删除域 + 散件构成**一个强连通分量（SCC）**。因此：
+
+1. **不存在能保持 `pnpm tc` 绿的增量删除顺序** —— 尝试过的每一个「按域切片」都会因为被同簇其它域反向引用而级联（实测：删 artifacts 15 错 → 修不动；删远程集群 264 错 → 再删散件爆到 4543；stub 化后爆到 5169）。
+2. **design D-6 的 WAVE 顺序无效** —— 它假设域之间是 DAG。实际是一个 SCC。
+3. **Group 5「域清扫」不是收尾工作，而是唯一的删除机制** —— 必须在**一次原子提交**里：删除整个 SCC（约 4,000 文件）+ 同时修完保留侧约 250–300 个引用文件。
+4. 这对本仓库的裁剪规模意味着：**这是单一 4000+ 文件的原子变更**，无法用「小步快跑」的方式完成。
+
+**已在本次实施中验证可行的部分**（可复用，不因上述结论作废）：
+
+- 独立于 SCC 的域（star-nag / emulator / updater / plugins / speech / pet / notebook）**可以**按切片删除 —— 已完成 7 个
+- F-2 的传输原语提取（4 个文件 → `src/main/hook-relay/`）已验证可行
+- 遥测发射端可独立失效（已完成 4.10）
+- 依赖清理（4.14 部分）可独立完成
+
 ## Migration Plan
 
 - 分支 `cull/local-ide`，WAVE 0 打 tag `pre-cull`
