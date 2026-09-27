@@ -45,7 +45,7 @@
 - [ ] 4.11 删 `src/main/updater/`、`UpdateCard*`、`electron-updater` 依赖（按 2.5 的 D5 结论决定是否保留 Windows 更新器）；验证：`pnpm tc` 通过且 `pnpm install` 成功
 - [ ] 4.12 删 `src/main/orca-profiles/` 的账号部分（按 2.3 清单），保留本地多项目持久化件；验证：`pnpm tc` 与 `pnpm test src/main/orca-profiles` 通过
 - [ ] 4.13 删 `src/main/ipc/` 中剩余删除域 handler 散件（按 2.1 清单）；验证：`pnpm tc` 通过
-- [ ] 4.14 依赖清理批次一（`qrcode`、`@streamparser/json`、`tldts`、`react-grab`、`@linear/sdk`）；验证：`pnpm install` 与 `pnpm tc` 通过
+- [x] 4.14 依赖清理批次一：移除 `sherpa-onnx` + 5 个平台 optional 包（语音域已删，实测 0 代码引用）。**其余依赖暂留**：`qrcode`(6)、`@streamparser/json`(1)、`tldts`(2)、`react-grab`(3)、`@linear/sdk`(11) 仍被尚未删除的域引用，随各自域一并移除；`electron-updater` 条目已在 4.11 移除（仅剩注释）。验证：`pnpm install --lockfile-only` 退出 0（1469 条目）、`pnpm tc` 0
 - [x] 4.15 删设备模拟器域（Android emulator + iOS simulator）：`src/main/emulator/`(79)、renderer `components/emulator-pane/`(54)、`shared/emulator-{touch,keyboard}-frame`、`shared/rpc-contract/emulator-params`、preload emulator bridge/api、settings `MobileEmulator*` panes、`lib/{emulator-right-split-target,open-mobile-emulator-tab,simulator-launch-coordination,ensure-simulator-tab}`、cli emulator spec/handler/format、emulator skill bundle（guides/skills/stubs）。**实施中新增的任务**（原 tasks 未单列此域）；验证：`pnpm tc` 通过，`skill-guide-cli-parity` 3 passed，`verify:bundled-skill-guides` / `verify:skill-bundle-manifest` 退出 0。终端 headless emulator（`src/main/daemon/headless-emulator*`）保留
 - [x] 4.16 删桌面宠物域（`renderer/components/pet/`、main pet ipc bundle/manifest/sprite、preload pet api、`PetStatusSegment`、pet UI-state 字段）。**实施中新增的任务**（原 tasks 未单列此域）；验证：`pnpm tc` 通过
 - [ ] 4.17 删 Notebook 域（`src/main/notebook/`、`ipc/notebook.ts`、preload notebook bridge、`shared/notebook-*`、编辑器 ipynb 内核组件）。⚠️ 需先确认 `editor/IpynbViewer` 等文件查看器是否属保留侧，再决定边界；验证：`pnpm tc` 通过且 ipynb 文件查看行为按结论保留或移除
