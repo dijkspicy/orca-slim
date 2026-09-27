@@ -3,13 +3,15 @@
 generated from HEAD
 
 - delete-set (current tree): 3578
-- peeled away leaf-first: 0
-- IRREDUCIBLE CORE: 3578
-- keep files importing the core: 2705
+- peeled away leaf-first: 3
+- IRREDUCIBLE CORE: 3575
+- keep files importing the core: 2704
 
 ## Peelable (delete safely, leaf-first)
 
-
+- src/main/artifacts/artifact-cloud-service.ts
+- src/main/artifacts/artifact-publisher.ts
+- src/main/runtime/runtime-artifact-controller.ts
 
 ## Irreducible core (needs stubs or call-site edits)
 
@@ -193,9 +195,7 @@ generated from HEAD
 - src/main/ai-vault/structured-session-ownership.ts
 - src/main/artifacts/artifact-cloud-config.ts
 - src/main/artifacts/artifact-cloud-request.ts
-- src/main/artifacts/artifact-cloud-service.ts
 - src/main/artifacts/artifact-create-intent-store.ts
-- src/main/artifacts/artifact-publisher.ts
 - src/main/artifacts/artifact-share-record-store.ts
 - src/main/automations/automation-dispatch-request.ts
 - src/main/automations/automation-owner-migration.ts
@@ -1462,7 +1462,6 @@ generated from HEAD
 - src/main/runtime/rpc/methods/native-chat-rpc-image-block.ts
 - src/main/runtime/rpc/methods/native-chat.ts
 - src/main/runtime/rpc/methods/skills.ts
-- src/main/runtime/runtime-artifact-controller.ts
 - src/main/runtime/runtime-file-commands-ssh-file-watcher-rearm.ts
 - src/main/runtime/runtime-mobile-agent-status-builder.ts
 - src/main/runtime/runtime-mobile-agent-status-projection.ts
@@ -4390,7 +4389,6 @@ generated from HEAD
 - src/main/runtime/rpc/methods/agent-launch-structured-prompt.ts
 - src/main/runtime/rpc/methods/agent-launch-surfaces.ts
 - src/main/runtime/rpc/methods/agent-launch-worktree-creation.ts
-- src/main/runtime/rpc/methods/artifacts.test.ts
 - src/main/runtime/rpc/methods/client-events.ts
 - src/main/runtime/rpc/methods/client-ui-pairing-local-fields.test.ts
 - src/main/runtime/rpc/methods/client-ui.test.ts
