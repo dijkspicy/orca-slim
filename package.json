@@ -308,12 +308,12 @@
     "@vscode/windows-process-tree": "0.8.0"
   },
   "lint-staged": {
-    "{*.{ts,tsx,js,jsx,mjs,mts,cts},!(cloud)/**/*.{ts,tsx,js,jsx,mjs,mts,cts}}": [
+    "**/*.{ts,tsx,js,jsx,mjs,mts,cts}": [
       "oxlint",
       "oxlint --config config/oxlint-react-doctor.json",
       "oxfmt --write"
     ],
-    "{*.{json,css},!(cloud)/**/*.{json,css}}": [
+    "**/*.{json,css}": [
       "oxfmt --write"
     ]
   },

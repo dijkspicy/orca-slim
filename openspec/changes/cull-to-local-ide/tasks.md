@@ -105,7 +105,7 @@
 
 - [ ] 11.1 i18n 按顶层命名空间裁剪 `src/renderer/src/i18n/locales/*.json`，跑 `pnpm sync:localization-catalog`；验证：`pnpm run verify:localization-catalog`、`verify:localization-extraction`、`verify:localization-coverage` 均通过
 - [ ] 11.2 lint 链去 skill/rpc-catalog 相关 verify，oxlint 配置去 `mobile` 目标，prune `config/{max-lines,ts-nocheck,runtime-electron}-baseline.txt`；验证：`pnpm lint` 通过
-- [ ] 11.3 清理 husky/lint-staged globs（含 `!(cloud)`）、`resources/onboarding`、`orca.yaml`、`config/{docker,dev-app-update.yml}`；验证：`pnpm install` 与 `pnpm lint` 通过
+- [x] 11.3 仓库卫生（部分）：`lint-staged` 的两条 glob 去掉 `!(cloud)` 排除（cloud 已删）。**待续**：`resources/onboarding/feature-wall`（属 renderer-mirror/SCC）、`orca.yaml`（setup 脚本仍有效，保留）、`config/{docker,dev-app-update.yml}`（updater 相关，已随 4.11 处理）。验证：`package.json` 仍可解析、glob 已简化
 - [x] 11.4 文档裁剪：删 `docs/site/content/docs/{ssh,remote-servers,mobile,android-apk,telemetry}.mdx` + `cli/` + `browser/`，删 `docs/reference/` 12 篇（ssh×3、skill×5、headless-linux-server、macos-press-and-hold、relay-regional-placement、remote-wire-compatibility），重写 `docs/site/content/docs/meta.json` 导航，README 移除 cloud 段落与 headless 链接，AGENTS.md 移除 SSH 与 remote-wire 两节。**待续**：`docs/site/src` 正文交叉引用、多语言 README（`docs/readme/*`）、其余 reference 篇目。验证：`pnpm run check:readme-local-links` 通过、AGENTS.md 无悬空 docs 链接
 - [ ] 11.5 更新 `docs-slim/feature-tree.md` 为裁剪后功能树；验证：树中只含 6 个保留域，且深度不超过 5 层
 
