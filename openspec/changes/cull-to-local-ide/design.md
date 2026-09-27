@@ -296,6 +296,24 @@ skills         -> artifacts, cloud-profiles, telemetry-stack
 - 遥测发射端可独立失效（已完成 4.10）
 - 依赖清理（4.14 部分）可独立完成
 
+### F-13 平台剥离同样级联：叶子级删除已用尽
+
+尝试 macOS 剥离（Group 10）的孤立部分（`window/macos-*`、`macos-system-sleep-assertion`、`macos-tcc-*`、`macos-press-and-hold-default`、`dock/unread-badge`、`daemon/macos-login-session-death-watch`、`ipc/macos-*`，共 16 个文件）：
+
+| 步骤 | 结果 |
+| --- | --- |
+| 删除 16 个 macOS 专属文件 | 22 处 TS2307（悬空 import，分布在 18 个文件） |
+| 脚本移除悬空 import | 25 处 TS2304（使用点仍在：`deathWatch` 8 处、`handleMacAppActivation`、4 个 ipc/app 注册、`getMacosFullDiskAccessStatus` 等） |
+
+**结论**：macOS 专属模块不是叶子——保留侧文件大量使用它们（`daemon-entry` 的 `MacosLoginSessionDeathWatch`、`index.ts` 的 `MacAppActivation`、`ipc/app.ts` 的键盘布局与 Dock 角标、`developer-permissions` 的 TCC 状态）。因此平台剥离必须与调用点改写同时进行，和 SCC 删除是同一类问题。
+
+**可复用的模式总结（供后续执行者）**：
+1. 先按域计算 import 图（`/tmp/opencode/gen-stubs.mjs` 与 `gen-remote-shims.mjs` 里的解析器已修好别名与原始文件表两处 bug）
+2. 若目标集自我闭合（无环、且对保留侧的边可穷举）→ 可以切片删
+3. 若目标集是 SCC 或对保留侧有大量使用点 → **必须一次原子提交**：删除 + 同时改写全部调用点
+4. 每次测量 `pnpm tc` 前先 `rm -f config/*.tsbuildinfo`（F-7）
+5. 提交前确认无后台写手（F-8），并跑 `npx oxlint <changed>` 预检 pre-commit
+
 ## Migration Plan
 
 - 分支 `cull/local-ide`，WAVE 0 打 tag `pre-cull`
