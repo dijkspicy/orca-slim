@@ -1,0 +1,53 @@
+.opencode/skills/openspec-update-change/SKILL.md
+  s_7949ac080b5592::t_6822b8543fb327 1-109
+.opencode/skills/openspec-apply-change/SKILL.md
+  s_7949ac080b5592::t_6822b8543fb327 1-202
+.opencode/commands/opsx-apply.md
+  s_7949ac080b5592::t_6822b8543fb327 1-195
+.opencode/skills/openspec-sync-specs/SKILL.md
+  s_7949ac080b5592::t_6822b8543fb327 1-290
+.opencode/commands/opsx-update.md
+  s_7949ac080b5592::t_6822b8543fb327 1-102
+.opencode/skills/openspec-propose/SKILL.md
+  s_7949ac080b5592::t_6822b8543fb327 1-174
+.opencode/skills/openspec-explore/SKILL.md
+  s_7949ac080b5592::t_6822b8543fb327 1-354
+.opencode/commands/opsx-sync.md
+  s_7949ac080b5592::t_6822b8543fb327 1-283
+.opencode/skills/openspec-archive-change/SKILL.md
+  s_7949ac080b5592::t_6822b8543fb327 1-210
+.opencode/commands/opsx-archive.md
+  s_7949ac080b5592::t_6822b8543fb327 1-250
+package.json
+  s_581c39faf14fb9::t_1836a9eb908aa4 19,171
+.opencode/commands/opsx-explore.md
+  s_7949ac080b5592::t_6822b8543fb327 1-236
+.opencode/commands/opsx-propose.md
+  s_7949ac080b5592::t_6822b8543fb327 1-167
+openspec/changes/cull-to-local-ide/tasks.md
+  s_581c39faf14fb9::t_6d58ea021424ae 89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "284327c420ee3aac6780881ee49d5b4a980af5c9",
+  "prompts": {},
+  "sessions": {
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_7949ac080b5592": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1fc49e9affeE478hMEgc4J7aA",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
