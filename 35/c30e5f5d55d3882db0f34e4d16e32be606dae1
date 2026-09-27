@@ -1,0 +1,26 @@
+src/main/providers/ssh-agent-session-claim-validation.ts
+  s_581c39faf14fb9::t_2d4c7cff35a6ab 5
+  s_581c39faf14fb9::t_6a6c26036a83fe 6
+src/main/providers/ssh-agent-session-create-operation.ts
+  s_581c39faf14fb9::t_6a6c26036a83fe 2-5
+src/shared/agent-session-host-authority.ts
+  s_581c39faf14fb9::t_6a6c26036a83fe 217-219
+src/renderer/src/lib/lazy-chunk-recovery-reload.ts
+  s_581c39faf14fb9::t_8a14a246a066d4 4-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "35c30e5f5d55d3882db0f34e4d16e32be606dae1",
+  "prompts": {},
+  "sessions": {
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
