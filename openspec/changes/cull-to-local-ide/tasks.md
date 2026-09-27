@@ -36,8 +36,8 @@
 - [ ] 4.2 删 `src/main/server/`、`src/main/ephemeral-vm-*.ts`、`runtime/push/`；验证：`pnpm tc` 通过，三者路径均不存在。**⚠️ 见 design.md F-1：本任务不能独立执行**——`server ↔ orcad ↔ ssh ↔ relay` 互相咬合，已合并为「远程宿主集群」切片（含 tasks 8.1 的 ssh 与 relay/serve-mode）
 - [ ] 4.3 删 `src/main/artifacts/` 与 renderer `components/artifacts/`；验证：`pnpm tc` 通过
 - [ ] 4.4 删 `src/main/jira/`、`src/main/linear/` 与 renderer 对应任务页；验证：`pnpm tc` 通过
-- [ ] 4.5 删 `src/main/speech/` 与 renderer `components/dictation/`、`sherpa-onnx` 依赖；验证：`pnpm tc` 通过且 `pnpm install` 成功
-- [ ] 4.6 删 `src/main/plugins/`、renderer `components/plugin-catalog/`、`shared/plugins/`、`resources/plugins/`；验证：`pnpm tc` 通过
+- [x] 4.5 删 `src/main/speech/` 与 renderer `components/dictation/`、voice settings pane、dictation store slice、speech ipc/RPC、`sherpa-onnx` 运行时引用；验证：`pnpm tc` 通过（`sherpa-onnx` 的 package.json 依赖条目移除并入 4.14）
+- [x] 4.6 删 `src/main/plugins/`、renderer `components/plugin-catalog/`、`shared/plugins/`、`resources/plugins/`、plugin panel/settings/consent/marketplace、plugin 命令与打包校验脚本；验证：`pnpm tc` 通过（agent 侧 codex/hermes/opencode 的“plugin”配置不属本域，保留）
 - [ ] 4.7 删 `src/main/automations/`、renderer `components/automations/`、`persistence/scheduling-automations/`；验证：`pnpm tc` 通过
 - [ ] 4.8 删 `src/main/skills/` 与 renderer `components/skills/`、`skills/` `skill-guides/` `skill-stubs/` `resources/skills/`；验证：`pnpm tc` 通过
 - [ ] 4.9 删 `src/main/ai-vault/`、`ai-vault-search/` 与 renderer AiVault 面板；验证：`pnpm tc` 通过
@@ -47,6 +47,8 @@
 - [ ] 4.13 删 `src/main/ipc/` 中剩余删除域 handler 散件（按 2.1 清单）；验证：`pnpm tc` 通过
 - [ ] 4.14 依赖清理批次一（`qrcode`、`@streamparser/json`、`tldts`、`react-grab`、`@linear/sdk`）；验证：`pnpm install` 与 `pnpm tc` 通过
 - [x] 4.15 删设备模拟器域（Android emulator + iOS simulator）：`src/main/emulator/`(79)、renderer `components/emulator-pane/`(54)、`shared/emulator-{touch,keyboard}-frame`、`shared/rpc-contract/emulator-params`、preload emulator bridge/api、settings `MobileEmulator*` panes、`lib/{emulator-right-split-target,open-mobile-emulator-tab,simulator-launch-coordination,ensure-simulator-tab}`、cli emulator spec/handler/format、emulator skill bundle（guides/skills/stubs）。**实施中新增的任务**（原 tasks 未单列此域）；验证：`pnpm tc` 通过，`skill-guide-cli-parity` 3 passed，`verify:bundled-skill-guides` / `verify:skill-bundle-manifest` 退出 0。终端 headless emulator（`src/main/daemon/headless-emulator*`）保留
+- [x] 4.16 删桌面宠物域（`renderer/components/pet/`、main pet ipc bundle/manifest/sprite、preload pet api、`PetStatusSegment`、pet UI-state 字段）。**实施中新增的任务**（原 tasks 未单列此域）；验证：`pnpm tc` 通过
+- [ ] 4.17 删 Notebook 域（`src/main/notebook/`、`ipc/notebook.ts`、preload notebook bridge、`shared/notebook-*`、编辑器 ipynb 内核组件）。⚠️ 需先确认 `editor/IpynbViewer` 等文件查看器是否属保留侧，再决定边界；验证：`pnpm tc` 通过且 ipynb 文件查看行为按结论保留或移除
 
 ## 5. 域清扫（WAVE 2.5）
 
