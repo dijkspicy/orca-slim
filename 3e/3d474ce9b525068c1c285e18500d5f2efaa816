@@ -1,0 +1,21 @@
+openspec/changes/cull-to-local-ide/design.md
+  s_581c39faf14fb9::t_6633c74b7617bb 345-368
+docs-slim/cull-scc-peel.md
+  s_581c39faf14fb9::t_284e212a3d3bcb 5-6,12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3e3d474ce9b525068c1c285e18500d5f2efaa816",
+  "prompts": {},
+  "sessions": {
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
