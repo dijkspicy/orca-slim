@@ -238,6 +238,32 @@
 
 **后果**：仅删除悬空 import 就能让 `pnpm tc` 变绿，但运行时会调用 `undefined` —— 所以修复必须**同时删掉调用点**，不能只删 import。这一点在派活时必须写清楚，否则会得到一个「编译过但运行时炸」的假绿。
 
+### F-10 Barrel 级联：删域成员前必须先收窄 barrel（严重）
+
+实测（远程宿主集群切片，已回滚）：
+
+| 步骤 | 结果 |
+| --- | --- |
+| 删 `src/relay` + `src/main/{ssh,orcad,server}` + `runtime/{relay,push}`（890 文件） | **264** 处错误（258 处 TS2307，其中 73 个错误文件本身在删除域内、105 个在保留目录，后者多为散落的 SSH 域文件） |
+| 再删散落在保留目录的 199 个 SSH 域文件（含 `src/main/providers/ssh-*`） | **4543** 处错误 —— 不可恢复 |
+
+**根因**：`src/main/providers/index.ts` 是 barrel，re-export 了每个 provider。删掉 `ssh-*` 成员后 barrel 的导出消失，所有 barrel 消费者全线崩。同理 `ipc/register-core-handlers.ts` 等聚合点。
+
+**规则**（对剩余每个大簇都适用）：
+
+1. **先收窄 barrel，再删其成员** —— 同一 commit 内：先改 `index.ts` 只导出存活子集（或改成按需具名导出），再删成员。顺序反了就得到 4000+ 错误。
+2. **聚合点（barrel / register-* / preload index / store index）单列一步**，不要与成员删除混在一起判断成败。
+3. 该集群的正确切法：`删除集群全部成员 + 收窄全部 barrel + 修 66 个保留文件` 作为**一次原子操作**，而不是分层推进。
+
+### F-11 远程宿主集群的实测地形（供下次直接使用）
+
+- 集群规模 **890 文件**：`src/relay`(378)、`src/main/ssh`(359)、`src/main/orcad`(~60)、`src/main/server`(4)、`runtime/relay`(55)、`runtime/push`(30)
+- 加上散落在保留目录的 SSH 域文件 **199 个**（`ipc/ssh*` ~25、`ipc/filesystem-import-ssh*`、`ipc/repos/remote-*`、`persistence/leasing-ssh-ptys`、`ports/ssh-*`、`providers/ssh-*`、`runtime/*ssh*`）
+- **F-2 的正确解法已验证**：WSL hook relay 需要的传输原语只有 **4 个文件**——
+  `ssh-channel-multiplexer.ts`、`ssh-multiplexer-transport-writer.ts`、`ssh-multiplexer-writer-lane-scheduler.ts`、`relay-protocol.ts`，
+  它们的外部依赖只有 `src/shared/pty-write-settlement.ts` 与 `src/shared/relay-frame-decoder.ts`（均已在保留侧）。
+  把这 4 个文件移到 `src/main/hook-relay/` 并改指 11 个 `agent-hooks/wsl-*` 的相对引用即可（已验证可行，本次回滚时一并撤销）。
+
 ## Migration Plan
 
 - 分支 `cull/local-ide`，WAVE 0 打 tag `pre-cull`
