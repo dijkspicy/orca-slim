@@ -1,0 +1,35 @@
+src/renderer/src/components/onboarding/use-onboarding-flow-persistence.ts
+  s_581c39faf14fb9::t_d5aa0a7ff25de5 117
+src/renderer/src/i18n/locales/ko.json
+  s_581c39faf14fb9::t_601a41a8f90737 16841
+src/renderer/src/i18n/locales/ja.json
+  s_581c39faf14fb9::t_601a41a8f90737 16841
+src/renderer/src/i18n/locales/fr.json
+  s_581c39faf14fb9::t_601a41a8f90737 16944
+src/renderer/src/components/Landing.tsx
+  s_581c39faf14fb9::t_8da388cdb880d8 72-73
+src/renderer/src/i18n/locales/es.json
+  s_581c39faf14fb9::t_601a41a8f90737 14625
+src/renderer/src/i18n/locales/zh.json
+  s_581c39faf14fb9::t_601a41a8f90737 16841
+src/renderer/src/i18n/locales/en.json
+  s_581c39faf14fb9::t_601a41a8f90737 3257,16997
+src/preload/api-types.ts
+  s_581c39faf14fb9::t_b55608e39e1887 41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1ce678aa9b9b43236b1d784c781597200d75083e",
+  "prompts": {},
+  "sessions": {
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
