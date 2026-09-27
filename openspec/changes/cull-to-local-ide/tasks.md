@@ -25,7 +25,7 @@
 - [ ] 3.4 按 2.1 分类结果删 `src/main/runtime/rpc/methods/` 的删除域方法并改 `methods/index.ts` 聚合表；验证：`pnpm tc` 通过，且 `pnpm run generate:rpc-params-catalog && pnpm run verify:rpc-params-catalog` 通过
 - [ ] 3.5 `src/main/runtime/orca-runtime.ts` 门面重指向，去掉删除域 import 与 re-export；验证：`pnpm tc` 通过，且 `rg "runtime-linear-command-surface|runtime-automation-controller|runtime-account-controller|runtime-mobile-notification-controller|runtime-remote-fetch-controller" src/main/runtime/orca-runtime.ts` 无输出
 - [ ] 3.6 脊柱分流落地：整删 `browser-client-host-protocol.ts`、`structured-agent-session-create.ts`、`structured-agent-session-projection.ts`；就地收窄 `native-chat-session-options.ts`（改名 `agent-session-options.ts`）与 `native-chat-types.ts`；收窄 `browser-workspace-types.ts`；`telemetry-events.ts` 转 no-op stub；验证：`pnpm tc` 通过，且每个脊柱的引用计数相对基线下降
-- [ ] 3.7 同步构建清单：`config/tsconfig.node.json`（去 `src/renderer/.../skill-freshness-display-status.ts`、`src/relay/**`）、`config/tsconfig.tc.web.json`（去 gitlab/worktree-linked-work-item-metadata/macos-app-activation）、根 `tsconfig.json`（去 relay reference）、`electron.vite.config.ts` inputs、`config/knip.json`；验证：`pnpm tc` 通过且 `pnpm run audit:dead-code` 可运行
+- [x] 3.7 构建清单同步（已删域部分）：从 `electron.vite.config.ts` 的 rollup inputs 移除 `plugin-host-entry`（4.6 已删）与 `stt-worker`（4.5 已删），并从 `config/knip.json` 移除同两项。**这是 F-3 的实例**：`pnpm tc` 看不见构建清单，`tc` 绿但构建会失败。验证：`electron.vite.config.ts` 中已无指向缺失文件的 `resolve(...)` 条目、`pnpm tc` 0、changed-code 门禁通过。**其余清单项**（tsconfig include、根 tsconfig 的 relay reference、electron-builder extraResources）待对应域删除时同步
 - [ ] 3.8 把脊柱判定表与 `execution-host` 收窄结论落进 `docs-slim/cull-census.md`；验证：表格覆盖 `design.md` D-2 列出的全部 8 个脊柱
 
 ## 4. 便宜域整删（WAVE 1，切割边 ≤ 11）
