@@ -1,0 +1,475 @@
+src/main/agent-hooks/install-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1
+  s_581c39faf14fb9::t_57a21f1f5822db 2-30
+src/shared/telemetry-property-schemas.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-205
+src/shared/setup-script-telemetry-events.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-161
+src/main/observability/local-file-sink-memory.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-128
+src/main/telemetry/cohort-classifier.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-64
+src/renderer/src/components/setup-guide/use-setup-guide-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-186
+src/main/crash-reporting/minidump-stream-reader.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-144
+src/shared/direct-ssh-reconnect-telemetry-schema.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-112
+src/main/crash-reporting/renderer-recovery-circuit-breaker.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-66
+src/main/observability/redactor.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-342
+src/main/crash-reporting/gpu-fallback-engagement.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-66
+src/main/telemetry/onboarding-cohort-classifier.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-62
+src/renderer/src/lib/crash-diagnostics.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-89
+src/main/crash-reporting/main-process-lifecycle-identity.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-19
+src/main/crash-reporting/minidump-crash-signature.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-232
+src/main/telemetry/client-lifecycle.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-165
+src/main/observability/agent-session-instrumentation.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-81
+src/renderer/src/components/feature-tips/feature-tip-telemetry.ts
+  s_93b1b060a4202e::t_2ccc84f6903f5a 3
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-2,13-32
+  s_581c39faf14fb9::t_d5d963e8534851 4-12,33
+src/shared/nested-repo-telemetry-schema.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-171
+src/main/crash-reporting/self-initiated-tree-kill-log.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-224
+src/main/ipc/telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-468
+src/main/crash-reporting/process-gone-recorder.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-757
+src/main/crash-reporting/process-gone-sibling-correlation.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-226
+src/main/crash-reporting/minidump-crashpad-annotations.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-178
+src/shared/telemetry-repository-event-schemas.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-265
+src/main/crash-reporting/process-gone-sibling-correlation.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-372
+src/main/observability/tracer.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-282
+src/shared/telemetry-onboarding-foundation-schemas.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-125
+src/main/crash-reporting/crash-breadcrumb-store.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-377
+src/main/crash-reporting/durable-crash-breadcrumb.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-87
+src/renderer/src/lib/crash-breadcrumb-recorder.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-25
+src/renderer/src/components/settings/PrivacyDiagnosticsSection.tsx
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-341
+src/renderer/src/lib/react-commit-cascade-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-339
+src/renderer/src/hooks/direct-ssh-reconnect-coordinator-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-118
+src/main/telemetry/consent.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-268
+src/main/observability/architecture.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-96
+src/main/observability/logs-directory.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-43
+src/main/ipc/pty/pane/spawn-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 2-21
+  s_581c39faf14fb9::t_1c3b2dc9c1eaed 1,22-24
+src/main/observability/diagnostic-bundle-upload.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-148
+src/shared/telemetry-native-feature-event-schemas.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-133
+src/renderer/src/hooks/direct-ssh-host-hydration-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-17
+src/main/ipc/github-star-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-117
+src/main/crash-reporting/crash-report-copy-text.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-53
+src/shared/crash-report-redaction.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-109
+src/shared/telemetry-events.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-643
+src/shared/daemon-adoption-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-155
+src/main/crash-reporting/process-gone-dedupe.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-95
+src/main/observability/diagnostic-upload-endpoint.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-42
+src/main/observability/diagnostic-bundle-limits.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1
+src/main/telemetry/burst-cap.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-122
+src/main/telemetry/client.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-338
+src/renderer/src/components/onboarding/windows-terminal-onboarding-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 2
+  s_581c39faf14fb9::t_4c19f164817cca 1,3-49
+src/main/telemetry/validator-warn-cache.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-37
+src/renderer/src/lib/direct-ssh-reconnect-product-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-106
+src/main/crash-reporting/process-gone-sibling-attribution.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-89
+src/main/observability/instrumentation.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-286
+src/main/crash-reporting/durable-crash-breadcrumb.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-97
+src/main/ipc/telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-132
+src/shared/nested-repo-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-224
+src/main/hang-watchdog/main-thread-hang-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-39
+src/main/observability/local-file-sink.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-272
+src/shared/crash-report-exit-code.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-25
+src/shared/nested-repo-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-217
+src/main/telemetry/client-test-harness.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-162
+src/main/crash-reporting/crash-feedback-diagnostic-bundle.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-119
+src/shared/feature-wall-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1
+src/main/window/renderer-recovery-reload-watchdog.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-136
+src/shared/telemetry-daemon-event-schemas.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-239
+src/shared/profile-state-telemetry-schema.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-29
+src/renderer/src/components/TelemetryFirstLaunchSurface.tsx
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-56
+src/main/crash-reporting/crash-breadcrumb-renderer-attribution.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-134
+src/preload/api/crash-reports-bridge.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-32
+src/shared/crash-reporting.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-502
+src/main/agent-hooks/server-prompt-sent-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-582
+src/shared/crash-reporting-diagnostic-bundle.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-61
+src/main/daemon/daemon-adoption-telemetry-event.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-343
+src/main/telemetry/cohort-classifier.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-101
+src/main/observability/redactor-environment-lines.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-64
+src/renderer/src/lib/feature-education-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-188
+src/renderer/src/lib/feature-education-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-238
+src/shared/telemetry-common-props.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-57
+src/main/crash-reporting/main-process-lifecycle-identity.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-18
+src/main/crash-reporting/process-gone-killed-one-ordering.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-178
+src/renderer/src/lib/native-chat-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-102
+src/renderer/src/lib/react-error-boundary-reporting.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-150
+src/renderer/src/components/crash-report/use-crash-report-copy.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-69
+src/renderer/src/components/crash-report/CrashReportDialog.tsx
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-118
+src/renderer/src/components/sidebar/setup-script-prompt-exposure-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-40
+  s_581c39faf14fb9::t_f227e29e27083e 41
+src/shared/feature-education-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-64
+src/main/crash-reporting/gpu-crash-diagnostics.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-222
+src/main/crash-reporting/swap-volume-free-space.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-67
+src/shared/telemetry-feature-education-event-schemas.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-177
+src/main/crash-reporting/renderer-recovery-circuit-breaker.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-65
+src/main/telemetry/validator.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-493
+src/main/crash-reporting/self-initiated-tree-kill-log.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-341
+src/shared/crash-reporting.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-277
+src/renderer/src/components/crash-report/CrashReportDialogSurface.overflow.test.tsx
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-84
+src/renderer/src/web/preload-api/web-telemetry-api.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-11
+src/main/observability/bundle.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-601
+src/main/telemetry/consent.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-110
+src/main/ipc/crash-reporting-renderer-breadcrumbs.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-487
+src/main/crash-reporting/crash-breadcrumb-store.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-909
+src/shared/telemetry-feature-wall-events.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-131
+src/main/window/createMainWindow-recovery-reload-watchdog.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-671
+src/main/crash-reporting/crash-report-copy-text.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-41
+src/main/crash-reporting/gpu-fallback-recovered-launch.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-56
+src/shared/onboarding-tour-telemetry-events.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-79
+src/shared/telemetry-event-classification.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-135
+src/renderer/src/components/terminal-pane/terminal-park-verdict-flip-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-732
+src/shared/telemetry-events.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-69
+src/main/crash-reporting/crash-breadcrumb-store-leak.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-68
+src/main/window/createMainWindow-renderer-crash-recovery.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 26-42
+  s_581c39faf14fb9::t_3736794a1b631a 1-25,43-678
+src/main/crash-reporting/process-gone-dedupe.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-107
+src/main/ipc/crash-reporting.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-788
+src/main/telemetry/classify-error.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-44
+src/renderer/src/components/feature-wall/use-feature-wall-tour-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-60
+src/shared/setup-script-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-62
+src/renderer/src/components/feature-wall/use-feature-wall-tour-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 2-112
+  s_581c39faf14fb9::t_3b6eab99549af8 1,113-120
+src/main/crash-reporting/minidump-crash-signature.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-458
+src/main/observability/diagnostic-upload-http.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-153
+src/main/ipc/crash-reporting-renderer-error-report-attribution.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-111
+src/main/crash-reporting/crashpad-capture.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-348
+src/main/crash-reporting/crashpad-capture-read-limit.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-303
+src/shared/telemetry-orca-cli-feature-tip.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-42
+src/main/observability/tracer.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-203
+src/renderer/src/lib/telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-78
+src/shared/telemetry-onboarding-event-schemas.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-299
+src/main/crash-reporting/gpu-fallback-engagement.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-113
+src/shared/telemetry-consent-types.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-17
+src/main/crash-reporting/crash-report-store.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-259
+src/renderer/src/components/settings/PrivacyDiagnosticBundleControls.tsx
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-191
+src/main/telemetry/install-id.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-51
+src/main/crash-reporting/pre-gone-host-memory.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-379
+src/main/ipc/crash-reporting-submission.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-175
+src/main/crash-reporting/process-gone-diagnostics.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-308
+src/main/codex/codex-trust-grant-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-90
+src/main/window/renderer-recovery-prompt.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-158
+src/shared/star-nag-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-56
+src/main/daemon/daemon-adoption-telemetry-event.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 8-102
+  s_581c39faf14fb9::t_ad7b9e97c36eae 1-7,103-147
+src/main/crash-reporting/gpu-crash-diagnostics.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-251
+src/main/telemetry/onboarding-cohort-classifier.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-143
+src/main/telemetry/install-id.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-21
+src/main/crash-reporting/gpu-crash-fallback-field-sessions.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-139
+src/main/crash-reporting/gpu-crash-fallback-decision.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-174
+src/shared/crash-report-attribution-lines.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-22
+src/main/crash-reporting/process-gone-recorder.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-343
+src/shared/telemetry-event-registry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-202
+src/main/crash-reporting/system-memory-details.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-161
+src/shared/telemetry-events-feature-education.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-99
+src/main/agent-hooks/install-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-39
+src/main/ipc/workspace-create-error-classifier.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-53
+src/renderer/src/lib/react-error-boundary-reporting.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-154
+src/main/crash-reporting/crashpad-capture.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-293
+src/shared/add-repo-existing-workspaces-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-48
+src/renderer/src/lib/crash-breadcrumb-data.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-69
+src/main/ipc/crash-reporting-renderer-breadcrumbs.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-230
+src/shared/feature-education-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-35
+src/renderer/src/components/crash-report/CrashReportDialogSurface.tsx
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-351
+src/renderer/src/components/crash-report/crash-report-submit-notice.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-128
+src/main/crash-reporting/gpu-fallback-restart-prompt.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-41
+src/main/observability/redactor.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-308
+src/renderer/src/components/settings/PrivacyPane.tsx
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-160
+src/renderer/src/lib/crash-diagnostics.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-495
+src/main/ipc/crash-reporting-sendable-reports.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-55
+src/main/orcad/orcad-profile-state-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-47
+src/main/telemetry/classify-error.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-43
+src/main/ipc/crash-reporting-replay-guard-wedge-burst.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-128
+src/renderer/src/components/sidebar/add-repo-existing-workspaces-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-4
+  s_581c39faf14fb9::t_64176d767b874e 5-93
+src/renderer/src/components/onboarding/use-onboarding-flow-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 3-84
+  s_581c39faf14fb9::t_4df49b177813a0 1-2,85-90
+src/main/crash-reporting/process-gone-classification.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-113
+src/main/crash-reporting/expected-teardown-state.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-61
+src/main/orcad/orcad-profile-state-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-46
+src/main/ipc/crash-reporting-renderer-error-report.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-202
+src/main/telemetry/onboarding-feature-setup-validator.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-89
+src/main/crash-reporting/process-gone-diagnostics.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-690
+src/main/crash-reporting/gpu-fallback-restart-prompt.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-23
+src/main/crash-reporting/crash-report-store.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-266
+src/renderer/src/lib/direct-ssh-reconnect-product-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-127
+src/main/observability/index.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-261
+src/main/crash-reporting/pre-gone-host-memory.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-164
+src/shared/crash-report-signature-lines.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-23
+src/shared/telemetry-app-event-schemas.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-134
+src/main/telemetry/burst-cap.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-163
+src/renderer/src/components/crash-report/crash-report-submit-notice.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-134
+src/renderer/src/components/setup-guide/use-setup-guide-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-134
+src/main/crash-reporting/suppressed-process-gone-breadcrumb.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-43
+src/renderer/src/lib/direct-ssh-reconnect-product-telemetry-types.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-8
+src/shared/setup-script-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-101
+src/main/crash-reporting/suppressed-process-gone-breadcrumb.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-51
+src/main/ipc/crash-reporting.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-115
+src/main/crash-reporting/process-gone-classification.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-434
+src/preload/api/crash-report-api.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-37
+src/renderer/src/components/settings/PrivacyPane.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-224
+src/renderer/src/components/onboarding/windows-terminal-onboarding-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-37
+src/renderer/src/components/settings/privacy-search.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-95
+src/main/crash-reporting/minidump-file-source.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-201
+src/main/crash-reporting/crash-breadcrumb-store-orphan-cleanup.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-167
+src/renderer/src/components/sidebar/add-repo-existing-workspaces-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-137
+src/shared/crash-breadcrumb-origin.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-4
+src/main/telemetry/client.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-123
+src/renderer/src/components/setup-guide/SetupGuideTelemetryObserver.tsx
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-15
+src/renderer/src/components/terminal-pane/terminal-park-verdict-flip-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-345
+src/shared/daemon-lifecycle-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-41
+src/main/crash-reporting/expected-teardown-state.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-175
+src/main/codex/codex-trust-grant-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-42
+src/main/observability/bundle.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-190
+src/renderer/src/components/feature-tips/feature-tip-telemetry.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-64
+src/main/ipc/repos/repo-added-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-21
+  s_581c39faf14fb9::t_0f9e88102f27f8 22-24
+src/main/telemetry/validator.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-107
+src/main/crash-reporting/gpu-crash-fallback-decision.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-114
+src/main/observability/local-file-sink.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-310
+src/preload/api/telemetry-api.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-63
+src/main/crash-reporting/gpu-fallback-recovered-launch.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-126
+src/main/crash-reporting/minidump-embedded-check.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-112
+src/main/observability/diagnostic-upload-http.test.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-82
+src/main/crash-reporting/minidump-file-source.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-99
+src/shared/daemon-adoption-telemetry.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-93
+src/renderer/src/components/crash-report/use-crash-report-copy.test.tsx
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-133
+src/main/observability/instrumentation.ts
+  s_581c39faf14fb9::t_75c3d3bb079a3c 1-331
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1702a6ed72cf6bef891fbb14b4bd34404b873e92",
+  "prompts": {},
+  "sessions": {
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_93b1b060a4202e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1f24e944ffeJudCUS1ZMw2udg",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
