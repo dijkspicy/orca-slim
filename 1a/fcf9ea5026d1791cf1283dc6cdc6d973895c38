@@ -1,0 +1,46 @@
+config/scripts/package-electron-runtime-contract.test.mjs
+  s_56070b4f0477f0::t_b3e22541dda46e 117,130-132,135
+config/scripts/electron-builder-native-rebuild.test.mjs
+  s_56070b4f0477f0::t_d3a4d045cd9fd4 72
+.github/workflows/release-cut.yml
+  s_56070b4f0477f0::t_45b13a9152f662 1340,1342
+config/scripts/pr-code-change-scope.test.mjs
+  s_56070b4f0477f0::t_d9702f833ebda7 190,193,196
+config/scripts/verify-macos-entitlements.mjs
+  s_56070b4f0477f0::t_b5ceb35e8171b7 9
+package.json
+  s_56070b4f0477f0::t_2dea3dabc881a8 106-107
+  s_56070b4f0477f0::t_4a612ddb29e249 96-97
+config/scripts/electron-builder-config.test.mjs
+  s_56070b4f0477f0::t_3f9031953ac2d3 125-127
+config/scripts/build-native-for-platform.mjs
+  s_56070b4f0477f0::t_cce333a8875107 3-7
+openspec/changes/cull-to-local-ide/tasks.md
+  s_581c39faf14fb9::t_29628ba7491986 91,109
+config/electron-builder.config.cjs
+  s_56070b4f0477f0::t_0f3c0263d2102c 212-214
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1afcf9ea5026d1791cf1283dc6cdc6d973895c38",
+  "prompts": {},
+  "sessions": {
+    "s_56070b4f0477f0": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1cdbb420ffehvYIItF294BiaX",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
