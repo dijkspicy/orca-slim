@@ -1,0 +1,44 @@
+src/main/ipc/filesystem/filesystem-file-content-inspection.ts
+  s_56070b4f0477f0::t_64cea6ff1e80e8 45
+docs-slim/cull-scc-peel.md
+  s_581c39faf14fb9::t_4d6ed840ae1324 5-8,12-54
+src/main/runtime/orca-runtime-state-fields.ts
+  s_56070b4f0477f0::t_ff208a3b0b403e 235-238
+src/main/runtime/runtime-ai-vault-commands.ts
+  s_56070b4f0477f0::t_2d41c6c8c296dd 11-12,20-21,25-26,28
+src/main/worktree-retirement-discovery.ts
+  s_56070b4f0477f0::t_2e6b9fa740d16f 138-146
+  s_56070b4f0477f0::t_31992823f8f983 4
+  s_56070b4f0477f0::t_ac1ad6d68f42d4 147-169
+src/main/opencode-usage/scanner-windows-data-directory.test.ts
+  s_56070b4f0477f0::t_eecd3f202a177d 4
+src/main/opencode/opencode-session-binder.ts
+  s_56070b4f0477f0::t_ad39e5fd38f650 27-28,31-64
+  s_56070b4f0477f0::t_7b6ab8119a5c88 272
+  s_56070b4f0477f0::t_3bc8c779967e07 15,17
+  s_56070b4f0477f0::t_4716261c039eea 65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8846bffa0cb5406c2a32411a915a3ab11aa98742",
+  "prompts": {},
+  "sessions": {
+    "s_56070b4f0477f0": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1cdbb420ffehvYIItF294BiaX",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
