@@ -1,0 +1,2243 @@
+src/main/runtime/orca-runtime-stored-mobile-snapshot-has-stale-preserved-tab.ts
+  s_bfe523dda848fb::t_5f8a045fa97257 64
+  s_bfe523dda848fb::t_ed226941648187 60-61
+src/main/ipc/workspace-cleanup-git-evidence.ts
+  s_45ce27f00e18ef::t_16845eaa7d19e0 55,60-64
+  s_45ce27f00e18ef::t_7387d351516d1a 122-125
+src/main/runtime/orca-runtime-refresh-pty-worktree-records-with-controller-inventory.ts
+  s_bfe523dda848fb::t_12ddb0c3fe3c5a 150
+src/renderer/src/components/settings/accounts-pane-codex-account-row.tsx
+  s_54078d311d2a9f::t_2d1de24f3c357e 74
+  s_54078d311d2a9f::t_0ec0aa27c9c7b3 30
+src/renderer/src/lib/worktree-creation-agent-seeds.ts
+  s_51fe632c652b0f::t_e9e7202607407e 35
+src/main/claude/claude-structured-session-recovery.test.ts
+  s_21d1c21ea67f23::t_2c7e644904d72d 2
+src/renderer/src/components/task-source-provider-availability.test.ts
+  s_5f01c1f790c525::t_82b303a036473c 11-12
+src/renderer/src/components/right-sidebar/pr-comment-snapshotted-thread-resolver.ts
+  s_5f01c1f790c525::t_f3ae18f1dedf68 66
+  s_5f01c1f790c525::t_3689d08543eac1 24-25
+src/renderer/src/store/slices/repos-project-host-lifecycle.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 49-50,238
+src/renderer/src/lib/pr-comment-reactions.test.ts
+  s_6eb44cc4f551a6::t_5635d3e41d82b2 2,12
+  s_6eb44cc4f551a6::t_669a14ed366859 9-11,13-15,18
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-create-review.tsx
+  s_5f01c1f790c525::t_80cee1a39164ac 131
+src/main/agent-hooks/managed-agent-hook-registry.ts
+  s_21d1c21ea67f23::t_1cb7f4bdaffa61 1
+  s_21d1c21ea67f23::t_753740fb576ce9 24,29,31,35,38
+src/main/codex/codex-subagent-activity.ts
+  s_39cd8df4111de4::t_5f4b6622e2a465 14
+src/renderer/src/store/slices/worktrees-slice-test-harness.ts
+  s_0555e2cf8cb4f7::t_73dfd753c44279 7-8,10-13,42-72
+  s_581c39faf14fb9::t_f2a19db97c51fc 73
+src/renderer/src/components/github-project/useProjectRowActions.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 212-215
+src/renderer/src/components/right-sidebar/useFileExplorerImport.ts
+  s_abe0c5b3223c93::t_55f8a6e2798eeb 70-74
+src/main/runtime/agent-prompt-submission-verification.ts
+  s_27e375e990447a::t_7ed7d3be35fbb4 3-4
+src/renderer/src/store/slices/repos-all-hosts-generation.test.ts
+  s_39cd8df4111de4::t_b1a62a350b2d47 5-6
+  s_581c39faf14fb9::t_bed68e41071f2f 51
+src/renderer/src/components/terminal-pane/TerminalContextMenu.tsx
+  s_abe0c5b3223c93::t_863057d442db0c 180
+src/shared/default-global-settings.ts
+  s_45ce27f00e18ef::t_9dcf6f27078d4f 5
+src/renderer/src/components/terminal-pane/pane-foreground-agent-tracker.ts
+  s_abe0c5b3223c93::t_1de768dd040578 8,26,31
+src/renderer/src/components/task-page-jira-project-selection.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 7-13
+src/main/runtime/runtime-file-commands-resolve-terminal-path.ts
+  s_bfe523dda848fb::t_c6f95a05601a95 114
+  s_bfe523dda848fb::t_ebabd4e2f5dba4 162-163
+  s_bfe523dda848fb::t_96e93b19d5eaa3 87
+src/renderer/src/lib/launch-agent-structured-chat-guard.test.ts
+  s_6eb44cc4f551a6::t_03700a0fcb1a27 247
+src/renderer/src/components/sidebar/WorktreeCardMetadataStatusBadges.tsx
+  s_753176acee6ab9::t_33c95797cccac1 32
+src/renderer/src/components/terminal-pane/pty-connection-types.ts
+  s_1c8880be3c8da0::t_c8e21e9cd885e4 104
+  s_abe0c5b3223c93::t_9b55eeaa8f6210 16,35,38
+src/renderer/src/lib/agent-paste-draft-readiness-budget.test.ts
+  s_f3eea1900dccbb::t_1e0155f31984ef 25-32
+src/renderer/src/components/sidebar/worktree-list/listing/use-visible-worktrees.ts
+  s_7eb6ee45f309ef::t_aeb12fa2833b6c 13,67-70
+src/shared/runtime-environment-store.ts
+  s_bc8dac5ccb04d8::t_3c1f91877f7ba9 73
+  s_581c39faf14fb9::t_31834a0e2a9050 118
+src/renderer/src/hooks/composer-state/target-change-actions.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 148-150
+src/renderer/src/lib/codex-pane-restart-eligibility.ts
+  s_f3eea1900dccbb::t_d72de7e70a4805 7
+  s_f3eea1900dccbb::t_09cd74233e429f 45
+src/renderer/src/store/slices/worktrees-linked-review-push-target.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 3
+src/main/runtime/runtime-file-commands-read-file-explorer-preview.ts
+  s_bfe523dda848fb::t_8a7e88f233fa1e 107
+  s_bfe523dda848fb::t_38fbf62e2e2492 12
+src/main/codex/config-toml-atomic-write.ts
+  s_54078d311d2a9f::t_781dbf74978921 12
+src/renderer/src/components/terminal-pane/use-terminal-pane-layout-persistence.ts
+  s_753176acee6ab9::t_762039d90eafa0 136
+src/renderer/src/components/use-worktree-jump-palette-controller.ts
+  s_f3eea1900dccbb::t_f81e24691fc654 117,138
+  s_581c39faf14fb9::t_db0f583d97da9f 99,105
+src/renderer/src/store/slices/detected-agents-environment-prune-leak.test.ts
+  s_1c8880be3c8da0::t_d73cfa963e87e1 11
+src/renderer/src/components/right-sidebar/useFileDeletion.ts
+  s_abe0c5b3223c93::t_ce5056529239dc 130,132,144-148,154-158,163-167
+  s_0555e2cf8cb4f7::t_51e98733370ac3 121
+src/main/codex/codex-model-catalog-probe.ts
+  s_39cd8df4111de4::t_024ad16fca6a59 10-22
+src/renderer/src/store/slices/repos-ssh-host-reconciliation.test.ts
+  s_d515f9c8eb4805::t_0217ad56c987f4 10
+src/main/ipc/runtime-environments.ts
+  s_f3eea1900dccbb::t_b27bd579d8b155 61,68
+  s_581c39faf14fb9::t_e600a43bd877aa 21-22,27
+src/renderer/src/components/terminal-pane/terminal-hidden-view-parking.ts
+  s_abe0c5b3223c93::t_09cec74cbfb5e1 60,64,89,93,95
+src/renderer/src/store/slices/repos-project-runtime.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 36-37
+src/renderer/src/components/terminal-pane/terminal-pane-mount-events.ts
+  s_7eb6ee45f309ef::t_432ead69018800 64
+src/renderer/src/lib/agent-draft-readiness.ts
+  s_f3eea1900dccbb::t_80caf710c78c8f 21,63-66
+src/main/codex/codex-background-task-tracker.test.ts
+  s_39cd8df4111de4::t_1e63e868bed09e 12,20
+src/renderer/src/store/slices/worktrees-fetch-owner-routing.test.ts
+  s_d515f9c8eb4805::t_0217ad56c987f4 4,6
+src/main/runtime/rpc/dispatcher-client-browser-routing.ts
+  s_bfe523dda848fb::t_534018211e9da9 1-2,4-6,8
+src/main/runtime/rpc/methods/agent-launch-worktree-creation.ts
+  s_7eb6ee45f309ef::t_86b15ea9c12600 49-79,81-92
+  s_7eb6ee45f309ef::t_450acf5f6ca9fc 48
+src/renderer/src/components/settings/CommitMessageAiPane.tsx
+  s_54078d311d2a9f::t_eb5de58529edf3 21
+src/renderer/src/components/task-page-source-context.tsx
+  s_5f01c1f790c525::t_ac2592a031b7a6 3-6,35,38,48,59,76
+src/main/window/createMainWindow-tray-minimize-close.test.ts
+  s_ca79eab6e88120::t_87d998f1cf73b7 94,100
+src/renderer/src/components/task-page-linear-issue-empty-state.test.ts
+  s_5f01c1f790c525::t_f30200e9b9fc93 8,50-52
+src/renderer/src/components/dashboard/dashboard-card-context.ts
+  s_bd639794f7233b::t_901051a44a58cb 5-8,16-18,21,40-57,63,80
+  s_581c39faf14fb9::t_f52858999516b8 83
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-polling.test.tsx
+  s_5f01c1f790c525::t_9e91dfeab1dbd5 5,30
+src/shared/automation-list-scope.ts
+  s_45ce27f00e18ef::t_691ba9ed95ed0a 31-36
+src/main/codex/codex-journal-payload-bounds.ts
+  s_39cd8df4111de4::t_417c5d3e155a92 1-6,8,11-13,16-17,20-28,31-40,43-46,50-59,61-77,79-87,90-95,97
+  s_581c39faf14fb9::t_db0f583d97da9f 9
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-ai-acknowledgement.tsx
+  s_5f01c1f790c525::t_54b782ecf132cf 38,69,72
+src/renderer/src/components/right-sidebar/PortsPanel.test.tsx
+  s_bd639794f7233b::t_0315471687d5bf 3
+src/renderer/src/components/sidebar/folder-workspace-composer-submit.ts
+  s_bfe523dda848fb::t_ff8dc0b86add50 194
+  s_753176acee6ab9::t_fe3fbc3a436327 42-46,58
+src/main/runtime/orca-runtime-publish-pty-backed-mobile-session-terminal.ts
+  s_bfe523dda848fb::t_901ea9745257e1 19
+  s_bfe523dda848fb::t_b1f962f570f03b 2
+src/renderer/src/components/task-page-jira-cache-selectors.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 3-6,17,21,25-27,30-31,36-37
+src/renderer/src/lib/structured-agent-session-launch-resume-identity.test.ts
+  s_51fe632c652b0f::t_6dc52b67a5e3ec 54-57,60-62,64
+  s_581c39faf14fb9::t_95d8e404354ac9 63,65
+src/renderer/src/components/sidebar/AddRepoDialog.tsx
+  s_bd639794f7233b::t_d73c28f32d3f54 262
+  s_f3eea1900dccbb::t_dc5943a4b8f02d 271
+  s_581c39faf14fb9::t_cbe3941186a988 75
+src/main/project-groups/folder-workspace-path-status.ts
+  s_bfe523dda848fb::t_cbc3c4ea9568de 25-27
+  s_bfe523dda848fb::t_478355f040382e 118
+src/main/runtime/orca-runtime-core.ts
+  s_ca79eab6e88120::t_475c04819d4902 335
+  s_27e375e990447a::t_3d2264fcd028ad 333
+src/main/window/createMainWindow.ts
+  s_ca79eab6e88120::t_7598dcd49841bc 120
+src/renderer/src/components/task-page-github-work-item-status.ts
+  s_5f01c1f790c525::t_a339002014014a 3
+  s_581c39faf14fb9::t_5a5efea88aa39a 4-6
+src/renderer/src/components/right-sidebar/SourceControlAgentActionDialog.tsx
+  s_bd639794f7233b::t_ea0ea9a6d538d9 14
+src/renderer/src/store/slices/worktrees-detected-listing-fixtures.ts
+  s_8595a5eb6fd955::t_af35ebbad19ead 3
+src/renderer/src/components/terminal-pane/pty-connection/agent-idle-working-handlers.ts
+  s_1c8880be3c8da0::t_3a98887b445f43 138,141
+src/renderer/src/components/settings/RepositoryForkSyncSection.tsx
+  s_54078d311d2a9f::t_ac63f24e7b3241 10
+src/main/runtime/runtime-rpc-mobile-method-allowlist.test.ts
+  s_ca79eab6e88120::t_758dcf04af4d39 643
+src/renderer/src/components/right-sidebar/ChecksPanel.tsx
+  s_5f01c1f790c525::t_da3e0dacfe4757 152
+src/main/ipc/runtime-environment-pairing-verification.ts
+  s_0555e2cf8cb4f7::t_f0c6f3765ebe8e 1,10-20,23-27,29,31-40,44
+src/renderer/src/components/worktree-jump-palette-entry.tsx
+  s_f3eea1900dccbb::t_6f53813de82d12 14
+  s_581c39faf14fb9::t_eea6311ddd6321 96-100
+src/shared/automations-types.ts
+  s_54078d311d2a9f::t_ddba22fd23d215 98,174
+src/renderer/src/components/terminal-pane/pane-foreground-process-reader.ts
+  s_abe0c5b3223c93::t_56834d180b8904 20-21,32-35
+  s_abe0c5b3223c93::t_1de768dd040578 1,7
+src/renderer/src/components/sidebar/comment-markdown-element-renderers.tsx
+  s_753176acee6ab9::t_099f992aac5adc 49
+src/renderer/src/components/terminal-pane/terminal-handle-links.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 172
+src/renderer/src/components/right-sidebar/checks-panel/use-comments-list-state.tsx
+  s_5f01c1f790c525::t_4fcb622ca43797 21
+  s_581c39faf14fb9::t_db0f583d97da9f 44,55,57-58
+  s_581c39faf14fb9::t_15fc48869fc8cc 59
+src/renderer/src/components/right-sidebar/source-control-primary-action-types.ts
+  s_bd639794f7233b::t_f78604988a20a9 1
+  s_581c39faf14fb9::t_5c0d1496aef016 2-4,45
+src/renderer/src/store/slices/runtime-status-response-fixture.ts
+  s_d515f9c8eb4805::t_b5b7cdafb85a38 1-5,8,12-14,16-29
+src/renderer/src/components/task-page/linear/IssueTable.tsx
+  s_6eb44cc4f551a6::t_7676dabebdfb05 47-48
+src/renderer/src/components/task-page-linear-issue-request.test.ts
+  s_5f01c1f790c525::t_7429e9b00139a5 6,16-26,29,32,34-41
+src/renderer/src/store/slices/ssh.ts
+  s_d515f9c8eb4805::t_35c90c83535bdb 8
+src/renderer/src/components/terminal-pane/terminal-fit-restore.ts
+  s_abe0c5b3223c93::t_286178b00b0627 39,46-47
+src/renderer/src/components/terminal-pane/agent-completion-coordinator-process-cadence.test.ts
+  s_27e375e990447a::t_bdf4c64c850ef7 9,306,314,317
+src/shared/agent-session-journal-types.ts
+  s_45ce27f00e18ef::t_1f8da25803decb 14-30
+src/renderer/src/lib/launch-ai-vault-session.ts
+  s_6eb44cc4f551a6::t_c05563b84ac9c1 10,41
+src/main/codex/codex-background-command-tracker.ts
+  s_39cd8df4111de4::t_e2fda8e0a0fc8a 4,7-12
+  s_581c39faf14fb9::t_99532d76482f89 13
+src/renderer/src/store/slices/runtime-status-skill-cache-eviction.test.ts
+  s_d515f9c8eb4805::t_59e809b81dec5e 4
+src/renderer/src/store/slices/worktrees-remote-runtime-create.test.ts
+  s_d515f9c8eb4805::t_f9d9fe5f12f80b 2,184
+src/renderer/src/lib/markdown-document-templates.ts
+  s_6eb44cc4f551a6::t_5b18b96b4a91c5 3-4,7-15,140,218
+src/renderer/src/components/settings/RuntimeEnvironmentsPane.tsx
+  s_54078d311d2a9f::t_84443713440a00 12
+  s_581c39faf14fb9::t_7207364c42e118 63-71,97
+src/renderer/src/store/slices/worktrees/teardown/remove-worktree.ts
+  s_f3eea1900dccbb::t_a3d668db4ca2b1 101
+src/renderer/src/store/slices/store-session-workspace-hydration.test.ts
+  s_d515f9c8eb4805::t_0217ad56c987f4 4
+src/renderer/src/components/right-sidebar/use-checks-panel-terminal-worktree.ts
+  s_abe0c5b3223c93::t_42cdf5a2d06759 71-72
+  s_abe0c5b3223c93::t_228db62e1ccfbb 31
+src/renderer/src/store/slices/worktree-nav-history.ts
+  s_d515f9c8eb4805::t_ec218a8b736b47 65
+  s_d515f9c8eb4805::t_14da55900aaee5 17
+  s_d515f9c8eb4805::t_cc02e679d84bf7 61,69
+src/renderer/src/components/quick-open-file-list.ts
+  s_8595a5eb6fd955::t_e147dd272cb5b2 243-244,257
+  s_8595a5eb6fd955::t_d6b475abfc67e1 290-292
+  s_8595a5eb6fd955::t_402498de55c8a3 1
+  s_8595a5eb6fd955::t_ffd1e18c9f987e 10-14
+  s_581c39faf14fb9::t_402e424e0213bb 241-242,245,248,253-254
+src/main/ipc/worktrees/create/register-worktree-create-handlers.ts
+  s_21d1c21ea67f23::t_56d66fd15d082e 21-44,46-49
+  s_581c39faf14fb9::t_8dd5a9a2dc6256 8
+src/main/runtime/orca-runtime-git-diff-budget.test.ts
+  s_27e375e990447a::t_1e4227efa39225 1,3-4
+src/main/runtime/runtime-rpc/runtime-rpc-mobile-pairing.ts
+  s_27e375e990447a::t_60b173b5688b2f 33
+  s_581c39faf14fb9::t_261581751da989 34-36
+src/renderer/src/lib/structured-agent-session-launch-options.test.ts
+  s_5f01c1f790c525::t_db64fdeeaddce3 14,34-36,129-131,135-137,167-170,174-175,178-181
+src/main/ipc/worktree-push-target-cleanup.test.ts
+  s_45ce27f00e18ef::t_36755a14602ae1 327-328,331,335
+src/renderer/src/components/cmd-j/PaletteCreateWorktreeRow.tsx
+  s_f3eea1900dccbb::t_31a2b994b3050e 1-2,17-29
+src/renderer/src/components/task-page-jira-status-order.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 1,16,30
+src/renderer/src/lib/sleeping-agent-session-launch.ts
+  s_6eb44cc4f551a6::t_618a5c878b74fd 112
+src/main/window/renderer-recovery-reload-watchdog.ts
+  s_ca79eab6e88120::t_33250e43d7568d 222
+src/main/runtime/runtime-file-commands-revoke-terminal-file-grants-for-client.ts
+  s_bfe523dda848fb::t_0f5ec5685d00ba 62,64-67
+  s_581c39faf14fb9::t_d3c27c5bc0dae0 4
+src/shared/automation-owner-precondition.ts
+  s_45ce27f00e18ef::t_691ba9ed95ed0a 31-36
+src/renderer/src/components/settings/use-settings-navigation-model.ts
+  s_f3eea1900dccbb::t_da7712fbf48d5b 6-10
+  s_f3eea1900dccbb::t_37063c8a91662b 52
+  s_581c39faf14fb9::t_4e8882f16746b2 47
+src/main/runtime/orca-runtime-build-pty-terminal-summary.ts
+  s_27e375e990447a::t_b417dd8b9ea780 71
+src/renderer/src/components/settings/settings-page-renderer.tsx
+  s_54078d311d2a9f::t_f6b38e174406a0 34,39
+  s_581c39faf14fb9::t_08434e27475bf7 23
+src/renderer/src/store/slices/runtime-status.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 6
+src/main/runtime/rpc/methods/agent-launch-pane-reservation.test.ts
+  s_7eb6ee45f309ef::t_8a2537c3bbd9b7 7,10,19,73
+src/renderer/src/store/slices/new-markdown.test.ts
+  s_1c8880be3c8da0::t_5421c43bc0aa56 21-34
+src/renderer/src/components/terminal-pane/use-terminal-pane-foundation.ts
+  s_753176acee6ab9::t_762039d90eafa0 1
+src/renderer/src/components/right-sidebar/stale-conflict-operation-poll.ts
+  s_abe0c5b3223c93::t_7431af4916ac3b 83,86
+src/main/ipc/codex-config-sync.ts
+  s_0555e2cf8cb4f7::t_f20ce1d28a1fa7 30
+  s_0555e2cf8cb4f7::t_f334dee36b983e 7-8,16,20-21
+  s_581c39faf14fb9::t_49a28f25dd823e 6
+src/main/window/renderer-recovery-loop-guard.ts
+  s_ca79eab6e88120::t_6204506c0ad075 1,4,10-11,23,26,31
+src/renderer/src/store/slices/runtime-host-connection-state.ts
+  s_d515f9c8eb4805::t_2b323bf1792238 120-122
+  s_d515f9c8eb4805::t_c61da06074e3af 25-35,37-38,41-48
+  s_581c39faf14fb9::t_2944a10b921652 1-4,6,8-18,20-24,49-55,57-60,62-65,67-68,71-73,75,78-82,84-115,118-119,123
+src/renderer/src/components/task-page-linear-issue-model.tsx
+  s_5f01c1f790c525::t_ef3c6ec366cbe0 1-11,16,27,29-32,34-35,53,60-62
+src/renderer/src/components/github-project/ProjectViewWrapper.tsx
+  s_581c39faf14fb9::t_db0f583d97da9f 106-109
+src/main/runtime/orca-runtime-transition-graph-reload-to-terminal-state.ts
+  s_bfe523dda848fb::t_5d11c71453c7c7 101
+src/main/ipc/runtime-environment-transport-routing.ts
+  s_0555e2cf8cb4f7::t_e7096f12de59c6 63,112-116,127,132-136
+  s_0555e2cf8cb4f7::t_38d2172c3a2ff9 10,18-25,76-94,98,102-108,128-131,137-142
+src/renderer/src/components/floating-terminal/FloatingTerminalPanelSurface.tsx
+  s_f3eea1900dccbb::t_f362686aa72fd1 183-185
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-review-state.tsx
+  s_5f01c1f790c525::t_c8e4dc7930e601 310-313
+src/main/codex/codex-structured-item-stream-events.ts
+  s_39cd8df4111de4::t_1b07da00701d75 1
+src/shared/native-chat-session-option-state.ts
+  s_45ce27f00e18ef::t_01dac805783e46 6
+  s_581c39faf14fb9::t_d644a25f798022 7-9
+src/renderer/src/lib/worktree-creation-flow-startup.ts
+  s_51fe632c652b0f::t_c6f4141f7497ba 42-43
+src/renderer/src/components/right-sidebar/file-explorer-directory-listing.ts
+  s_bd639794f7233b::t_6aa227a635d717 4
+src/main/codex/codex-session-resume-home.ts
+  s_39cd8df4111de4::t_6c496056a3fb53 260
+  s_39cd8df4111de4::t_0974d8bb860e9c 270
+  s_39cd8df4111de4::t_d78086725ed096 222-223,225,229
+src/renderer/src/lib/launch-structured-agent-session.test.ts
+  s_6eb44cc4f551a6::t_a3b81e87840c29 2,11-13,17-28,32,78-82,110,119,123-126,133,140,147,154,163,166,176,185,195,204,210,212-213,219,224,231,236,253-254
+  s_6eb44cc4f551a6::t_48822213c8ea6c 66-68,250-252
+src/renderer/src/store/slices/store-sleep-pane-hibernation.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 427-439,639-640,642
+  s_581c39faf14fb9::t_807c72ac5a8be8 426,641,643-652
+src/renderer/src/components/right-sidebar/git-status-refresh.ts
+  s_bd639794f7233b::t_f91536053c0c91 1-2
+src/renderer/src/lib/retire-unowned-background-terminal.ts
+  s_6eb44cc4f551a6::t_ab155ccfbfcd89 26,28
+src/main/agent-hooks/wsl-hook-relay-sentinel.test.ts
+  s_21d1c21ea67f23::t_774fbe28cf3c64 8
+src/main/codex/codex-background-command-tracker.test.ts
+  s_39cd8df4111de4::t_eacbb1a782e874 7
+  s_581c39faf14fb9::t_7415144003cad9 8-13
+src/main/ipc/runtime-environment-abortable-requests.ts
+  s_0555e2cf8cb4f7::t_b8649767bbdfb6 2,15,29-30,37-38
+src/renderer/src/lib/resume-stale-structured-agent-session.test.ts
+  s_6eb44cc4f551a6::t_038795b39fa15e 18-19
+src/renderer/src/components/settings/use-settings-repo-scroll-effects.ts
+  s_753176acee6ab9::t_08fbce63f0729e 35
+  s_753176acee6ab9::t_4b742da8438957 19-20
+src/renderer/src/components/use-terminal-window-lifecycle.ts
+  s_1c8880be3c8da0::t_f8492d456ee789 1
+src/renderer/src/store/slices/worktrees-hydration-purge.test.ts
+  s_d515f9c8eb4805::t_d199f0ab027f99 3,581
+src/main/agent-hooks/wsl-hook-relay-deps.ts
+  s_21d1c21ea67f23::t_9475ef9bf0d36e 16
+src/main/codex/codex-background-task-tracker.ts
+  s_39cd8df4111de4::t_abe41e37569641 6,8,10,16,33,35,44
+src/renderer/src/lib/pr-comment-action-state.test.ts
+  s_6eb44cc4f551a6::t_0341f217353bf7 10-12
+src/main/codex/codex-app-server-process-teardown.ts
+  s_39cd8df4111de4::t_d21706508f02b3 128
+src/main/codex/config-plugin-registration-promotion.test.ts
+  s_54078d311d2a9f::t_53e3ac09c8cd8f 21
+  s_581c39faf14fb9::t_6d50c3648f720b 6
+src/renderer/src/components/use-worktree-jump-palette-recent-tabs.ts
+  s_f3eea1900dccbb::t_cfdfb8f27900b6 74
+  s_f3eea1900dccbb::t_13cd69118508af 131,133
+src/renderer/src/store/slices/repos-host-identity-routing.test.ts
+  s_39cd8df4111de4::t_b1a62a350b2d47 6
+  s_1c8880be3c8da0::t_c1cb9d25a4777b 82
+  s_581c39faf14fb9::t_f805b741509547 5
+src/renderer/src/lib/repo-slug-cache.test.ts
+  s_6eb44cc4f551a6::t_b076b364db50a7 5
+src/main/runtime/rpc/methods/session-tab-close-methods.ts
+  s_7eb6ee45f309ef::t_caefa708cc3376 38-48,74-76
+  s_581c39faf14fb9::t_d830b2d45ad58d 77-79
+src/main/codex/codex-command-lifecycle.ts
+  s_39cd8df4111de4::t_7802f7be79ab3f 1
+src/renderer/src/components/right-sidebar/useCreatePullRequestDialogFields.ts
+  s_abe0c5b3223c93::t_3fb3c9ea8c4c7a 2,7,17
+  s_abe0c5b3223c93::t_6817ab2eb98684 36-37
+  s_abe0c5b3223c93::t_4a54342f2bb6c4 107-116
+  s_abe0c5b3223c93::t_75728c1b1a0b77 120
+src/renderer/src/lib/launch-agent-in-new-tab.test.ts
+  s_6eb44cc4f551a6::t_cfaa88824e95ba 526,529
+  s_581c39faf14fb9::t_9ad429c4e44a97 567
+src/renderer/src/components/terminal-pane/pty-connection/pane-agent-identity.ts
+  s_abe0c5b3223c93::t_5e07c82662b617 130,132
+src/renderer/src/components/task-source-summary-types.ts
+  s_5f01c1f790c525::t_ebda025fc4f75d 25-26
+  s_5f01c1f790c525::t_7c7c08630d7dd2 1-2,4-24,27-32
+  s_581c39faf14fb9::t_8c833cefdd72ca 33-37
+src/renderer/src/components/TerminalSurface.tsx
+  s_51fe632c652b0f::t_0335a2969953f7 17
+src/renderer/src/components/task-page-jira-grouping.test.ts
+  s_54078d311d2a9f::t_ea898d7b62e187 15
+  s_5f01c1f790c525::t_fb70d8e14d06f1 13-14,16-17
+  s_39cd8df4111de4::t_32b8da3061cefe 30
+src/renderer/src/lib/codex-pane-selection-lane.ts
+  s_f3eea1900dccbb::t_f459b38465dfc3 40-41,104
+src/main/codex/codex-trust-grant-telemetry.ts
+  s_54078d311d2a9f::t_b6aac941a10ad6 2
+src/shared/pairing.ts
+  s_6eb44cc4f551a6::t_40c3dd50a07ada 1-111
+src/renderer/src/components/terminal-pane/pty-connection/hidden-restore-state-and-ssh-probe.ts
+  s_1c8880be3c8da0::t_d6f8676c754f55 140-141
+src/shared/setup-script-telemetry.ts
+  s_bc8dac5ccb04d8::t_f90aeed3713fe0 1-5,8-11,13
+src/renderer/src/components/terminal-pane/terminal-input-host-platform.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 62
+src/renderer/src/components/right-sidebar/checks-panel/check-presentation.tsx
+  s_5f01c1f790c525::t_6f7c381287504d 38
+src/renderer/src/components/right-sidebar/checks-panel/comment-controls.tsx
+  s_5f01c1f790c525::t_9803259ed124dc 152,163,180,278
+  s_1c8880be3c8da0::t_a5e62025365f93 29-31
+  s_5f01c1f790c525::t_8cbbf9265f718d 24
+src/main/ipc/pty-serializer-settlement-mapping.test.ts
+  s_0555e2cf8cb4f7::t_306844f5212001 2,65
+  s_0555e2cf8cb4f7::t_aec585a2d999c3 10
+src/main/runtime/rpc/methods/repo.ts
+  s_7eb6ee45f309ef::t_f485440cfe657b 4
+src/renderer/src/components/sidebar/worktree-review-helpers.test.tsx
+  s_581c39faf14fb9::t_db0f583d97da9f 30-32,48,63,72-73
+src/main/runtime/orca-runtime-test-fixtures.spec.ts
+  s_bfe523dda848fb::t_c8cd65752bb3d5 644
+src/main/ipc/worktree-remote-push-target-materialization.test.ts
+  s_45ce27f00e18ef::t_140c29867f08bc 8
+src/renderer/src/components/landing-preflight-runtime-boundary.test.ts
+  s_8595a5eb6fd955::t_e1a1759beb7907 37,47
+src/shared/agent-session-conversation-outline.ts
+  s_45ce27f00e18ef::t_4b3e018afbebec 5
+src/shared/pr-comment-audience.ts
+  s_45ce27f00e18ef::t_d3c0c603c5725b 1
+openspec/changes/cull-to-local-ide/design.md
+  s_581c39faf14fb9::t_aa3cc4e26527b9 453-475
+  s_581c39faf14fb9::t_fde34039354907 396-427
+  s_581c39faf14fb9::t_0714721cfc880e 554-560,565-573,584-585
+  s_581c39faf14fb9::t_7404822512904d 562
+  s_581c39faf14fb9::t_ff311e63e869fd 563
+  s_581c39faf14fb9::t_8dd7ef367a0b8c 561
+  s_581c39faf14fb9::t_05bd374bc39c9c 574-583
+  s_581c39faf14fb9::t_7c9f6d9201669e 476-497,518-522
+  s_581c39faf14fb9::t_2de1200f080cfe 564
+  s_581c39faf14fb9::t_4500926baf41f9 428-452
+  s_581c39faf14fb9::t_8a573629d49a8f 523-546
+  s_581c39faf14fb9::t_0f0f1323474db0 547-553
+  s_581c39faf14fb9::t_5e08c9946dbb69 498-517
+  s_581c39faf14fb9::t_2092d9e47a019c 369-395
+src/main/agent-hooks/wsl-hook-relay-state.ts
+  s_21d1c21ea67f23::t_faad6bdc118d06 1
+src/renderer/src/components/task-page-linear-issue-request.ts
+  s_5f01c1f790c525::t_82c1432b0cae12 14,26,28
+src/main/runtime/runtime-terminal-spawn-push-target-materialization.ts
+  s_ca79eab6e88120::t_bfc5527f9b7f55 23-30
+  s_ca79eab6e88120::t_c8c9fef76a86a1 1
+src/renderer/src/components/terminal-pane/terminal-path-existence-batch.ts
+  s_7eb6ee45f309ef::t_bfb68a2667a9f2 5-11,20,26-27,31-32,35,82-85
+  s_581c39faf14fb9::t_89b934f0454563 86-87,89
+src/renderer/src/store/slices/repos.runtime-fallback.test.ts
+  s_d515f9c8eb4805::t_f9d9fe5f12f80b 2-4,41-42,148
+src/renderer/src/components/terminal-pane/codex-detached-pane-restart.ts
+  s_abe0c5b3223c93::t_4ec7cef45fa523 191
+src/renderer/src/components/TerminalSplitWorkspaceSurfaces.tsx
+  s_51fe632c652b0f::t_bf9e72261d3b95 30
+src/renderer/src/components/editor/EditorPanel.tsx
+  s_f3eea1900dccbb::t_a6538ae9a351ee 211
+src/renderer/src/lib/structured-agent-synthetic-sleeping-record.ts
+  s_51fe632c652b0f::t_0491e6458cf578 12-13
+src/main/codex/codex-legacy-session-resume.test.ts
+  s_39cd8df4111de4::t_2c07abd392800a 266,279
+src/main/runtime/orca-runtime-tests/terminal-handles-part-02.spec.ts
+  s_bfe523dda848fb::t_f2f211fb6f1b8c 1-2
+src/renderer/src/components/terminal-pane/pty-connection/terminal-keydown-fit.ts
+  s_1c8880be3c8da0::t_1147a71ebc75b3 233,240
+  s_581c39faf14fb9::t_9a0461a875eca9 177
+src/main/runtime/orca-runtime-stop-requested-pty-ids.ts
+  s_bfe523dda848fb::t_ab8d64cc92cef9 106
+  s_bfe523dda848fb::t_63589b0abe2d30 69-72,74
+src/main/runtime/orca-runtime-process-incarnation-liveness.test.ts
+  s_bfe523dda848fb::t_de94e77bd43dc8 1
+src/renderer/src/hooks/composer-state/issue-source-actions.ts
+  s_6eb44cc4f551a6::t_76a7a565b8c707 90,116,130-131,133
+  s_6eb44cc4f551a6::t_b435fbe72e8624 37
+src/main/runtime/orca-runtime-refresh-repo-worktree-scan.ts
+  s_bfe523dda848fb::t_1ca0f9effea643 96-99
+src/renderer/src/lib/agent-launch-route-input.ts
+  s_f3eea1900dccbb::t_98f67274e8bdc7 122-124
+src/shared/global-settings-types.ts
+  s_45ce27f00e18ef::t_9dcf6f27078d4f 5-8
+  s_581c39faf14fb9::t_4d8e3c2dfae68a 16
+src/shared/tui-agent-config.ts
+  s_bc8dac5ccb04d8::t_42f95d81f63fc7 91-92
+src/main/ipc/workspace-cleanup-git-route.ts
+  s_45ce27f00e18ef::t_76be9bbd8a15c3 43,48-49,51
+  s_45ce27f00e18ef::t_e3a382993708ca 31
+src/renderer/src/components/right-sidebar/checks-panel/check-details-model.ts
+  s_5f01c1f790c525::t_993aa9891b98a3 79
+  s_5f01c1f790c525::t_287ce40589a894 1-42,47,50,53,81,146
+  s_5f01c1f790c525::t_08d0d10beb3031 73
+  s_581c39faf14fb9::t_f96d1f233e7912 80,85,98
+src/main/ipc/pty-daemon-ssh-lease-lifecycle.test.ts
+  s_0555e2cf8cb4f7::t_76a5decac42150 50
+  s_0555e2cf8cb4f7::t_e8977fad2097a4 3
+src/renderer/src/lib/execute-open-editor-path-move.ts
+  s_f3eea1900dccbb::t_a8b1971cc3a2b6 2,75-79,107
+  s_581c39faf14fb9::t_c287eff52ffcbd 108-111
+src/renderer/src/components/task-page-localized-options.tsx
+  s_5f01c1f790c525::t_808f7bf196a001 28-44
+  s_581c39faf14fb9::t_ca9e28268560c6 9-27,45-46
+src/renderer/src/store/slices/repos-runtime-routing-fixture.ts
+  s_d515f9c8eb4805::t_3bb18390e6af0a 87-88
+src/main/ipc/pty-daemon-spawn-session-identity.test.ts
+  s_0555e2cf8cb4f7::t_62f0e5c1abb771 2
+  s_0555e2cf8cb4f7::t_2010b8a11f5d0e 5
+src/renderer/src/lib/agent-hibernation-coordinator.ts
+  s_bc8dac5ccb04d8::t_d63828f4fdbc7d 54-59,75
+  s_581c39faf14fb9::t_c8d9311d1b044f 77,105-106,111-112,139
+src/main/runtime/orca-runtime-adopt-terminal-orphans-from-inventory.ts
+  s_27e375e990447a::t_eea70329482dbc 194
+src/shared/pr-check-severity-order.ts
+  s_45ce27f00e18ef::t_d3c0c603c5725b 1
+src/main/codex/codex-session-backfill-marker.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 4
+src/renderer/src/store/slices/repos-module-lifetime-coordinators.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 23,33
+src/shared/workspace-linked-item-source-context.test.ts
+  s_bc8dac5ccb04d8::t_27c06ba8fceb0e 14
+src/renderer/src/components/right-sidebar/file-explorer-row-file-transfer.ts
+  s_bd639794f7233b::t_60104489a12f20 18-24
+  s_581c39faf14fb9::t_24a42fca08bfb0 14,16-17
+src/renderer/src/components/terminal-pane/pty-connection/direct-ssh-retry-status.ts
+  s_1c8880be3c8da0::t_dd89b0e2091bbf 39
+src/renderer/src/components/task-page-jira-create-fields.ts
+  s_5f01c1f790c525::t_ee66b7eb6e0711 4,6-8,10,26,38,46,50,54,61,107
+  s_7eb6ee45f309ef::t_fa3baee13a6232 5
+  s_581c39faf14fb9::t_d2ebafb11a986d 2-3,9,18,76
+src/main/runtime/runtime-browser-commands-factory.ts
+  s_bfe523dda848fb::t_2db92b0952818d 1
+  s_bfe523dda848fb::t_f3b58951002229 105-107
+src/renderer/src/components/sidebar/useCreateProjectDefaults.ts
+  s_bd639794f7233b::t_ebfe25ab8efdff 2
+  s_bd639794f7233b::t_44526d22334c76 196,198
+  s_bd639794f7233b::t_0d155d9cad6532 211
+  s_bd639794f7233b::t_832268216e531a 6
+src/renderer/src/lib/workspace-port-scan-client.ts
+  s_51fe632c652b0f::t_06b9323bd153b6 93-97
+  s_51fe632c652b0f::t_f30bf520ac5128 3-5
+  s_581c39faf14fb9::t_c4009b9387ac6d 92
+src/renderer/src/components/terminal-pane/terminal-http-link-source-owner.ts
+  s_abe0c5b3223c93::t_b25608cd6c81cf 14-15
+src/renderer/src/lib/onboarding-folder-agent-launch.ts
+  s_6eb44cc4f551a6::t_ecc1c86c7b3b3c 94-99
+  s_6eb44cc4f551a6::t_c6c7115c5d31ad 2,10,12-16,20-76
+  s_581c39faf14fb9::t_a5863cd80368e7 77
+src/main/agent-hooks/wsl-guest-plugin-install.test.ts
+  s_21d1c21ea67f23::t_460b8cc0c16ed9 4
+src/main/runtime/orca-runtime-subscribe-to-terminal-resize.ts
+  s_bfe523dda848fb::t_421fbb8a4c767b 108-110
+src/renderer/src/components/right-sidebar/checks-panel/comment-row.tsx
+  s_5f01c1f790c525::t_ea192edb0342be 18-19
+  s_5f01c1f790c525::t_b15c4307890210 42,55-57
+  s_581c39faf14fb9::t_c7b02e9b505866 58
+src/main/runtime/runtime-desktop-surface.ts
+  s_27e375e990447a::t_1a55dd2c0c21f1 6-10,12-14
+src/renderer/src/components/task-page-linear-team-selection.test.ts
+  s_5f01c1f790c525::t_9a5744925aa292 7
+  s_51fe632c652b0f::t_8f0c20e1e8bfd6 9
+  s_581c39faf14fb9::t_d07e65ce078503 8
+src/renderer/src/store/slices/degraded-repo-hydration.test.ts
+  s_1c8880be3c8da0::t_65bddb1fd0bf95 127,141,152,163,165
+  s_1c8880be3c8da0::t_4031c27ada1f61 79-81,96,99-100
+src/renderer/src/components/right-sidebar/checks-panel/triage-strip.tsx
+  s_5f01c1f790c525::t_f7bb09f5d2b042 12
+  s_581c39faf14fb9::t_db0f583d97da9f 34
+src/renderer/src/lib/execute-open-editor-path-move.test.ts
+  s_f3eea1900dccbb::t_f35fa09ca72886 4-8,51,69-73,187-190
+  s_581c39faf14fb9::t_1e718823064677 191-196,204
+src/main/codex/codex-trust-grant-host.ts
+  s_54078d311d2a9f::t_4c7536f0ef7aa5 8
+src/renderer/src/components/task-page-linear-issue-grouping.test.ts
+  s_5f01c1f790c525::t_97a5b02abf1468 2,16-17
+  s_21d1c21ea67f23::t_70c43cdfd2833c 26
+src/main/codex/codex-probe-termination.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 1,3-20,22-38,40,43,45-48,50-52,54-61,63-83,85-94,96-107,109-110,112
+src/renderer/src/store/slices/repos-selected-owner-routing.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 39-40
+src/renderer/src/store/slices/folder-workspace-diff-comments.test.ts
+  s_1c8880be3c8da0::t_c1cb9d25a4777b 93
+  s_39cd8df4111de4::t_b1a62a350b2d47 10-11
+src/main/ipc/worktrees-lineage-hydration.test.ts
+  s_45ce27f00e18ef::t_1197e7e8ea8b68 4
+  s_45ce27f00e18ef::t_fa38e3dd725dbf 92
+src/renderer/src/components/settings/AccountsPane.tsx
+  s_54078d311d2a9f::t_f79d84da601639 171,175
+  s_54078d311d2a9f::t_7cefebcd086f5a 61-84
+  s_54078d311d2a9f::t_a2de2d7eae775a 308-310
+  s_54078d311d2a9f::t_8ddd25ffde6d67 128
+  s_54078d311d2a9f::t_23501bc2f77329 282-302,304-307,311-327,331,333
+  s_54078d311d2a9f::t_52e7c2e9f145cd 85-94
+  s_54078d311d2a9f::t_d74866cdc0d761 328
+  s_581c39faf14fb9::t_07329f39d108f2 303
+docs-slim/cull-macos-surface.md
+  s_581c39faf14fb9::t_b08b00fb35d223 1-68
+src/renderer/src/components/sidebar/repo-header-create-state.ts
+  s_753176acee6ab9::t_48b75b027c94f9 27,42
+src/renderer/src/components/sidebar/use-worktree-card-linked-details.ts
+  s_bd639794f7233b::t_505d6a65efd26a 34
+  s_bd639794f7233b::t_0fbc69c6cb9c05 49
+src/renderer/src/components/terminal-pane/agent-completion-no-evidence-cadence.test.ts
+  s_abe0c5b3223c93::t_747fcf3465a2a2 4,16,25
+src/renderer/src/components/sidebar/SetupGuideSidebarEntry.tsx
+  s_753176acee6ab9::t_65c536353d8ece 59
+  s_753176acee6ab9::t_98348c5599e8e1 36-39
+src/renderer/src/components/settings/NativeChatShellEnvironmentSetting.tsx
+  s_54078d311d2a9f::t_00db445a79e840 10-12
+  s_581c39faf14fb9::t_d33ac307482d60 13
+src/renderer/src/components/terminal-pane/pty-connection/deferred-session-attach.ts
+  s_1c8880be3c8da0::t_d868352b3cb8f4 78,89,104
+  s_1c8880be3c8da0::t_333c0f2663dff8 190
+src/renderer/src/components/task-page-work-item-pagination.ts
+  s_5f01c1f790c525::t_a339002014014a 3-4,33,171-173,177,220,222
+  s_581c39faf14fb9::t_db0f583d97da9f 195
+  s_581c39faf14fb9::t_9050c3c02181db 2
+src/renderer/src/store/slices/workspace-cleanup-wrong-host-removal.test.ts
+  s_d515f9c8eb4805::t_b37c5064b9c8f2 707-712
+  s_581c39faf14fb9::t_db0f583d97da9f 842,873
+  s_d515f9c8eb4805::t_cc5ed1892dce28 186-189,191,193
+src/main/runtime/runtime-git-target-execution-host.test.ts
+  s_ca79eab6e88120::t_b0266ee52d042c 4-5,85-87,89-97,100-102
+src/renderer/src/components/sidebar/use-worktree-card-secondary-details.ts
+  s_bd639794f7233b::t_4966e040bb6902 47
+src/renderer/src/components/settings/runtime-host-access-link.ts
+  s_54078d311d2a9f::t_64d338c3426269 1-2,4-16,26-35,48-60,91
+src/renderer/src/components/sidebar/visible-worktree-options-from-state.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 11-13,36
+src/renderer/src/components/task-page-jira-create-fields.test.ts
+  s_5f01c1f790c525::t_9bba9ada23d20e 14-20
+src/renderer/src/components/tab-group/useTabGroupCreationCommands.ts
+  s_f3eea1900dccbb::t_f362686aa72fd1 113-115
+src/renderer/src/store/slices/diff-comment-persistence.ts
+  s_1c8880be3c8da0::t_efb3a69d31c53b 50-53,59-62
+  s_1c8880be3c8da0::t_ad25bc210b5ba6 130,135
+  s_1c8880be3c8da0::t_e849471c314b6f 8
+  s_581c39faf14fb9::t_8129b91df69de8 47
+src/shared/worker-terminal-host-scope.test.ts
+  s_bc8dac5ccb04d8::t_51c285c89f08a2 8-9,14,21,26,31,36,41,46,51,56,61,66,71,77,81
+src/main/window/main-window-webview-security.test.ts
+  s_ca79eab6e88120::t_21cb413b6c9e11 4,15,18-20,24-29,31,34
+src/renderer/src/components/terminal-pane/terminal-parked-pty-watcher.ts
+  s_7eb6ee45f309ef::t_a8dd28c8075cf6 153
+src/renderer/src/components/sidebar/useAddRepoServerPathFlow.ts
+  s_bd639794f7233b::t_96f17a87709d58 8
+src/renderer/src/lib/worktree-agent-structured-inventory.ts
+  s_51fe632c652b0f::t_7ab92556bf30d5 17-23
+src/renderer/src/components/sidebar/worktree-card-pr-display.ts
+  s_bd639794f7233b::t_0fac7c7cac12a1 8
+src/main/runtime/orca-runtime-fit-override-listeners.ts
+  s_bd639794f7233b::t_ff929f6c090288 194
+src/renderer/src/lib/repo-slug-index.ts
+  s_6eb44cc4f551a6::t_c2796f5be50d48 22,114
+src/renderer/src/store/slices/repos-project-host-capability.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 47
+src/renderer/src/hooks/composer-state/source-context-state.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 129-130
+src/renderer/src/store/slices/repos-all-hosts-folder-workspaces.test.ts
+  s_39cd8df4111de4::t_b1a62a350b2d47 8-9
+  s_1c8880be3c8da0::t_c1cb9d25a4777b 144
+src/renderer/src/store/slices/store-session-test-harness.ts
+  s_d515f9c8eb4805::t_edbceeb048f03b 2-20
+  s_d515f9c8eb4805::t_b179a10fb051ae 132-133
+src/renderer/src/components/task-page-new-issue-draft.ts
+  s_1c8880be3c8da0::t_38870b41a91b43 1-9
+src/main/runtime/runtime-hosted-review-commands.ts
+  s_ca79eab6e88120::t_a86e9ab3761f3a 13
+src/renderer/src/components/terminal-pane/pty-connection/deferred-session-reattach-connect.ts
+  s_1c8880be3c8da0::t_333c0f2663dff8 74
+  s_1c8880be3c8da0::t_9c06c65379d258 90,153
+src/renderer/src/components/tab-bar/open-tab-search.test.ts
+  s_f3eea1900dccbb::t_1655c300552102 161
+  s_f3eea1900dccbb::t_8e40015ff731bc 222,337
+  s_581c39faf14fb9::t_8cf31409b1bf27 219
+src/renderer/src/components/terminal-pane/terminal-pane-manager-options.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 93-95
+src/renderer/src/lib/new-workspace.ts
+  s_6eb44cc4f551a6::t_3242cc2f07db23 14-18,62,155,298,304,315
+  s_f3eea1900dccbb::t_81d94d752d0579 293
+  s_f3eea1900dccbb::t_fca60531d0e3ff 2
+src/renderer/src/components/sidebar/project-added-default-checkout.ts
+  s_753176acee6ab9::t_d5e5612d7004f4 83,92,105,107,121,126,139,146,148,185
+  s_753176acee6ab9::t_e70cb58b446eea 110-115
+  s_753176acee6ab9::t_313a8371140755 84
+  s_753176acee6ab9::t_eff6443287b15c 189-190,194
+src/main/runtime/orca-runtime-get-pty-record-for-pane-key.ts
+  s_27e375e990447a::t_4bb58b53d30ac7 155-156
+src/renderer/src/store/slices/folder-workspace-activation-and-activity.test.ts
+  s_39cd8df4111de4::t_b1a62a350b2d47 8-9
+  s_1c8880be3c8da0::t_c1cb9d25a4777b 81
+src/renderer/src/components/terminal-pane/terminal-link-handlers.ts
+  s_7eb6ee45f309ef::t_3d6a523c44e455 163,174
+src/renderer/src/store/slices/runtime-environment-ssh.ts
+  s_d515f9c8eb4805::t_1b7632f00912a4 3-4
+src/main/runtime/runtime-agent-orchestration-projection.ts
+  s_bfe523dda848fb::t_195ac661245c57 172
+  s_bfe523dda848fb::t_ef71fddf1d603c 39,49
+  s_bfe523dda848fb::t_59c7c709ad1571 69,76-81
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-comment-mutations.tsx
+  s_5f01c1f790c525::t_374930c4721505 17
+  s_5f01c1f790c525::t_a5051c71a8b32e 91,98,115,134,147,196
+src/renderer/src/lib/agent-paste-draft.ts
+  s_f3eea1900dccbb::t_f09543cbcaf14d 147-148
+  s_f3eea1900dccbb::t_aa7a2fb25ae4dd 102,157,160,202,208,217,224,271-273,291,297,318-325
+  s_581c39faf14fb9::t_f2c87c3c1828cd 326-327
+src/renderer/src/store/slices/tabs-open-close-lifecycle.test.ts
+  s_f3eea1900dccbb::t_b8971dc376b5ce 5
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-entry-refresh-and-title-actions.tsx
+  s_5f01c1f790c525::t_58e819f21b55b5 198
+  s_581c39faf14fb9::t_9f0c275f127142 51
+src/renderer/src/components/task-page-linear-in-orca-issues.test.ts
+  s_5f01c1f790c525::t_dad9fe8291e6ec 10-12
+  s_5f01c1f790c525::t_fa8cf0727242e9 69,71-75
+src/renderer/src/store/slices/runtime-catalog-merge-removed-env-guard.test.ts
+  s_d515f9c8eb4805::t_4e906c9ff4fa13 23-24,27-31,36-38
+src/main/codex/codex-structured-launch-resolution.ts
+  s_39cd8df4111de4::t_572dd0d278c369 18-32
+  s_581c39faf14fb9::t_c640086813e962 33
+src/renderer/src/components/sidebar/use-worktree-sleep-state.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 7-8,79
+src/renderer/src/components/terminal-pane/use-terminal-tab-cold-parking.ts
+  s_7eb6ee45f309ef::t_ead82e4f8df3b7 53-59,309-313,315
+openspec/changes/cull-to-local-ide/tasks.md
+  s_581c39faf14fb9::t_8a7ef8ba1bda9d 45
+  s_581c39faf14fb9::t_f95c8f900c4836 9
+  s_581c39faf14fb9::t_30f82c384c1c6e 101
+  s_581c39faf14fb9::t_4ece7416bab3db 110
+src/renderer/src/components/TerminalWorktreeSplitSurface.tsx
+  s_51fe632c652b0f::t_dbf1500b40749a 35
+src/main/codex/codex-item-stream-retention.ts
+  s_39cd8df4111de4::t_bab09e4ed39f9c 2-11
+src/renderer/src/components/use-worktree-jump-palette-local-state.ts
+  s_f3eea1900dccbb::t_efc772d2c240ae 34,39-40
+src/main/agent-hooks/first-work-branch-rename.ts
+  s_21d1c21ea67f23::t_83b28f8c92eb43 274
+  s_21d1c21ea67f23::t_cf3920b32bae19 217
+  s_21d1c21ea67f23::t_636b7b3454832c 250
+  s_21d1c21ea67f23::t_e4fc626543cce7 16
+  s_581c39faf14fb9::t_a46e174dc700a2 178
+src/renderer/src/components/terminal-pane/pty-connection/hidden-output-restore-drain.ts
+  s_abe0c5b3223c93::t_a5451a71cd2266 3
+  s_abe0c5b3223c93::t_7597f8d51307f7 140-143
+src/shared/tui-agent-startup.ts
+  s_bc8dac5ccb04d8::t_2cdec37b0bd3d4 18-20
+src/renderer/src/components/settings/accounts-pane-removal-dialogs.tsx
+  s_54078d311d2a9f::t_9b903335cb694d 102
+  s_54078d311d2a9f::t_6b4531155bcaa1 59
+  s_54078d311d2a9f::t_fe571fb7db216b 22
+src/renderer/src/components/sidebar/use-complete-git-repo-add.ts
+  s_753176acee6ab9::t_ef78a16fbf2769 1,10-11,23,25
+src/shared/automation-workspace-repin.ts
+  s_45ce27f00e18ef::t_691ba9ed95ed0a 20-25
+src/renderer/src/components/terminal-pane/use-terminal-pane-projection.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 43,106-107,116-118,124
+src/renderer/src/components/worktree-jump-palette-recent-inclusion.ts
+  s_f3eea1900dccbb::t_d3dc470cffef5b 12
+src/renderer/src/lib/agent-session-continuation.ts
+  s_f3eea1900dccbb::t_f246e39819eb37 2
+src/renderer/src/lib/worktree-initial-terminal-seeding.ts
+  s_51fe632c652b0f::t_6e68273a798338 218
+  s_51fe632c652b0f::t_de2f0549d05e28 219
+src/renderer/src/lib/agent-hibernation-pane-eligibility.ts
+  s_f3eea1900dccbb::t_1b49cdfcc37663 5
+src/main/ipc/runtime-environment-shared-control-support.ts
+  s_0555e2cf8cb4f7::t_b4e926ddb2e398 38
+src/renderer/src/components/sidebar/worktree-review-helpers.tsx
+  s_bd639794f7233b::t_fc632642d19b48 75
+src/main/ipc/runtime-environment-tailscale-response.ts
+  s_0555e2cf8cb4f7::t_e28de93527a22b 3-6,11
+  s_0555e2cf8cb4f7::t_6877dd90eda921 9
+src/renderer/src/store/slices/store-sleep-exact-runtime-stop.test.ts
+  s_d515f9c8eb4805::t_2133a457a763b3 57-64,115-116,118,180,182,239,241,358,360
+  s_581c39faf14fb9::t_c4d60ff8290a5e 56,117,119-128,177-179,181,183-185,234-238,240,242,351-357,359,361-363,469-474,525-530,599-604,703-715
+src/main/runtime/runtime-repository-ref-queries.ts
+  s_ca79eab6e88120::t_5ace4233320808 1,9,28
+src/renderer/src/store/slices/runtime-detected-agents.ts
+  s_d515f9c8eb4805::t_6674b30dcc7065 4
+  s_d515f9c8eb4805::t_d5913514f67811 65-70
+  s_d515f9c8eb4805::t_5f36c6df55add5 123-138,140,143
+  s_581c39faf14fb9::t_8670ed9535c056 119-120
+src/renderer/src/components/settings/accounts-pane-codex-section.tsx
+  s_54078d311d2a9f::t_fb214e25bd0598 206
+src/renderer/src/store/slices/store-cascades-test-harness.ts
+  s_d515f9c8eb4805::t_334941ab59d322 61,64-77
+src/main/runtime/runtime-terminal-spawn-push-target-materialization.test.ts
+  s_39cd8df4111de4::t_85329db757ebc3 6,11
+src/renderer/src/lib/launch-agent-in-new-tab.ts
+  s_6eb44cc4f551a6::t_c60efe4769bf15 215
+  s_6eb44cc4f551a6::t_1c72da5b7d8a67 40-41
+  s_6eb44cc4f551a6::t_acdadc67692b33 58
+  s_6eb44cc4f551a6::t_f9229e899382f7 135
+src/renderer/src/components/use-worktree-jump-palette-selection-actions.ts
+  s_f3eea1900dccbb::t_331d2ff790897f 37
+  s_f3eea1900dccbb::t_479cb9bfeb6217 186-187
+src/main/ipc/filesystem-mutations.ts
+  s_0555e2cf8cb4f7::t_1aec44f790d5f5 33
+  s_0555e2cf8cb4f7::t_4f72d2f5273b69 31,45,91,178-179
+  s_581c39faf14fb9::t_18f6f03321a524 32,34-38,40,42-44,46,53,68,167-169,180-182
+src/main/runtime/rpc/methods/status.ts
+  s_7eb6ee45f309ef::t_c577758c478c25 13
+src/renderer/src/components/tab-bar/TabBarCreateEntry.tsx
+  s_f3eea1900dccbb::t_83a2c8754b9383 174
+src/shared/issue-link-input.ts
+  s_45ce27f00e18ef::t_16d7b6805bbc42 3-110
+  s_581c39faf14fb9::t_bdb58c2628708c 111
+src/renderer/src/components/task-page-linear-jira-list-model.tsx
+  s_581c39faf14fb9::t_db0f583d97da9f 14,16,22-23,39,75,174,188
+src/renderer/src/components/task-page-list-chrome-visibility.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 1
+src/renderer/src/lib/launch-worktree-background-terminals.ts
+  s_6eb44cc4f551a6::t_a64b8014e6b4ce 198
+  s_6eb44cc4f551a6::t_c14bb286db95d4 229
+src/shared/workspace-linked-item-source-context.ts
+  s_bc8dac5ccb04d8::t_a4c84f7684987b 74
+  s_bc8dac5ccb04d8::t_d273b9fdca989f 2-3,6-49
+  s_581c39faf14fb9::t_91688f7139ee61 50
+src/renderer/src/components/right-sidebar/ai-vault-session-resume-in-chat-workspace.ts
+  s_bd639794f7233b::t_64358232346c08 46
+src/renderer/src/lib/native-chat-supported-agent.ts
+  s_6eb44cc4f551a6::t_ac8890f0ce3a09 1-52
+src/main/ipc/runtime-environment-connectivity-handlers.ts
+  s_0555e2cf8cb4f7::t_6233773e19d1ae 108,190
+src/main/ipc/terminal-startup-color-query-replies.test.ts
+  s_45ce27f00e18ef::t_e9e9b85c9d53d1 4
+src/main/runtime/orca-runtime-files-preview-budget.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 11-12
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-list-state.tsx
+  s_5f01c1f790c525::t_7fa25f92725dc4 128,316
+  s_5f01c1f790c525::t_0a47aa343945fc 12-15,21,24,27-28
+src/main/runtime/selected-review-branch.ts
+  s_ca79eab6e88120::t_a395e03a529467 55
+src/shared/pr-check-status.ts
+  s_45ce27f00e18ef::t_d3c0c603c5725b 2
+src/renderer/src/components/right-sidebar/FileExplorerRow.actions.test.tsx
+  s_bd639794f7233b::t_8900903c4271e5 13
+  s_bd639794f7233b::t_a86a99589968f0 80
+  s_bd639794f7233b::t_773bc5e1b9d1bc 87-89
+src/renderer/src/components/editor/EditorPanelHeader.tsx
+  s_f3eea1900dccbb::t_c82db0b4644c5d 2
+src/renderer/src/components/right-sidebar/useFileExplorerInlineInput.ts
+  s_abe0c5b3223c93::t_63f20837e7cebe 136,138-140,146-150,155-158,166-169,174-177,185
+src/renderer/src/components/sidebar/WorktreeCard.pr-display.test.tsx
+  s_753176acee6ab9::t_6f02dd73ba0561 130-131,133,138,666,699,738,773,807,841,874
+docs-slim/feature-tree.pre-cull.md
+  s_581c39faf14fb9::t_95cbf407588895 1-321
+src/renderer/src/components/terminal-pane/agent-completion-coordinator-pending-title-inspection.test.ts
+  s_27e375e990447a::t_bdf4c64c850ef7 9,44-45,79-80,114-115,149,169,209
+src/renderer/src/components/settings/accounts-pane-claude-section.tsx
+  s_54078d311d2a9f::t_15ec1bc7cb7fc7 123
+  s_54078d311d2a9f::t_4115c6523cc3e3 202
+src/renderer/src/components/task-page-pr-check-summary.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 4,6
+src/renderer/src/store/slices/terminal-quick-command-hosts.ts
+  s_d515f9c8eb4805::t_d6938d91a528d2 12-15
+  s_d515f9c8eb4805::t_8370968cd1fb04 100-101,106-109
+  s_d515f9c8eb4805::t_08857db520bd54 213-214,225-227,229
+src/main/runtime/rpc/methods/agent-launch.ts
+  s_7eb6ee45f309ef::t_b324b6c2a04bf1 172-175
+  s_7eb6ee45f309ef::t_409e599143ab56 15-17
+  s_7eb6ee45f309ef::t_dca2092767f58f 29
+src/main/agent-hooks/first-work-generation-target.ts
+  s_21d1c21ea67f23::t_0dee474eafefa7 7-8
+src/main/window/createMainWindow-renderer-crash-recovery.test.ts
+  s_ca79eab6e88120::t_ef38e35c6c9632 468
+  s_581c39faf14fb9::t_f361567f06a16a 15
+src/main/runtime/runtime-project-group-controller.ts
+  s_ca79eab6e88120::t_5883f81a9cedf9 16-18
+  s_581c39faf14fb9::t_c7386e7fb85044 19,156,174-176,206
+src/renderer/src/components/right-sidebar/use-file-explorer-ignored-paths.ts
+  s_abe0c5b3223c93::t_c9310d9e3aa1f9 61-62,64-66
+src/renderer/src/components/terminal-pane/pty-shutdown-exit-deferral.ts
+  s_abe0c5b3223c93::t_d30259bc48bc1e 55
+src/main/runtime/rpc/methods/git-diff-methods.ts
+  s_7eb6ee45f309ef::t_08450a43f62c87 8-10,16,22,28,34,43
+src/main/ipc/worktree-push-target-cleanup.ts
+  s_45ce27f00e18ef::t_a9e2898581af8a 24-25,27
+src/main/codex/codex-subagent-linkage.ts
+  s_39cd8df4111de4::t_518f68ddf85e2b 13-17,30
+  s_581c39faf14fb9::t_1dd3ae9795404c 12
+src/renderer/src/components/settings/settings-setup-guide-progress-hook.test.tsx
+  s_54078d311d2a9f::t_0c40ba6b6d778d 3,6-12
+  s_581c39faf14fb9::t_a17d3285c4d8d4 13
+src/main/ipc/runtime-environment-status-owner.ts
+  s_0555e2cf8cb4f7::t_77417f850b9955 2
+  s_0555e2cf8cb4f7::t_d4a5783972323b 36
+src/renderer/src/components/sidebar/use-worktree-card-foundation.ts
+  s_753176acee6ab9::t_ac54d6ac925a46 1
+src/renderer/src/components/use-terminal-watcher-effects.ts
+  s_5f01c1f790c525::t_369ed696f024f4 109,119,127
+src/renderer/src/components/TerminalLegacyTerminalPanes.tsx
+  s_51fe632c652b0f::t_2d12e3b902d637 79-80
+  s_581c39faf14fb9::t_40457acf35ab0b 69,72,78
+src/renderer/src/components/settings/SettingsSidebar.tsx
+  s_54078d311d2a9f::t_9a4de5f75b99a8 40-41
+src/main/agent-hooks/wsl-hook-relay-manager.ts
+  s_21d1c21ea67f23::t_4c3c604cf80919 20
+  s_581c39faf14fb9::t_ca00c9f52c52f9 21-23
+src/main/runtime/orca-runtime-state-fields.ts
+  s_27e375e990447a::t_bdf4c64c850ef7 2,36
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-check-and-review-actions.tsx
+  s_5f01c1f790c525::t_6249a84cb6bfa1 15,20
+  s_5f01c1f790c525::t_aaa10019618664 78,81,85-95
+  s_5f01c1f790c525::t_cd28fa600bb04a 144
+src/renderer/src/components/settings/EphemeralVmRuntimeRow.tsx
+  s_54078d311d2a9f::t_2fc50f122316e6 62
+  s_54078d311d2a9f::t_03bc23fc584c55 6-19
+  s_581c39faf14fb9::t_14b7e37a10d185 20
+src/renderer/src/components/settings/EphemeralVmCleanupStopDialog.tsx
+  s_54078d311d2a9f::t_9b793ef844c4ad 13-15
+  s_581c39faf14fb9::t_8183da54f2b08f 16
+src/renderer/src/components/sidebar/WorktreeCardHelpers.tsx
+  s_753176acee6ab9::t_3b6b0b3c05e687 12
+  s_581c39faf14fb9::t_eda28e7ed1db1c 3
+src/main/ipc/runtime-environment-support-routing.ts
+  s_0555e2cf8cb4f7::t_c050196521c3ee 17-19,86-89,108,111,117,123-125,127-131,133,180,185-188,204,228,241
+src/renderer/src/components/terminal-pane/agent-completion-inspection-result.ts
+  s_abe0c5b3223c93::t_434c434e501d7d 4
+  s_abe0c5b3223c93::t_9e63c89edcd148 30,52,54
+  s_abe0c5b3223c93::t_d984523291902a 44
+  s_581c39faf14fb9::t_1394f78d14b3bb 57
+src/renderer/src/lib/floating-workspace-terminal-actions.ts
+  s_f3eea1900dccbb::t_ebfc6b47716295 125-128,132
+src/main/ipc/settings.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 180-182
+src/renderer/src/store/slices/worktrees-fetch-remote-lineage.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 3
+src/shared/workspace-doc-history.ts
+  s_bc8dac5ccb04d8::t_a84547df22d5a7 3-9
+  s_581c39faf14fb9::t_090e6513f4a688 10,17,43
+src/main/ipc/git-status-upstream-ref-watch-request.ts
+  s_0555e2cf8cb4f7::t_755d53906590bc 27-29,31-48
+src/renderer/src/components/settings/use-settings-terminal-model.ts
+  s_753176acee6ab9::t_dea8dc0c7f57a3 3
+src/renderer/src/store/slices/worktree-visibility-settings-write.ts
+  s_d515f9c8eb4805::t_8157d1c702cdfb 70,74
+  s_d515f9c8eb4805::t_f17c84c16f0b69 45-51
+  s_d515f9c8eb4805::t_c34f2d39b89b84 1
+src/renderer/src/components/sidebar/worktree-meta-updates.ts
+  s_bd639794f7233b::t_a35a6d737725c6 239-241
+src/renderer/src/components/terminal-pane/terminal-file-link-hit-testing.ts
+  s_abe0c5b3223c93::t_6af61f34c4f4d4 73
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-ai-queue.tsx
+  s_5f01c1f790c525::t_94f062759104c6 118
+  s_5f01c1f790c525::t_631dcd3d9ac53f 128
+src/main/runtime/rpc/methods/agent-launch-surfaces.ts
+  s_7eb6ee45f309ef::t_fadb262f6c4693 4-8,10-13,23,33-39
+  s_7eb6ee45f309ef::t_b35f5c82dcfa58 25-26,29-30
+  s_7eb6ee45f309ef::t_fe007a266a2b39 63
+src/renderer/src/components/settings/RuntimeHostAccessForm.tsx
+  s_54078d311d2a9f::t_535780b4013fb4 3
+  s_bc8dac5ccb04d8::t_0e7b6f68379ebe 141,143,158,212
+  s_581c39faf14fb9::t_260186b0f72761 268
+src/renderer/src/lib/agent-followup-delivery.test.ts
+  s_f3eea1900dccbb::t_30eeb7b6cd7bbb 18-27,39,47,51,57,65,69,73,81,85,92,100,104
+src/renderer/src/lib/structured-agent-session-launch-prompt.ts
+  s_6eb44cc4f551a6::t_9b859ad23cf8c4 31,34,62,83,100,107,127,133,206-210
+  s_581c39faf14fb9::t_6bded0f7ed7bf1 3-4,6-9,12-30,32-33,35-61,63-82,84-99,101-106,108-126,128-132,134-136,228,230
+src/main/runtime/rpc/methods/index.ts
+  s_7eb6ee45f309ef::t_ea856c3cf60435 55
+src/renderer/src/components/terminal-pane/agent-completion-coordinator-hook-title-precedence.test.ts
+  s_27e375e990447a::t_bdf4c64c850ef7 10,187,258,281-282
+src/renderer/src/lib/structured-agent-session-launch-registry.ts
+  s_51fe632c652b0f::t_a2308c75ff3bcf 71
+src/renderer/src/components/worktree-jump-palette-model.ts
+  s_f3eea1900dccbb::t_b175e5946b5e25 76
+src/renderer/src/components/settings/BaseRefPicker.tsx
+  s_54078d311d2a9f::t_6db6820194517b 7
+  s_54078d311d2a9f::t_a905a5dc34977d 64,66-67,93
+  s_54078d311d2a9f::t_9a9b60f6f36304 1,5,9-10
+  s_54078d311d2a9f::t_8ffaf0273c9050 96,112-113,136
+  s_581c39faf14fb9::t_e56ba4d2548300 8
+src/renderer/src/store/slices/runtime-status-snapshot.test.ts
+  s_d515f9c8eb4805::t_e6e42401cb9a90 12
+src/renderer/src/components/terminal-pane/terminal-pane-split-completion.ts
+  s_7eb6ee45f309ef::t_9ccda259ef44b6 12
+src/renderer/src/store/slices/repos-project-groups-delete.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 42-43
+src/main/runtime/device-registry.ts
+  s_27e375e990447a::t_edb72d9544f4e8 236
+src/renderer/src/lib/workspace-port-actions.ts
+  s_51fe632c652b0f::t_5bf687d554a066 283
+  s_51fe632c652b0f::t_029aab39f74cd6 9
+  s_581c39faf14fb9::t_a0a87423ffb590 10-12,135-137,286
+src/shared/agent-status-field-normalization.ts
+  s_45ce27f00e18ef::t_cede24292fc75a 38,43
+src/main/ipc/pty-spawn-timing.test.ts
+  s_0555e2cf8cb4f7::t_0190d538dfbe03 8,23,34
+src/renderer/src/components/worktree-jump-palette-create-worktree.ts
+  s_f3eea1900dccbb::t_d433d38607c7cb 19,31,40,59,61
+  s_f3eea1900dccbb::t_e9940711916aa9 16,60
+src/main/runtime/orca-runtime-remove-managed-worktree.ts
+  s_ca79eab6e88120::t_7f308106197e87 29
+  s_bfe523dda848fb::t_4e5528d368e741 70
+  s_bfe523dda848fb::t_66e4ac58153552 242-243
+  s_27e375e990447a::t_bdf4c64c850ef7 2,33
+src/renderer/src/components/tab-bar/tab-create-entry-classifier.runtime-listing.test.tsx
+  s_8595a5eb6fd955::t_2eea66c158d486 19-20
+  s_8595a5eb6fd955::t_8982417bc9f88e 135
+  s_8595a5eb6fd955::t_c3f10ee6b407ff 111-114,116-117
+src/renderer/src/components/task-page-linear-team-selection.ts
+  s_5f01c1f790c525::t_82c1432b0cae12 1,14
+src/renderer/src/store/slices/repos-manual-order-hydration.test.ts
+  s_39cd8df4111de4::t_b1a62a350b2d47 5
+  s_581c39faf14fb9::t_9de1155039a36c 4,37-38
+src/renderer/src/lib/workspace-browser-tab-open.ts
+  s_51fe632c652b0f::t_864d6825f6d7b4 19-30
+  s_51fe632c652b0f::t_af901c5cb6e6dd 295-297
+  s_581c39faf14fb9::t_989a1ee82711af 31
+src/renderer/src/components/terminal-pane/resolve-split-cwd.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 81-82
+src/renderer/src/store/slices/store-session-terminal-reconnect.test.ts
+  s_d515f9c8eb4805::t_0217ad56c987f4 8
+src/renderer/src/main.tsx
+  s_6eb44cc4f551a6::t_216492596d0c34 3
+src/renderer/src/components/quick-open-file-listing-requests.ts
+  s_8595a5eb6fd955::t_9abc1f2b599181 1,3-4,25-77
+src/renderer/src/lib/agent-ready-wait.test.ts
+  s_f3eea1900dccbb::t_4c2ecebc19d2a3 18-21,31
+src/shared/constants.ts
+  s_45ce27f00e18ef::t_fc7000c1457409 4
+  s_0555e2cf8cb4f7::t_0dac4dbb026bb7 294
+src/main/ipc/filesystem-watcher.ts
+  s_0555e2cf8cb4f7::t_dce33aa18d1480 24-28
+src/shared/pr-comment-groups.ts
+  s_45ce27f00e18ef::t_d3c0c603c5725b 1
+src/renderer/src/store/slices/repos-project-groups-owner-routing.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 53-54
+src/main/codex/codex-rollout-session-meta.test.ts
+  s_39cd8df4111de4::t_a0f6dfdff17b87 4,37,41,43,52,54
+src/shared/native-chat-blocks.ts
+  s_45ce27f00e18ef::t_41dd9998a1009a 102,104
+  s_45ce27f00e18ef::t_7ba8843153240f 7-10
+  s_45ce27f00e18ef::t_e87b5fe0184b88 1-5,11-12,14-18,21-30,32,34-42,44-51,53,55-68,70-101,103,105-120
+src/main/agent-hooks/wsl-hook-fs-adapter.ts
+  s_21d1c21ea67f23::t_7f47c9df320c0b 14
+src/renderer/src/lib/workspace-activation-terminal-focus.ts
+  s_51fe632c652b0f::t_7f4eeb966c4c01 48
+src/main/runtime/runtime-mobile-session-result-finalization.ts
+  s_bfe523dda848fb::t_1c75c83fd35a81 7-23,25-26,29-30
+  s_bfe523dda848fb::t_6d3cbf15d44f55 2-5,24
+  s_581c39faf14fb9::t_e4708cd073639b 6
+src/main/runtime/orca-runtime-terminal-create-deduplication.ts
+  s_bfe523dda848fb::t_44c97092b3a5cf 131
+src/main/agent-hooks/wsl-hook-relay-launch.ts
+  s_21d1c21ea67f23::t_c83bee93732cb6 11
+src/renderer/src/lib/structured-agent-session-launch.ts
+  s_51fe632c652b0f::t_325249752438b2 224,229
+  s_51fe632c652b0f::t_7b8a16d26bb60c 190,202
+src/renderer/src/components/right-sidebar/checks-panel/comment-group.tsx
+  s_5f01c1f790c525::t_80cee1a39164ac 27
+  s_5f01c1f790c525::t_21a9443cf5c8f3 63-66,71,96,212-214
+  s_581c39faf14fb9::t_b74f44c89eb495 215
+src/renderer/src/components/sidebar/NoticeHostGlyph.tsx
+  s_753176acee6ab9::t_c95a152335896b 33-34,61
+src/renderer/src/lib/agent-paste-draft.test.ts
+  s_f3eea1900dccbb::t_508793a59ef4be 839
+  s_f3eea1900dccbb::t_83342a3d68b699 234,387,748
+  s_581c39faf14fb9::t_c17bff0467299b 32-34,70-77,96-97,101-103,121,125,130,159,162,180,193,196,201,214,219,249,254,271,277,286,302,309,316,333,339,352,357,370,388,390,393,397,412,416,430,444,459,478,483,505,532,537,542,561,582,636-637,641,645,650,698,704,723,739,757,772-775,836,844,850,853
+src/renderer/src/hooks/composer-state/runtime-target-selection.ts
+  s_6eb44cc4f551a6::t_3fd160b9d77521 71-77,233-239
+src/main/runtime/orca-runtime-perform-mobile-session-pty-records-refresh.ts
+  s_bfe523dda848fb::t_dce3656396f1e2 137-139
+  s_bfe523dda848fb::t_15c73e81f7c0c8 172-185
+src/renderer/src/components/worktree-jump-palette-open-tab-items.ts
+  s_f3eea1900dccbb::t_25ddfbf2b9fde8 37
+src/shared/workspace-session-browser-schema.ts
+  s_bc8dac5ccb04d8::t_8389d56a43509f 39,43
+  s_bc8dac5ccb04d8::t_1ca598a73dca62 6
+src/renderer/src/lib/activate-ai-vault-structured-session.ts
+  s_54078d311d2a9f::t_dc7c5e1876192b 8-10,12,19-26
+src/renderer/src/components/task-page-work-item-pagination.test.ts
+  s_5f01c1f790c525::t_bf9bd28f8aacc5 2,15
+  s_5f01c1f790c525::t_3381d0deaf6425 32-33
+src/main/codex/sta-4823-shared-state-survives-a-failed-read.test.ts
+  s_39cd8df4111de4::t_101da7398380c1 485-487
+src/main/runtime/runtime-worktree-agent-startup.ts
+  s_ca79eab6e88120::t_64304a4c4218fd 157
+src/renderer/src/components/sidebar/WorktreeMetaDialog.test.tsx
+  s_581c39faf14fb9::t_db0f583d97da9f 531
+  s_753176acee6ab9::t_ebbc368e3a102a 68-71,74-75
+src/main/codex/codex-pane-launch-account.ts
+  s_39cd8df4111de4::t_4951c79a5bcd17 6,14-15,27-29,37-46,53,62
+src/renderer/src/components/tab-bar/TabBarCreateEntry.tab-results.test.tsx
+  s_f3eea1900dccbb::t_9e36224a866161 111,277,288
+src/renderer/src/lib/structured-agent-session-provisional-tab.ts
+  s_51fe632c652b0f::t_dd800653ddd98f 24
+src/renderer/src/components/use-terminal-workspace-store-bindings.ts
+  s_5f01c1f790c525::t_369ed696f024f4 5,107
+src/renderer/src/components/terminal-pane/pty-connection/hidden-output-snapshot-serialize.ts
+  s_abe0c5b3223c93::t_133320fe139f80 16,18-19,21
+  s_abe0c5b3223c93::t_456c5a7d8472e3 44-45
+src/renderer/src/store/slices/ssh-target-cleanup.ts
+  s_d515f9c8eb4805::t_d132fd8ff59c6f 2-3
+  s_d515f9c8eb4805::t_22c969df460ded 24
+src/main/codex/codex-app-server-process-teardown.test.ts
+  s_39cd8df4111de4::t_8b6571bf72d701 127-130,132
+  s_39cd8df4111de4::t_365e51e71e2b10 2
+src/renderer/src/components/use-terminal-create-actions.ts
+  s_f3eea1900dccbb::t_f362686aa72fd1 151-153
+src/renderer/src/components/terminal-pane/TerminalPaneSurface.tsx
+  s_abe0c5b3223c93::t_1ba768a93332de 21
+src/renderer/src/components/use-worktree-jump-palette-list-entries.ts
+  s_f3eea1900dccbb::t_6f30e8977e9ff4 20
+  s_f3eea1900dccbb::t_c4d5d02839ac13 226
+src/renderer/src/store/slices/store-sleep-runtime-convergence.test.ts
+  s_d515f9c8eb4805::t_629865ca1b56f8 203-217,243-244,246
+  s_581c39faf14fb9::t_e728008b87bb98 202,245,247-248,362-367,420-425,479-484,540-545,594-600
+src/renderer/src/components/settings/EphemeralVmRuntimesSection.tsx
+  s_54078d311d2a9f::t_120afbdc255270 11-17
+  s_581c39faf14fb9::t_227da480eade73 18
+src/renderer/src/store/slices/ssh-target-cleanup.test.ts
+  s_d515f9c8eb4805::t_0217ad56c987f4 2
+src/renderer/src/components/terminal-pane/agent-completion-coordinator-types.ts
+  s_abe0c5b3223c93::t_1de768dd040578 4,36
+src/renderer/src/components/task-page/linear/IssueBoardColumns.tsx
+  s_6eb44cc4f551a6::t_7676dabebdfb05 60-61
+src/renderer/src/components/task-page-jira-project-selection.ts
+  s_5f01c1f790c525::t_ee66b7eb6e0711 1-7,9,19-20
+src/renderer/src/components/terminal-pane/terminal-link-handlers-test-harness.ts
+  s_7eb6ee45f309ef::t_4b644f4bc6771b 45
+src/main/runtime/worktree-teardown.ts
+  s_ca79eab6e88120::t_bd54f7493959ea 253
+  s_ca79eab6e88120::t_38ef5ac7c8b30c 187
+  s_ca79eab6e88120::t_d761d070b07474 204
+  s_581c39faf14fb9::t_d28254fdd393c7 14
+src/renderer/src/store/slices/repos-runtime-project-groups.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 11-12
+src/shared/agent-session-option-catalog-omp.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 133
+src/main/window/clipboard-image-temp-file.ts
+  s_ca79eab6e88120::t_f7639b71d701ff 16-17
+src/main/runtime/runtime-git-generation-commands.ts
+  s_ca79eab6e88120::t_0f7be6a3043b3d 96-97
+  s_ca79eab6e88120::t_34311369e62937 207-208
+  s_ca79eab6e88120::t_6cd4c88eb4a907 117,139-142
+  s_ca79eab6e88120::t_ed434d8204673b 191-192
+  s_ca79eab6e88120::t_907392df7f72df 45-46,48
+src/renderer/src/components/worktree-jump-palette-browser-simulator-rows.tsx
+  s_f3eea1900dccbb::t_89c7961a5759dc 7
+src/main/runtime/runtime-file-command-target.ts
+  s_bfe523dda848fb::t_d9cfd96b6f9efa 74-75
+src/renderer/src/hooks/ipc-events/new-workspace-command.ts
+  s_6eb44cc4f551a6::t_0aadcaf0fd1402 1,25
+src/renderer/src/components/sidebar/use-visible-workspace-kanban-worktree-ids.ts
+  s_bd639794f7233b::t_1884f06fd09723 56
+  s_581c39faf14fb9::t_0788296d81558c 16-17
+src/main/runtime/runtime-git-command-target.test.ts
+  s_ca79eab6e88120::t_064a8bdea96201 1
+src/main/codex/codex-atomic-file-writes.ts
+  s_54078d311d2a9f::t_94d5ba940f8970 145
+  s_39cd8df4111de4::t_a8c00e870634da 1-5,7-12,14-15,17-36,43-53,55-56,58-62,64-72,74-76,78-83,85-89,91-93,95-98,100-101,103,105-106,108-109,111-119,121-133,138,140-144,146-179,183-199
+src/renderer/src/components/sidebar/use-worktree-issue-link.ts
+  s_bd639794f7233b::t_877d1d66e4d12b 41
+  s_bd639794f7233b::t_c6e96c33b7664e 107
+  s_581c39faf14fb9::t_8bfde08da4a06a 57,78-79,108-109,170
+src/renderer/src/components/terminal-pane/parked-terminal-command-status.ts
+  s_abe0c5b3223c93::t_04c47cd4ad75e8 132-133
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-manual-refresh.tsx
+  s_5f01c1f790c525::t_2d2724420cef15 118
+  s_581c39faf14fb9::t_db0f583d97da9f 134
+  s_581c39faf14fb9::t_7bcd954c21fa22 5
+src/main/runtime/runtime-local-worktree-create-candidate.ts
+  s_ca79eab6e88120::t_4a11529c1c4c16 137-144
+  s_ca79eab6e88120::t_7a3f3030fe291f 22
+src/renderer/src/components/use-task-page-composer-actions.ts
+  s_6eb44cc4f551a6::t_0aadcaf0fd1402 6,59
+  s_6eb44cc4f551a6::t_6f2d1deefabbf3 77
+  s_581c39faf14fb9::t_1bac9a89b7280d 195
+src/renderer/src/lib/workspace-file-host-routing.ts
+  s_51fe632c652b0f::t_0086e1bcdacc48 2,6-24,29,32,49,57-58,61-62,64
+src/renderer/src/store/slices/worktree-removal-maps-leak.test.ts
+  s_d515f9c8eb4805::t_c4d22d02dff32e 12
+src/shared/hosted-review.ts
+  s_45ce27f00e18ef::t_391a49d8b9f127 7
+src/renderer/src/components/right-sidebar/checks-panel/conflict-summary.tsx
+  s_5f01c1f790c525::t_a62a102a8ce3e6 4,7
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-polling.tsx
+  s_5f01c1f790c525::t_f5bc663f6ffff7 3,10
+  s_5f01c1f790c525::t_ce2986d1c636e9 146
+  s_5f01c1f790c525::t_966936c00290ea 1
+  s_581c39faf14fb9::t_74211d927e5266 39
+src/renderer/src/lib/structured-agent-session-launch.test.ts
+  s_51fe632c652b0f::t_c864c4f007340f 50
+  s_581c39faf14fb9::t_1b77f72d6e6a31 18,179,204,267,290,311,355,376,401,438,464,479,496,514,533,539,555,577,597,621,651,722,755,785
+src/renderer/src/components/terminal-pane/agent-completion-coordinator-queued-inspection-disposal.test.ts
+  s_27e375e990447a::t_bdf4c64c850ef7 9
+  s_581c39faf14fb9::t_2794db4474ee54 15
+src/renderer/src/components/sidebar/worktree-list/listing/use-filters.ts
+  s_bd639794f7233b::t_c7b3b9a29855c3 123-124,131-132
+  s_bd639794f7233b::t_44a5d2a98e8540 26
+src/renderer/src/lib/agent-followup-delivery.ts
+  s_f3eea1900dccbb::t_2da51fea0703cd 12-13,17,25,31,56-64
+  s_581c39faf14fb9::t_3afc801efd7a36 65
+src/renderer/src/store/slices/repos-cross-host-refresh-identity.test.ts
+  s_39cd8df4111de4::t_b1a62a350b2d47 10-11
+  s_1c8880be3c8da0::t_7e0b3828d658d6 9
+src/renderer/src/components/sidebar/SetupGuideSidebarEntry.test.tsx
+  s_753176acee6ab9::t_1148a982f4e99c 46-54
+  s_753176acee6ab9::t_ef178d2f14679c 91
+  s_581c39faf14fb9::t_0aac5e610c90bd 73
+src/main/runtime/runtime-project-host-setup-controller.ts
+  s_bfe523dda848fb::t_cfa6381924ebe6 91
+  s_bfe523dda848fb::t_0e872c7235a4b2 16
+src/main/agent-hooks/wsl-guest-plugin-install.ts
+  s_21d1c21ea67f23::t_1acdd7c9adab95 5,7-18,21
+  s_21d1c21ea67f23::t_b2400f1ea70142 19-20
+src/shared/tui-agent-launch-command.ts
+  s_bc8dac5ccb04d8::t_f3fc826a5bdf55 5-7
+src/main/codex/codex-legacy-session-resume.ts
+  s_39cd8df4111de4::t_11e32b64a63069 125-128
+src/renderer/src/components/sidebar/useAddRepoLocalFolderFlow.ts
+  s_bd639794f7233b::t_f1ca23b1f6e484 8
+src/renderer/src/store/slices/ui/ui-slice-agent-actions.ts
+  s_f3eea1900dccbb::t_37885fd00d3faa 2
+  s_f3eea1900dccbb::t_66d5371f86c2fc 114-118
+src/shared/bundled-ripgrep.ts
+  s_45ce27f00e18ef::t_ffa58085a78521 1-10,13-14
+src/shared/pr-review-data-types.ts
+  s_45ce27f00e18ef::t_3de3bcf5a8363a 1-4,6-21,23-27,30,32-33,35-45,48-61,64-90,104,113,124
+  s_45ce27f00e18ef::t_e23568173f1993 107-108,116-117,129-130
+  s_581c39faf14fb9::t_e7ab3f8c282947 93-100,103,105-106,111-112,114-115,118-121,123,125-128,131-135
+src/main/ipc/preflight-remote-windows-terminal-capabilities.ts
+  s_0555e2cf8cb4f7::t_f0702d61b1ea37 17-22,25
+src/renderer/src/lib/agent-row-primary-text.ts
+  s_f3eea1900dccbb::t_09b8966a837acf 3-4
+src/renderer/src/lib/worktree-palette-search.ts
+  s_51fe632c652b0f::t_0a59694b73c76b 29
+src/renderer/src/components/terminal-pane/terminal-native-file-drop.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 15,21
+  s_7eb6ee45f309ef::t_b1c5a8a951fb02 36
+src/renderer/src/components/terminal-pane/pty-connection/pane-pty-visibility-bind.ts
+  s_1c8880be3c8da0::t_7f6965085954a4 95,102
+src/shared/setup-agent-startup-policy.ts
+  s_bc8dac5ccb04d8::t_d71098b56a43e5 3-4
+src/renderer/src/store/slices/worktrees-create-base-status.test.ts
+  s_d515f9c8eb4805::t_d199f0ab027f99 5
+src/renderer/src/components/settings/EphemeralVmRuntimesSection.test.tsx
+  s_54078d311d2a9f::t_9f047c0d52b968 12-14
+  s_581c39faf14fb9::t_a8a87c32af64dd 15
+src/main/runtime/runtime-worktree-create-git.ts
+  s_ca79eab6e88120::t_eb3ee3308df3ce 14
+src/renderer/src/components/right-sidebar/useFileSearchRunner.ts
+  s_abe0c5b3223c93::t_c5784bdc0ce11d 7,14-43,66,96,104,127,135,142-152
+src/renderer/src/components/settings/PrivacyPane.tsx
+  s_54078d311d2a9f::t_fa90e34525ad6f 11
+src/renderer/src/lib/launch-agent-session-continuation.ts
+  s_6eb44cc4f551a6::t_05ba7077b46548 19
+  s_abe0c5b3223c93::t_1ea52c9ca3a527 20
+src/renderer/src/lib/ssh-mutation-expectation.ts
+  s_6eb44cc4f551a6::t_3e08ac557f4a74 2-8
+src/renderer/src/hooks/composer-state/host-runtime-effects.ts
+  s_6eb44cc4f551a6::t_f17dafb0211fa2 197
+src/renderer/src/components/tab-bar/open-tab-selection-routing.test.ts
+  s_f3eea1900dccbb::t_9e2b5b584b8eeb 9
+src/main/codex/codex-ai-vault-session-resume.ts
+  s_39cd8df4111de4::t_938f36f92b069d 7-11
+src/renderer/src/components/right-sidebar/useSourceControlAgentActionStart.ts
+  s_abe0c5b3223c93::t_4cef74a51e6926 35
+  s_581c39faf14fb9::t_698233985823f0 156
+docs-slim/feature-tree.md
+  s_581c39faf14fb9::t_50b75326197e7e 1,3-8,14,16-18,20,22-90,93,95-164,170-171,175,177-179,181-183
+src/renderer/src/components/editor/combined-diff/review-controls/use-combined-diff-section-actions.ts
+  s_f3eea1900dccbb::t_021aad3d34ab44 123-126,134-135,194
+src/renderer/src/components/task-page-pr-check-summary.ts
+  s_5f01c1f790c525::t_a339002014014a 3-5
+src/renderer/src/components/terminal-pane/terminal-paste-operation-order.test.ts
+  s_f3eea1900dccbb::t_508793a59ef4be 57
+  s_581c39faf14fb9::t_00199b5e6ec4fc 79-85,87-88
+src/renderer/src/lib/smart-github-submit.ts
+  s_6eb44cc4f551a6::t_b9c71ac212b125 6-30,61,63-64,67,69-70,73,79,89,154,157,171,223
+src/main/runtime/orca-runtime-write-orchestration-pointer-pty.ts
+  s_bfe523dda848fb::t_06cc0be11cb89f 90
+  s_bfe523dda848fb::t_26f750a964bb58 149-152
+  s_bfe523dda848fb::t_5f7b09f266059f 176
+  s_bfe523dda848fb::t_1f7997cecbe578 92-93,95-96
+src/main/runtime/orca-runtime-resolve-authoritative-terminal-wait-permission.ts
+  s_bfe523dda848fb::t_da2d1e4cbd70d4 68,71,74-76
+src/renderer/src/store/slices/diffComments.test.ts
+  s_1c8880be3c8da0::t_15c999d88f1d59 221
+src/main/runtime/orca-runtime-list-known-resolved-worktrees-for-explicit-target.ts
+  s_bfe523dda848fb::t_611044c35580cd 152
+src/renderer/src/components/task-page-linear-in-orca-issues.ts
+  s_5f01c1f790c525::t_82c1432b0cae12 2,14,23,45,66-68,70,75,88,90,98,100,117-120,127,129
+  s_6eb44cc4f551a6::t_567c4b4655967f 40-41
+  s_581c39faf14fb9::t_9bbb23fadcbff4 57,59,130
+src/shared/runtime-upload-staging-contract.ts
+  s_bc8dac5ccb04d8::t_7d3aa2f13ecb33 48
+src/main/ipc/pty-ipc-producer-flow-control.test.ts
+  s_21d1c21ea67f23::t_27523917c1cf47 3
+  s_0555e2cf8cb4f7::t_6e722af53fb3c7 50-51
+src/renderer/src/lib/agent-background-session-timeout-toast.ts
+  s_f3eea1900dccbb::t_e767afb992a325 4
+src/renderer/src/components/right-sidebar/create-pull-request-dialog-field-model.ts
+  s_bd639794f7233b::t_219975ea3832ff 5
+src/main/runtime/orca-runtime-browser.ts
+  s_bfe523dda848fb::t_d42f87c9da87d6 1-3,5-13
+src/main/codex/config-settings-promotion.test.ts
+  s_54078d311d2a9f::t_8d34214c1b5cb0 39
+  s_581c39faf14fb9::t_fdffc6923e030d 18
+src/main/runtime/runtime-orchestration-federation.ts
+  s_ca79eab6e88120::t_327986aece9a30 1
+src/renderer/src/store/terminals/terminal-actions.ts
+  s_1c8880be3c8da0::t_b38f2fc1f79036 130
+src/renderer/src/store/slices/runtime-environment-ssh.test.ts
+  s_d515f9c8eb4805::t_0217ad56c987f4 2
+src/renderer/src/lib/agent-hibernation-coordinator.test.ts
+  s_f3eea1900dccbb::t_a2449cd86064b8 18
+src/renderer/src/components/right-sidebar/source-control-fix-split-button.tsx
+  s_bd639794f7233b::t_6dce3385fe59cd 16
+src/renderer/src/components/settings/ComputerUsePane.tsx
+  s_54078d311d2a9f::t_c2bd80adae1064 11-19
+  s_581c39faf14fb9::t_4c6cb411c1cf57 20
+src/main/runtime/orca-runtime-attach-window.ts
+  s_5f01c1f790c525::t_a339002014014a 2,8
+src/renderer/src/components/sidebar/sidebar-header-actions.tsx
+  s_753176acee6ab9::t_af10d51e05c04d 1
+  s_753176acee6ab9::t_019440898e6121 45,62
+src/main/ipc/runtime-environment-diagnostics-broadcast.ts
+  s_0555e2cf8cb4f7::t_65dfc49b116f4c 3,10
+src/renderer/src/components/right-sidebar/activity-bar-buttons.tsx
+  s_bd639794f7233b::t_8436311692be99 56,71,88,110
+  s_bd639794f7233b::t_3ee639ec6e589a 29-30,36
+src/renderer/src/components/sidebar/repo-header-create-state.test.ts
+  s_753176acee6ab9::t_e8177aef55a938 18,21
+  s_581c39faf14fb9::t_de5f6bee4299b5 27,30
+src/shared/terminal-github-pr-link-detector.ts
+  s_bc8dac5ccb04d8::t_0e197fe6cc6355 11-12,14-56
+src/main/codex/codex-account-home-discovery.ts
+  s_39cd8df4111de4::t_79a4ad9d7e18dc 3,15-16
+src/renderer/src/lib/worktree-live-terminal-surface-owners.ts
+  s_51fe632c652b0f::t_c72f23e63a5adb 103-107
+src/renderer/src/components/settings/use-runtime-environment-mutation-actions.ts
+  s_54078d311d2a9f::t_9f1016598a5ad0 8-12
+src/renderer/src/store/slices/runtime-environment-ssh-selectors.ts
+  s_d515f9c8eb4805::t_7ce6193318523f 2,6
+src/renderer/src/components/terminal-pane/pty-connection/reattach-result-handler.ts
+  s_1c8880be3c8da0::t_a98d97fc2b709c 237
+  s_581c39faf14fb9::t_0d1c5f79000e6b 310
+src/renderer/src/components/terminal-pane/terminal-handle-links.ts
+  s_7eb6ee45f309ef::t_7ca3b16bc0a65d 159,164-170,196-199,228
+  s_abe0c5b3223c93::t_dc59d9d886ab20 232-234,249
+src/renderer/src/lib/use-tab-agent.ts
+  s_51fe632c652b0f::t_85c42ebf1c5ee4 257
+src/renderer/src/store/slices/terminals-hydration.test.ts
+  s_d515f9c8eb4805::t_0217ad56c987f4 95
+src/renderer/src/lib/worktree-agent-activation-gate.test.ts
+  s_51fe632c652b0f::t_bb00126dfc27ea 324
+src/renderer/src/lib/structured-agent-session-launch-options.ts
+  s_6eb44cc4f551a6::t_2ee5de960478e4 10,14-17,87,89
+  s_54078d311d2a9f::t_d21852335af8c4 6-7
+src/shared/persisted-state-types.ts
+  s_45ce27f00e18ef::t_67c2c35b2f5abe 81-82,84-85
+src/renderer/src/components/terminal-pane/parked-terminal-byte-watcher.ts
+  s_abe0c5b3223c93::t_00a95f7d26157a 196-200
+src/renderer/src/components/terminal-pane/terminal-file-open-routing.ts
+  s_abe0c5b3223c93::t_244f19fa89f8d9 9-10
+  s_abe0c5b3223c93::t_2b8427ac4e66b0 106
+  s_abe0c5b3223c93::t_db8c942089f57d 183-186
+  s_abe0c5b3223c93::t_4d81a4f34b4e17 29-35
+  s_abe0c5b3223c93::t_659fd24491d0b5 191
+  s_581c39faf14fb9::t_93f52aef4bfb0d 67
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-composer-state.tsx
+  s_5f01c1f790c525::t_dbe0e415d8732b 121
+src/renderer/src/store/slices/repos-project-groups.test.ts
+  s_d515f9c8eb4805::t_f9d9fe5f12f80b 2,81-82,282
+  s_d515f9c8eb4805::t_0217ad56c987f4 8
+src/main/agent-hooks/wsl-hook-relay-link.ts
+  s_21d1c21ea67f23::t_dc89c90ed199af 7
+src/renderer/src/components/editor/combined-diff/CombinedDiffViewer.tsx
+  s_bfe523dda848fb::t_f96afa9b134f07 197
+  s_581c39faf14fb9::t_bd5dbf71594905 198-208
+src/renderer/src/components/right-sidebar/runSourceControlAgentActionStart.ts
+  s_bd639794f7233b::t_17a22784a1ad3e 6
+src/renderer/src/components/settings/AgentSkillSetupPanel.tsx
+  s_54078d311d2a9f::t_6d3ee56e8dcdcd 302-307
+  s_581c39faf14fb9::t_b1ee0fe4b81c7e 275
+src/shared/agent-session-option-descriptors.ts
+  s_45ce27f00e18ef::t_6c841a505e5e2f 1-4,6-43,45-50,52-86,88-92,95-100,102-124
+src/main/runtime/runtime-rpc-startup-failure.ts
+  s_ca79eab6e88120::t_9fb2c3825e5e9b 4-11
+src/renderer/src/lib/agent-draft-readiness.test.ts
+  s_27e375e990447a::t_ed0f2908d6aa1a 40
+src/renderer/src/store/slices/worktrees-fetch-persisted-metadata-fallback.test.ts
+  s_d515f9c8eb4805::t_0217ad56c987f4 8
+src/shared/git-diff-transport-budget.ts
+  s_45ce27f00e18ef::t_656c67c20a968d 7-12
+src/renderer/src/store/slices/worktree-visibility-owner-settings.ts
+  s_d515f9c8eb4805::t_e5057e88c2cd19 26-27,30-37
+  s_d515f9c8eb4805::t_e9839db899a3ab 2,5
+src/renderer/src/components/sidebar/WorktreeCard.merged-pr-display.test.tsx
+  s_753176acee6ab9::t_9ee0579b3997e1 169
+  s_753176acee6ab9::t_e9443437b3fb97 148
+src/renderer/src/lib/setup-script-prompt.ts
+  s_6eb44cc4f551a6::t_8246a1218a2f54 5-18
+src/main/ipc/local-network-connection-test.ts
+  s_0555e2cf8cb4f7::t_2c496030f190d4 61-103,121,124-127
+  s_581c39faf14fb9::t_0f365d24d30bae 128
+src/main/ipc/agent-status-ipc-boundary.ts
+  s_0555e2cf8cb4f7::t_7814ba677c8e07 62,69
+  s_0555e2cf8cb4f7::t_07192813a39947 12-22
+  s_0555e2cf8cb4f7::t_0fa46097c42e81 40,44
+  s_581c39faf14fb9::t_f959bfa8eb2c40 23
+src/renderer/src/components/sidebar/folder-workspace-agent-startup.ts
+  s_753176acee6ab9::t_02c42c1751ad5f 14-17
+  s_753176acee6ab9::t_202a01f4245362 45
+  s_581c39faf14fb9::t_4842557cb6eb9a 18
+src/renderer/src/components/use-worktree-jump-palette-open-tabs.ts
+  s_f3eea1900dccbb::t_6184773b27ec96 224-225
+src/renderer/src/store/slices/ssh-host-state-contracts.ts
+  s_d515f9c8eb4805::t_104e7f250c31ab 1-3,5-23,26-39,42-45,48-95,98-116,119-120,123-128,130-131,133,138-143,145,147-158
+src/main/ipc/shell.test.ts
+  s_0555e2cf8cb4f7::t_fe17ae795eb17e 84,517
+src/main/codex/codex-state-db-backfill-recovery.ts
+  s_39cd8df4111de4::t_ae149efa1898fe 9,13
+src/main/ipc/runtime-environment-request-connections.ts
+  s_0555e2cf8cb4f7::t_c37711dbf5116b 84-90,96-101
+  s_0555e2cf8cb4f7::t_89a22114444ad0 12-14,17-18,39-41,43-44,92,102-103,112-113,128
+  s_0555e2cf8cb4f7::t_663eb8ead4abaa 95
+  s_0555e2cf8cb4f7::t_6ced33c85d0d0f 116,118,120,123-125
+  s_0555e2cf8cb4f7::t_28fe6cf58393b0 72-82
+  s_581c39faf14fb9::t_854767fe6803eb 9
+src/main/runtime/orca-runtime-close-headless-mobile-terminal-tab.ts
+  s_27e375e990447a::t_a8a096073fef30 73
+  s_27e375e990447a::t_9bbaa22d11f99b 54-55
+  s_27e375e990447a::t_bdf4c64c850ef7 2,14,39
+  s_581c39faf14fb9::t_3b356ea8b9041c 40-42
+src/renderer/src/components/terminal-cold-activation.ts
+  s_5f01c1f790c525::t_369ed696f024f4 83,92-94
+src/shared/workspace-session-state-types.ts
+  s_bc8dac5ccb04d8::t_bd6c3b231b4932 7-80
+  s_bc8dac5ccb04d8::t_f29753699abc9b 173
+  s_bc8dac5ccb04d8::t_b1edcb3ef4450c 153,155
+src/main/runtime/orca-runtime-verify-orchestration-compatibility-caller.ts
+  s_f3eea1900dccbb::t_4ecd29f87383e5 11-28
+  s_581c39faf14fb9::t_794ecdfca69626 29
+src/main/codex/codex-prompt-registry-bounds.ts
+  s_39cd8df4111de4::t_b83a1349f2253a 1
+src/renderer/src/components/terminal-pane/agent-completion-coordinator-test-harness.ts
+  s_abe0c5b3223c93::t_1de768dd040578 4,17
+src/main/runtime/runtime-message-waiters.ts
+  s_ca79eab6e88120::t_60cee8885f5296 1-2
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-review-data.tsx
+  s_5f01c1f790c525::t_7bb69bf75236db 3,51
+  s_5f01c1f790c525::t_e12bd6af48c7f7 111,127
+src/renderer/src/lib/agent-ready-wait.ts
+  s_f3eea1900dccbb::t_a322d74d567b01 93
+src/main/runtime/runtime-client-settings.ts
+  s_bfe523dda848fb::t_129b33f29d1ce0 102
+src/main/ipc/worktree-remote.ts
+  s_45ce27f00e18ef::t_18b0b43a28a40c 879-882,884-892,896-903,907-914
+  s_581c39faf14fb9::t_1266629d2f652d 10,33,35-36,47,73,84,878,1200,1456
+src/main/ipc/worktree-push-target-remote-scan.test.ts
+  s_45ce27f00e18ef::t_5b0fa6bc3365b2 62
+src/renderer/src/components/sidebar/WorkspaceKanbanDrawer.search.test.tsx
+  s_bd639794f7233b::t_0f917055e3be32 162
+src/renderer/src/components/right-sidebar/file-explorer-directory-listing.test.ts
+  s_bd639794f7233b::t_64a3b372307ae1 4
+src/main/ipc/pty-pane-reservation-settlement.test.ts
+  s_bfe523dda848fb::t_d6bfb8957e91cd 5
+src/main/ipc/register-core-handlers/register-core-handlers.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 120,123
+src/main/runtime/runtime-file-commands-constructor.ts
+  s_bfe523dda848fb::t_f937f7cd24ed08 18-19,30-117,119-123
+  s_bfe523dda848fb::t_1fb4a3de4c5b5a 195
+  s_bfe523dda848fb::t_a39564148ed382 283
+src/renderer/src/store/slices/preflight.ts
+  s_1c8880be3c8da0::t_e2226729dbda07 93-95
+src/renderer/src/components/right-sidebar/useFileExplorerWatch.ts
+  s_abe0c5b3223c93::t_46911695f44896 223,227
+src/renderer/src/components/terminal-pane/use-terminal-pane-chat-state.ts
+  s_7eb6ee45f309ef::t_b3df1148895dbc 113-115
+src/shared/runtime-rpc-call-queue.ts
+  s_bc8dac5ccb04d8::t_56b2bfdf25fa19 2-4
+  s_bc8dac5ccb04d8::t_47deb7406656dd 66
+src/main/codex/config-settings-promotion.ts
+  s_54078d311d2a9f::t_abdb8bc560b916 5
+src/renderer/src/components/task-page-pr-delta-summary.ts
+  s_5f01c1f790c525::t_a339002014014a 1-5
+src/renderer/src/lib/worktree-sort-order-persistence.test.ts
+  s_51fe632c652b0f::t_e656ba02f87b9c 9-10,12,50-51,56,60
+src/renderer/src/components/task-source-provider-availability.ts
+  s_5f01c1f790c525::t_ac2592a031b7a6 4
+  s_5f01c1f790c525::t_57e4b6e76aa818 18,57
+  s_581c39faf14fb9::t_7f3d2d3d977662 60
+src/main/runtime/runtime-preserved-branch-cleanup.ts
+  s_ca79eab6e88120::t_9f0ef274c4dd66 122-134
+  s_ca79eab6e88120::t_958c490caeceef 11
+src/renderer/src/lib/repo-slug-cache.ts
+  s_6eb44cc4f551a6::t_dd952d841919a1 8-9,11-20,116
+  s_6eb44cc4f551a6::t_c2796f5be50d48 10
+  s_581c39faf14fb9::t_a4f3873a86e191 7,21-23,118-119
+src/main/window/attach-main-window-services.ts
+  s_ca79eab6e88120::t_331a99a74716a3 109,111,115-116
+src/renderer/src/components/right-sidebar/local-workspace-ports-panel.tsx
+  s_bd639794f7233b::t_89425161a37645 7
+  s_bd639794f7233b::t_0245ba9e15d3de 29-30
+  s_bd639794f7233b::t_dfabb923993dd3 51
+  s_bd639794f7233b::t_911ac090730caf 50
+  s_bd639794f7233b::t_68d5ff8b483d0f 213
+src/renderer/src/lib/windows-terminal-capability-read.ts
+  s_51fe632c652b0f::t_be8e3545b2ba2d 3-5,23-24,26-30,35,37-41,44,51-54
+src/renderer/src/components/terminal-pane/TerminalOverlaySlot.tsx
+  s_abe0c5b3223c93::t_0b6ca1e9f0bbf1 53,59
+  s_abe0c5b3223c93::t_021dc2da66dde4 57-58
+src/renderer/src/components/terminal-pane/pty-connection/unbound-pane-spawn-recovery.ts
+  s_1c8880be3c8da0::t_ab3269804c5ea7 17,19
+src/renderer/src/store/slices/superseded-ssh-repo-rows.ts
+  s_d515f9c8eb4805::t_df4d3fc959468f 1
+src/renderer/src/components/right-sidebar/checks-panel-async-result-key.ts
+  s_bd639794f7233b::t_a23390067cf1c2 1-7,9-15,22
+src/main/ipc/filesystem-watcher.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 3-5,25
+src/renderer/src/components/new-workspace/use-smart-workspace-secondary-searches.ts
+  s_6eb44cc4f551a6::t_4e9f046c0cc82f 160-161
+  s_581c39faf14fb9::t_2fd0c69d9b0611 162-171,173
+src/renderer/src/components/terminal-pane/ssh-reattach-model-restore.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 42,131
+  s_abe0c5b3223c93::t_2c7f69e662ae2b 47-49
+  s_abe0c5b3223c93::t_169ab54cea99ed 135-136
+src/renderer/src/components/task-page-jira-cache-selectors.test.ts
+  s_5f01c1f790c525::t_033b5a8d2b6c47 4,22,25-26,30-31,34,41-42,45-46,51
+src/renderer/src/lib/linked-work-item-context.ts
+  s_6eb44cc4f551a6::t_73ba869b01c766 2-3
+src/shared/persisted-ui-state-types.ts
+  s_45ce27f00e18ef::t_fc7000c1457409 7
+src/renderer/src/lib/structured-agent-session-launch-recovery.ts
+  s_6eb44cc4f551a6::t_721458b2125efc 58-67,85
+  s_6eb44cc4f551a6::t_2b3d78ee5c5845 7-32
+src/renderer/src/components/use-worktree-jump-palette-selection-lifecycle.ts
+  s_f3eea1900dccbb::t_ab020a00148cfc 64
+  s_581c39faf14fb9::t_8d77128036a759 97,103,120,185
+src/renderer/src/components/terminal-pane/terminal-parked-watcher-registry.ts
+  s_7eb6ee45f309ef::t_a8dd28c8075cf6 100
+src/main/codex/codex-real-home-hooks-json.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 3
+src/renderer/src/lib/agent-paste-draft-submit-retry.test.ts
+  s_f3eea1900dccbb::t_3911b2c2979905 23-25,79-81,129,157,172
+  s_f3eea1900dccbb::t_a58d0a5f2ed292 55-62,82-85,105
+src/renderer/src/components/terminal-pane/pty-connection/direct-ssh-reattach-recovery.ts
+  s_1c8880be3c8da0::t_a8344b580f0348 11
+src/renderer/src/store/slices/worktree-helpers.ts
+  s_d515f9c8eb4805::t_5cd221b96535e8 39
+src/renderer/src/components/NewWorkspaceComposerCard.test.tsx
+  s_51fe632c652b0f::t_eb2847cfbdebb0 19
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-controller-state.tsx
+  s_5f01c1f790c525::t_1444045a13f1b7 21-22
+  s_581c39faf14fb9::t_8da6a9c6431f21 92,94,96,136,160
+src/shared/provider-check-summary.ts
+  s_bc8dac5ccb04d8::t_dba56aea1c1079 1-8
+src/main/runtime/runtime-repository-command-surface.ts
+  s_27e375e990447a::t_b594e6e960b8d7 52
+src/main/runtime/runtime-file-commands-mobile-file-list-limit.ts
+  s_bfe523dda848fb::t_c260492492851b 78-79
+  s_bfe523dda848fb::t_0c43103d60bc08 87-88
+  s_bfe523dda848fb::t_3920653e8950bc 43,46,53-55
+  s_bfe523dda848fb::t_b21588573635df 4
+  s_581c39faf14fb9::t_82aea731580f4e 56
+src/renderer/src/components/right-sidebar/useFileExplorerTree.ts
+  s_abe0c5b3223c93::t_c40dc615768062 176-179
+  s_abe0c5b3223c93::t_86f3c958298c16 181
+src/main/runtime/runtime-automation-controller.ts
+  s_bfe523dda848fb::t_26d94561c3d1c9 1
+  s_bfe523dda848fb::t_86b36149404eee 51-52,54
+src/main/codex/codex-ai-vault-session-resume.test.ts
+  s_39cd8df4111de4::t_8acaddff6e861d 1
+src/shared/agent-skill-sharing-contract.ts
+  s_45ce27f00e18ef::t_09cb7d99d8138e 30-55
+  s_45ce27f00e18ef::t_de9ec678e73d0d 59
+  s_45ce27f00e18ef::t_178eb9fb896c1e 2-3
+src/main/runtime/runtime-file-commands-resolve-allowed-terminal-artifact-path.ts
+  s_bfe523dda848fb::t_eacb4dbddd18c5 54-56
+  s_bfe523dda848fb::t_b4c5444cb3f8fd 38-40
+  s_bfe523dda848fb::t_9f4058d333eba6 37
+  s_bfe523dda848fb::t_c7904bd8917e50 33
+src/renderer/src/store/slices/store-active-worktree-terminal-creation.test.ts
+  s_1c8880be3c8da0::t_2c5bfe8cc0f916 4
+src/main/runtime/orca-runtime-prune-mobile-session-tab-group-layout.ts
+  s_bfe523dda848fb::t_b74d74e5f98c6b 13,15
+  s_bfe523dda848fb::t_4cd2a4767e69fd 65,69-78,80
+src/renderer/src/components/right-sidebar/useFileDuplicate.ts
+  s_abe0c5b3223c93::t_1ce6cb610d3786 73-77
+  s_abe0c5b3223c93::t_a1754d4a555aab 50,56
+src/renderer/src/components/terminal-pane/terminal-remote-file-download-open.ts
+  s_7eb6ee45f309ef::t_e828d450ec697b 6-9,17
+  s_7eb6ee45f309ef::t_a8dd28c8075cf6 13-14,24
+  s_581c39faf14fb9::t_f8041745d90ea4 5
+src/main/codex/codex-structured-model-catalog.ts
+  s_39cd8df4111de4::t_ac817c3d962a81 25-29,31-58
+  s_39cd8df4111de4::t_26b66902b95766 2
+  s_39cd8df4111de4::t_4c491f9a254bda 21-24,30
+  s_39cd8df4111de4::t_9df866dac43acd 60-62,107,205
+  s_581c39faf14fb9::t_163d6b34cdf7f9 59
+src/renderer/src/store/slices/worktrees-remote-runtime-removal.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 4
+src/renderer/src/store/slices/runtime-environment-rpc-call.ts
+  s_d515f9c8eb4805::t_a9e4503d05ade1 54-55,57
+  s_d515f9c8eb4805::t_cac34df434d34f 38
+  s_581c39faf14fb9::t_84894365459b59 1-4,6,8,10,12-16,19-21,23-37,39,42-53,58
+src/main/runtime/rpc/methods/files.ts
+  s_7eb6ee45f309ef::t_f00d8c7f91952f 49-51,81,102-103,145-146,149
+  s_21d1c21ea67f23::t_d2847644358b08 35,75
+src/renderer/src/components/sidebar/WorktreeMetaDialog.tsx
+  s_bd639794f7233b::t_95cdc1bf07ad08 120
+src/shared/terminal-execution-host.ts
+  s_bc8dac5ccb04d8::t_1ced82121c3175 1,6-8
+src/main/runtime/runtime-file-commands-write-terminal-artifact-file.ts
+  s_bfe523dda848fb::t_7ea44fe0861fec 4
+src/shared/hook-command-source-policy.ts
+  s_45ce27f00e18ef::t_30ca108f87414a 1-3
+docs-slim/cull-scc-peel.md
+  s_581c39faf14fb9::t_79a1af9b38721a 94-104,106-122,130-131,136-140,142,144-154,156-164,169-173,177,192,198,205-206,209,221-235,237-249,252,256,264,267-268,272-275,285,291-293,295,299-300,302-303,309,323,325-347,351-356,359,361-416,418-438,490,623,646-694,724,738-739,743,778,783-812,4216
+  s_581c39faf14fb9::t_dd7d750ae37222 105,123-129,132-135,197,202-204,250,255,257-259,741
+  s_581c39faf14fb9::t_2f6c07a2f2926b 155,168,174-176,178-189,201,207-208,210-214,216-219,263,265-266,269-271,276-284,286-290,294,296-298,301,304-308,310-322,725,731,735,815,3657
+  s_581c39faf14fb9::t_88ad7013555323 5-8,141,143,165-167,190-191,193-196,199-200,215,220,236,251,253-254,260,262,324,357-358,360,417,439-489,491-622,624-645,695-721,723,726-730,732-734,736-737,740,744-777,779-782,813-814,816-830,2245-2246,2885-2892,3419,4618-4619
+  s_581c39faf14fb9::t_3a876ed4fac396 261,348-350,722,742
+src/renderer/src/components/terminal-pane/pty-connection/pty-exit-hibernate.ts
+  s_abe0c5b3223c93::t_9bcd79da2656df 6,175
+src/shared/git-diff-transport-budget.test.ts
+  s_45ce27f00e18ef::t_656c67c20a968d 11
+src/renderer/src/components/terminal-pane/agent-process-inspection-cost.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 2-4
+src/renderer/src/components/terminal-pane/terminal-hidden-worktree-retention.ts
+  s_abe0c5b3223c93::t_af47af4f8a8c44 55
+  s_abe0c5b3223c93::t_dd31b0f5134385 80
+src/main/codex/codex-session-index-heal-state.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 7
+src/renderer/src/components/task-page-work-item-signatures.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 1-30,32,47,75-77,82
+src/renderer/src/components/right-sidebar/file-explorer-row-context-menu.tsx
+  s_581c39faf14fb9::t_db0f583d97da9f 125,128-129
+src/renderer/src/store/slices/repos-remove-missing-remote-project.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 49,82-83
+src/main/runtime/orca-runtime-test-lifecycle.spec.ts
+  s_bfe523dda848fb::t_0c108594fadc58 3,61-63
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-context-state.tsx
+  s_5f01c1f790c525::t_fce534ca301129 203,327
+src/main/runtime/orca-runtime-restore-structured-agent-session-tabs-once.ts
+  s_bfe523dda848fb::t_289a9b2f769315 3
+  s_581c39faf14fb9::t_76fc6efa79a78b 2,18,47
+src/renderer/src/lib/ensure-hooks-confirmed.ts
+  s_f3eea1900dccbb::t_04b91bd5fb8521 9-28,183,216,218-219,242,244-245
+  s_581c39faf14fb9::t_42e3df20721de9 5-8,249,253-255
+src/main/runtime/orchestration/mailbox-delivery-target.ts
+  s_bfe523dda848fb::t_4c32b561854b9f 8-10
+  s_bfe523dda848fb::t_468346e5ab0077 25
+  s_bfe523dda848fb::t_73a17f2b713397 43
+src/renderer/src/lib/agent-status-connection-ownership.ts
+  s_f3eea1900dccbb::t_11bd96cbe44146 14-15,25-27,48
+src/renderer/src/components/terminal-pane/ssh-pane-connect-gate.ts
+  s_abe0c5b3223c93::t_2ed0fda024d073 26-27
+src/shared/agent-session-wire.ts
+  s_45ce27f00e18ef::t_3718466f9e05ef 174-176
+  s_581c39faf14fb9::t_55e7a092f3e7af 177
+src/renderer/src/components/sidebar/WorkspaceKanbanDrawer.mount-gating.test.tsx
+  s_753176acee6ab9::t_ee4449e23d46e7 11,18
+src/main/runtime/orca-runtime-resolve-terminal-split-source-authority.ts
+  s_bfe523dda848fb::t_e6fcbd8c5e52a7 134-135,144
+src/renderer/src/components/settings/RepositoryPane.tsx
+  s_45ce27f00e18ef::t_1938f30a4e12d8 33
+  s_54078d311d2a9f::t_f965c607fc2cf7 110-111
+src/renderer/src/store/slices/agent-status-orchestration-context.ts
+  s_1c8880be3c8da0::t_121993a86c78f5 16
+src/renderer/src/lib/worktree-startup-payload.ts
+  s_51fe632c652b0f::t_a6bb05e9c3f246 8-73,95
+src/renderer/src/components/right-sidebar/useSourceControlAgentActionDialog.ts
+  s_abe0c5b3223c93::t_69f61994a5136f 116-118,120-131
+src/renderer/src/components/tab-bar/open-tab-search-entries.ts
+  s_f3eea1900dccbb::t_d7aea058d13062 1-2
+src/renderer/src/store/slices/runtime-status-refresh.ts
+  s_d515f9c8eb4805::t_409f9d7aa0962b 29-30,35-36
+  s_d515f9c8eb4805::t_f450a32535b5f2 33
+src/renderer/src/store/slices/editor-close-file-cleanup.test.ts
+  s_39cd8df4111de4::t_b1a62a350b2d47 11-12
+  s_581c39faf14fb9::t_0bc425edaca168 54-55
+docs-slim/cull-census.md
+  s_581c39faf14fb9::t_59d24abcedf279 151-174
+  s_581c39faf14fb9::t_07e773674f1524 218-237
+  s_581c39faf14fb9::t_b9f4ab00fc1acb 238-251
+  s_581c39faf14fb9::t_7ef03e505b942b 120-150
+  s_581c39faf14fb9::t_741de49de76072 175-217
+src/renderer/src/components/tab-bar/tab-create-entry-active-option.ts
+  s_f3eea1900dccbb::t_35ed7ea0961907 11
+src/main/window/main-window-webview-security.ts
+  s_ca79eab6e88120::t_3c8441bda67907 5-7,11-12
+src/renderer/src/store/slices/folder-workspace-owner-routed-mutations.test.ts
+  s_39cd8df4111de4::t_b1a62a350b2d47 7-8
+  s_1c8880be3c8da0::t_c1cb9d25a4777b 54
+src/shared/agent-subagent-summary.ts
+  s_21d1c21ea67f23::t_1d431f21695be5 1-6,8,10-19,21-23,25-27,29-33,35-36,38-40,42-50,52-63,65,68-70,72-97,99-108,110-135
+src/renderer/src/components/terminal-pane/TerminalPaneRuntimePortals.tsx
+  s_abe0c5b3223c93::t_c762c4be14102f 83
+  s_581c39faf14fb9::t_4f02ee7679c7d6 110-111
+src/main/claude/claude-structured-journal-translation.ts
+  s_5f01c1f790c525::t_84f37c108d9e42 1,8,42
+src/renderer/src/lib/structured-agent-session-launch-prompt.test.ts
+  s_6eb44cc4f551a6::t_86aa0ab5684c7a 4-7,11-12,20-30,34-50,64-73
+src/main/codex/codex-turn-ordinals.ts
+  s_54078d311d2a9f::t_883bcd2aa0a6ea 1
+src/main/runtime/orchestration-worker-workspace-resolution.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 1
+src/renderer/src/components/terminal-pane/pty-connection/pty-input-recovery.ts
+  s_abe0c5b3223c93::t_8940e7f9655f52 151
+src/renderer/src/lib/agent-draft-paste-content.ts
+  s_f3eea1900dccbb::t_e6a9495d3083ee 32,69,72,78,191-192,198-205,215
+src/renderer/src/components/use-terminal-workspace-projection.ts
+  s_5f01c1f790c525::t_6ccbcd807bbb9c 34
+src/renderer/src/store/slices/editor-markdown-link-activation.test.ts
+  s_39cd8df4111de4::t_b1a62a350b2d47 6-7
+  s_581c39faf14fb9::t_1c3edf2b1c0a0f 61-62
+src/renderer/src/store/slices/worktrees-create-parent-pick.test.ts
+  s_d515f9c8eb4805::t_d199f0ab027f99 5
+src/renderer/src/lib/create-untitled-markdown.ts
+  s_f3eea1900dccbb::t_0360f2c9efce22 25-33,61,65,89,95,99,101,105-107,110-112,154,158
+src/renderer/src/lib/pending-worktree-creation.ts
+  s_7eb6ee45f309ef::t_8a9c6266bc3d1e 15-18,20-23,25-35
+  s_6eb44cc4f551a6::t_8ee7b6ccc622da 24,37
+  s_d515f9c8eb4805::t_1792fca63e4bda 19
+src/renderer/src/components/right-sidebar/use-git-status-upstream-ref-watch.ts
+  s_abe0c5b3223c93::t_7296431567c039 14,25-26,30,33-34,36,47-48,51-54,56
+src/renderer/src/lib/agent-session-launch-plan.ts
+  s_f3eea1900dccbb::t_80ccfb5a1a99d5 2-4
+src/renderer/src/lib/setup-script-status.ts
+  s_6eb44cc4f551a6::t_8246a1218a2f54 3-12
+src/renderer/src/popout.tsx
+  s_6eb44cc4f551a6::t_216492596d0c34 3
+src/renderer/src/components/settings/EphemeralVmRecipeRow.tsx
+  s_54078d311d2a9f::t_41910a94938200 9-16
+src/renderer/src/lib/agent-background-draft-delivery.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 15
+src/renderer/src/lib/agent-launch-caller-routing.test.ts
+  s_27e375e990447a::t_7a7104243fe804 24
+src/renderer/src/store/slices/repos-all-hosts.test.ts
+  s_1c8880be3c8da0::t_c1cb9d25a4777b 167,849
+  s_39cd8df4111de4::t_b1a62a350b2d47 9-10
+src/main/runtime/runtime-repository-issue-command.ts
+  s_ca79eab6e88120::t_1d834ab57b57a5 3,25,34
+src/renderer/src/store/slices/settings.ts
+  s_d515f9c8eb4805::t_221b8675afdf1f 128-130
+  s_d515f9c8eb4805::t_38a8aa790ee149 98
+  s_581c39faf14fb9::t_ad7590745498c8 49
+src/main/window/main-window-focus-lifecycle.ts
+  s_ca79eab6e88120::t_11eec3395a18a3 140-141
+  s_ca79eab6e88120::t_d4d7c67668d062 14-17
+  s_ca79eab6e88120::t_c7548215b0b6d4 183
+src/renderer/src/store/slices/worktrees-metadata-persistence.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 4
+src/renderer/src/components/sidebar/useAddRepoNestedReviewController.ts
+  s_bd639794f7233b::t_eb4604b6ee2432 48
+  s_bd639794f7233b::t_5d91f099b74e54 49
+  s_bd639794f7233b::t_f34585f3a1c4f1 72
+  s_bd639794f7233b::t_59b8418cdfa50f 2
+src/renderer/src/components/task-page-jira-sorting.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 4-21
+  s_581c39faf14fb9::t_a86b290e58c452 22
+src/renderer/src/components/sidebar/useCreateRepo.ts
+  s_bd639794f7233b::t_04c878bcc562a2 105
+  s_581c39faf14fb9::t_e55a6c6b2a2b51 106-109
+src/renderer/src/components/settings/settings-setup-guide-progress.ts
+  s_753176acee6ab9::t_dc3da9f2ea1ca2 46
+src/renderer/src/store/terminals/terminal-pty-release.ts
+  s_1c8880be3c8da0::t_b635344cac18f5 102
+  s_1c8880be3c8da0::t_d3ffdf62173792 45
+src/renderer/src/components/task-page-linear-cache-selectors.ts
+  s_5f01c1f790c525::t_42044cd92e351e 4-29
+  s_581c39faf14fb9::t_a0af7714c61baa 30,32,36,56-57,67-69,83,91
+src/main/runtime/rpc/methods/files-terminal-artifact-methods.ts
+  s_7eb6ee45f309ef::t_de8cd04f9e96e3 22-28
+src/main/runtime/rpc/methods/client-events.ts
+  s_7eb6ee45f309ef::t_15e8391540bb9d 41
+src/main/agent-hooks/wsl-hook-relay-guest-install.ts
+  s_21d1c21ea67f23::t_89469df95f0c4d 10-11
+src/main/runtime/runtime-git-command-target.ts
+  s_ca79eab6e88120::t_142d63f88b308c 81,87-88
+  s_ca79eab6e88120::t_29536a5f4334b7 10
+  s_ca79eab6e88120::t_9cfc0067d48d4a 63
+src/main/ipc/minimax-credentials.ts
+  s_0555e2cf8cb4f7::t_8274015ccf6560 29
+src/renderer/src/store/slices/ssh.test.ts
+  s_d515f9c8eb4805::t_0217ad56c987f4 2
+  s_581c39faf14fb9::t_87291ea9f709f8 117,212
+src/renderer/src/lib/renderer-memory-sampling.ts
+  s_f3eea1900dccbb::t_d8bf79110e5f39 83,86
+src/renderer/src/components/right-sidebar/checks-panel/check-run-details.tsx
+  s_5f01c1f790c525::t_4a7d52b7a6b8dc 12-14
+  s_5f01c1f790c525::t_c1bb108c746394 53,59-60,67,69-70
+src/renderer/src/lib/ensure-hooks-confirmed.test.ts
+  s_f3eea1900dccbb::t_08e8732a083dee 35
+src/renderer/src/components/sidebar/worktree-card-pr-display.test.ts
+  s_753176acee6ab9::t_124e98f579c23d 178
+  s_bd639794f7233b::t_030c86a0450735 183
+src/renderer/src/lib/pr-comment-reactions.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 1-22,42-43,46,68-69,72,80-81,85,93-94,98
+src/shared/tui-agent-resume-startup.ts
+  s_bc8dac5ccb04d8::t_f0a64a73bbd9a2 6-8
+src/main/host/electron-runtime-desktop-surface.ts
+  s_27e375e990447a::t_49cf288a4d7776 1
+src/main/runtime/claude-agent-teams-shim-env.ts
+  s_27e375e990447a::t_5694cfb483b90e 13-22
+  s_581c39faf14fb9::t_4411c6ae27c58e 23
+src/main/codex/wsl-codex-command.ts
+  s_54078d311d2a9f::t_745a3764fc0cac 1-2,4,6-10,12-13,15-18,22,24-28,30-43,47-61,64-77
+src/main/runtime/rpc/methods/client-ui.test.ts
+  s_7eb6ee45f309ef::t_55e09231541e57 400,440,572,669,731,811
+src/renderer/src/components/tab-bar/open-tab-search.ts
+  s_f3eea1900dccbb::t_f65a1499b00cdd 1
+  s_f3eea1900dccbb::t_85ab1819201272 34
+  s_581c39faf14fb9::t_8fbc3175b089c2 82,92
+src/main/agent-hooks/wsl-hook-relay-manager.test.ts
+  s_21d1c21ea67f23::t_e95753518911dd 5-6,10-20,29,36-195,198,202,223-230
+  s_21d1c21ea67f23::t_1904989bd863bc 360
+  s_581c39faf14fb9::t_07dc25a2e51359 232,246,251,329,359,363,369,443
+src/main/ipc/minimax-credentials.test.ts
+  s_0555e2cf8cb4f7::t_bd11eecbe581ef 62,72,87,102,112,114,126,137,142,144,157
+src/renderer/src/components/sidebar/SidebarFeedbackDialog.tsx
+  s_753176acee6ab9::t_eaf3e3cf395cab 76
+  s_581c39faf14fb9::t_593cb634cbad6c 46-49
+src/renderer/src/components/tab-bar/open-tab-search-retention.test.ts
+  s_f3eea1900dccbb::t_16fe456182cef1 101
+src/main/window/privileged-window-navigation.ts
+  s_ca79eab6e88120::t_0c912320281aa9 4-14,18,31
+src/main/codex/codex-config-mirror.ts
+  s_39cd8df4111de4::t_fa5764372ed749 8
+src/main/ipc/shell.ts
+  s_0555e2cf8cb4f7::t_976ed16f5b9b89 16
+  s_0555e2cf8cb4f7::t_0fb7439f82ca76 4
+src/renderer/src/store/slices/terminal-tab-retirement.ts
+  s_d515f9c8eb4805::t_31ddf62030ecc0 15-41
+src/renderer/src/components/sidebar/use-delete-worktree-status-hydration.ts
+  s_753176acee6ab9::t_5508b55e44b4ef 5
+src/renderer/src/components/terminal-pane/terminal-parked-tab-watchers.ts
+  s_abe0c5b3223c93::t_a50217fb0fc292 52
+src/renderer/src/components/task-source-context-summary.ts
+  s_5f01c1f790c525::t_559d52cec53490 5-6
+  s_5f01c1f790c525::t_ac2592a031b7a6 7
+  s_5f01c1f790c525::t_57e4b6e76aa818 8
+  s_581c39faf14fb9::t_8713ca824d8385 9-11,45,112
+src/renderer/src/components/sidebar/worktree-card-meta-types.ts
+  s_bd639794f7233b::t_5e68893e2af04a 8-16
+src/renderer/src/lib/pr-comment-action-state.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 45
+src/renderer/src/components/landing-preflight-runtime.ts
+  s_8595a5eb6fd955::t_a663dd07df11ba 39
+src/renderer/src/components/right-sidebar/file-explorer-row-action-visibility.ts
+  s_bd639794f7233b::t_572d8327b4af9a 27,30
+src/main/runtime/agent-session-tab-table.ts
+  s_27e375e990447a::t_88bab271c2cc52 5-7
+  s_581c39faf14fb9::t_6a2fb07b3040d0 8
+src/renderer/src/components/sidebar/CommentMarkdown.test.tsx
+  s_753176acee6ab9::t_1215c883ca2857 5-6,8-13
+  s_753176acee6ab9::t_c4a47971adda94 242
+  s_753176acee6ab9::t_368d6d31e8c130 2,7
+  s_753176acee6ab9::t_8dc9023c422377 256
+src/main/runtime/rpc/methods/client-ui.ts
+  s_7eb6ee45f309ef::t_02ba02402a0b87 61,68,75
+  s_7eb6ee45f309ef::t_bdeaf3b806347c 67
+src/renderer/src/components/editor/editor-panel-render-model.ts
+  s_f3eea1900dccbb::t_63c10788a2f371 38
+src/shared/workspace-session-browser-history.ts
+  s_bc8dac5ccb04d8::t_c3770b94599737 2-31
+src/renderer/src/components/task-page-jira-load-state.ts
+  s_5f01c1f790c525::t_ee66b7eb6e0711 7
+src/main/codex/codex-trust-config-rollback.ts
+  s_54078d311d2a9f::t_871e735c8ef0e8 15
+src/renderer/src/components/sidebar/useAddRepoCloneFlow.ts
+  s_bd639794f7233b::t_c5c2c16b437e2d 3
+  s_bd639794f7233b::t_801eaf557f31ee 133-136
+src/main/runtime/orca-runtime-reconcile-headless-mobile-session-browser-tabs.ts
+  s_bfe523dda848fb::t_013dba0655fb1f 104-105
+  s_bfe523dda848fb::t_0536db49bd8d17 80-82
+  s_581c39faf14fb9::t_72f0c059208aa0 107
+src/shared/project-host-setup-projection.ts
+  s_bc8dac5ccb04d8::t_a31bc7fd7410ad 10-20,96,130
+  s_581c39faf14fb9::t_e105d69fa04b3b 38,79-80,82,87,94,104,137
+src/main/runtime/orca-runtime-get-status.ts
+  s_27e375e990447a::t_5e3c4de67fd08f 61-62,73
+src/main/codex/codex-trust-grant-telemetry.test.ts
+  s_54078d311d2a9f::t_1db4b195dad85c 2
+src/main/runtime/tui-idle-name-only-real-pty.integration.test.ts
+  s_ca79eab6e88120::t_5ca6c20c2c8197 43-44,47
+src/renderer/src/components/sidebar/WorktreeCardPorts.tsx
+  s_753176acee6ab9::t_b78f0a585d6df6 1,7-8
+  s_45ce27f00e18ef::t_08df1bdbd5f6ef 110,116
+  s_753176acee6ab9::t_1a3cd78eb6dcba 111-115,117-118
+src/renderer/src/components/terminal-pane/pty-connection/apply-reattach-payload.ts
+  s_1c8880be3c8da0::t_d36c83dd748a6e 119,124
+src/main/agent-hooks/wsl-hook-relay-sentinel.ts
+  s_21d1c21ea67f23::t_e4e79f33bae9a6 7-8
+src/renderer/src/components/right-sidebar/checks-panel/use-checks-panel-comment-resolution.tsx
+  s_5f01c1f790c525::t_cae1ce485bf960 87
+  s_5f01c1f790c525::t_ca14e3b0714f12 14
+  s_5f01c1f790c525::t_42d30057af3da9 74
+src/renderer/src/components/sidebar/folder-workspace-card-pr-display.test.ts
+  s_ca79eab6e88120::t_8965792a742bdf 2,354-355,357,362,370-372
+src/main/runtime/orca-runtime-record-pty-worktree.ts
+  s_bfe523dda848fb::t_90117a9f0f786f 43
+src/renderer/src/lib/worktree-sort-order-persistence.ts
+  s_51fe632c652b0f::t_37ce4c53193446 7-8,19
+src/renderer/src/lib/workspace-terminal-host-authority.ts
+  s_51fe632c652b0f::t_b4fca502fd011a 11-13,31
+src/renderer/src/hooks/composer-state/linked-item-lookup-effects.ts
+  s_6eb44cc4f551a6::t_f17dafb0211fa2 64-65
+src/shared/repo-hook-settings.ts
+  s_45ce27f00e18ef::t_5213b7ea08242c 1-3,5-19,21-30,32-35,37-38
+src/renderer/src/components/new-workspace/NewWorkspaceComposerProjectSection.tsx
+  s_51fe632c652b0f::t_d32c743fce856a 41-42
+src/renderer/src/components/settings/GeneralPane.tsx
+  s_54078d311d2a9f::t_070f0bc8ed344f 107,109-110,113-114
+src/main/runtime/orca-runtime-close-mobile-session-tab.ts
+  s_27e375e990447a::t_d5bb754146be91 273-276
+src/renderer/src/components/new-workspace/use-smart-workspace-gitlab-search.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 1,15-16,18,21-23
+docs-slim/cull-nonsrc-surface.md
+  s_581c39faf14fb9::t_50113e0d522a8c 1-48
+src/renderer/src/components/sidebar/use-add-repo-host-selection.ts
+  s_753176acee6ab9::t_92857ccce8eb8c 113
+src/renderer/src/lib/structured-agent-session-launch-join-delivery.test.ts
+  s_bd639794f7233b::t_fffc1c063de799 37-39,123-128,144-152,158,163,173-175
+src/renderer/src/components/task-page-new-issue-draft.test.ts
+  s_1c8880be3c8da0::t_38870b41a91b43 8-16
+src/main/codex/codex-rollout-session-meta.ts
+  s_39cd8df4111de4::t_eb75e179131844 1,5-8,17,21-32,41-42
+  s_581c39faf14fb9::t_b69221452bb10e 43
+src/renderer/src/store/slices/repos-shared-project-badge-color.test.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 101,107-108
+src/renderer/src/components/terminal-pane/terminal-pane-close-admission.ts
+  s_7eb6ee45f309ef::t_97750e5646d899 29-31
+src/renderer/src/components/terminal-pane/pty-connection/pane-serializer-settle.ts
+  s_f3eea1900dccbb::t_508793a59ef4be 118
+  s_f3eea1900dccbb::t_969816c4c08b51 142
+src/main/codex/codex-hook-legacy-cleanup.ts
+  s_581c39faf14fb9::t_db0f583d97da9f 11
+src/renderer/src/components/terminal-pane/terminal-live-layout-reconciliation.ts
+  s_7eb6ee45f309ef::t_a8dd28c8075cf6 8-11,13,17
+src/renderer/src/components/use-terminal-bulk-close-actions.ts
+  s_5f01c1f790c525::t_d037d0c4f4cf2b 23,42
+  s_51fe632c652b0f::t_349f3039695b38 3
+src/main/agent-hooks/first-work-workspace-title-rename.ts
+  s_581c39faf14fb9::t_da8a48545d33ac 37
+src/main/codex/codex-stale-pane-accounts.test.ts
+  s_581c39faf14fb9::t_59d6718be59287 2
+src/main/ipc/filesystem-watcher-handlers.ts
+  s_581c39faf14fb9::t_5e3f5c17336ad2 12-13
+src/main/ipc/pty-spawn-env-terminal-basics.test.ts
+  s_581c39faf14fb9::t_12d39c984dbad6 4,11
+src/main/ipc/worktree-base-directory-watch-targets.ts
+  s_581c39faf14fb9::t_bb35fd3a60d230 11,16,35,43,54,56-57,72,90,93,110,112,122,124
+src/main/runtime/orca-runtime-hydrate-headless-mobile-session-tabs-from-workspace-session.ts
+  s_581c39faf14fb9::t_9229a17f311cfa 119
+src/main/runtime/orca-runtime-terminal-drivers.ts
+  s_581c39faf14fb9::t_499699352bbae4 4
+src/main/runtime/orca-runtime-tests/terminal-handles.spec.ts
+  s_581c39faf14fb9::t_8de7a9aebdd09e 3
+src/main/runtime/runtime-file-commands-assert-remote-terminal-file-grant-path-still-canonical.ts
+  s_581c39faf14fb9::t_8f099c2e0c1b0d 7
+src/main/runtime/runtime-git-sync-commands.ts
+  s_581c39faf14fb9::t_d4b3ac4ce4fa86 8,79,121,148,191
+src/main/runtime/runtime-repository-hooks-commands.ts
+  s_581c39faf14fb9::t_c214d2e43ef0e9 4
+src/main/runtime/runtime-unregistered-worktree-removal.ts
+  s_581c39faf14fb9::t_bcc3c32a27128e 15,156-166
+src/renderer/src/components/TerminalWorkbenchContainer.tsx
+  s_581c39faf14fb9::t_b97eb0b247f4f6 12
+src/renderer/src/components/editor/ReviewNotesSendMenuContent.tsx
+  s_581c39faf14fb9::t_2c018b1c5629e2 23
+src/renderer/src/components/right-sidebar/ai-vault-session-launch-actions.ts
+  s_581c39faf14fb9::t_542aced5c69aec 114
+src/renderer/src/components/settings/NativeChatSupportedAgents.test.tsx
+  s_581c39faf14fb9::t_40f3527606c763 8
+src/renderer/src/components/settings/NativeChatSupportedAgents.tsx
+  s_581c39faf14fb9::t_b39c9c84a8d637 1
+src/renderer/src/components/sidebar/HostSectionHeaderMenu.tsx
+  s_581c39faf14fb9::t_6bc7e65f3dd82e 2
+src/renderer/src/components/sidebar/index.tsx
+  s_581c39faf14fb9::t_478d8d551a7c39 126-135
+src/renderer/src/components/sidebar/useAddRepoNestedImportFlow.ts
+  s_581c39faf14fb9::t_d773c52e7aa70f 9
+src/renderer/src/components/tab-bar/use-tab-bar-create-menu-controller.ts
+  s_581c39faf14fb9::t_aadd698f902066 6
+src/renderer/src/components/tab-group/AiVaultSessionDropLayer.tsx
+  s_581c39faf14fb9::t_2a905197cd6e11 267
+src/renderer/src/components/tab-group/workspace-tab-close-commands.ts
+  s_581c39faf14fb9::t_1c688ab229f0b0 74-75
+src/renderer/src/components/task-page-jira-issue-list.tsx
+  s_581c39faf14fb9::t_1a704563903bb4 9-25,27,30,33,36-39,42,45,58,68-70,72-73,96-99,106,117-119,297,307,310,355
+src/renderer/src/components/task-page-workspace-composer-boundary.test.ts
+  s_581c39faf14fb9::t_72161a71a09c21 123,126,129,132
+src/renderer/src/components/terminal-pane/codex-detached-pane-restart.test.ts
+  s_581c39faf14fb9::t_7f0162a4848e93 359-360,362-366
+src/renderer/src/components/terminal-pane/pty-connection-setup-split-spawn.test.ts
+  s_581c39faf14fb9::t_cfff44a409c5c9 5
+src/renderer/src/components/terminal-pane/pty-connection/ssh-snapshot-prepaint.ts
+  s_581c39faf14fb9::t_f5fa35b91a2f9e 17,25
+src/renderer/src/components/terminal-pane/terminal-pane-lifecycle-types.ts
+  s_581c39faf14fb9::t_2fa59be0f3fbff 87
+src/renderer/src/components/terminal-pane/terminal-pane-mount-cleanup.ts
+  s_581c39faf14fb9::t_5701875b22632b 26
+src/renderer/src/components/terminal-pane/use-terminal-pane-mount-lifecycle.ts
+  s_581c39faf14fb9::t_0a8e677c61a812 28
+src/renderer/src/hooks/useIpcEvents-close-routing-active-browser-tab.test.ts
+  s_581c39faf14fb9::t_a1878c093cc5d9 7-10
+src/renderer/src/lib/activity-thread-display.ts
+  s_581c39faf14fb9::t_770e1d75ced759 54-56
+src/renderer/src/lib/codex-session-restart.ts
+  s_581c39faf14fb9::t_d312b9e03c554d 13-16,63-64,89-94,99,109-114,168,170
+src/renderer/src/lib/structured-agent-session-launch-callers.ts
+  s_581c39faf14fb9::t_0bf7a6530d279f 3-9
+src/renderer/src/lib/structured-agent-session-launch-draft.ts
+  s_581c39faf14fb9::t_158729b047ef7c 2-4
+src/renderer/src/lib/structured-agent-session-launch-persistence.ts
+  s_581c39faf14fb9::t_4e941e8b6d6490 2-6
+src/renderer/src/lib/workspace-tab-commands.ts
+  s_581c39faf14fb9::t_b75999620e28df 120-121
+src/renderer/src/lib/worktree-creation-agent-seeding.test.ts
+  s_581c39faf14fb9::t_b44653f184ea24 7
+src/renderer/src/lib/worktree-creation-flow-execute.ts
+  s_581c39faf14fb9::t_637655d33f7a0f 34-36,107
+src/renderer/src/lib/worktree-default-terminal-tabs.ts
+  s_581c39faf14fb9::t_5c4bc38e3e6024 43
+src/renderer/src/store/slices/agent-status-live-actions.ts
+  s_581c39faf14fb9::t_601c1e67a3c83f 26,140-143,147,153-155,159
+src/renderer/src/store/slices/agent-status-orchestration-actions.ts
+  s_581c39faf14fb9::t_a00e24987890d9 7,46-48
+src/renderer/src/store/slices/repos-cross-host-project-collisions.test.ts
+  s_581c39faf14fb9::t_e6a0b4132ec2df 138
+src/renderer/src/store/slices/repos-project-group-create-race.test.ts
+  s_581c39faf14fb9::t_4ba67055f3a9eb 1-3
+src/renderer/src/store/slices/store-worktree-removal-cascade.test.ts
+  s_581c39faf14fb9::t_8a6cee05ed0fba 51-57
+src/renderer/src/store/slices/worktree-terminal-removal-teardown.test.ts
+  s_581c39faf14fb9::t_a2df890a3638ac 51-57
+src/renderer/src/store/slices/worktrees-runtime-connection-generation-fence.test.ts
+  s_581c39faf14fb9::t_b206b0e8950ee3 49,72,89,117
+src/renderer/src/store/slices/worktrees-workspace-selection-state.test.ts
+  s_581c39faf14fb9::t_0984493cc51d13 5
+src/renderer/src/store/terminals/restored-relay-session-identity.test.ts
+  s_581c39faf14fb9::t_02f966ca6eccb9 107,120
+src/renderer/src/store/terminals/terminal-pty-bindings.ts
+  s_581c39faf14fb9::t_a3a0701820e98f 18
+src/shared/agent-session-option-catalog-types.ts
+  s_581c39faf14fb9::t_7c3c52fc79031e 6
+src/shared/agent-session-option-catalog.ts
+  s_581c39faf14fb9::t_51dbe207c0764e 21
+src/shared/agent-session-option-launch.ts
+  s_581c39faf14fb9::t_860b7b9adfb1c9 3
+src/shared/agent-startup-plan-inputs.ts
+  s_581c39faf14fb9::t_8fb8aa2fee3d69 2
+src/shared/check-job-log-retention.test.ts
+  s_581c39faf14fb9::t_f7ddddb561a03c 29-31
+src/shared/detected-worktree-provider-contract.ts
+  s_581c39faf14fb9::t_37d5a14794235f 14,33-36
+src/shared/host-lineage-contract.ts
+  s_581c39faf14fb9::t_d60cda7de99522 4,9
+src/shared/host-repo-catalog-contract.ts
+  s_581c39faf14fb9::t_8abc790c8f05a8 4,9
+src/shared/pr-check-severity-order.test.ts
+  s_581c39faf14fb9::t_7ac88aab00e0c1 2
+src/shared/pr-check-status.test.ts
+  s_581c39faf14fb9::t_f158ae9d063e64 3
+src/shared/pr-checks-fix-prompt.ts
+  s_581c39faf14fb9::t_e51a733bdb3c2c 1
+src/shared/pr-comment-audience.test.ts
+  s_581c39faf14fb9::t_9b3d8feb082c74 2
+src/shared/pr-comment-groups.test.ts
+  s_581c39faf14fb9::t_e4252545a430ab 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4451784a42ad4d6057bd04113340daf5b4e95b04",
+  "prompts": {},
+  "sessions": {
+    "s_0555e2cf8cb4f7": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a2c3b64ffeikbtqGlYPFlj8C",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_1c8880be3c8da0": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a3a96bcffeuNVODGbLlh1v6N",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_21d1c21ea67f23": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a2c22f8ffeLOtMKKDKv1Dtpw",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_27e375e990447a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a4f23cbffecEaGHOL6nkv3Ri",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_39cd8df4111de4": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a2c1b14fferIonDuYPmLzW5r",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_45ce27f00e18ef": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a2c3375ffe5K50BsyEzmckXr",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_51fe632c652b0f": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a3aabf3ffeP2QRMq7p9K87fI",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_54078d311d2a9f": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a1d4296ffeLKfnzSy7ZLPzzH",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_581c39faf14fb9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f21e4125cffe75gBkAMYgBgpO2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_5f01c1f790c525": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a3a9d72ffePFVslci17XYdc5",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_6eb44cc4f551a6": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a4f0123ffeMc1B4hj1jnuhlg",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_753176acee6ab9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a1d390affeN3ggRBqSzPFYFq",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_7eb6ee45f309ef": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a1d1d9bffeLxJg49w95mscvI",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_8595a5eb6fd955": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a3aa3dcffewV2AcAI8iK1567",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_abe0c5b3223c93": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a1d2783ffeA13t3H9MiEV03t",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_bc8dac5ccb04d8": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a2c2b37ffewQsM42Rb8CcFNz",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_bd639794f7233b": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a1d3058ffe9O7o9QCu7oaAsF",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_bfe523dda848fb": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a4f1b6effe6GCxPcRpZXFrpb",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_ca79eab6e88120": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a4f126fffeeZnD6jU3YNKLq3",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_d515f9c8eb4805": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a3a906affe2wdVmjXsXSZ30M",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    },
+    "s_f3eea1900dccbb": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f1a4f091effer26cAZIfXfm1tG",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "dijkspicy <dijkspicy@outlook.com>"
+    }
+  }
+}
