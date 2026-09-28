@@ -10,11 +10,11 @@ import {
   type CorrelatedSession,
   type SessionOwnership
 } from '../../shared/agent-hook-listener/opencode-session-correlation'
-import { readOpenCodeDatabase } from '../ai-vault/session-scanner-opencode-sqlite-open'
 import { columnExists, tableExists } from '../opencode-usage/schema-helpers'
 import { splitWorktreeIdForFilesystem } from '../../shared/worktree/id'
+import { isWslUncPath } from '../../shared/wsl-paths'
 import { listRegisteredPtys } from '../memory/pty-registry'
-import type SyncDatabase from '../sqlite/sync-database'
+import SyncDatabase from '../sqlite/sync-database'
 import { isOpenCodeClientProcess, type ProcessIdentityRow } from './opencode-client-sweep'
 import type { HookListenerState } from '../../shared/agent-hook-listener/listener-state'
 
@@ -24,9 +24,44 @@ import type { HookListenerState } from '../../shared/agent-hook-listener/listene
  * Each round: read new sessions from the shared server's SQLite store,
  * snapshot panes, sweep for live clients, correlate, bind. Everything the
  * round needs is injected so the decision core stays unit-testable; only
- * the SQLite reader below touches disk, reusing ai-vault's guarded open
- * (read-only + query_only + busy timeout).
+ * the SQLite reader below touches disk, with the guarded read-only open
+ * (busy timeout + query_only) the ai-vault scanner used to provide.
  */
+
+// Why: WAL readers almost never block on a writer, so this is insurance rather
+// than the fix -- a single bounded open, no retry loop on top of sqlite's own
+// busy handler. Zero over the WSL share: Windows cannot take SQLite's locks
+// over \\wsl.localhost, so waiting there is provably useless.
+const OPENCODE_BINDER_SQLITE_BUSY_TIMEOUT_MS = 1_500
+
+function openOpencodeDatabaseReadonly(dbPath: string): SyncDatabase {
+  const timeoutMs = isWslUncPath(dbPath) ? 0 : OPENCODE_BINDER_SQLITE_BUSY_TIMEOUT_MS
+  const db = new SyncDatabase(dbPath, {
+    readonly: true,
+    fileMustExist: true,
+    timeout: timeoutMs
+  })
+  try {
+    db.pragma('query_only = ON')
+    return db
+  } catch (error) {
+    try {
+      db.close()
+    } catch {
+      // Why: close must not hide the query_only setup failure.
+    }
+    throw error
+  }
+}
+
+function readOpencodeDatabase<T>(args: { dbPath: string; read: (db: SyncDatabase) => T }): T {
+  const db = openOpencodeDatabaseReadonly(args.dbPath)
+  try {
+    return args.read(db)
+  } finally {
+    db.close()
+  }
+}
 
 /** One pane snapshot feeding a binder round. */
 export type BinderPaneSnapshot = {
@@ -234,7 +269,7 @@ export function listOpenCodeDbSessions(
   cursor: OpenCodeSessionCursor
 ): BinderSessionRow[] {
   try {
-    return readOpenCodeDatabase({
+    return readOpencodeDatabase({
       dbPath,
       read: (db) => {
         const table = canReadSessionV2(db) ? 'session_v2' : 'session'

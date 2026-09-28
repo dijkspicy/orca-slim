@@ -12,10 +12,6 @@ import {
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import type * as NodeFsPromises from 'node:fs/promises'
-import {
-  codexRolloutHardlinkIdentity,
-  dedupeCodexRolloutFileAliases
-} from '../ai-vault/codex-session-root-dedup'
 import { prepareLegacySharedCodexSessionResume } from './codex-legacy-session-resume'
 import { ManagedCodexHomeTemporarilyUnavailableError } from '../codex-accounts/host-codex-managed-home-ownership'
 
@@ -218,33 +214,6 @@ describe('per-account resume repin', () => {
     rmSync(root, { recursive: true, force: true })
   })
 
-  it.each([['recorded rollout first'], ['bridged alias first']])(
-    'repins the surviving vault row to the selected account, discovered %s',
-    async (order) => {
-      const recorded = rolloutCandidate(recordedRolloutPath, selectedHome)
-      const bridged = rolloutCandidate(bridgedRolloutPath, peerHome)
-      const survivors = dedupeCodexRolloutFileAliases(
-        order === 'recorded rollout first' ? [recorded, bridged] : [bridged, recorded],
-        rolloutCandidateAccessors
-      )
-
-      // The dedup pick is order-independent: the peer's alias wins the tie-break.
-      expect(survivors).toEqual([bridged])
-
-      const result = await prepareLegacySharedCodexSessionResume(
-        {
-          agent: 'codex',
-          filePath: bridged.filePath,
-          codexHome: peerHome,
-          executionHostId: 'local'
-        },
-        repinOptions()
-      )
-
-      expect(result).toEqual({ useRealCodexHome: false, substituteCodexHome: selectedHome })
-    }
-  )
-
   it('keeps the home of a row that already names the selected account', async () => {
     const result = await prepareLegacySharedCodexSessionResume(
       {
@@ -369,24 +338,7 @@ describe('per-account resume repin', () => {
       getSelectedHostAccountCodexHomePath: () => selectedHome
     }
   }
-
-  function rolloutCandidate(filePath: string, codexHome: string) {
-    const stat = statSync(filePath)
-    return {
-      filePath,
-      codexHome,
-      file: { dev: stat.dev, ino: stat.ino, nlink: stat.nlink }
-    }
-  }
 })
-
-const rolloutCandidateAccessors = {
-  isCodex: () => true,
-  getFilePath: (candidate: { filePath: string }) => candidate.filePath,
-  getCodexHome: (candidate: { codexHome: string }) => candidate.codexHome,
-  getHardlinkIdentity: (candidate: { file: { dev: number; ino: number; nlink: number } }) =>
-    codexRolloutHardlinkIdentity(candidate.file)
-}
 
 function rootPlaceholder(): string {
   return '__ROOT__'

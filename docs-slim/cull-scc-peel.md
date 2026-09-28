@@ -2,27 +2,65 @@
 
 generated from HEAD
 
-- delete-set (current tree): 3578
-- peeled away leaf-first: 3
-- IRREDUCIBLE CORE: 3575
-- keep files importing the core: 2704
+- delete-set (current tree): 3575
+- peeled away leaf-first: 43
+- IRREDUCIBLE CORE: 3532
+- keep files importing the core: 2697
 
 ## Peelable (delete safely, leaf-first)
 
-- src/main/artifacts/artifact-cloud-service.ts
-- src/main/artifacts/artifact-publisher.ts
-- src/main/runtime/runtime-artifact-controller.ts
+- src/main/ai-vault-search/session-search-child-service.ts
+- src/main/ai-vault-search/session-search-enablement.ts
+- src/main/ai-vault-search/session-search-sqlite-support.ts
+- src/main/ai-vault-search/session-search-store-scope-catalog.ts
+- src/main/ai-vault/claude-project-dir-encoding.ts
+- src/main/ai-vault/local-log-tail-reader.ts
+- src/main/ai-vault/remote-session-document-parsers.ts
+- src/main/ai-vault/remote-session-parse-cache.ts
+- src/main/ai-vault/remote-session-scan-batching.ts
+- src/main/ai-vault/remote-session-scan-concurrency.ts
+- src/main/ai-vault/remote-session-scanner-cline-source.ts
+- src/main/ai-vault/remote-session-scanner-codex-index.ts
+- src/main/ai-vault/remote-session-scanner-devin-source.ts
+- src/main/ai-vault/remote-session-scanner-discovery.ts
+- src/main/ai-vault/remote-session-scanner-opencode-source.ts
+- src/main/ai-vault/remote-session-scanner-source-parsers.ts
+- src/main/ai-vault/remote-session-scanner-sources.ts
+- src/main/ai-vault/remote-session-scanner.ts
+- src/main/ai-vault/remote-session-transcript-read.ts
+- src/main/ai-vault/runtime-session-scanner.ts
+- src/main/ai-vault/runtime-session-search-call.ts
+- src/main/ai-vault/session-delete-target.ts
+- src/main/ai-vault/session-delete.ts
+- src/main/ai-vault/session-first-user-prompt-handler.ts
+- src/main/ai-vault/session-list-result-validation.ts
+- src/main/ai-vault/session-root-dedup.ts
+- src/main/ai-vault/session-scan-cutoff.ts
+- src/main/ai-vault/session-scanner-opencode2-sqlite-list.ts
+- src/main/ai-vault/session-title-resolver.ts
+- src/main/ai-vault/session-title-result-validation.ts
+- src/main/ai-vault/ssh-session-list.ts
+- src/main/ipc/ai-vault-all-host-timeouts.ts
+- src/main/ipc/ai-vault-delete.ts
+- src/main/ipc/ai-vault-host-discovery.ts
+- src/main/ipc/ai-vault-host-leg-cache.ts
+- src/main/ipc/ai-vault-resume.ts
+- src/main/ipc/ai-vault-runtime-scan.ts
+- src/main/ipc/ai-vault-search-all-hosts.ts
+- src/main/ipc/ai-vault-search-merged-cursor.ts
+- src/main/ipc/ai-vault-search.ts
+- src/main/ipc/ai-vault-session-title-routing.ts
+- src/main/ipc/ai-vault-subagent-list.ts
+- src/main/ipc/ai-vault.ts
 
 ## Irreducible core (needs stubs or call-site edits)
 
-- src/main/ai-vault-search/session-search-child-service.ts
 - src/main/ai-vault-search/session-search-clock.ts
 - src/main/ai-vault-search/session-search-content-hash.ts
 - src/main/ai-vault-search/session-search-database-path.ts
 - src/main/ai-vault-search/session-search-degraded-roots.ts
 - src/main/ai-vault-search/session-search-deleted-sources.ts
 - src/main/ai-vault-search/session-search-directory-listings.ts
-- src/main/ai-vault-search/session-search-enablement.ts
 - src/main/ai-vault-search/session-search-engine-types.ts
 - src/main/ai-vault-search/session-search-engine.ts
 - src/main/ai-vault-search/session-search-file-cursor.ts
@@ -56,8 +94,6 @@ generated from HEAD
 - src/main/ai-vault-search/session-search-service.ts
 - src/main/ai-vault-search/session-search-snippet.ts
 - src/main/ai-vault-search/session-search-source-presence.ts
-- src/main/ai-vault-search/session-search-sqlite-support.ts
-- src/main/ai-vault-search/session-search-store-scope-catalog.ts
 - src/main/ai-vault-search/session-search-store.ts
 - src/main/ai-vault-search/session-search-synthetic-sources.ts
 - src/main/ai-vault-search/session-search-typo-repair.ts
@@ -65,42 +101,19 @@ generated from HEAD
 - src/main/ai-vault/ai-vault-scan-cancellation.ts
 - src/main/ai-vault/ai-vault-scan-coordinator.ts
 - src/main/ai-vault/cached-session-list.ts
-- src/main/ai-vault/claude-project-dir-encoding.ts
 - src/main/ai-vault/codex-session-root-dedup.ts
-- src/main/ai-vault/local-log-tail-reader.ts
 - src/main/ai-vault/omp-session-root.ts
 - src/main/ai-vault/opencode-wsl-runtime-preparation.ts
 - src/main/ai-vault/remote-session-content-lines.ts
-- src/main/ai-vault/remote-session-document-parsers.ts
 - src/main/ai-vault/remote-session-file-stat.ts
-- src/main/ai-vault/remote-session-parse-cache.ts
-- src/main/ai-vault/remote-session-scan-batching.ts
-- src/main/ai-vault/remote-session-scan-concurrency.ts
-- src/main/ai-vault/remote-session-scanner-cline-source.ts
-- src/main/ai-vault/remote-session-scanner-codex-index.ts
-- src/main/ai-vault/remote-session-scanner-devin-source.ts
-- src/main/ai-vault/remote-session-scanner-discovery.ts
-- src/main/ai-vault/remote-session-scanner-opencode-source.ts
-- src/main/ai-vault/remote-session-scanner-source-parsers.ts
-- src/main/ai-vault/remote-session-scanner-sources.ts
 - src/main/ai-vault/remote-session-scanner-types.ts
-- src/main/ai-vault/remote-session-scanner.ts
-- src/main/ai-vault/remote-session-transcript-read.ts
-- src/main/ai-vault/runtime-session-scanner.ts
-- src/main/ai-vault/runtime-session-search-call.ts
-- src/main/ai-vault/session-delete-target.ts
-- src/main/ai-vault/session-delete.ts
 - src/main/ai-vault/session-document-stream.ts
-- src/main/ai-vault/session-first-user-prompt-handler.ts
 - src/main/ai-vault/session-first-user-prompt-read.ts
-- src/main/ai-vault/session-list-result-validation.ts
 - src/main/ai-vault/session-list-results.ts
 - src/main/ai-vault/session-newest-files.ts
 - src/main/ai-vault/session-parse-cache-persistence.ts
 - src/main/ai-vault/session-parse-cache-store.ts
 - src/main/ai-vault/session-parse-file-lane.ts
-- src/main/ai-vault/session-root-dedup.ts
-- src/main/ai-vault/session-scan-cutoff.ts
 - src/main/ai-vault/session-scan-issues.ts
 - src/main/ai-vault/session-scanner-accumulator.ts
 - src/main/ai-vault/session-scanner-agent-parser.ts
@@ -159,7 +172,6 @@ generated from HEAD
 - src/main/ai-vault/session-scanner-opencode-sqlite-worker-spawn.ts
 - src/main/ai-vault/session-scanner-opencode-wsl-client.ts
 - src/main/ai-vault/session-scanner-opencode-wsl-runtime.ts
-- src/main/ai-vault/session-scanner-opencode2-sqlite-list.ts
 - src/main/ai-vault/session-scanner-parse-cache.ts
 - src/main/ai-vault/session-scanner-primary-parsers.ts
 - src/main/ai-vault/session-scanner-record-value.ts
@@ -184,14 +196,11 @@ generated from HEAD
 - src/main/ai-vault/session-scanner-worker-spawn.ts
 - src/main/ai-vault/session-sidecar-stat.ts
 - src/main/ai-vault/session-subagent-reader.ts
-- src/main/ai-vault/session-title-resolver.ts
-- src/main/ai-vault/session-title-result-validation.ts
 - src/main/ai-vault/session-transcript-channel.ts
 - src/main/ai-vault/session-transcript-consumers.ts
 - src/main/ai-vault/session-transcript-message-content.ts
 - src/main/ai-vault/session-transcript-reader.ts
 - src/main/ai-vault/session-transcript-record-budget.ts
-- src/main/ai-vault/ssh-session-list.ts
 - src/main/ai-vault/structured-session-ownership.ts
 - src/main/artifacts/artifact-cloud-config.ts
 - src/main/artifacts/artifact-cloud-request.ts
@@ -832,18 +841,6 @@ generated from HEAD
 - src/main/gitlab/work-item-details.ts
 - src/main/gitlab/work-item-queries.ts
 - src/main/grok-accounts/status.ts
-- src/main/ipc/ai-vault-all-host-timeouts.ts
-- src/main/ipc/ai-vault-delete.ts
-- src/main/ipc/ai-vault-host-discovery.ts
-- src/main/ipc/ai-vault-host-leg-cache.ts
-- src/main/ipc/ai-vault-resume.ts
-- src/main/ipc/ai-vault-runtime-scan.ts
-- src/main/ipc/ai-vault-search-all-hosts.ts
-- src/main/ipc/ai-vault-search-merged-cursor.ts
-- src/main/ipc/ai-vault-search.ts
-- src/main/ipc/ai-vault-session-title-routing.ts
-- src/main/ipc/ai-vault-subagent-list.ts
-- src/main/ipc/ai-vault.ts
 - src/main/ipc/automations.ts
 - src/main/ipc/browser-grab-ipc.ts
 - src/main/ipc/browser-guest-view-ipc.ts
@@ -3922,7 +3919,6 @@ generated from HEAD
 - src/main/ipc/filesystem-watcher-remote-install.ts
 - src/main/ipc/filesystem-watcher-remote-removal.ts
 - src/main/ipc/filesystem/filesystem-download-handlers.ts
-- src/main/ipc/filesystem/filesystem-file-content-inspection.ts
 - src/main/ipc/filesystem/filesystem-git-commit-generation-handlers.ts
 - src/main/ipc/filesystem/filesystem-git-commit-handlers.ts
 - src/main/ipc/filesystem/filesystem-git-diff-handlers.ts
@@ -3943,7 +3939,6 @@ generated from HEAD
 - src/main/ipc/hooks/register-worktree-hook-check-handler.ts
 - src/main/ipc/hooks/register-worktree-hook-file-handlers.ts
 - src/main/ipc/hooks/register-worktree-hook-inspection-handler.ts
-- src/main/ipc/local-log-tail.ts
 - src/main/ipc/local-network-connection-test.ts
 - src/main/ipc/minimax-credentials.test.ts
 - src/main/ipc/minimax-credentials.ts
@@ -4113,7 +4108,6 @@ generated from HEAD
 - src/main/opencode-usage/opencode-usage-row-parsing.ts
 - src/main/opencode-usage/opencode-usage-worktree-attribution.ts
 - src/main/opencode-usage/opencode2-session-usage.test.ts
-- src/main/opencode-usage/scanner-windows-data-directory.test.ts
 - src/main/opencode-usage/scanner-wsl-gate.test.ts
 - src/main/opencode-usage/scanner.test.ts
 - src/main/opencode-usage/scanner.ts
@@ -4121,7 +4115,6 @@ generated from HEAD
 - src/main/opencode-usage/snapshot-rollups.ts
 - src/main/opencode-usage/store.test.ts
 - src/main/opencode-usage/store.ts
-- src/main/opencode/opencode-session-binder.ts
 - src/main/orca-chromium-process-pids.ts
 - src/main/orca-profiles/profile-active-transfer-worker.test.ts
 - src/main/orca-profiles/profile-active-transfer.test.ts
@@ -4462,7 +4455,6 @@ generated from HEAD
 - src/main/runtime/rpc/methods/pairing.ts
 - src/main/runtime/rpc/methods/repo.ts
 - src/main/runtime/rpc/methods/session-tab-close-methods.ts
-- src/main/runtime/rpc/methods/session-tabs.ts
 - src/main/runtime/rpc/methods/ssh.ts
 - src/main/runtime/rpc/methods/status.ts
 - src/main/runtime/rpc/methods/structured-agent-session-adoption-replay.test.ts
@@ -4484,7 +4476,6 @@ generated from HEAD
 - src/main/runtime/rpc/methods/structured-worker-stop-receipt.test.ts
 - src/main/runtime/rpc/methods/structured-worker-tab-retirement.test.ts
 - src/main/runtime/rpc/methods/task-provider-identity.test.ts
-- src/main/runtime/rpc/methods/terminal/terminal-send-method.ts
 - src/main/runtime/rpc/methods/worktree.test.ts
 - src/main/runtime/rpc/methods/worktree.ts
 - src/main/runtime/rpc/mobile-e2ee-auth-validation.ts
@@ -4522,7 +4513,6 @@ generated from HEAD
 - src/main/runtime/runtime-account-controller.ts
 - src/main/runtime/runtime-agent-orchestration-projection.ts
 - src/main/runtime/runtime-agent-row-main-agent-projection.test.ts
-- src/main/runtime/runtime-ai-vault-commands.ts
 - src/main/runtime/runtime-automation-controller.ts
 - src/main/runtime/runtime-browser-client-automation.test.ts
 - src/main/runtime/runtime-browser-client-automation.ts

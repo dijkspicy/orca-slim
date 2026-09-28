@@ -1,21 +1,9 @@
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { opencodeDiscoveries } from '../ai-vault/session-scanner-opencode-sources'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import Database from '../sqlite/sync-database'
 import { scanOpenCodeUsageDatabases } from './scanner'
-
-vi.mock('../ai-vault/session-scanner-opencode-sqlite-worker-spawn', async () => {
-  const { listOpenCodeSqliteSessions } =
-    await import('../ai-vault/session-scanner-opencode-sqlite-list')
-  const { listOpenCode2SqliteSessions } =
-    await import('../ai-vault/session-scanner-opencode2-sqlite-list')
-  return {
-    listOpenCodeSqliteSessionsViaWorker: listOpenCodeSqliteSessions,
-    listOpenCode2SqliteSessionsViaWorker: listOpenCode2SqliteSessions
-  }
-})
 
 describe('OpenCode usage discovery on Windows', () => {
   const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')!
@@ -84,11 +72,6 @@ describe('OpenCode usage discovery on Windows', () => {
     database.close()
 
     const result = await scanOpenCodeUsageDatabases([], [])
-    const issues = []
-    const [discovery] = await Promise.all(opencodeDiscoveries({}, [], 25, issues))
-
-    expect(discovery?.files.map(({ path }) => path)).toEqual([`${databasePath}#windows-session`])
-    expect(issues).toEqual([])
     expect(result.processedDatabases.map(({ path }) => path)).toEqual([databasePath])
     expect(result.sessions.map(({ sessionId }) => sessionId)).toEqual(['windows-session'])
   })

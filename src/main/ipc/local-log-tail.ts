@@ -3,11 +3,8 @@ import { watch, type FSWatcher } from 'node:fs'
 import type { Store } from '../persistence'
 import type {
   LocalLogTailChangedPayload,
-  LocalLogTailReadArgs,
-  LocalLogTailReadResult,
   LocalLogTailWatchArgs
 } from '../../shared/local-log-tail-types'
-import { readLocalLogTailRange } from '../ai-vault/local-log-tail-reader'
 import { resolveAuthorizedPath } from './filesystem-auth'
 import { abortWhenRendererGone } from './renderer-lifetime-abort'
 
@@ -144,14 +141,6 @@ async function startWatch(
 }
 
 export function registerLocalLogTailHandlers(store: Store): void {
-  ipcMain.handle(
-    'fs:readLocalLogTail',
-    async (_event, args: LocalLogTailReadArgs): Promise<LocalLogTailReadResult> => {
-      const filePath = await resolveAuthorizedPath(args.filePath, store)
-      return readLocalLogTailRange(filePath, args.fromByteOffset, args.expectedIdentity)
-    }
-  )
-
   ipcMain.handle('fs:startLocalLogTail', (event, args: LocalLogTailWatchArgs): Promise<void> =>
     startWatch(event.sender, args, store)
   )

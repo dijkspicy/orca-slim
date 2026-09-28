@@ -7,9 +7,9 @@ import type {
   AiVaultSessionTitlesResult
 } from '../../shared/ai-vault-session-title'
 import type { AiVaultListArgs, AiVaultListResult } from '../../shared/ai-vault-types'
-import { listAiVaultSessions } from '../ai-vault/cached-session-list'
-import { resolveLocalAiVaultSessionTitles } from '../ai-vault/session-title-resolver'
 
+// The ai-vault session-history domain is being deleted; the RPC surface keeps
+// its contract with empty results until the callers are removed with it.
 export class RuntimeAiVaultCommands {
   constructor(
     private readonly getPrepareResume: () =>
@@ -17,15 +17,15 @@ export class RuntimeAiVaultCommands {
       | null
   ) {}
 
-  list(args?: AiVaultListArgs): Promise<AiVaultListResult> {
-    return listAiVaultSessions(args)
+  list(_args?: AiVaultListArgs): Promise<AiVaultListResult> {
+    return Promise.resolve({ sessions: [], issues: [], scannedAt: new Date().toISOString() })
   }
 
   resolveTitles(
-    requests: AiVaultSessionTitleRequest[],
-    signal?: AbortSignal
+    _requests: AiVaultSessionTitleRequest[],
+    _signal?: AbortSignal
   ): Promise<AiVaultSessionTitlesResult> {
-    return resolveLocalAiVaultSessionTitles(requests, signal)
+    return Promise.resolve({ titles: [] })
   }
 
   prepare(args: AiVaultPrepareSessionResumeArgs): Promise<AiVaultPrepareSessionResumeResult> {

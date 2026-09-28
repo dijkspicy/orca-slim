@@ -16,7 +16,6 @@ import { SESSION_TAB_MUTATION_METHODS } from './session-tab-mutation-methods'
 import { createSessionTabsRetirementProofDelta } from './session-tabs-retirement-proof-delta'
 import { restoreStructuredTabsIfSupported } from './structured-session-tab-restore'
 import { isStructuredNativeChatEnabled } from './structured-agent-session-policy'
-import { assertLegacyAiVaultResumeCommandAllowed } from '../../../ai-vault/structured-session-ownership'
 import { SessionTabsUnsubscribeAllParams } from '../../../../shared/rpc-contract/session-tabs-params'
 import { SESSION_TABS_SPLIT_GROUP_PLACEMENT_RUNTIME_CAPABILITY } from '../../../../shared/protocol-version'
 
@@ -51,11 +50,6 @@ export const SESSION_TAB_METHODS = [
       params,
       { runtime, signal, clientKind, pairedDeviceId, clientCapabilities }
     ) => {
-      if (params.command) {
-        await assertLegacyAiVaultResumeCommandAllowed(params.command, () =>
-          runtime.ensureStructuredAgentSessionHost()
-        )
-      }
       return runtime.createMobileSessionTerminal(params.worktree, {
         afterTabId: params.afterTabId,
         targetGroupId: params.targetGroupId,

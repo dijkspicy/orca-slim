@@ -1,10 +1,7 @@
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { isWslUncPath, parseWslUncPath } from '../shared/wsl-paths'
-import {
-  encodeClaudeProjectPaths,
-  isClaudeProjectDirInScope
-} from './ai-vault/claude-project-dir-encoding'
+import { normalizeRuntimePathSeparators } from '../shared/cross-platform-path'
 import { wslGatedReaddir, wslGatedStat } from './native-chat/wsl-transcript-fs-access'
 import type { RetirementScanResult } from './worktree-retirement-backfill-scan'
 import { normalizeRetirableGeneratedName } from './worktree-name-retirement'
@@ -136,6 +133,38 @@ function getClaudeProjectsDir(home: string, env: NodeJS.ProcessEnv): string {
 type ClaudeProjectsSource = {
   projectsDir: string
   encodedParents: string[]
+}
+
+/** One dash per non-alphanumeric character — runs are NOT collapsed, so `/.claude` encodes to
+ *  `--claude` and `C:\` to `c--`. Anything that collapses runs stops matching real buckets. */
+function encodeClaudeProjectPath(pathValue: string): string {
+  const separated = normalizeRuntimePathSeparators(pathValue)
+  const trimmed =
+    separated === '/' || /^[A-Za-z]:\/$/.test(separated) ? separated : separated.replace(/\/+$/, '')
+  return trimmed.replace(/[^a-zA-Z0-9]/g, '-')
+}
+
+// Why: Claude derives the directory name from the raw cwd, so encoding from the
+// comparison key would lowercase Windows paths and never match on disk. Encode
+// the raw path, plus its NFC spelling, since macOS hands us NFD (#10832).
+function encodeClaudeProjectPaths(pathValue: string): string[] {
+  const raw = encodeClaudeProjectPath(pathValue)
+  const composed = encodeClaudeProjectPath(pathValue.normalize('NFC'))
+  return raw === composed ? [raw] : [raw, composed]
+}
+
+// Why the explicit boundary: a bare `startsWith` lets a sibling prefix match, so the encoding of
+// `…/orca` would claim `…/orca-secret` and `…/orcadyne` as its own.
+function isClaudeProjectDirInScope(
+  projectDirName: string,
+  scopePrefixes: ReadonlySet<string> | readonly string[]
+): boolean {
+  for (const prefix of scopePrefixes) {
+    if (projectDirName === prefix || projectDirName.startsWith(`${prefix}-`)) {
+      return true
+    }
+  }
+  return false
 }
 
 // Lowercased on both sides: the recorded cwd can differ in case from ours on case-insensitive

@@ -1,10 +1,3 @@
-import {
-  applySessionSearchSettingsChange,
-  installChildSessionSearchService
-} from '../ai-vault-search/session-search-enablement'
-import { LOCAL_EXECUTION_HOST_ID } from '../../shared/execution-host'
-import { sessionSearchScopeCatalogFromStore } from '../ai-vault-search/session-search-store-scope-catalog'
-import { getCanonicalUserDataPath } from '../persistence/loading-store/user-data-path'
 import { app } from 'electron'
 import { OrcaRuntimeService } from '../runtime/orca-runtime'
 import { getLocalPtyProvider, getSshPtyProvider, clearProviderPtyState } from '../ipc/pty'
@@ -146,21 +139,8 @@ export function initializeMainProcessRuntime(): OrcaRuntimeService {
     buildAgentHookPtyEnv: () =>
       isAgentStatusHooksEnabled(state.store?.getSettings()) ? agentHookServer.buildPtyEnv() : {},
     orchestrationEnvironmentTransport,
-    // Why the same function the settings IPC handler calls: a paired client's write and a
-    // local one must reconcile the scanner child through one path, or they can disagree.
-    applySessionSearchSettings: applySessionSearchSettingsChange,
     skillTransactionRecovery: state.skillTransactionRecovery
   })
-  // Both desktop and headless serve own a host-local search service.
-  const sessionSearch = installChildSessionSearchService({
-    dataRoot: getCanonicalUserDataPath(),
-    getSettings: () => store.getSettings(),
-    // Why read per request rather than snapshot: a repo added or a workspace
-    // renamed between two searches has to be in scope for the second one.
-    // This process answers for its own host, so the catalog is bound to it here.
-    getScopeCatalog: () => sessionSearchScopeCatalogFromStore(store, LOCAL_EXECUTION_HOST_ID)
-  })
-  app.once('will-quit', () => sessionSearch?.dispose())
   state.runtime = runtime
   agentHookServer.subscribeEnrichedStatus((enriched) =>
     recordObservedAgentStatusPaneIdentity(observedPaneIdentities, enriched.paneKey, runtime)

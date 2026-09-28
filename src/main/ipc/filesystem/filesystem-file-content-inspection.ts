@@ -1,6 +1,5 @@
 import { open } from 'node:fs/promises'
 import type { FileHandle } from 'node:fs/promises'
-import { localLogFileIdentity } from '../../ai-vault/local-log-tail-reader'
 
 // Why: Monaco degrades features on large files like VS Code, so a 5MB block would needlessly lock out ordinary JSON/log files.
 export const MAX_TEXT_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -43,8 +42,7 @@ export async function readLocalLogSnapshot(filePath: string): Promise<{
     }
     return {
       content: buffer.toString('utf8'),
-      isBinary: false,
-      fileIdentity: localLogFileIdentity(stats)
+      isBinary: false
     }
   } finally {
     await handle.close()
