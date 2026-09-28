@@ -21,7 +21,8 @@ export type SnapshottedThreadResolverDeps = {
       prRepo?: PendingPRCommentAiAckGithubResolveTarget['prRepo']
     }
   ) => Promise<boolean>
-  resolveGitLabDiscussion: (args: {
+  /** Optional now that the GitLab MR resolver is gone; GitLab threads fail with no resolver. */
+  resolveGitLabDiscussion?: (args: {
     repoPath: string
     repoId: string
     iid: number
@@ -62,7 +63,7 @@ async function resolveOnHost(
 ): Promise<SnapshottedThreadResolveOutcome> {
   try {
     if (deps.provider === 'gitlab') {
-      if (!deps.gitlabTarget) {
+      if (!deps.gitlabTarget || !deps.resolveGitLabDiscussion) {
         return { ok: false }
       }
       return await deps.resolveGitLabDiscussion({

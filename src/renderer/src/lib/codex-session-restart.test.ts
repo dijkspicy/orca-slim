@@ -7,12 +7,6 @@ import {
   markLiveCodexSessionsForRestart,
   markRestoredStaleCodexSessionsForRestart
 } from './codex-session-restart'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '@/runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '@/runtime/runtime-rpc-client'
-import { liveRemoteEvidence } from './codex-session-restart-test-fixture'
 
 const ACCOUNT_A = 'account-a@example.com'
 const ACCOUNT_B = 'account-b@example.com'
@@ -43,16 +37,8 @@ describe('CODEX_ACCOUNT_RESTART_STARTUP', () => {
 
 describe('markLiveCodexSessionsForRestart', () => {
   const originalWindow = (globalThis as { window?: typeof window }).window
-  const runtimeEnvironmentCall = vi.fn()
-  const runtimeEnvironmentTransportCall = vi.fn()
 
   beforeEach(() => {
-    clearRuntimeCompatibilityCacheForTests()
-    runtimeEnvironmentCall.mockReset()
-    runtimeEnvironmentTransportCall.mockReset()
-    runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-      return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
-    })
     useAppStore.setState({
       // Why: a prior test's remote-runtime selection must not silently move
       // every later local pane out of the switch's lane.
@@ -97,10 +83,6 @@ describe('markLiveCodexSessionsForRestart', () => {
             activeAccountId: null
           }),
           listStalePanes: vi.fn().mockResolvedValue([])
-        },
-        runtimeEnvironments: {
-          ...originalWindow?.api?.runtimeEnvironments,
-          call: runtimeEnvironmentTransportCall
         }
       }
     } as unknown as typeof window
@@ -377,58 +359,6 @@ describe('markLiveCodexSessionsForRestart', () => {
       nextAccountLabel: ACCOUNT_C
     })
   })
-
-  it('inspects remote runtime PTYs through the active runtime environment', async () => {
-    useAppStore.setState({
-      settings: { activeRuntimeEnvironmentId: 'env-1' } as never,
-      tabsByWorktree: {
-        wt1: [
-          {
-            id: 'tab-1',
-            ptyId: 'remote:term-1',
-            worktreeId: 'wt1',
-            title: 'orca-1',
-            customTitle: null,
-            color: null,
-            sortOrder: 0,
-            createdAt: 1
-          }
-        ]
-      },
-      ptyIdsByTabId: {
-        'tab-1': ['remote:term-1']
-      }
-    })
-    runtimeEnvironmentCall.mockResolvedValue({
-      id: 'rpc-1',
-      ok: true,
-      result: {
-        process: {
-          foregroundProcess: 'codex',
-          hasChildProcesses: true,
-          foregroundProcessEvidence: liveRemoteEvidence('term-1')
-        }
-      },
-      _meta: { runtimeId: 'remote-runtime' }
-    })
-
-    await markLiveCodexSessionsForRestart({
-      previousAccountLabel: ACCOUNT_A,
-      nextAccountLabel: ACCOUNT_B
-    })
-
-    expect(window.api.pty.inspectProcess).not.toHaveBeenCalled()
-    expect(runtimeEnvironmentCall).toHaveBeenCalledWith({
-      selector: 'env-1',
-      method: 'terminal.inspectProcess',
-      params: { terminal: 'term-1' },
-      timeoutMs: 15_000
-    })
-    expect(useAppStore.getState().codexRestartNoticeByPtyId['remote:term-1']).toEqual({
-      previousAccountLabel: ACCOUNT_A,
-      nextAccountLabel: ACCOUNT_B
-    })
-  })
 })
 
 /**
@@ -440,8 +370,6 @@ describe('markLiveCodexSessionsForRestart', () => {
  */
 describe('markLiveCodexSessionsForRestart lane scoping', () => {
   const originalWindow = (globalThis as { window?: typeof window }).window
-  const runtimeEnvironmentCall = vi.fn()
-  const runtimeEnvironmentTransportCall = vi.fn()
 
   function seedPanes(
     panes: { ptyId: string; worktreeId?: string; shellOverride?: string }[],
@@ -476,26 +404,6 @@ describe('markLiveCodexSessionsForRestart lane scoping', () => {
   }
 
   beforeEach(() => {
-    clearRuntimeCompatibilityCacheForTests()
-    runtimeEnvironmentCall.mockReset()
-    runtimeEnvironmentTransportCall.mockReset()
-    runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-      return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
-    })
-    // Why: every pane in this block reads as a live Codex session, so any pane
-    // left uncarded was excluded by its lane and nothing else.
-    runtimeEnvironmentCall.mockResolvedValue({
-      id: 'rpc-1',
-      ok: true,
-      result: {
-        process: {
-          foregroundProcess: 'codex',
-          hasChildProcesses: true,
-          foregroundProcessEvidence: liveRemoteEvidence('term-1')
-        }
-      },
-      _meta: { runtimeId: 'remote-runtime' }
-    })
     ;(globalThis as { window: typeof window }).window = {
       ...originalWindow,
       api: {
@@ -511,10 +419,6 @@ describe('markLiveCodexSessionsForRestart lane scoping', () => {
           list: vi.fn().mockResolvedValue({ accounts: [], activeAccountId: null }),
           listStalePanes: vi.fn().mockResolvedValue([]),
           listRecordedPaneLanes: vi.fn().mockResolvedValue({})
-        },
-        runtimeEnvironments: {
-          ...originalWindow?.api?.runtimeEnvironments,
-          call: runtimeEnvironmentTransportCall
         }
       }
     } as unknown as typeof window
@@ -527,48 +431,6 @@ describe('markLiveCodexSessionsForRestart lane scoping', () => {
     } else {
       delete (globalThis as { window?: typeof window }).window
     }
-  })
-
-  it('leaves a live remote Codex pane alone on a host switch, and never inspects it', async () => {
-    seedPanes([{ ptyId: 'remote:env-1@@term-1' }])
-
-    await markLiveCodexSessionsForRestart({
-      previousAccountLabel: ACCOUNT_A,
-      nextAccountLabel: ACCOUNT_B,
-      target: { runtime: 'host' }
-    })
-
-    expect(useAppStore.getState().codexRestartNoticeByPtyId).toEqual({})
-    expect(runtimeEnvironmentCall).not.toHaveBeenCalled()
-  })
-
-  it('leaves a live SSH-connection Codex pane alone on a host switch', async () => {
-    seedPanes([{ ptyId: 'ssh:my-box@@pty-7' }])
-
-    await markLiveCodexSessionsForRestart({
-      previousAccountLabel: ACCOUNT_A,
-      nextAccountLabel: ACCOUNT_B,
-      target: { runtime: 'host' }
-    })
-
-    expect(useAppStore.getState().codexRestartNoticeByPtyId).toEqual({})
-    expect(window.api.pty.inspectProcess).not.toHaveBeenCalled()
-  })
-
-  it('still marks the local host pane while sparing the remote one beside it', async () => {
-    seedPanes([{ ptyId: 'pty-1' }, { ptyId: 'remote:env-1@@term-1' }])
-
-    await markLiveCodexSessionsForRestart({
-      previousAccountLabel: ACCOUNT_A,
-      nextAccountLabel: ACCOUNT_B,
-      target: { runtime: 'host' }
-    })
-
-    expect(useAppStore.getState().codexRestartNoticeByPtyId).toEqual({
-      'pty-1': { previousAccountLabel: ACCOUNT_A, nextAccountLabel: ACCOUNT_B }
-    })
-    expect(window.api.pty.inspectProcess).toHaveBeenCalledWith('pty-1')
-    expect(runtimeEnvironmentCall).not.toHaveBeenCalled()
   })
 
   it('still marks a local host pane when the switch names no target at all', async () => {
@@ -624,27 +486,6 @@ describe('markLiveCodexSessionsForRestart lane scoping', () => {
     })
 
     expect(useAppStore.getState().codexRestartNoticeByPtyId).toEqual({})
-  })
-
-  it('leaves the local host pane alone when the switch was made on a runtime environment', async () => {
-    seedPanes([{ ptyId: 'pty-1' }, { ptyId: 'remote:env-1@@term-1' }])
-    useAppStore.setState({ settings: { activeRuntimeEnvironmentId: 'env-1' } as never })
-
-    await markLiveCodexSessionsForRestart({
-      previousAccountLabel: ACCOUNT_A,
-      nextAccountLabel: ACCOUNT_B,
-      target: { runtime: 'host' }
-    })
-
-    // Why: that mutation was RPC'd to env-1's own roster, so env-1's panes are
-    // the stale ones and the local shell is untouched — the mirror of the bug.
-    expect(useAppStore.getState().codexRestartNoticeByPtyId).toEqual({
-      'remote:env-1@@term-1': {
-        previousAccountLabel: ACCOUNT_A,
-        nextAccountLabel: ACCOUNT_B
-      }
-    })
-    expect(window.api.pty.inspectProcess).not.toHaveBeenCalled()
   })
 
   /**
@@ -797,27 +638,6 @@ describe('markLiveCodexSessionsForRestart lane scoping', () => {
         nextAccountLabel: ACCOUNT_B
       })
     })
-
-    it('asks only about panes main could have recorded', async () => {
-      seedPanes([
-        { ptyId: 'pty-1' },
-        { ptyId: 'remote:env-1@@term-1' },
-        { ptyId: 'ssh:my-box@@pty-7' }
-      ])
-
-      await markLiveCodexSessionsForRestart({
-        previousAccountLabel: ACCOUNT_A,
-        nextAccountLabel: ACCOUNT_B,
-        target: { runtime: 'host' }
-      })
-
-      // Why: main only records daemon host spawns, so a foreign id is a certain
-      // miss — and one batched call, not one per pane.
-      expect(window.api.codexAccounts.listRecordedPaneLanes).toHaveBeenCalledTimes(1)
-      expect(window.api.codexAccounts.listRecordedPaneLanes).toHaveBeenCalledWith({
-        ptyIds: ['pty-1']
-      })
-    })
   })
 })
 
@@ -825,7 +645,6 @@ describe('markRestoredStaleCodexSessionsForRestart', () => {
   const originalWindow = (globalThis as { window?: typeof window }).window
 
   beforeEach(() => {
-    clearRuntimeCompatibilityCacheForTests()
     useAppStore.setState({
       tabsByWorktree: {
         wt1: [

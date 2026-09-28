@@ -18,7 +18,7 @@ import {
   type CommitMessageModelCapability
 } from '../../../../shared/commit-message-agent-spec'
 import { getCommitMessageModelDiscoveryHostKeyForScope } from '../../../../shared/commit-message-host-key'
-import { getRuntimeGitScope } from '../../runtime/runtime-git-client'
+import { getRuntimeGitScope } from '../../runtime/runtime-git-client-context'
 import { useAppStore } from '../../store'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'

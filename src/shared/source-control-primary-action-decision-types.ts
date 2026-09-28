@@ -1,6 +1,5 @@
 import type { HostedReviewCreationEligibility } from './hosted-review'
 import type { GitUpstreamStatus } from './git-status-types'
-import type { PRState } from './github/pull-request-types'
 
 export type SourceControlPrimaryActionKind =
   | 'commit'
@@ -85,7 +84,6 @@ export type SourceControlPrimaryActionDecisionInputs = {
   isCommitting: boolean
   isRemoteOperationActive: boolean
   upstreamStatus: GitUpstreamStatus | undefined
-  prState?: PRState | null
   isPRStateLoading?: boolean
   inFlightRemoteOpKind?: SourceControlRemoteOpKind | null
   hostedReviewCreation?: HostedReviewCreationEligibility | null

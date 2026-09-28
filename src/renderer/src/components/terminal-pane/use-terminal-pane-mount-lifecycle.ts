@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { PaneManager } from '@/lib/pane-manager/pane-manager'
 import { configureTerminalOutputBacklogCap } from '@/lib/pane-manager/pane-terminal-output-scheduler'
-import { scheduleRuntimeGraphSync } from '@/runtime/sync-runtime-graph'
 import { e2eConfig } from '@/lib/e2e-config'
 import { useTerminalParkMountIntent } from './use-terminal-park-mount-intent'
 import { prepareTerminalPaneMount } from './terminal-pane-mount-preparation'
@@ -26,13 +25,7 @@ export function useTerminalPaneMountLifecycle(
     if (!preparation) {
       return
     }
-    const {
-      container,
-      deferredSplitHandoffs,
-      expandedStyleSnapshots,
-      ptyDeps,
-      unregisterRuntimeTab
-    } = preparation
+    const { container, deferredSplitHandoffs, expandedStyleSnapshots, ptyDeps } = preparation
     let shouldPersistLayout = false
     const releaseWebviewDragPassthrough: { current: (() => void) | null } = {
       current: null
@@ -97,7 +90,6 @@ export function useTerminalPaneMountLifecycle(
     preparation.applyAppearance(manager)
     queueResizeAll(deps.isActive)
     deps.persistLayoutSnapshot()
-    scheduleRuntimeGraphSync()
     const removeMountEvents = installTerminalPaneMountEvents({
       manager,
       deps: {
@@ -119,7 +111,6 @@ export function useTerminalPaneMountLifecycle(
         refs,
         deferredSplitHandoffs,
         expandedStyleSnapshots,
-        unregisterRuntimeTab,
         cancelResize: preparation.cancelResizeAll
       })
       releaseWebviewDragPassthrough.current?.()

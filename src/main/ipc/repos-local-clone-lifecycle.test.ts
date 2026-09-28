@@ -34,7 +34,6 @@ vi.mock('../ssh/ssh-target-registry', () => moduleMocks.sshModuleMock(reposMocks
 
 import { registerRepoHandlers } from './repos'
 import { clearGitCapabilityStateForTests } from '../git/git-capability-state'
-import { resetSshProviderAuthorities } from '../ssh/ssh-provider-authority'
 import { DEFAULT_REPO_BADGE_COLOR } from '../../shared/constants'
 import { listSubmodulePaths } from '../git/status'
 import {
@@ -56,7 +55,6 @@ const {
 
 beforeEach(() => {
   clearGitCapabilityStateForTests()
-  resetSshProviderAuthorities()
 })
 
 describe('repos:add + repos:clone', () => {

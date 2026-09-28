@@ -13,7 +13,6 @@ import { createUISlice } from './ui'
 import { createSettingsSlice } from './settings'
 import { createKeybindingsSlice } from './keybindings'
 import { createGitHubSlice } from './github'
-import { createHostedReviewSlice } from './hosted-review'
 import { createLinearSlice } from './linear'
 import { createPreflightSlice } from './preflight'
 import { createJiraSlice } from './jira'
@@ -44,11 +43,8 @@ import { createPullRequestGenerationSlice } from './pull-request-generation'
 import { createCommitMessageGenerationSlice } from './commit-message-generation'
 import { createPinnedTabCloseConfirmSlice } from './pinned-tab-close-confirm'
 import { createRecentlyClosedTabsSlice } from './recently-closed-tabs'
-import { createOrcaProfilesSlice } from './orca-profiles'
-import { createNewIssueDraftSlice } from './new-issue-draft'
 import { createFeedbackDraftSlice } from './feedback-draft'
 import { createTaskCreationDraftsSlice } from './task-creation-drafts'
-import { createRemoteServerUpdatesSlice } from './remote-server-updates'
 import { createTerminalQuickCommandHostsSlice } from './terminal-quick-command-hosts'
 import { translate } from '@/i18n/i18n'
 
@@ -71,7 +67,6 @@ export function createTestStore() {
     ...createSettingsSlice(...a),
     ...createKeybindingsSlice(...a),
     ...createGitHubSlice(...a),
-    ...createHostedReviewSlice(...a),
     ...createLinearSlice(...a),
     ...createPreflightSlice(...a),
     ...createJiraSlice(...a),
@@ -100,11 +95,8 @@ export function createTestStore() {
     ...createCommitMessageGenerationSlice(...a),
     ...createPinnedTabCloseConfirmSlice(...a),
     ...createRecentlyClosedTabsSlice(...a),
-    ...createOrcaProfilesSlice(...a),
-    ...createNewIssueDraftSlice(...a),
     ...createFeedbackDraftSlice(...a),
     ...createTaskCreationDraftsSlice(...a),
-    ...createRemoteServerUpdatesSlice(...a),
     ...createTerminalQuickCommandHostsSlice(...a)
   }))
 }

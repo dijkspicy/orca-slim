@@ -6,13 +6,9 @@ import { findWorkspaceFileRoute } from '@/lib/runtime-workspace-file-route'
 import { isPathInsideWorktree, toWorktreeRelativePath } from '@/lib/terminal-links'
 import {
   buildWorkspaceFileContext,
-  canClientOsOpenWorkspaceFile
+  canClientOsOpenWorkspaceFile,
+  type RuntimeFileOperationContext
 } from '@/lib/workspace-file-host-routing'
-import {
-  isMissingRuntimePathError,
-  statRuntimePath,
-  type RuntimeFileOperationArgs
-} from '@/runtime/runtime-file-client'
 import { useAppStore } from '@/store'
 import { activateAndRevealWorkspace, activateAndRevealWorktree } from '@/lib/worktree-activation'
 import { resolveKnownWorktreeRootPathLink } from './terminal-worktree-path-link'
@@ -28,6 +24,13 @@ export type FileOpenFailure = {
   /** `missing` is a verified absence; `unverifiable` means the host could not answer (dropped SSH, timeout, denied path). */
   verdict: 'missing' | 'unverifiable'
   error: unknown
+}
+
+function isMissingPathError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
+  return (
+    message.includes('enoent') || message.includes('not found') || message.includes('no such file')
+  )
 }
 
 type TerminalFileOpenDeps = {
@@ -61,7 +64,7 @@ export function getTerminalFileContext(
   worktreeId: string,
   worktreePath: string,
   runtimeEnvironmentId?: string | null
-): RuntimeFileOperationArgs {
+): RuntimeFileOperationContext {
   return buildWorkspaceFileContext(worktreeId, worktreePath, runtimeEnvironmentId)
 }
 
@@ -100,7 +103,7 @@ export function terminalLinkWslDistro(
 }
 
 export function shouldOpenTerminalFileWithSystemDefault(
-  fileContext: RuntimeFileOperationArgs,
+  fileContext: RuntimeFileOperationContext,
   filePath: string
 ): boolean {
   return canClientOsOpenWorkspaceFile(fileContext, filePath)
@@ -177,12 +180,15 @@ export function openDetectedFilePath(
       if (canOpenWithSystemDefault) {
         await window.api.fs.authorizeExternalPath({ targetPath: mappedFilePath })
       }
-      statResult = await statRuntimePath(fileContext, mappedFilePath)
+      statResult = await window.api.fs.stat({
+        filePath: mappedFilePath,
+        connectionId: fileContext.connectionId
+      })
     } catch (error) {
       if (requestId === latestOpenDetectedFilePathRequestId && deps.onOpenFailure) {
         // Why: loss of contact with the host is not evidence the file is gone.
         deps.onOpenFailure({
-          verdict: isMissingRuntimePathError(error) ? 'missing' : 'unverifiable',
+          verdict: isMissingPathError(error) ? 'missing' : 'unverifiable',
           error
         })
       }

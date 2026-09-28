@@ -5,7 +5,6 @@ import { keybindingMatchesAction } from '../../../shared/keybindings'
 import { matchesRecentTabSwitcherChord } from '../../../shared/window-shortcut-policy'
 import { useAppStore } from '../store'
 import {
-  createFloatingWorkspaceBrowserTab,
   createFloatingWorkspaceMarkdownTab,
   createFloatingWorkspaceTerminalTab,
   handleEmptyFloatingWorkspacePanelCloseShortcut,
@@ -110,12 +109,6 @@ export function handleTerminalWorkspaceKeyDown(
       ? FLOATING_TERMINAL_WORKTREE_ID
       : activeWorktreeId
     if (!ensureClientCreationActionAllowed(browserWorkspaceId, 'managed-browser')) {
-      return
-    }
-    if (floatingWorkspaceFocused) {
-      void createFloatingWorkspaceBrowserTab(useAppStore.getState()).catch(
-        showClientCreationActionError
-      )
       return
     }
     handleNewBrowserTab()

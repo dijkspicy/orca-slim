@@ -23,11 +23,7 @@ import {
 } from '../../workspace-creator-visibility'
 import { getAgentStatusEpochNow } from '@/lib/agent-status-epoch-clock'
 import { getWorktreeIdsWithLiveAgent, isInactiveWorkspace } from '@/lib/worktree-activity-state'
-import {
-  getVisibleWorktreeBrowserActivityTabs,
-  getVisibleWorktreeTerminalActivityTabs,
-  getWorktreeIdsWithStructuredChat
-} from '../../visible-worktree-activity-inputs'
+import { getVisibleWorktreeTerminalActivityTabs } from '../../visible-worktree-activity-inputs'
 
 export type SidebarWorktreeFilters = ReturnType<typeof useSidebarWorktreeFilters>
 
@@ -119,23 +115,21 @@ export function useSidebarWorktreeFilters() {
     }
     if (!state.showSleepingWorkspaces) {
       const tabsByWorktree = getVisibleWorktreeTerminalActivityTabs(state.tabsByWorktree)
-      const browserTabsByWorktree = getVisibleWorktreeBrowserActivityTabs(
-        state.browserTabsByWorktree
-      )
       const liveAgentWorktrees = getWorktreeIdsWithLiveAgent(
         state.agentStatusByPaneKey,
         tabsByWorktree,
         getAgentStatusEpochNow(state.agentStatusEpoch)
       )
+      // Why: browser tabs and structured chat tabs no longer exist, so neither can
+      // keep a workspace active.
       if (
         !isSleepingSweepExemptWorkspace(worktree, state.alwaysShowDefaultBranchWorkspace) &&
         isInactiveWorkspace(
           worktree.id,
           tabsByWorktree,
           state.ptyIdsByTabId,
-          browserTabsByWorktree,
-          liveAgentWorktrees,
-          getWorktreeIdsWithStructuredChat(state.unifiedTabsByWorktree)
+          null,
+          liveAgentWorktrees
         )
       ) {
         state.setShowSleepingWorkspaces(true)

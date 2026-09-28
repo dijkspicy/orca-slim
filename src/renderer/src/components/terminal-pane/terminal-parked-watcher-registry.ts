@@ -8,7 +8,6 @@
  * import cycle-free, mirroring how pty-dispatcher exports its handler maps.
  */
 import { discardPreHandlerPtyState, hasPreHandlerPtyExit } from './pty-pre-handler-buffer'
-import { parseRemoteRuntimePtyId } from '../../../../shared/remote-runtime-pty-id'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { releaseTerminalScrollIntentKey } from '../../lib/pane-manager/terminal-scroll-intent-key-store'
 
@@ -90,11 +89,6 @@ export function isTerminalTabParked(tabId: string): boolean {
  * delete only the disposer and deliberately keep the pane-id slot so the dead
  * leaf's runtime title can still be cleared.
  *
- * Excludes remote-runtime PTYs (detected through the store-free shared id
- * module — this file must stay importable from a store slice). startParkedPtyWatcher installs no PTY-exit
- * subscription for them, and the parked fact stream carries no exit fact, so
- * their disposer outlives the terminal and proves nothing about liveness.
- *
  * Also excludes a PTY holding an unowned buffered exit. startParkedPtyWatcher
  * refuses to register one, so this only catches an exit that raced an existing
  * registration; keeping the check here costs one lookup per watched PTY.
@@ -103,7 +97,7 @@ export function collectParkedTerminalWatcherPtyIds(): Set<string> {
   const ptyIds = new Set<string>()
   for (const entry of parkedWatchersByTabId.values()) {
     for (const ptyId of entry.disposersByPtyId.keys()) {
-      if (parseRemoteRuntimePtyId(ptyId) === null && !hasPreHandlerPtyExit(ptyId)) {
+      if (!hasPreHandlerPtyExit(ptyId)) {
         ptyIds.add(ptyId)
       }
     }

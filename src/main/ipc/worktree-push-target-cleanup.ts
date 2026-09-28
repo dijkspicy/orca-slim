@@ -8,7 +8,6 @@
 import type { Store } from '../persistence'
 import type { WorktreeMeta } from '../../shared/worktree/meta-types'
 import type { GitPushTarget } from '../../shared/worktree/types'
-import { parseGitHubOwnerRepo } from '../github/gh-utils'
 import { getRepoIdFromWorktreeId } from '../../shared/worktree/id'
 import { iterateProcessOutputLines } from '../../shared/process-output-field-scanner'
 
@@ -22,18 +21,10 @@ export type GitRemoteExec = (
 export type WorktreePushTargetStore = Pick<Store, 'getAllWorktreeMeta'> &
   Partial<Pick<Store, 'setWorktreeMeta'>>
 
+// Exact-match only: the forge-side owner/repo normalization was culled with the
+// forge integrations, so differently-spelled URLs of the same repo no longer match.
 export function sameGitHubRemoteUrl(left: string, right: string): boolean {
-  if (left === right) {
-    return true
-  }
-  const parsedLeft = parseGitHubOwnerRepo(left)
-  const parsedRight = parseGitHubOwnerRepo(right)
-  return Boolean(
-    parsedLeft &&
-    parsedRight &&
-    parsedLeft.owner.toLowerCase() === parsedRight.owner.toLowerCase() &&
-    parsedLeft.repo.toLowerCase() === parsedRight.repo.toLowerCase()
-  )
+  return left === right
 }
 
 /** A worktree metadata entry, in the same repo as `target`, whose pushTarget references it. */

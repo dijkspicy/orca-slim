@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppState } from '../types'
 import { toast } from 'sonner'
-import type { RuntimeEnvironmentCallRequest } from '../../runtime/runtime-compatibility-test-fixture'
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 import { getHostedReviewCacheKey } from './hosted-review-cache-identity'
 import { getGitHubPRCacheKey, getLegacyGitHubPRCacheKey } from './github-cache-key'
 import { makeWorktree } from './worktrees-slice-test-fixtures'

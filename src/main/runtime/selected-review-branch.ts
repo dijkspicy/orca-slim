@@ -1,6 +1,5 @@
 import type { GitPushTarget } from '../../shared/worktree/types'
 import type { ForgeProviderId } from '../source-control/forge-provider'
-import type { getPRForBranch } from '../github/client'
 
 export type SelectedReviewBranchInput = {
   branchNameOverride?: string
@@ -53,7 +52,7 @@ function isSelectedReviewBranchOverride(
 }
 
 export function isMatchingSelectedGitHubPr(
-  existingPR: Awaited<ReturnType<typeof getPRForBranch>>,
+  existingPR: { number: number } | null | undefined,
   args: SelectedReviewBranchInput,
   branchName: string
 ): boolean {

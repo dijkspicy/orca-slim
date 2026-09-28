@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from 'react'
-import type { LaunchSource } from '../../../../shared/telemetry-events'
 import type {
   SourceControlActionRecipe,
   SourceControlLaunchActionId
@@ -8,7 +7,6 @@ import type { SourceControlAiWriteTarget } from '../../../../shared/source-contr
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { Repo } from '../../../../shared/repo-types'
 import type { TuiAgent } from '../../../../shared/tui-agent'
-import { buildSourceControlAgentDeliveryPlan } from './buildSourceControlAgentDeliveryPlan'
 import type { SourceControlAgentActionDeliveryPlanState } from './SourceControlAgentActionDialogForm'
 import { runSourceControlAgentActionStart } from './runSourceControlAgentActionStart'
 import { buildSourceControlAgentConnectionErrorPlan } from './source-control-agent-action-dialog-support'
@@ -34,7 +32,7 @@ type UseSourceControlAgentActionStartArgs = {
   /** Why: SSH hosts launch the plain `orca` shim, so the previewed command must
    * drop the Linux-only `orca-ide` rename to match the real launch. */
   isRemote?: boolean
-  launchSource: LaunchSource
+  launchSource: string
   connectionUnavailable: boolean
   refreshDetectedAgents: () => Promise<TuiAgent[]>
   onStart?: (args: {
@@ -71,7 +69,6 @@ type UseSourceControlAgentActionStartResult = {
 
 export function useSourceControlAgentActionStart({
   selectedAgent,
-  commandInput,
   trimmedCommandInput,
   agentArgs,
   agentArgsApply,
@@ -86,7 +83,6 @@ export function useSourceControlAgentActionStart({
   groupId,
   promptDelivery,
   launchPlatform,
-  isRemote,
   launchSource,
   connectionUnavailable,
   refreshDetectedAgents,
@@ -104,37 +100,8 @@ export function useSourceControlAgentActionStart({
   const isStartingRef = useRef(false)
   const resetDeliveryPlan = useCallback(() => setDeliveryPlan({ status: 'idle' }), [])
 
-  const buildPlan = useCallback(
-    async (agentsOverride?: TuiAgent[]): Promise<SourceControlAgentActionDeliveryPlanState> => {
-      const currentDetectedAgents = agentsOverride ?? (await refreshDetectedAgents())
-      return buildSourceControlAgentDeliveryPlan({
-        selectedAgent,
-        commandInput,
-        // Why: the previewed command must show what the launch will really apply.
-        agentArgs: agentArgsApply ? agentArgs : undefined,
-        promptDelivery,
-        detectedAgents: currentDetectedAgents,
-        connectionUnavailable,
-        launchPlatform,
-        isRemote
-      })
-    },
-    [
-      agentArgs,
-      agentArgsApply,
-      commandInput,
-      connectionUnavailable,
-      promptDelivery,
-      refreshDetectedAgents,
-      selectedAgent,
-      launchPlatform,
-      isRemote
-    ]
-  )
-
   const startWithDetectedAgents = useCallback(
     async ({
-      detectedAgents: nextAgents,
       saveTargetValueOverride
     }: SourceControlAgentActionStartWithDetectedAgentsArgs): Promise<boolean> => {
       if (!selectedAgent || isStartingRef.current) {
@@ -147,12 +114,6 @@ export function useSourceControlAgentActionStart({
       isStartingRef.current = true
       setIsStarting(true)
       try {
-        const nextPlan = await buildPlan(nextAgents)
-        if (nextPlan.status === 'error') {
-          setDeliveryPlan(nextPlan)
-          return false
-        }
-        setDeliveryPlan(nextPlan)
         return await runSourceControlAgentActionStart({
           selectedAgent,
           trimmedCommandInput,
@@ -188,12 +149,11 @@ export function useSourceControlAgentActionStart({
       actionId,
       agentArgs,
       agentArgsApply,
-      buildPlan,
       commandTemplate,
       connectionUnavailable,
       groupId,
-      launchSource,
       launchPlatform,
+      launchSource,
       onClose,
       onLaunchAborted,
       onLaunchAccepted,

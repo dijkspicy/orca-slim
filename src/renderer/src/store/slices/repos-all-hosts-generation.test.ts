@@ -1,11 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Repo } from '../../../../shared/repo-types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import { createTestStore } from './store-test-helpers'
+
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 
 const localRepo: Repo = {
   id: 'local-repo',
@@ -39,7 +36,6 @@ const runtimeEnvironmentCall = vi.fn()
 const reposList = vi.fn()
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   runtimeEnvironmentCall.mockReset()
   reposList.mockReset()
   reposList.mockResolvedValue([localRepo])
@@ -52,8 +48,7 @@ beforeEach(() => {
       },
       runtimeEnvironments: {
         list: vi.fn().mockResolvedValue([{ id: 'env-1', name: 'Remote' }]),
-        call: (args: RuntimeEnvironmentCallRequest) =>
-          createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+        call: (args: RuntimeEnvironmentCallRequest) => runtimeEnvironmentCall(args)
       }
     },
     dispatchEvent: vi.fn()

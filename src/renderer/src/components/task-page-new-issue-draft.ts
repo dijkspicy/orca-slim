@@ -1,5 +1,12 @@
-import type { GitHubAssignableUser } from '../../../shared/github/pull-request-types'
-import type { NewIssueDraft } from '@/store/slices/new-issue-draft'
+type GitHubAssignableUser = { login: string; name?: string; avatarUrl?: string }
+
+type NewIssueDraft = {
+  title: string
+  body: string
+  labels: string[]
+  assignees: GitHubAssignableUser[]
+  repoId: string | null
+}
 
 export type NewIssueOpenSeed = {
   title: string

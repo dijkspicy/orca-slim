@@ -1,11 +1,9 @@
 import type { AppState } from '../types'
-import type { SshRepoReadoption } from '../../../../shared/ssh-types'
 import type { ProjectHostSetup } from '../../../../shared/project-types'
 import type { Repo } from '../../../../shared/repo-types'
 import type { ProjectHostSetupProjection } from '../../../../shared/project-host-setup-projection'
 import { reconcileReadoptedSshRepoRows } from '../slices/superseded-ssh-repo-rows'
 import type { SshRepoReconciliation } from '../slices/superseded-ssh-repo-rows'
-import { reconcileReadoptedSshWorktreesByRepo } from '../slices/readopted-ssh-worktree-rows'
 import { callRuntimeRpc } from '../../runtime/runtime-rpc-client'
 import type { getActiveRuntimeTarget } from '../../runtime/runtime-rpc-client'
 import { getRepoExecutionHostId } from '../../../../shared/execution-host'
@@ -90,34 +88,6 @@ export function filterSetupsForPrunedRepoRows(
     (setup) => !setup.repoId || !prunedOwners.has(`${setup.hostId}:${setup.repoId}`)
   )
   return filtered.length === setups.length ? setups : filtered
-}
-
-export function reconcileReadoptedSshWorktreeState(
-  state: Pick<AppState, 'worktreesByRepo' | 'detectedWorktreesByRepo' | 'sortEpoch'>,
-  readoptions: readonly SshRepoReadoption[]
-): Pick<AppState, 'worktreesByRepo' | 'detectedWorktreesByRepo' | 'sortEpoch'> {
-  const worktreesByRepo = reconcileReadoptedSshWorktreesByRepo(state.worktreesByRepo, readoptions)
-  const detectedRows = Object.fromEntries(
-    Object.entries(state.detectedWorktreesByRepo).map(([repoId, result]) => [
-      repoId,
-      result.worktrees
-    ])
-  )
-  const reconciledDetectedRows = reconcileReadoptedSshWorktreesByRepo(detectedRows, readoptions)
-  const detectedWorktreesByRepo =
-    reconciledDetectedRows === detectedRows
-      ? state.detectedWorktreesByRepo
-      : Object.fromEntries(
-          Object.entries(state.detectedWorktreesByRepo).map(([repoId, result]) => [
-            repoId,
-            { ...result, worktrees: reconciledDetectedRows[repoId] }
-          ])
-        )
-  return {
-    worktreesByRepo,
-    detectedWorktreesByRepo,
-    sortEpoch: worktreesByRepo === state.worktreesByRepo ? state.sortEpoch : state.sortEpoch + 1
-  }
 }
 
 export function projectCompatibilityForReconciledRepos(

@@ -88,7 +88,6 @@ export function useFullSubmitPreparation(input: FullSubmitPreparationInput) {
               repoId,
               'setup',
               selectedRepoExecutionHostId ?? undefined,
-              undefined,
               isSubmissionCancelled
             )
           : Promise.resolve<'skip'>('skip'),

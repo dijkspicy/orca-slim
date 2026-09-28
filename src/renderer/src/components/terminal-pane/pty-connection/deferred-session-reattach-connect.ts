@@ -59,9 +59,6 @@ export function startDeferredSessionReattach(
     ...(coldRestoreStartup?.launchToken ? { launchToken: coldRestoreStartup.launchToken } : {}),
     ...(coldRestoreStartup?.agent ? { launchAgent: coldRestoreStartup.agent } : {}),
     ...(session.shouldDeclareHiddenAtSpawn() ? { initiallyHidden: true } : {}),
-    ...(session.directSshRetryAttempt
-      ? { admitPtyId: session.claimCapturedDirectSshRetryPty }
-      : {}),
     callbacks: outputCallbacks.callbacks
   })
   const isCurrentReattach = (): boolean =>
@@ -74,7 +71,7 @@ export function startDeferredSessionReattach(
     .finally(() => {
       session.transportConnectInFlightSince = null
     })
-  const trackedReattachPromise = Promise.resolve(reattachPromise)
+  const _trackedReattachPromise = Promise.resolve(reattachPromise)
     .then(async (result) => {
       if (!isCurrentReattach()) {
         session.finishReattachLiveDataDeferral(false, outputCallbacks.generation)
@@ -90,7 +87,7 @@ export function startDeferredSessionReattach(
         if (typeof gen === 'number') {
           void window.api.pty.clearPendingPaneSerializer(session.cacheKey, gen).catch(() => {})
         }
-        session.settlePaneAttachAttempt(session.directSshRetryAttempt, 'failed')
+        session.settlePaneAttachAttempt(undefined, 'failed')
         return
       }
       if (!result && expiredReattachError) {
@@ -153,7 +150,7 @@ export function startDeferredSessionReattach(
       }
       if (message.includes(PANE_OWNER_UNVERIFIED_ERROR)) {
         session.reportError(message)
-        session.settlePaneAttachAttempt(session.directSshRetryAttempt, 'failed')
+        session.settlePaneAttachAttempt(undefined, 'failed')
         return
       }
       warnTerminalLifecycleAnomaly('restored PTY reattach threw', {
@@ -183,5 +180,4 @@ export function startDeferredSessionReattach(
         forceBlankRestoredViewport: true
       })
     })
-  session.armDirectSshPaneRetryTimeout(trackedReattachPromise, session.directSshRetryAttempt)
 }

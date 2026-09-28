@@ -30,7 +30,6 @@ import type { ExecutionHostId } from '../../../../shared/execution-host'
 import { formatPrimaryShortcutLabel } from '@/hooks/useShortcutLabel'
 import type { KeybindingOverrides } from '../../../../shared/keybindings'
 import { translate } from '@/i18n/i18n'
-import { isMacPlatform, nativeChatToggleShortcutLabel } from '../native-chat/native-chat-shortcut'
 import { AgentSessionContinuationMenuItem } from './AgentSessionContinuationMenuItem'
 import type { TerminalQuickCommandMenuHost } from '@/hooks/use-terminal-quick-command-hosts'
 import { TerminalQuickCommandsSubmenu } from './TerminalQuickCommandsSubmenu'
@@ -178,8 +177,7 @@ function TerminalContextMenuItems({
       expand: formatPrimaryShortcutLabel('terminal.expandPane', keybindings),
       setTitle: formatPrimaryShortcutLabel('terminal.setTitle', keybindings),
       clearPaneTitle: formatPrimaryShortcutLabel('terminal.clearPaneTitle', keybindings),
-      close: formatPrimaryShortcutLabel('terminal.closePane', keybindings),
-      nativeChat: nativeChatToggleShortcutLabel(isMacPlatform())
+      close: formatPrimaryShortcutLabel('terminal.closePane', keybindings)
     }),
     [keybindings]
   )
@@ -238,7 +236,6 @@ function TerminalContextMenuItems({
                 'components.tab.bar.SortableTabContextMenu.switchToChatView',
                 'Switch to chat view'
               )}
-          <DropdownMenuShortcut>{shortcuts.nativeChat}</DropdownMenuShortcut>
         </DropdownMenuItem>
       ) : null}
       <DropdownMenuSeparator />

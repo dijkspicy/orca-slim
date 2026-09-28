@@ -1,6 +1,35 @@
-import type { GitHubWorkItem } from '../../../shared/github/work-item-types'
+/** Structural work-item shape covering the fields the signatures read. */
+export type TaskPageWorkItemSignatureInput = {
+  id: string
+  repoId: string
+  type: 'issue' | 'pr'
+  number: number
+  title: string
+  state: string
+  url: string
+  author: string | null
+  branchName?: string
+  baseRefName?: string
+  labels?: string[]
+  assignees?: readonly { login: string | null | undefined }[]
+  reviewRequests?: readonly { login: string | null | undefined }[]
+  reviewDecision?: string | null
+  checksSummary?: {
+    state?: string | null
+    total?: number | null
+    failed?: number | null
+    pending?: number | null
+    neutral?: number | null
+  }
+  mergeable?: string | null
+  autoMergeEnabled?: boolean
+  autoMergeAllowed?: boolean | null
+  mergeQueueRequired?: boolean | null
+  mergeStateStatus?: string | null
+  updatedAt: string
+}
 
-export function taskPageWorkItemKey(item: GitHubWorkItem): string {
+export function taskPageWorkItemKey(item: TaskPageWorkItemSignatureInput): string {
   return `${item.repoId}\u0000${item.id}`
 }
 
@@ -15,7 +44,7 @@ function sortedLogins(users: readonly { login: string | null | undefined }[] | u
     .join('\u0000')
 }
 
-export function taskPageWorkItemStatusSignature(item: GitHubWorkItem): string {
+export function taskPageWorkItemStatusSignature(item: TaskPageWorkItemSignatureInput): string {
   return JSON.stringify([
     item.type,
     item.number,
@@ -43,12 +72,14 @@ export function taskPageWorkItemStatusSignature(item: GitHubWorkItem): string {
   ])
 }
 
-export function taskPageWorkItemKeyOrderSignature(items: readonly GitHubWorkItem[]): string {
+export function taskPageWorkItemKeyOrderSignature(
+  items: readonly TaskPageWorkItemSignatureInput[]
+): string {
   return items.map(taskPageWorkItemKey).join('\u0000')
 }
 
 export function taskPageWorkItemPaginationBoundary(
-  items: readonly GitHubWorkItem[]
+  items: readonly TaskPageWorkItemSignatureInput[]
 ): string | null {
   return items.at(-1)?.updatedAt ?? null
 }

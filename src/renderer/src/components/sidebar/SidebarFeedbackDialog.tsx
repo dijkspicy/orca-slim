@@ -14,7 +14,6 @@ import {
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { useAppStore } from '@/store'
 import { cn } from '@/lib/utils'
-import type { GitHubViewer } from '../../../../shared/github/pull-request-types'
 import { translate } from '@/i18n/i18n'
 import {
   extractImageFilesFromDataTransfer,
@@ -44,7 +43,10 @@ function openExternalUrl(url: string): void {
   void window.api.shell.openUrl(url)
 }
 
-function getSubmitIdentity(viewer: GitHubViewer | null, anonymous: boolean): SubmitIdentity {
+// Why: derived from the preload contract so the dialog keeps its shape without the removed provider type module.
+type FeedbackViewer = Awaited<ReturnType<typeof window.api.gh.viewer>>
+
+function getSubmitIdentity(viewer: FeedbackViewer | null, anonymous: boolean): SubmitIdentity {
   if (anonymous || !viewer) {
     return {
       githubLogin: null,
@@ -71,7 +73,7 @@ export function SidebarFeedbackDialog({
   const setFeedbackDraft = useAppStore((s) => s.setFeedbackDraft)
   const clearFeedbackDraft = useAppStore((s) => s.clearFeedbackDraft)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [viewer, setViewer] = useState<GitHubViewer | null>(null)
+  const [viewer, setViewer] = useState<FeedbackViewer | null>(null)
   const [isViewerLoading, setIsViewerLoading] = useState(false)
   const mountedRef = useMountedRef()
   const feedbackTextareaRef = useRef<HTMLTextAreaElement>(null)

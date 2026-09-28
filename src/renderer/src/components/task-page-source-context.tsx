@@ -1,16 +1,9 @@
 import type { GitLabTaskFilter, GitLabIssueFilter } from '@/components/task-page-localized-options'
-import type { GitHubWorkItem } from '../../../shared/github/work-item-types'
-import type { GitLabProjectRef, GitLabWorkItem } from '../../../shared/gitlab-types'
-import type { JiraIssue } from '../../../shared/jira-types'
-import type { Repo } from '../../../shared/repo-types'
-import { getLinkedWorkItemWorkspaceName, getLinkedWorkItemSuggestedName } from '@/lib/new-workspace'
 import {
-  type TaskSourceContext,
-  normalizeTaskSourceContext,
-  getTaskSourceCacheScope
-} from '../../../shared/task-source-context'
-import { projectHostSetupProjectionFromRepos } from '../../../shared/project-host-setup-projection'
-import { getRepoExecutionHostId } from '../../../shared/execution-host'
+  getLinkedWorkItemWorkspaceName,
+  getLinkedWorkItemSuggestedName,
+  type WorkspaceIntentWorkItem
+} from '@/lib/new-workspace'
 import type { ExecutionHostRegistryEntry } from '../../../shared/execution-host-registry'
 import type { TaskSourceHostAvailability } from './task-source-context-summary'
 import { TASK_SOURCE_CONTEXT_RUNTIME_CAPABILITY } from '../../../shared/protocol-version'
@@ -39,10 +32,10 @@ export const GITHUB_TASK_ROW_SURFACE_CLASS = 'bg-background transition-colors'
 export const GITHUB_TASK_ROW_HOVER_SURFACE_CLASS = 'group-hover/github-task-row:bg-accent'
 export const GITHUB_TASK_HEADER_SURFACE_CLASS =
   '[background:color-mix(in_srgb,var(--muted)_25%,var(--background))]'
-export function getGitHubWorkItemWorkspaceSeed(item: GitHubWorkItem): string {
+export function getGitHubWorkItemWorkspaceSeed(item: WorkspaceIntentWorkItem): string {
   return getLinkedWorkItemWorkspaceName(item)?.seedName ?? getLinkedWorkItemSuggestedName(item)
 }
-export function getGitLabWorkItemWorkspaceSeed(item: GitLabWorkItem): string {
+export function getGitLabWorkItemWorkspaceSeed(item: WorkspaceIntentWorkItem): string {
   return (
     getLinkedWorkItemWorkspaceName({
       type: item.type,
@@ -52,7 +45,7 @@ export function getGitLabWorkItemWorkspaceSeed(item: GitLabWorkItem): string {
     })?.seedName ?? getLinkedWorkItemSuggestedName(item)
   )
 }
-export function getJiraIssueWorkspaceSeed(issue: JiraIssue): string {
+export function getJiraIssueWorkspaceSeed(issue: { key: string; title: string }): string {
   return (
     getLinkedWorkItemWorkspaceName({
       type: 'issue',
@@ -63,33 +56,7 @@ export function getJiraIssueWorkspaceSeed(issue: JiraIssue): string {
     })?.seedName ?? getLinkedWorkItemSuggestedName(issue)
   )
 }
-export function getTaskPageRepoSourceContext(
-  repo: Repo | null | undefined,
-  provider: 'github' | 'gitlab',
-  gitlabProjectRef?: GitLabProjectRef | null
-): TaskSourceContext | null {
-  if (!repo) {
-    return null
-  }
-  const projection = projectHostSetupProjectionFromRepos([repo])
-  const project = projection.projects[0]
-  const setup = projection.setups[0]
-  const providerIdentity =
-    provider === 'github' && project?.providerIdentity?.provider === 'github'
-      ? project.providerIdentity
-      : provider === 'gitlab' && gitlabProjectRef
-        ? buildGitLabProviderIdentity(gitlabProjectRef)
-        : null
-  return normalizeTaskSourceContext({
-    provider,
-    projectId: setup?.projectId ?? project?.id ?? repo.id,
-    hostId: setup?.hostId ?? getRepoExecutionHostId(repo),
-    projectHostSetupId: setup?.id,
-    repoId: repo.id,
-    providerIdentity
-  })
-}
-export function buildGitLabProviderIdentity(projectRef: GitLabProjectRef) {
+export function buildGitLabProviderIdentity(projectRef: { host: string; path: string }) {
   const pathParts = projectRef.path
     .split('/')
     .map((part) => part.trim())
@@ -106,7 +73,7 @@ export function buildGitLabProviderIdentity(projectRef: GitLabProjectRef) {
 }
 export function getTaskSourceHostAvailabilityForHost(
   host: ExecutionHostRegistryEntry | null | undefined,
-  hostId: TaskSourceContext['hostId']
+  hostId: string
 ): TaskSourceHostAvailability | null {
   if (!host) {
     return null
@@ -132,21 +99,6 @@ export function getTaskSourceHostAvailabilityForHost(
     hostId,
     health: host.health,
     status: host.connectionStatus
-  }
-}
-export function getTaskPageRepoCacheInput(repo: Repo): {
-  id: string
-  path: string
-  executionHostId?: string | null
-  sourceCacheScope?: string | null
-} {
-  const sourceContext = getTaskPageRepoSourceContext(repo, 'github')
-  return {
-    id: repo.id,
-    path: repo.path,
-    executionHostId: repo.executionHostId,
-    sourceCacheScope:
-      sourceContext?.provider === 'github' ? getTaskSourceCacheScope(sourceContext) : null
   }
 }
 

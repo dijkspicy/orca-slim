@@ -1,7 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { createProgrammaticScrollMarks } from '@/hooks/programmatic-scroll-marks'
-import { useWorkspaceFileBrowserActionPredicate } from '@/lib/file-preview'
 import { selectWorktreeDiffCommentsOrEmpty } from '@/store/worktree-diff-comments-selector'
 import type { OpenFile } from '@/store/slices/editor'
 import '@/lib/monaco-setup'
@@ -63,7 +62,6 @@ export default function CombinedDiffViewer({
     selectWorktreeDiffCommentsOrEmpty(s, file.worktreeId)
   )
   const activeGroupId = useAppStore((s) => s.activeGroupIdByWorktree[file.worktreeId])
-  const canOpenWorkspaceFileBrowserForPath = useWorkspaceFileBrowserActionPredicate(file.worktreeId)
   const isDark =
     settings?.theme === 'dark' ||
     (settings?.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
@@ -196,21 +194,18 @@ export default function CombinedDiffViewer({
     shouldAutoReloadFromGitStatus: entrySet.shouldAutoReloadFromGitStatus,
     treeMode: entrySet.treeMode
   })
-  const { handleSectionSaveRef, modifiedEditorsRef, openSection, openSectionPreview } =
-    useCombinedDiffSectionActions({
-      activeGroupId,
-      branchCompare: entrySet.branchCompare,
-      canOpenWorkspaceFileBrowserForPath,
-      commitCompare: entrySet.commitCompare,
-      file,
-      isAllMode: entrySet.isAllMode,
-      isBranchMode: entrySet.isBranchMode,
-      isCommitMode: entrySet.isCommitMode,
-      sections,
-      sectionsRef: registry.sectionsRef,
-      setSectionHeights,
-      setSections
-    })
+  const { handleSectionSaveRef, modifiedEditorsRef, openSection } = useCombinedDiffSectionActions({
+    branchCompare: entrySet.branchCompare,
+    commitCompare: entrySet.commitCompare,
+    file,
+    isAllMode: entrySet.isAllMode,
+    isBranchMode: entrySet.isBranchMode,
+    isCommitMode: entrySet.isCommitMode,
+    sections,
+    sectionsRef: registry.sectionsRef,
+    setSectionHeights,
+    setSections
+  })
 
   useCombinedDiffViewPersist({
     combinedGitStatusSignature,
@@ -359,7 +354,6 @@ export default function CombinedDiffViewer({
           />
           <CombinedDiffSectionList
             activeGroupId={activeGroupId}
-            canOpenWorkspaceFileBrowserForPath={canOpenWorkspaceFileBrowserForPath}
             diffCommentsForWorktree={diffCommentsForWorktree}
             file={file}
             handleSectionSaveRef={handleSectionSaveRef}
@@ -373,7 +367,6 @@ export default function CombinedDiffViewer({
             modifiedEditorsRef={modifiedEditorsRef}
             onScrollbarPointerDown={handleScrollbarPointerDown}
             openSection={openSection}
-            openSectionPreview={openSectionPreview}
             retrySection={retrySection}
             scrollThumb={scrollThumb}
             sectionHeights={sectionHeights}

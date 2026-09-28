@@ -1,5 +1,3 @@
-import { getActiveMultiplexer } from '../ssh/ssh-target-registry'
-
 export type RemoteWindowsTerminalCapabilities = {
   wslAvailable: boolean
   wslDistros: string[]
@@ -16,15 +14,13 @@ const EMPTY_REMOTE_WINDOWS_TERMINAL_CAPABILITIES: RemoteWindowsTerminalCapabilit
   hostPlatform: null
 }
 
-export async function detectRemoteWindowsTerminalCapabilities(args: {
+/**
+ * Kept for the renderer's `preflight:detectRemoteWindowsTerminalCapabilities`
+ * contract, but the remote multiplexer it probed was removed with the
+ * remote-host domain, so there is no host left to detect capabilities on.
+ */
+export async function detectRemoteWindowsTerminalCapabilities(_args: {
   connectionId: string
 }): Promise<RemoteWindowsTerminalCapabilities> {
-  const mux = getActiveMultiplexer(args.connectionId)
-  if (!mux || mux.isDisposed()) {
-    return EMPTY_REMOTE_WINDOWS_TERMINAL_CAPABILITIES
-  }
-  const result = (await mux.request('preflight.detectWindowsTerminalCapabilities', {})) as
-    | RemoteWindowsTerminalCapabilities
-    | undefined
-  return result ?? EMPTY_REMOTE_WINDOWS_TERMINAL_CAPABILITIES
+  return EMPTY_REMOTE_WINDOWS_TERMINAL_CAPABILITIES
 }

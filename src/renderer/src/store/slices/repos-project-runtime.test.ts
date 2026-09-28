@@ -2,11 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestStore } from './store-test-helpers'
 import type { Project, ProjectHostSetup } from '../../../../shared/project-types'
 import type { Repo } from '../../../../shared/repo-types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 
 const localRepo: Repo = {
   id: 'local-repo',
@@ -28,7 +23,6 @@ const runtimeEnvironmentTransportCall = vi.fn()
 const dispatchEventMock = vi.fn()
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   projectsList.mockReset()
   projectsUpdate.mockReset()
   projectsCreateHostSetup.mockReset()
@@ -39,8 +33,8 @@ beforeEach(() => {
   runtimeEnvironmentCall.mockReset()
   runtimeEnvironmentTransportCall.mockReset()
   dispatchEventMock.mockReset()
-  runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-    return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+  runtimeEnvironmentTransportCall.mockImplementation((args: { method: string }) => {
+    return runtimeEnvironmentCall(args)
   })
   vi.stubGlobal('window', {
     api: {

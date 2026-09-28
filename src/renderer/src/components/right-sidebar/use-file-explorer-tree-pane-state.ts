@@ -2,8 +2,6 @@ import type { Dispatch, RefObject, SetStateAction } from 'react'
 import { useMemo, useRef } from 'react'
 import { useAppStore } from '@/store'
 import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
-import { useWorkspaceFileBrowserActionPredicate } from '@/lib/file-preview'
-import type { RuntimeFileOperationArgs } from '@/runtime/runtime-file-client'
 import type { OpenFile } from '@/store/slices/editor'
 import type { Repo } from '../../../../shared/repo-types'
 import type { FileExplorerRowProjection } from './file-explorer-row-projection'
@@ -42,9 +40,7 @@ type UseFileExplorerTreePaneStateParams = {
 
 type UseFileExplorerTreePaneStateResult = {
   scrollRef: RefObject<HTMLDivElement | null>
-  runtimeDownloadContext: RuntimeFileOperationArgs | null
   supportsFolderDownload: boolean
-  canOpenWorkspaceFileBrowserForPath: ReturnType<typeof useWorkspaceFileBrowserActionPredicate>
   statusByRelativePath: ReturnType<typeof buildStatusMap>
   folderStatusByRelativePath: ReturnType<typeof buildFolderStatusMap>
   deletion: ReturnType<typeof useFileDeletion>
@@ -105,8 +101,6 @@ export function useFileExplorerTreePaneState({
   } = selection
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const canOpenWorkspaceFileBrowserForPath =
-    useWorkspaceFileBrowserActionPredicate(activeWorktreeId)
   const supportsFolderDownload = useAppStore((s) => {
     const connectionId = activeRepo?.connectionId
     return connectionId
@@ -122,18 +116,6 @@ export function useFileExplorerTreePaneState({
   const gitStatusByWorktree = useAppStore((s) => s.gitStatusByWorktree)
   const closeFile = useAppStore((s) => s.closeFile)
 
-  const runtimeDownloadContext = useMemo(
-    () =>
-      activeRuntimeEnvironmentId && activeWorktreeId && worktreePath
-        ? {
-            settings: { activeRuntimeEnvironmentId },
-            worktreeId: activeWorktreeId,
-            worktreePath,
-            connectionId: activeRepo?.connectionId ?? undefined
-          }
-        : null,
-    [activeRepo?.connectionId, activeRuntimeEnvironmentId, activeWorktreeId, worktreePath]
-  )
   const isWindows = useMemo(() => navigator.userAgent.includes('Windows'), [])
 
   const entries = useMemo(
@@ -262,9 +244,7 @@ export function useFileExplorerTreePaneState({
 
   return {
     scrollRef,
-    runtimeDownloadContext,
     supportsFolderDownload,
-    canOpenWorkspaceFileBrowserForPath,
     statusByRelativePath,
     folderStatusByRelativePath,
     deletion,

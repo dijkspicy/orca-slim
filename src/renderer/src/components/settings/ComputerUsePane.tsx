@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Accessibility, Camera, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
-import type {
-  ComputerUsePermissionId,
-  ComputerUsePermissionState,
-  ComputerUsePermissionStatus
-} from '../../../../shared/computer-use-permissions-types'
 import { useAppStore } from '@/store'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
 import { ComputerUseSkillSetupPanel } from './ComputerUseSkillSetupPanel'
 import { translate } from '@/i18n/i18n'
 export { getComputerUsePaneSearchEntries } from './computer-use-search'
+
+// Mirrors the shapes of window.api.computerUsePermissions payloads.
+type ComputerUsePermissionId = 'accessibility' | 'screenshots'
+
+type ComputerUsePermissionStatus = 'granted' | 'not-granted' | 'unsupported'
+
+type ComputerUsePermissionState = {
+  id: ComputerUsePermissionId
+  status: ComputerUsePermissionStatus
+}
 
 type PermissionDefinition = {
   id: ComputerUsePermissionId

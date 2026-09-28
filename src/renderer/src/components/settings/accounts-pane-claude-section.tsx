@@ -1,6 +1,5 @@
 import { Loader2, Plus, RefreshCw, Trash2, X } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
-import { selectClaudeProviderAccount } from '@/runtime/runtime-provider-accounts-client'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Label } from '../ui/label'
@@ -25,7 +24,6 @@ export function renderClaudeAccountsSection(model: AccountsPaneSectionModel): Re
     remoteAccountScopeNotice,
     runClaudeAccountAction,
     setRemoveClaudeTarget,
-    settings,
     systemClaudeActive,
     visibleClaudeAccounts,
     wslCapabilitiesLoading
@@ -122,7 +120,7 @@ export function renderClaudeAccountsSection(model: AccountsPaneSectionModel): Re
             type="button"
             onClick={() =>
               void runClaudeAccountAction('select:system', () =>
-                selectClaudeProviderAccount(settings, {
+                window.api.claudeAccounts.select({
                   accountId: null,
                   runtime: accountRuntime.runtime,
                   wslDistro: accountRuntime.wslDistro
@@ -201,7 +199,7 @@ export function renderClaudeAccountsSection(model: AccountsPaneSectionModel): Re
                         void runClaudeAccountAction(
                           `select:${account.id}`,
                           () =>
-                            selectClaudeProviderAccount(settings, {
+                            window.api.claudeAccounts.select({
                               accountId: account.id,
                               ...accountRuntimeView
                             }),

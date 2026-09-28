@@ -5,7 +5,6 @@ import type {
   RuntimeCreateAgentSessionResult
 } from '../../shared/agent-session-host-authority'
 import type { AgentProviderSessionMetadata } from '../../shared/agent-session-resume'
-import type { OrchestrationCompatibilityHostStamp } from '../../shared/orchestration-compatibility-evidence'
 import type { TerminalOscColorQueryReplyColors } from '../../shared/terminal-osc-color-reply'
 import type {
   RuntimeTerminalPresentation,
@@ -176,11 +175,6 @@ export type RestoredOrchestrationAuthorityReceipt = Readonly<{
   processIncarnation: string
   hostScope: OrchestrationCompatibilityTerminalAuthority['hostScope']
 }>
-
-export type OrchestrationCompatibilitySshAttachmentAuthority = Extract<
-  OrchestrationCompatibilityHostStamp,
-  { kind: 'ssh' }
->
 
 export type TerminalWaiter = {
   handle: string

@@ -10,8 +10,6 @@ import {
   withWorkspaceCleanupTimeout
 } from './workspace-cleanup-scan-primitives'
 import { getWorktreeSharedLinkPaths } from '../git/worktree-shared-directories'
-import { SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE } from '../providers/ssh-git-dispatch'
-import type { SshGitProvider } from '../providers/ssh-git-provider'
 import {
   resolveWorkspaceCleanupWorktreeGitRoute,
   type WorkspaceCleanupGitRoute,
@@ -54,21 +52,16 @@ export async function readWorkspaceCleanupGitEvidence(
     return { ...createEmptyWorkspaceCleanupGitEvidence(), blockers: ['git-status-error'] }
   }
   // Shared links are this machine's symlink layout; no remote checkout inherits it.
-  const sharedLinkPaths = route.kind === 'ssh' ? [] : getWorktreeSharedLinkPaths(repo)
+  const sharedLinkPaths = getWorktreeSharedLinkPaths(repo)
 
   try {
     status = await withWorkspaceCleanupTimeout(
       (signal) =>
-        route.kind === 'ssh'
-          ? requireWorkspaceCleanupGitProvider(route).getStatus(worktree.path, {
-              includeLineStats: false,
-              signal
-            })
-          : getStatus(worktree.path, {
-              includeLineStats: false,
-              signal,
-              ...(sharedLinkPaths.length > 0 ? { sharedLinkPaths } : {})
-            }),
+        getStatus(worktree.path, {
+          includeLineStats: false,
+          signal,
+          ...(sharedLinkPaths.length > 0 ? { sharedLinkPaths } : {})
+        }),
       WORKSPACE_CLEANUP_GIT_READ_TIMEOUT_MS,
       'Timed out reading git status.',
       signal
@@ -126,16 +119,10 @@ async function readUnpushedCommitCount(
   try {
     const result = await withWorkspaceCleanupTimeout(
       (signal) =>
-        route.kind === 'ssh'
-          ? requireWorkspaceCleanupGitProvider(route).exec(
-              ['rev-list', '--count', 'HEAD', '--not', '--remotes'],
-              worktree.path,
-              { signal }
-            )
-          : gitExecFileAsync(['rev-list', '--count', 'HEAD', '--not', '--remotes'], {
-              cwd: worktree.path,
-              signal
-            }),
+        gitExecFileAsync(['rev-list', '--count', 'HEAD', '--not', '--remotes'], {
+          cwd: worktree.path,
+          signal
+        }),
       WORKSPACE_CLEANUP_GIT_READ_TIMEOUT_MS,
       'Timed out checking unpushed commits.',
       signal
@@ -148,16 +135,6 @@ async function readUnpushedCommitCount(
     }
     return null
   }
-}
-
-/** An unreachable remote host is an error, never a licence to read this machine's checkout. */
-function requireWorkspaceCleanupGitProvider(
-  route: Extract<WorkspaceCleanupGitRoute, { kind: 'ssh' }>
-): SshGitProvider {
-  if (!route.provider) {
-    throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
-  }
-  return route.provider
 }
 
 function uniqueWorkspaceCleanupGitBlockers(

@@ -46,8 +46,6 @@ import { ElectronSecretStore } from '../host/electron-secret-store'
 import { setPtyHostBindings } from '../ipc/pty-host-bindings'
 import { electronRuntimeDesktopSurface } from '../host/electron-runtime-desktop-surface'
 import { setRuntimeDesktopSurface } from '../runtime/runtime-desktop-surface'
-import { electronRuntimeBrowserCommandsFactory } from '../host/electron-browser-commands'
-import { setRuntimeBrowserCommandsFactory } from '../runtime/runtime-browser-commands-factory'
 import { electronHttpClient } from '../host/electron-http-client'
 import { setMainHttpClient } from '../network/http-client'
 import { setWorktreeWatcherRemoval } from '../ipc/worktree-watcher-removal'
@@ -246,10 +244,6 @@ function initializeMainProcessPreflight(options: MainProcessPreflightOptions): b
   // tab-create-reply channel are desktop-only. A Node host installs none and the
   // runtime routes notifications to paired clients instead.
   setRuntimeDesktopSurface(electronRuntimeDesktopSurface)
-  // Why here: constructing RuntimeBrowserCommands is what pulls the Chromium browser
-  // cluster into the graph. The desktop installs it; a Node host installs none and every
-  // browser RPC rejects, which capability filtering already tells clients about.
-  setRuntimeBrowserCommandsFactory(electronRuntimeBrowserCommandsFactory)
   // Why here: proxy-settings only needed electron for `session.defaultSession`. The
   // desktop supplies it; a Node host has no Chromium proxy config to consult, so the
   // environment variables are the whole answer there.

@@ -2,17 +2,11 @@ import {
   AGENT_STATUS_STALE_AFTER_MS,
   type AgentStatusOrchestrationContext
 } from '../../shared/agent-status-types'
-import type { FleetAgentStatusEvidence } from '../../shared/orchestration-fleet-agent-status-evidence'
-import { buildOrchestrationTaskDisplayMetadata } from '../../shared/orchestration-task-display'
 import { parsePaneKey } from '../../shared/stable-pane-id'
 import type { OrchestrationCompatibilityTerminalAuthority } from './runtime-terminal-contracts'
 import type { RuntimeLeafRecord, RuntimePtyWorktreeRecord } from './runtime-terminal-state-records'
 import type { OrchestrationDb } from './orchestration/db'
 import { runtimeWorktreeIdsEqual } from './runtime-worktree-path-identity'
-import {
-  buildWorkerAttentionContext,
-  projectWorkerAttentionContext
-} from './orchestration/worker-attention-context'
 
 type RuntimeAgentOrchestrationDependencies = {
   getDb(): OrchestrationDb | null
@@ -25,7 +19,6 @@ type RuntimeAgentOrchestrationDependencies = {
   getHandleForPaneKey(paneKey: string): string | null
   getPaneKey(handle: string): string | null
   getDispatchAuthority(handle: string): OrchestrationCompatibilityTerminalAuthority | null
-  getAgentStatusSnapshot(): readonly FleetAgentStatusEvidence[]
 }
 
 export class RuntimeAgentOrchestrationProjection {
@@ -37,24 +30,13 @@ export class RuntimeAgentOrchestrationProjection {
       return undefined
     }
     const contexts: Record<string, AgentStatusOrchestrationContext> = {}
-    const evidenceByPaneKey = new Map(
-      this.deps.getAgentStatusSnapshot().map((evidence) => [evidence.activity.paneKey, evidence])
-    )
-    // Defer attention to one batched query below; per-pane facts would refetch on every 16ms publish.
-    const batchAttention = typeof db.getWorkerAttentionFactsForDispatches === 'function'
-    const queriedHandles = new Set<string>()
     for (const leaf of this.deps.getLeaves()) {
       if (!leaf.ptyId) {
         continue
       }
       const handle = this.deps.issueLeafHandle(leaf)
-      queriedHandles.add(handle)
       const paneKey = this.deps.makePaneKey(leaf)
-      const context = this.getForHandle(handle, db, {
-        paneKey,
-        evidence: evidenceByPaneKey.get(paneKey),
-        deferAttention: batchAttention
-      })
+      const context = this.getForHandle(handle, db, { paneKey })
       if (context) {
         contexts[paneKey] = context
       }
@@ -64,15 +46,7 @@ export class RuntimeAgentOrchestrationProjection {
         continue
       }
       const handle = this.deps.issuePtyHandle(pty)
-      if (queriedHandles.has(handle)) {
-        continue
-      }
-      queriedHandles.add(handle)
-      const context = this.getForHandle(handle, db, {
-        paneKey: pty.paneKey,
-        evidence: evidenceByPaneKey.get(pty.paneKey),
-        deferAttention: batchAttention
-      })
+      const context = this.getForHandle(handle, db, { paneKey: pty.paneKey })
       if (context) {
         contexts[pty.paneKey] = context
       }
@@ -80,27 +54,6 @@ export class RuntimeAgentOrchestrationProjection {
     const entries = Object.entries(contexts)
     if (entries.length === 0) {
       return undefined
-    }
-    if (batchAttention) {
-      const now = Date.now()
-      const factsByDispatch = db.getWorkerAttentionFactsForDispatches(
-        entries.map(([, context]) => context.dispatchId),
-        now
-      )
-      for (const [paneKey, context] of entries) {
-        const facts = factsByDispatch.get(context.dispatchId)
-        if (facts) {
-          contexts[paneKey] = {
-            ...context,
-            attention: projectWorkerAttentionContext({
-              facts,
-              isRoot: facts.isRoot,
-              evidence: evidenceByPaneKey.get(paneKey),
-              now
-            })
-          }
-        }
-      }
     }
     return contexts
   }
@@ -111,25 +64,21 @@ export class RuntimeAgentOrchestrationProjection {
     options: {
       // Why: handles are minted per process; after a restart only the pane identity still names the dispatch.
       paneKey?: string
-      evidence?: FleetAgentStatusEvidence
-      deferAttention?: boolean
     } = {}
   ): AgentStatusOrchestrationContext | undefined {
-    const { paneKey, evidence, deferAttention = false } = options
+    const { paneKey } = options
     const dispatch =
       db?.getActiveDispatchForTerminal?.(handle, paneKey) ?? this.getRecent(handle, db)
     if (!dispatch) {
       return undefined
     }
     const task = db?.getTask?.(dispatch.task_id, dispatch.run_id)
-    const display =
-      typeof task?.spec === 'string'
-        ? buildOrchestrationTaskDisplayMetadata({
-            spec: task.spec,
-            taskTitle: task.task_title,
-            displayName: task.display_name
-          })
-        : { taskTitle: '', displayName: '' }
+    // The spec-derived bounded-title helper was culled with the shared
+    // orchestration-task-display module; the stored titles are what survive.
+    const display = {
+      taskTitle: task?.task_title ?? '',
+      displayName: task?.display_name ?? ''
+    }
     const owningRun =
       task?.run_id && task.run_id === dispatch.run_id ? db?.getRun?.(dispatch.run_id) : undefined
     const runCoordinatorHandle = owningRun?.coordinator_handle ?? undefined
@@ -211,10 +160,6 @@ export class RuntimeAgentOrchestrationProjection {
         coordinator.paneKey === paneKey)
     // Why: a creator whose pane is gone still has a coordinator to nest under.
     const parent = creator?.handle ? creator : coordinatorIsSelf ? {} : coordinator
-    const attention =
-      !deferAttention && db && typeof db.getWorkerAttentionFacts === 'function'
-        ? buildWorkerAttentionContext({ db, dispatch, task, evidence })
-        : undefined
     return {
       taskId: dispatch.task_id,
       dispatchId: dispatch.id,
@@ -224,8 +169,7 @@ export class RuntimeAgentOrchestrationProjection {
       ...(parent.handle ? { parentTerminalHandle: parent.handle } : {}),
       ...(parent.paneKey ? { parentPaneKey: parent.paneKey } : {}),
       ...(coordinator.handle ? { coordinatorHandle: coordinator.handle } : {}),
-      ...(orchestrationRunId ? { orchestrationRunId } : {}),
-      ...(attention ? { attention } : {})
+      ...(orchestrationRunId ? { orchestrationRunId } : {})
     }
   }
 

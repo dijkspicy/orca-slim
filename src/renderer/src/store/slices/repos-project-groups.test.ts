@@ -1,16 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createCompatibleRuntimeStatusResponse } from './runtime-status-response-fixture'
 import { createTestStore } from './store-test-helpers'
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { NestedRepoScanResult, ProjectGroup } from '../../../../shared/project-group-types'
 import type { Repo } from '../../../../shared/repo-types'
-import {
-  createCompatibleRuntimeStatusResponse,
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
-import type { SshConnectionState } from '../../../../shared/ssh-types'
+import type { SshConnectionState } from './ssh-host-state-contracts'
 
 const remoteRepo: Repo = {
   id: 'remote-repo',
@@ -62,7 +57,6 @@ function makeSshConnectionState(status: SshConnectionState['status']): SshConnec
 }
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   reposList.mockReset()
   reposRemove.mockReset()
   reposRemove.mockResolvedValue(undefined)
@@ -84,8 +78,8 @@ beforeEach(() => {
   folderWorkspacesDelete.mockReset()
   runtimeEnvironmentCall.mockReset()
   runtimeEnvironmentTransportCall.mockReset()
-  runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-    return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+  runtimeEnvironmentTransportCall.mockImplementation((args: { method: string }) => {
+    return runtimeEnvironmentCall(args)
   })
   vi.stubGlobal('window', {
     api: {
@@ -285,7 +279,7 @@ describe('project group store routing', () => {
         (capability) => capability !== 'worktree.linked-work-item-context.v1'
       )
     }
-    runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) =>
+    runtimeEnvironmentTransportCall.mockImplementation((args: { method: string }) =>
       args.method === 'status.get' ? oldRuntimeStatus : runtimeEnvironmentCall(args)
     )
     const store = createTestStore()

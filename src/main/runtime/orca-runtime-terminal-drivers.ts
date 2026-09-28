@@ -1,15 +1,7 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
 import { OrcaRuntimeWithFitOverrideListeners } from './orca-runtime-fit-override-listeners'
 import { RuntimeTerminalDriverController } from './runtime-terminal-driver-controller'
-import { RuntimeEdgeCommandController } from './runtime-edge-command-controller'
-import { getBrowserHostLeaseRegistry } from './browser-host-lease-registry-instance'
-import { getRuntimeBrowserPageRegistry } from './runtime-browser-page-registry'
-import type {
-  LayoutQueueEntry,
-  PtyLayoutState,
-  RuntimeCommandSurfaceHost
-} from './orca-runtime-core'
-import { RuntimeBrowserDriverController } from './runtime-browser-driver-controller'
+import type { LayoutQueueEntry, PtyLayoutState } from './orca-runtime-core'
 import { RemoteDesktopTerminalFloor } from './remote-desktop-terminal-floor'
 import type { StatsCollector } from '../stats/collector'
 import { RuntimeRemoteFetchController } from './runtime-remote-fetch-controller'
@@ -33,50 +25,6 @@ export class OrcaRuntimeWithTerminalDrivers extends OrcaRuntimeWithFitOverrideLi
     },
     commitMobileFloor: (ptyId, clientId, previousFloor, isCurrent) =>
       this.mobileTookFloor(ptyId, clientId, previousFloor, isCurrent)
-  })
-
-  protected readonly edgeCommands = new RuntimeEdgeCommandController({
-    browserHost: {
-      getAgentBrowserBridge: () => this.agentBrowserBridge,
-      resolveWorktreeSelector: (selector) => this.resolveWorktreeSelector(selector),
-      resolveBrowserWorkspace: (selector) => this.resolveBrowserWorkspace(selector),
-      getBrowserHostLeaseRegistry: () => getBrowserHostLeaseRegistry(this),
-      getRuntimeBrowserPageRegistry: () => getRuntimeBrowserPageRegistry(this),
-      resolveBrowserNetworkExecutionHost: (worktree) =>
-        this.resolveBrowserNetworkExecutionHostForWorktree(worktree),
-      getAuthoritativeWindow: () => this.getAuthoritativeWindow(),
-      getAvailableAuthoritativeWindow: () => this.getAvailableAuthoritativeWindow(),
-      getOffscreenBrowserBackend: () => this.offscreenBrowserBackend,
-      markHeadlessBrowserSessionTabActive: this.markHeadlessBrowserSessionTabActive.bind(this),
-      notifyHeadlessBrowserSessionTabsChanged: (worktreeId) =>
-        this.notifyMobileSessionTabsChanged(worktreeId),
-      retireRuntimeOwnedBrowserSessionTab: (worktreeId, browserPageId) =>
-        this.retireRuntimeOwnedBrowserSessionTab(worktreeId, browserPageId)
-    },
-    screencast: {
-      registerSubscriptionCleanup: (subscriptionId, cleanup, connectionId) =>
-        (this as RuntimeCommandSurfaceHost<this>).registerSubscriptionCleanup(
-          subscriptionId,
-          cleanup,
-          connectionId
-        ),
-      cleanupSubscription: (subscriptionId) =>
-        (this as RuntimeCommandSurfaceHost<this>).cleanupSubscription(subscriptionId),
-      getDriver: (browserPageId) => this.browserDrivers.get(browserPageId),
-      setDriver: (browserPageId, next) => this.browserDrivers.set(browserPageId, next),
-      notifyRemoteViewersChanged: (browserPageId, hasRemoteViewers) =>
-        this.notifier?.browserRemoteViewersChanged?.(browserPageId, hasRemoteViewers)
-    },
-    getBrowserCommands: () => this.browserCommands
-  })
-
-  // Why: tests and diagnostic seams replace only screencast startup; ordinary edge methods stay pre-bound.
-  protected browserCommands = this.edgeCommands.getBrowserCommands()
-
-  protected readonly browserDrivers = new RuntimeBrowserDriverController({
-    notifyChanged: (browserPageId, next) =>
-      this.notifier?.browserDriverChanged?.(browserPageId, next),
-    cancelScreencast: (browserPageId) => this.edgeCommands.cancelScreencast(browserPageId)
   })
 
   protected readonly remoteDesktopFloor = new RemoteDesktopTerminalFloor({

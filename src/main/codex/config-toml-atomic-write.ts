@@ -9,7 +9,7 @@ import {
   writeFileSync
 } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { renameFileWithWindowsRetry } from '../codex-accounts/fs-utils'
+import { renameFileWithWindowsRetry } from './codex-atomic-file-writes'
 import { writeRollingFileBackup } from '../rolling-file-backup'
 
 export function writeTomlConfigAtomically(configPath: string, contents: string): void {

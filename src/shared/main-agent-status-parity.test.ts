@@ -14,7 +14,6 @@ import { PANE_KEY } from './agent-hook-listener-test-harness'
 import { foldAgentLeadStatus } from './agent-lead-status-fold'
 import type { AgentSessionBackgroundTask } from './agent-session-background-task-wire'
 import {
-  agentChildWorkLiveness,
   agentChildWorkLivenessFromEvidence,
   type AgentChildWorkLiveness
 } from './agent-status-child-work-liveness'
@@ -25,7 +24,6 @@ import type {
   ParsedAgentStatusPayload
 } from './agent-status-types'
 import { codexRosterChildWorkLiveness, seedCodexSubagentRoster } from './codex-subagent-roster'
-import { structuredAgentSessionAgentStatus } from './structured-agent-session-agent-status'
 import type { AgentJournalTurnOutcome } from './agent-turn-outcome'
 
 type Published = {
@@ -454,18 +452,6 @@ describe('mainAgent status parity across lanes', () => {
       const row = published(payload)
       expect(row).toEqual(lane.expect)
       expect(row).toEqual(refold(row.mainAgent, claudeChildWorkLiveness(payload)))
-    })
-  })
-
-  describe('structured lane', () => {
-    it.each(storiesFor('structured'))('%s', (_name, lane) => {
-      const row = structuredAgentSessionAgentStatus({
-        status: lane.status,
-        backgroundTasks: lane.backgroundTasks,
-        turnOutcome: lane.turnOutcome
-      })
-      expect(row).toEqual(lane.expect)
-      expect(refold(row.mainAgent, agentChildWorkLiveness(lane.backgroundTasks))).toEqual(row)
     })
   })
 

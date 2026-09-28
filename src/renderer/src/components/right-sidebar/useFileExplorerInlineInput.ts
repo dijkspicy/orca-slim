@@ -9,7 +9,6 @@ import type { InlineInput } from './file-explorer-inline-input-row'
 import type { TreeNode } from './file-explorer-types'
 import type { FileExplorerRowProjection } from './file-explorer-row-projection'
 import { commitFileExplorerOp } from './fileExplorerUndoRedo'
-import { createRuntimePath, deleteRuntimePath } from '@/runtime/runtime-file-client'
 import {
   captureFileExplorerOperationGuard,
   getFileExplorerOperationOwner
@@ -134,48 +133,29 @@ export function useFileExplorerInlineInput({
               inlineInput.operationOwner
             )
             const operationRoute = operationGuard.route
-            const fileContext = {
-              settings: operationRoute.settings,
-              worktreeId: activeWorktreeId,
-              worktreePath,
-              connectionId: operationRoute.connectionId,
-              expectedExecutionHostId: operationRoute.expectedExecutionHostId,
-              expectedSshTargetId: operationRoute.expectedSshTargetId,
-              expectedSshConnectionGeneration: operationRoute.expectedSshConnectionGeneration
-            }
+            const { connectionId } = operationRoute
             operationGuard.assertCurrent()
-            await createRuntimePath(
-              fileContext,
-              fullPath,
-              inlineInput.type === 'folder' ? 'directory' : 'file'
-            )
+            await (inlineInput.type === 'folder'
+              ? window.api.fs.createDir({ dirPath: fullPath, connectionId })
+              : window.api.fs.createFile({ filePath: fullPath, connectionId }))
             const parentForRefresh = inlineInput.parentPath
             if (inlineInput.type === 'folder') {
               commitFileExplorerOp({
                 undo: async () => {
                   const currentRoute = operationGuard.assertCurrent()
-                  await deleteRuntimePath(
-                    {
-                      ...fileContext,
-                      settings: currentRoute.settings,
-                      connectionId: currentRoute.connectionId
-                    },
-                    fullPath,
-                    true
-                  )
+                  await window.api.fs.deletePath({
+                    targetPath: fullPath,
+                    connectionId: currentRoute.connectionId,
+                    recursive: true
+                  })
                   await refreshDir(parentForRefresh)
                 },
                 redo: async () => {
                   const currentRoute = operationGuard.assertCurrent()
-                  await createRuntimePath(
-                    {
-                      ...fileContext,
-                      settings: currentRoute.settings,
-                      connectionId: currentRoute.connectionId
-                    },
-                    fullPath,
-                    'directory'
-                  )
+                  await window.api.fs.createDir({
+                    dirPath: fullPath,
+                    connectionId: currentRoute.connectionId
+                  })
                   await refreshDir(parentForRefresh)
                 }
               })
@@ -183,27 +163,18 @@ export function useFileExplorerInlineInput({
               commitFileExplorerOp({
                 undo: async () => {
                   const currentRoute = operationGuard.assertCurrent()
-                  await deleteRuntimePath(
-                    {
-                      ...fileContext,
-                      settings: currentRoute.settings,
-                      connectionId: currentRoute.connectionId
-                    },
-                    fullPath
-                  )
+                  await window.api.fs.deletePath({
+                    targetPath: fullPath,
+                    connectionId: currentRoute.connectionId
+                  })
                   await refreshDir(parentForRefresh)
                 },
                 redo: async () => {
                   const currentRoute = operationGuard.assertCurrent()
-                  await createRuntimePath(
-                    {
-                      ...fileContext,
-                      settings: currentRoute.settings,
-                      connectionId: currentRoute.connectionId
-                    },
-                    fullPath,
-                    'file'
-                  )
+                  await window.api.fs.createFile({
+                    filePath: fullPath,
+                    connectionId: currentRoute.connectionId
+                  })
                   await refreshDir(parentForRefresh)
                 }
               })
@@ -211,7 +182,7 @@ export function useFileExplorerInlineInput({
             await refreshDir(inlineInput.parentPath)
             if (inlineInput.type === 'file') {
               const runtimeEnvironmentId =
-                fileContext.settings.activeRuntimeEnvironmentId?.trim() || null
+                operationRoute.settings.activeRuntimeEnvironmentId?.trim() || null
               openFile(
                 {
                   filePath: fullPath,

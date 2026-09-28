@@ -84,7 +84,6 @@ export function createAcknowledgedTabRetirementFixture(bound = false) {
       : {})
   })
   setRuntimeDesktopSurface({
-    showNotification: () => false,
     findWindowById: () => {
       // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the exercised close path only checks window and WebContents destruction.
       return { isDestroyed: () => false, webContents: { isDestroyed: () => false } } as never

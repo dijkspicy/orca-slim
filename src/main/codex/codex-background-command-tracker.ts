@@ -1,9 +1,15 @@
 import type { AgentSessionBackgroundTask } from '../../shared/agent-session-wire'
-import type { CodexBackgroundTaskEvent } from './codex-background-task-frames'
 import { codexCommandOutlivesTurn } from './codex-command-lifecycle'
 import { readRecord, readString } from './codex-item-field-readers'
-import { readCodexThreadItem } from './codex-structured-item-translation'
+import { readCodexThreadItem } from './codex-thread-item-identity'
 import { MAX_CODEX_ITEM_STREAM_METADATA_BYTES } from './codex-item-stream-retention'
+
+/** One provider event the tracker may observe. */
+export type CodexBackgroundTaskEvent = {
+  method: string
+  threadId: string
+  params: unknown
+}
 
 const MAX_SETTLED_COMMANDS = 128
 const MAX_DESCRIPTION_CHARS = 512

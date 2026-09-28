@@ -1,6 +1,5 @@
 import { isTerminalLeafId } from '../../../../shared/stable-pane-id'
 import { isProvenProcessExit } from '../../../../shared/terminal-exit-cause'
-import { isRemoteRuntimePtyId } from '@/runtime/runtime-terminal-inspection'
 import { useAppStore } from '@/store'
 import { closeTerminalTab } from '../terminal/terminal-tab-actions'
 import { startParkedTerminalByteWatcher } from './parked-terminal-byte-watcher'
@@ -151,9 +150,7 @@ export function startParkedPtyWatcher(args: {
     ...(initialTitle !== undefined ? { initialTitle } : {}),
     ...(restoreTitleOnRegister ? { restoreTitleOnRegister: true } : {})
   })
-  const unsubscribeExit = isRemoteRuntimePtyId(ptyId)
-    ? () => {}
-    : subscribeToPtyExit(ptyId, handlePtyExit)
+  const unsubscribeExit = subscribeToPtyExit(ptyId, handlePtyExit)
   entry.paneIdByPtyId.set(ptyId, pane.paneId)
   entry.disposersByPtyId.set(ptyId, () => {
     unsubscribeExit()

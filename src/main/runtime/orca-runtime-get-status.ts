@@ -1,15 +1,7 @@
 import { OrcaRuntimeWithGetRuntimeId } from './orca-runtime-get-runtime-id'
 import type { RuntimeDegradation, RuntimeStatus } from '../../shared/runtime-types'
-import {
-  runtimeBrowserCommandsFactoryIsHeadless,
-  runtimeBrowserUnavailableCause
-} from './runtime-browser-commands-factory'
-import { isBrowserIdentityModeStoreInitialized } from '../browser/browser-identity-mode-store'
 import type { RuntimeCapability } from '../../shared/protocol-version'
 import {
-  BROWSER_CERTIFICATE_TRUST_RUNTIME_CAPABILITY,
-  BROWSER_HEADLESS_RUNTIME_CAPABILITY,
-  BROWSER_IDENTITY_RUNTIME_CAPABILITY,
   MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION,
   REMOTE_RUNTIME_SHARED_CONTROL_CAPABILITY,
   RUNTIME_CAPABILITIES,
@@ -18,12 +10,6 @@ import {
   TERMINAL_PROMPT_DELIVERY_RUNTIME_CAPABILITY,
   TERMINAL_PAIRED_PARKING_RUNTIME_CAPABILITY
 } from '../../shared/protocol-version'
-import {
-  BROWSER_UNAVAILABLE_ERROR_CODE,
-  browserUnavailableMessage
-} from '../../shared/runtime-types'
-import { MOBILE_WEB_BUNDLE_CAPABILITY } from '../../shared/mobile-web-bundle/mobile-web-bundle-capability'
-import { loadBundledMobileWebBundle } from './bundled-mobile-web-bundle'
 import { runtimeTerminalDegradation } from './native-terminal-availability'
 import { isWindowsProcessStartTimeAvailable } from '../windows/windows-process-table'
 import type { RuntimeWorktreeLifecycleEvent } from './orca-runtime-core'
@@ -64,24 +50,16 @@ export class OrcaRuntimeWithGetStatus extends OrcaRuntimeWithGetRuntimeId {
   }
 
   getStatus(): RuntimeStatus {
-    // Why: browser panes need a backend that can create and stream a page. A
-    // desktop renderer provides one via <webview>; a headless serve provides one
-    // via the offscreen backend. Either way the same browser.screencast.v1 path
-    // works, so advertise it when either is present. browser.headless.v1
-    // additionally tells clients this host owns browser pages with no renderer,
-    // so they must not fall back to a local desktop browser tab.
     const statusHost = this.asRuntimeStatusHost()
     const hasRenderer = Boolean(statusHost.getAvailableAuthoritativeWindow())
-    const hasOffscreen = !hasRenderer && Boolean(this.offscreenBrowserBackend)
-    const hasHeadlessCommands = runtimeBrowserCommandsFactoryIsHeadless()
-    const canBrowse = hasRenderer || hasOffscreen
     // This field reports current Windows process-identity proof. Structured RPC
     // support itself stays advertised; agentSession.createSupport owns current eligibility.
     const windowsProcessStartTimeAvailable =
       process.platform === 'win32' && isWindowsProcessStartTimeAvailable()
     const capabilities: RuntimeCapability[] = RUNTIME_CAPABILITIES.filter(
       (capability) =>
-        (capability !== 'browser.screencast.v1' || canBrowse) &&
+        // Why: browser panes no longer exist on any host, so no browser capability is advertised.
+        !capability.startsWith('browser.') &&
         // Why: the nested-runtime E2E needs a real legacy transport without maintaining an old binary fixture.
         (process.env.ORCA_E2E_DISABLE_RUNTIME_SHARED_CONTROL !== '1' ||
           capability !== REMOTE_RUNTIME_SHARED_CONTROL_CAPABILITY) &&
@@ -92,42 +70,7 @@ export class OrcaRuntimeWithGetStatus extends OrcaRuntimeWithGetRuntimeId {
         (capability !== TERMINAL_PROMPT_DELIVERY_RUNTIME_CAPABILITY ||
           supportsDurableTerminalPromptDelivery())
     )
-    if (hasOffscreen || hasHeadlessCommands) {
-      capabilities.push(BROWSER_HEADLESS_RUNTIME_CAPABILITY)
-    }
-    // Why not a static capability: the identity is this host's own process-wide choice, fixed
-    // before ready. A host that never initialized the store has no identity to report or change,
-    // so advertising it would point clients at a method that can only throw.
-    if (isBrowserIdentityModeStoreInitialized()) {
-      capabilities.push(BROWSER_IDENTITY_RUNTIME_CAPABILITY)
-    }
-    // Why: certificate proceed is owned by the browser-hosting process for both
-    // desktop webviews and offscreen pages. Advertise whenever either backend
-    // can host a page so remote clients can surface Proceed Anyway (Unsafe).
-    if (canBrowse) {
-      capabilities.push(BROWSER_CERTIFICATE_TRUST_RUNTIME_CAPABILITY)
-    }
-    // Why not a static capability: dev trees and `orca serve` installs may carry no
-    // out/mobile-web, and advertising a bundle this install cannot produce would promise a
-    // download that only ever answers mobile_web_bundle_unavailable.
-    if (loadBundledMobileWebBundle()) {
-      capabilities.push(MOBILE_WEB_BUNDLE_CAPABILITY)
-    }
-    // Why the cause and not one fixed sentence: the operator can only act on the reason
-    // that actually applies, and a host that says "set ORCA_BROWSER_EXECUTABLE" to someone
-    // who already set it sends them to fix a thing that is not broken.
-    const cause = canBrowse || hasHeadlessCommands ? null : runtimeBrowserUnavailableCause()
-    const degradations: RuntimeDegradation[] = cause
-      ? [
-          {
-            code: BROWSER_UNAVAILABLE_ERROR_CODE,
-            capability: BROWSER_HEADLESS_RUNTIME_CAPABILITY,
-            message: browserUnavailableMessage(cause.reason, cause.detail),
-            reason: cause.reason,
-            ...(cause.detail ? { detail: cause.detail } : {})
-          }
-        ]
-      : []
+    const degradations: RuntimeDegradation[] = []
     const terminalDegradation = runtimeTerminalDegradation()
     if (terminalDegradation) {
       degradations.push(terminalDegradation)
@@ -179,9 +122,6 @@ export class OrcaRuntimeWithGetStatus extends OrcaRuntimeWithGetRuntimeId {
 
   setNotifier(notifier: RuntimeNotifier | null): void {
     this.notifier = notifier
-    if (notifier) {
-      this.repositoryForkBackfill.start()
-    }
   }
 
   protected countTerminalSideEffectConsumingClientEventListeners(): number {

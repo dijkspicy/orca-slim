@@ -9,12 +9,10 @@ import type {
 } from '../../../../shared/agent-session-host-authority'
 import type { StartupCommandDelivery } from '../../../../shared/codex-startup-delivery'
 import type { ProjectExecutionRuntimeResolution } from '../../../../shared/project-execution-runtime'
-import type { EventProps } from '../../../../shared/telemetry-events'
 import type { TerminalOscColorQueryReplyColors } from '../../../../shared/terminal-osc-color-reply'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import type { ExecutionHostId } from '../../../../shared/execution-host'
 import type { PtyDataMeta } from './pty-dispatcher'
-import type { RemoteRuntimeSnapshotOutcome } from '../../runtime/remote-runtime-terminal-multiplexer'
 import type { PtyPreconnectInputEntry } from './pty-preconnect-input-buffer'
 
 export type PtyBufferSnapshot = {
@@ -228,9 +226,6 @@ export type PtyTransport = {
    *  would corrupt the next live chunk. IPC transports only. */
   resetCrossChunkParserState?: () => void
   serializeBuffer?: (opts?: { scrollbackRows?: number }) => Promise<PtyBufferSnapshot | null>
-  serializeBufferOutcome?: (opts?: {
-    scrollbackRows?: number
-  }) => Promise<RemoteRuntimeSnapshotOutcome>
   preserve?: () => void
   /** Hand the live PTY to a successor without process teardown. Terminal for this instance:
    *  it also drops the transport's output processor from the pty side-effect memory census,
@@ -274,7 +269,6 @@ export type IpcPtyTransportOptions = {
   projectRuntime?: ProjectExecutionRuntimeResolution
   terminalKittyKeyboardProtocol?: boolean
   terminalColorQueryReplies?: TerminalOscColorQueryReplyColors
-  telemetry?: EventProps<'agent_started'>
   onPtyExit?: (ptyId: string, exitCode?: number) => void
   onTitleChange?: (title: string, rawTitle: string) => void
   onPtySpawn?: (ptyId: string) => void

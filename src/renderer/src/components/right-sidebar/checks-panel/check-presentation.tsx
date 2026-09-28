@@ -8,7 +8,6 @@ import {
   CircleMinus,
   GitPullRequest
 } from 'lucide-react'
-import type { PRInfo } from '../../../../../shared/github/pull-request-types'
 
 export const PullRequestIcon = GitPullRequest
 
@@ -36,7 +35,7 @@ export const CHECK_COLOR: Record<string, string> = {
   stale: 'text-muted-foreground'
 }
 
-export function prStateColor(state: PRInfo['state']): string {
+export function prStateColor(state: string): string {
   switch (state) {
     case 'merged':
       return 'bg-purple-500/15 text-purple-500 border-purple-500/20'

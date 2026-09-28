@@ -4,19 +4,16 @@ import {
   type CloseActiveTabListener
 } from './ipc-events-close-routing-test-harness'
 
-const { closeWebRuntimeSessionTab, destroyWorkspaceWebviews, isWebRuntimeSessionActive } =
-  vi.hoisted(() => ({
-    closeWebRuntimeSessionTab: vi.fn(),
-    destroyWorkspaceWebviews: vi.fn(),
-    isWebRuntimeSessionActive: vi.fn(() => true)
-  }))
+const { closeWebRuntimeSessionTab, isWebRuntimeSessionActive } = vi.hoisted(() => ({
+  closeWebRuntimeSessionTab: vi.fn(),
+  isWebRuntimeSessionActive: vi.fn(() => true)
+}))
 
 vi.mock('@/runtime/web-runtime-session', () => ({
   closeWebRuntimeSessionTab,
   createWebRuntimeSessionTerminal: vi.fn(),
   isWebRuntimeSessionActive
 }))
-vi.mock('@/store/slices/browser-webview-cleanup', () => ({ destroyWorkspaceWebviews }))
 
 const closeBrowserTab = vi.fn()
 const closeUnifiedTab = vi.fn()
@@ -113,7 +110,6 @@ describe('useIpcEvents Close Tab on the active browser tab', () => {
     requireListener(listenerRef)()
 
     expect(closeWebRuntimeSessionTab).not.toHaveBeenCalled()
-    expect(destroyWorkspaceWebviews).toHaveBeenCalled()
     expect(closeBrowserTab).toHaveBeenCalledWith('workspace-1', undefined)
   })
 
@@ -206,7 +202,6 @@ describe('useIpcEvents Close Tab on the active browser tab', () => {
     requireListener(listenerRef)({ sourceId: 'page-1' })
 
     expect(closeBrowserTab).toHaveBeenCalledWith('workspace-1', undefined)
-    expect(destroyWorkspaceWebviews).toHaveBeenCalled()
   })
 
   // Why: an open-but-empty floating panel is the ambient close fallback only; a guest-forwarded
@@ -222,7 +217,6 @@ describe('useIpcEvents Close Tab on the active browser tab', () => {
     requireListener(listenerRef)({ sourceId: 'page-1' })
 
     expect(closeBrowserTab).toHaveBeenCalledWith('workspace-1', undefined)
-    expect(destroyWorkspaceWebviews).toHaveBeenCalled()
   })
 
   it('no-ops on a stale source id instead of closing the ambient active tab', async () => {

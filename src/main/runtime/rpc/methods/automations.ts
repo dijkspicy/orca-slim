@@ -71,16 +71,6 @@ export const AUTOMATION_METHODS = [
       )
   }),
   defineMethod({
-    name: 'automation.runNow',
-    params: AutomationId,
-    handler: async (params, context) => ({
-      run: await context.runtime.runAutomationNow(
-        params.id,
-        mutationOwner(params.id, params.expectedOwner, context)
-      )
-    })
-  }),
-  defineMethod({
     name: 'automation.runs',
     params: AutomationRuns,
     handler: (params, { runtime }) => {

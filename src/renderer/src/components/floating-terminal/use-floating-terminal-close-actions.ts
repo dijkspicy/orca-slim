@@ -7,7 +7,6 @@ import {
 } from '@/lib/floating-workspace-terminal-actions'
 import { armFloatingPanelReclaimIntent } from '@/lib/floating-workspace-focus-reclaim'
 import { useAppStore } from '@/store'
-import { destroyWorkspaceWebviews } from '@/store/slices/browser-webview-cleanup'
 import { guardPinnedTabClose, resolvePinnedTabLabel } from '@/store/pinned-tab-close-guard'
 import type { Tab } from '../../../../shared/tab-types'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
@@ -53,7 +52,6 @@ export function useFloatingTerminalCloseActions({
         if (item.contentType === 'terminal') {
           closeTab(item.entityId, { reason: 'cleanup' })
         } else if (item.contentType === 'browser') {
-          destroyWorkspaceWebviews(state.browserPagesByWorkspace, item.entityId)
           closeBrowserTab(item.entityId)
         } else if (item.contentType === 'simulator') {
           closeUnifiedTab(item.id)
@@ -101,7 +99,6 @@ export function useFloatingTerminalCloseActions({
         onClose: () => {
           const latest = useAppStore.getState()
           if (item.contentType === 'browser') {
-            destroyWorkspaceWebviews(latest.browserPagesByWorkspace, item.entityId)
             closeBrowserTab(item.entityId)
           } else if (item.contentType === 'simulator') {
             closeUnifiedTab(item.id)

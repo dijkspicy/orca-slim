@@ -1,7 +1,7 @@
 import type { GlobalSettings } from './global-settings-types'
 import type { NotificationSettings } from './notification-settings-types'
 import type { OnboardingChecklistState, OnboardingState } from './onboarding-state-types'
-import type { RepoHookSettings } from './orca-yaml-hook-types'
+import type { RepoHookSettings } from './repo-hook-settings'
 import type { PersistedState } from './persisted-state-types'
 import type { PersistedUIState } from './persisted-ui-state-types'
 import type { AgentActivityDisplayMode } from './ui-chrome-types'
@@ -15,7 +15,6 @@ import { DEFAULT_USAGE_PERCENTAGE_DISPLAY } from './usage-percentage-display'
 import { DEFAULT_STATUS_BAR_USAGE_MODE } from './status-bar-usage-mode'
 import { buildDefaultSettings } from './default-global-settings'
 import { DEFAULT_SETUP_AGENT_STARTUP_POLICY } from './setup-agent-startup-policy'
-import { DEFAULT_BROWSER_PAGE_ZOOM_LEVEL } from './browser-page-zoom'
 
 export { DEFAULT_STATUS_BAR_ITEMS } from './status-bar-defaults'
 export {
@@ -203,11 +202,6 @@ export function getDefaultPersistedState(homedir: string): PersistedState {
     githubCache: { pr: {}, issue: {} },
     workspaceSession: getDefaultWorkspaceSession(),
     workspaceSessionsByHostId: {},
-    sshTargets: [],
-    sshTargetGenerationCounter: 0,
-    deletedSshConfigAliases: [],
-    sshRemotePtyLeases: [],
-    sshPtyConsumerRecoveries: [],
     claudeLivePtySessionIds: [],
     migrationUnsupportedPtyEntries: [],
     legacyPaneKeyAliasEntries: [],
@@ -297,8 +291,7 @@ export function getDefaultUIState(): PersistedUIState {
     workspaceCleanup: { dismissals: {} },
     featureTipsSeenIds: [],
     featureInteractions: {},
-    contextualToursSeenIds: [],
-    browserDefaultZoomLevel: DEFAULT_BROWSER_PAGE_ZOOM_LEVEL
+    contextualToursSeenIds: []
   }
 }
 

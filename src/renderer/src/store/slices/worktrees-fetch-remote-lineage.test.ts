@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppState } from '../types'
-import type { RuntimeEnvironmentCallRequest } from '../../runtime/runtime-compatibility-test-fixture'
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 import { clearHugeRepoWarningDismissalsForTests } from '@/lib/source-control-huge-repo-warning-dismissals'
 import { worktreeWorkspaceKey } from '../../../../shared/workspace-scope'
 import { makeDetectedResult } from './worktrees-detected-listing-fixtures'

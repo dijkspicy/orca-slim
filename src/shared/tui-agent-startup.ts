@@ -15,7 +15,9 @@ import { buildSleepingAgentLaunchConfig } from './sleeping-agent-launch-config'
 import { planHermesStartupQuery } from './hermes-startup-query'
 import { inlineAgentDraftFitsPlatform } from './agent-draft-platform-limit'
 import type { TuiAgent } from './tui-agent'
-import type { SessionOptionValue } from './native-chat-session-options'
+// Same shape the session-option catalog applies; kept local so startup planning
+// does not depend on the deleted shared options module.
+type SessionOptionValue = string | boolean
 import { resolveAgentLaunchCommand } from './tui-agent-launch-command'
 
 export { buildAgentResumeStartupPlan } from './tui-agent-resume-startup'

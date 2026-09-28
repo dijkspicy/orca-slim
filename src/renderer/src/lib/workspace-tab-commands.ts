@@ -15,7 +15,6 @@ import {
   switchFloatingWorkspaceTab
 } from './floating-workspace-terminal-actions'
 import { TOGGLE_FLOATING_TERMINAL_EVENT } from './floating-terminal'
-import { closeWorkspaceBrowserTab } from './workspace-browser-tab-close'
 import { resolveBrowserWorkspaceOwner } from './browser-workspace-source-resolution'
 
 export type WorkspaceTabTarget =
@@ -118,22 +117,8 @@ export function dispatchWorkspaceTabCommand(command: WorkspaceTabCommand): boole
       return false
     }
     if (!target.tab) {
-      if (!target.browserWorkspaceId) {
-        return false
-      }
-      const plan = closeWorkspaceBrowserTab(target.worktreeId, target.browserWorkspaceId)
-      if (
-        plan.closesLocally &&
-        plan.localCloseReason !== 'cleanup' &&
-        !command.skipEmptyCheck &&
-        !command.bulk
-      ) {
-        createWorkspaceTabCloseCommands({
-          worktreeId: target.worktreeId,
-          groupTabs: []
-        }).leaveWorktreeIfEmpty()
-      }
-      return true
+      // Browser-source targets went with the browser cull; nothing else closes here.
+      return false
     }
     const tab = target.tab
     if (command.context === 'terminal' && tab.contentType === 'terminal') {

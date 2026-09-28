@@ -3,17 +3,14 @@ import {
   LOCAL_EXECUTION_HOST_ID,
   getLocalExecutionHostLabel,
   getSettingsFocusedExecutionHostId,
-  isRuntimeOwnedSshTargetId,
   parseExecutionHostId,
   toRuntimeExecutionHostId,
-  toSshExecutionHostId,
   type ExecutionHostId,
   type ExecutionHostKind
 } from './execution-host'
 import { evaluateRuntimeCompat, type RuntimeCompatVerdict } from './protocol-compat'
 import { MIN_COMPATIBLE_RUNTIME_SERVER_VERSION, RUNTIME_PROTOCOL_VERSION } from './protocol-version'
 import type { RuntimeStatus } from './runtime-types'
-import type { SshConnectionState, SshConnectionStatus } from './ssh-types'
 import type { RuntimeEnvironmentSource } from './runtime-environments'
 import type { GlobalSettings } from './global-settings-types'
 import type { Repo } from './repo-types'
@@ -32,7 +29,6 @@ export type ExecutionHostRegistryEntry = {
   label: string
   detail: string
   health: ExecutionHostHealth
-  connectionStatus?: SshConnectionStatus
   compatibility?: RuntimeCompatVerdict
   capabilities?: readonly string[]
   appVersion?: string | null
@@ -106,24 +102,6 @@ function runtimeControlHealth(
   }
 }
 
-function sshHealth(state: SshConnectionState | undefined): ExecutionHostHealth {
-  switch (state?.status) {
-    case 'connected':
-      return 'available'
-    case 'connecting':
-    case 'deploying-relay':
-    case 'reconnecting':
-      return 'connecting'
-    case 'auth-failed':
-    case 'error':
-    case 'reconnection-failed':
-      return 'error'
-    case 'disconnected':
-    case undefined:
-      return 'disconnected'
-  }
-}
-
 function setHost(
   hosts: Map<ExecutionHostId, ExecutionHostRegistryEntry>,
   entry: ExecutionHostRegistryEntry
@@ -193,8 +171,6 @@ export function buildExecutionHostRegistry(args: {
   repos: readonly Pick<Repo, 'connectionId' | 'executionHostId'>[]
   settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined
   hostSource?: ExecutionHostSource
-  sshTargetLabels?: ReadonlyMap<string, string>
-  sshConnectionStates?: ReadonlyMap<string, SshConnectionState>
   runtimeEnvironments?: readonly RuntimeEnvironmentSummary[]
   runtimeStatusByEnvironmentId?: RuntimeStatusByEnvironmentId
   // Why: user-chosen per-host display labels override the derived label so a
@@ -245,7 +221,6 @@ export function buildExecutionHostRegistry(args: {
     )
   }
 
-  const sshTargetIds = new Set<string>()
   if (args.hostSource !== 'configured-only') {
     for (const repo of args.repos) {
       const parsedHost = parseExecutionHostId(repo.executionHostId)
@@ -258,38 +233,7 @@ export function buildExecutionHostRegistry(args: {
           args.runtimeStatusByEnvironmentId
         )
       }
-      // Why: a VM-backed repo's executionHostId is `ssh:runtime-ssh-<id>`. Runtime-owned
-      // targets are hidden, so they must not become visible SSH run-target hosts here.
-      if (parsedHost?.kind === 'ssh' && !isRuntimeOwnedSshTargetId(parsedHost.targetId)) {
-        sshTargetIds.add(parsedHost.targetId)
-      }
     }
-  }
-  for (const targetId of args.sshTargetLabels?.keys() ?? []) {
-    const normalized = normalizeHostPart(targetId)
-    if (normalized && !isRuntimeOwnedSshTargetId(normalized)) {
-      sshTargetIds.add(normalized)
-    }
-  }
-  if (args.hostSource !== 'configured-only') {
-    for (const repo of args.repos) {
-      const targetId = normalizeHostPart(repo.connectionId)
-      if (targetId && !isRuntimeOwnedSshTargetId(targetId)) {
-        sshTargetIds.add(targetId)
-      }
-    }
-  }
-
-  for (const targetId of sshTargetIds) {
-    const state = args.sshConnectionStates?.get(targetId)
-    setHost(hosts, {
-      id: toSshExecutionHostId(targetId),
-      kind: 'ssh',
-      label: args.sshTargetLabels?.get(targetId) || targetId,
-      detail: 'SSH',
-      health: sshHealth(state),
-      connectionStatus: state?.status
-    })
   }
 
   const overrides = args.hostLabelOverrides

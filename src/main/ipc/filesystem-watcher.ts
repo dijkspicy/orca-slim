@@ -4,18 +4,10 @@ import {
   forgetLocalWatcherRemovalSnapshot,
   restoreLocalWatcherAfterFailedRemoval
 } from './filesystem-watcher-local-removal'
-import {
-  closeRemoteWatcherForWorktreePath,
-  forgetRemoteWatcherRemovalSnapshot,
-  restoreRemoteWatcherAfterFailedRemoval
-} from './filesystem-watcher-remote-removal'
 
 export { closeLocalWatcherForWorktreePath } from './filesystem-watcher-local-removal'
 export { restoreLocalWatcherAfterFailedRemoval } from './filesystem-watcher-local-removal'
 export { forgetLocalWatcherRemovalSnapshot } from './filesystem-watcher-local-removal'
-export { closeRemoteWatcherForWorktreePath } from './filesystem-watcher-remote-removal'
-export { restoreRemoteWatcherAfterFailedRemoval } from './filesystem-watcher-remote-removal'
-export { forgetRemoteWatcherRemovalSnapshot } from './filesystem-watcher-remote-removal'
 export { registerFilesystemWatcherHandlers } from './filesystem-watcher-handlers'
 export { closeAllWatchers } from './filesystem-watcher-shutdown'
 
@@ -29,7 +21,9 @@ export const desktopWorktreeWatcherRemoval: WorktreeWatcherRemoval = {
       : closeLocalWatcherForWorktreePath(worktreePath),
   restoreLocal: restoreLocalWatcherAfterFailedRemoval,
   forgetLocal: forgetLocalWatcherRemovalSnapshot,
-  closeRemote: closeRemoteWatcherForWorktreePath,
-  restoreRemote: restoreRemoteWatcherAfterFailedRemoval,
-  forgetRemote: forgetRemoteWatcherRemovalSnapshot
+  // Why inert: remote (SSH relay) watchers no longer exist, so there is never
+  // anything to close, restore, or forget — the interface's documented no-owner state.
+  closeRemote: async () => {},
+  restoreRemote: async () => {},
+  forgetRemote: () => {}
 }

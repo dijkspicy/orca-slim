@@ -1,5 +1,4 @@
 import { yieldToEventLoop } from '../../../shared/event-loop-yield'
-import type { GlobalSettings } from '../../../shared/global-settings-types'
 import {
   getUtf8ByteLengthForCodePoint,
   readUtf8CodePointAt
@@ -11,7 +10,6 @@ import {
   wrapTerminalBracketedPasteText
 } from '@/components/terminal-pane/terminal-bracketed-paste'
 import { runTerminalPtyInputTransaction } from '@/components/terminal-pane/terminal-pty-input-transaction'
-import { sendRuntimePtyInputVerified } from '@/runtime/runtime-terminal-inspection'
 
 // Why: bracketed paste markers let supported TUIs treat generated prompt text
 // as one paste instead of echoing character-by-character or triggering edits.
@@ -26,20 +24,18 @@ const AGENT_DRAFT_PASTE_INERT_ESCAPE = '\u241b'
 export type AgentDraftPtyInputWriter = (data: string) => boolean | Promise<boolean>
 
 export async function sendAgentDraftPasteContent(
-  settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined,
   ptyId: string,
   content: string,
   writePty?: AgentDraftPtyInputWriter
 ): Promise<boolean> {
   return await runTerminalPtyInputTransaction(ptyId, () =>
-    sendAgentDraftPasteContentNow(settings, ptyId, content, writePty)
+    sendAgentDraftPasteContentNow(ptyId, content, writePty)
   )
 }
 
 // Why: callers that must keep extra PTY writes (e.g. submit Enter) inside the same
 // transaction take the lock themselves; taking it again here would deadlock.
 export async function sendAgentDraftPasteContentNow(
-  settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined,
   ptyId: string,
   content: string,
   writePty?: AgentDraftPtyInputWriter
@@ -54,7 +50,6 @@ export async function sendAgentDraftPasteContentNow(
   })
   if (!directMeasurement.exceededLimit) {
     return await writeAgentDraftPtyInput(
-      settings,
       ptyId,
       wrapTerminalBracketedPasteText(terminalContent),
       writePty
@@ -71,16 +66,16 @@ export async function sendAgentDraftPasteContentNow(
   for (const chunk of iterateAgentDraftPasteContentChunks(terminalContent)) {
     let accepted = false
     try {
-      accepted = await writeAgentDraftPtyInput(settings, ptyId, chunk, writePty)
+      accepted = await writeAgentDraftPtyInput(ptyId, chunk, writePty)
     } catch {
       if (bracketedPasteOpen && chunk !== BRACKETED_PASTE_END) {
-        await closeAgentDraftBracketedPaste(settings, ptyId, writePty)
+        await closeAgentDraftBracketedPaste(ptyId, writePty)
       }
       return false
     }
     if (!accepted) {
       if (bracketedPasteOpen && chunk !== BRACKETED_PASTE_END) {
-        await closeAgentDraftBracketedPaste(settings, ptyId, writePty)
+        await closeAgentDraftBracketedPaste(ptyId, writePty)
       }
       return false
     }
@@ -193,24 +188,31 @@ function getSanitizedUtf8ByteLengthForCodePoint(codePoint: number): number {
   )
 }
 
+// Verified local PTY write: prefer the acked bridge write, fall back to the
+// fire-and-forget one so paste flow never blocks on an unacked transport.
 async function writeAgentDraftPtyInput(
-  settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined,
   ptyId: string,
   data: string,
   writePty?: AgentDraftPtyInputWriter
 ): Promise<boolean> {
-  return writePty ? await writePty(data) : await sendRuntimePtyInputVerified(settings, ptyId, data)
+  if (writePty) {
+    return await writePty(data)
+  }
+  const accepted = await window.api.pty.writeAccepted(ptyId, data)
+  if (!accepted) {
+    window.api.pty.write(ptyId, data)
+  }
+  return true
 }
 
 async function closeAgentDraftBracketedPaste(
-  settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined,
   ptyId: string,
   writePty?: AgentDraftPtyInputWriter
 ): Promise<void> {
   try {
     // Why: once the opener reached the PTY, a failed content chunk should not
     // leave the target TUI in bracketed-paste mode.
-    await writeAgentDraftPtyInput(settings, ptyId, BRACKETED_PASTE_END, writePty)
+    await writeAgentDraftPtyInput(ptyId, BRACKETED_PASTE_END, writePty)
   } catch {
     // The original write already failed; callers only need the paste to fail closed.
   }

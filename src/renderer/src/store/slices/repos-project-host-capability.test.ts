@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Repo } from '../../../../shared/repo-types'
 import { PROJECT_HOST_SETUP_RUNTIME_CAPABILITY } from '../../../../shared/protocol-version'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
-import type { RuntimeEnvironmentCallRequest } from '../../runtime/runtime-compatibility-test-fixture'
 import { createTestStore } from './store-test-helpers'
 
 const remoteRepo: Repo = {
@@ -40,14 +38,13 @@ function runtimeStatusWithoutProjectHostSetup() {
 }
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   reposList.mockReset()
   reposClone.mockReset()
   reposCloneRemote.mockReset()
   runtimeEnvironmentCall.mockReset()
   runtimeEnvironmentTransportCall.mockReset()
   runtimeCapabilities = []
-  runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
+  runtimeEnvironmentTransportCall.mockImplementation((args: { method: string }) => {
     if (args.method === 'status.get') {
       return runtimeStatusWithoutProjectHostSetup()
     }

@@ -7,7 +7,7 @@ import type {
   DirectSshAuthority,
   SshConnectionState,
   SshProviderEpoch
-} from '../../../../shared/ssh-types'
+} from './ssh-host-state-contracts'
 import type { Project, ProjectHostSetup } from '../../../../shared/project-types'
 import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'

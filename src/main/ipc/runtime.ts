@@ -1,14 +1,12 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import type {
-  RuntimeBrowserDriverState,
   RuntimeRendererSyncWindowGraph,
   RuntimeStatus,
   RuntimeSyncWindowGraphResult,
   RuntimeTerminalDriverState
 } from '../../shared/runtime-types'
 import type { RuntimeRpcResponse } from '../../shared/runtime-rpc-envelope'
-import type { ClientHostedBrowserRowsEvent } from '../../shared/client-hosted-browser-rows'
 import { TERMINAL_FIT_RESTORE_DEADLINE_MS } from '../../shared/terminal-fit-restore-deadline'
 import { DESKTOP_RENDERER_RUNTIME_CLIENT_CAPABILITIES } from './desktop-renderer-runtime-capabilities'
 import { RpcDispatcher } from '../runtime/rpc/dispatcher'
@@ -161,29 +159,6 @@ export function registerRuntimeHandlers(runtime: OrcaRuntimeService): void {
     }
   )
 
-  ipcMain.removeHandler('runtime:getBrowserDrivers')
-  ipcMain.handle(
-    'runtime:getBrowserDrivers',
-    (): { browserPageId: string; driver: RuntimeBrowserDriverState }[] => {
-      const drivers = runtime.getAllBrowserDrivers()
-      return Array.from(drivers.entries()).map(([browserPageId, driver]) => ({
-        browserPageId,
-        driver
-      }))
-    }
-  )
-
-  ipcMain.removeHandler('runtime:getBrowserRemoteViewerPages')
-  ipcMain.handle('runtime:getBrowserRemoteViewerPages', (): string[] =>
-    runtime.getBrowserRemoteViewerPages()
-  )
-
-  // Why: the renderer holds these rows in memory only, so a reload has nothing to restore from.
-  ipcMain.removeHandler('runtime:getClientHostedBrowserRows')
-  ipcMain.handle('runtime:getClientHostedBrowserRows', (): ClientHostedBrowserRowsEvent[] =>
-    runtime.listClientHostedBrowserRows()
-  )
-
   // Why: the desktop "Restore" button sets the display mode to 'desktop' and
   // applies it, which restores the PTY to its original dimensions and emits
   // a 'resized' event to any active mobile subscriber. This uses the same
@@ -231,16 +206,4 @@ export function registerRuntimeHandlers(runtime: OrcaRuntimeService): void {
     }
     return { restored: await boundTerminalFitRestore(pending) }
   })
-
-  ipcMain.removeHandler('runtime:reclaimBrowserForDesktop')
-  ipcMain.handle(
-    'runtime:reclaimBrowserForDesktop',
-    (_event, args: { browserPageId: string }): { reclaimed: boolean } => {
-      try {
-        return { reclaimed: runtime.reclaimBrowserForDesktop(args.browserPageId) }
-      } catch {
-        return { reclaimed: false }
-      }
-    }
-  )
 }

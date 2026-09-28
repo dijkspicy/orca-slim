@@ -2,10 +2,6 @@ import { BrowserWindow, nativeTheme, powerMonitor, screen } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { join } from 'node:path'
 import { getAppIconPath } from '../app-icon'
-import { getBrowserClientHostId } from '../browser/browser-client-host-id'
-import { formatBrowserClientHostIdArgument } from '../../shared/browser-client-host-id-argument'
-import { markSystemSessionEnding } from '../crash-reporting/expected-teardown-state'
-import { recordDurableCrashBreadcrumb } from '../crash-reporting/durable-crash-breadcrumb'
 import { clearTrustedUIRendererWebContentsId, setTrustedUIRendererWebContentsId } from '../ipc/ui'
 import type { Store } from '../persistence'
 import { closeDashboardPopout } from './dashboard-popout-window'
@@ -14,7 +10,6 @@ import {
   WINDOW_QUIT_RENDERER_ACK_TIMEOUT_MS
 } from './main-window-close-lifecycle'
 import type { CreateMainWindowOptions, MainWindowLoadObserver } from './main-window-contracts'
-import { mainWindowLoadErrorCode } from './main-window-load-error-code'
 import { installMainWindowFocusLifecycle } from './main-window-focus-lifecycle'
 import { installMainWindowShortcutRouting } from './main-window-shortcut-routing'
 import { installMainWindowStateLifecycle } from './main-window-state-lifecycle'
@@ -43,11 +38,6 @@ export function loadMainWindow(mainWindow: BrowserWindow, observer?: MainWindowL
     () => observer?.onLoaded?.(),
     (cause: unknown) => {
       const error = cause instanceof Error ? cause : new Error(String(cause))
-      const errorCode = mainWindowLoadErrorCode(error)
-      // Keep durable diagnostics path-free and exclude shutdown/navigation aborts.
-      if (!mainWindow.isDestroyed() && errorCode !== 'ERR_ABORTED') {
-        recordDurableCrashBreadcrumb('main_window_load_failed', { errorCode })
-      }
       console.error('[window] Main window load failed', error)
       observer?.onError?.(error)
     }
@@ -127,31 +117,13 @@ export function createMainWindow(
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,
-      webviewTag: true,
-      // Why an argument and not an IPC read: this is the window whose webviews host browser guests,
-      // and it has to know that before it interprets its first session snapshot — earlier than any
-      // handler registration it could wait on.
-      additionalArguments: [formatBrowserClientHostIdArgument(getBrowserClientHostId())]
+      webviewTag: true
     }
   })
   const rendererWebContentsId = mainWindow.webContents.id
   installWindowsPathRegistryChangeListener(mainWindow)
   // Why: native paste fallback is privileged IPC; only the top-level renderer may request it.
   setTrustedUIRendererWebContentsId(rendererWebContentsId)
-
-  // Unlike query-session-end, session-end cannot be canceled before this signal is recorded.
-  if (process.platform === 'win32') {
-    mainWindow.on('session-end', (event) => {
-      markSystemSessionEnding()
-      // Why: killed/exit-1 tree kills look identical from a user task-kill and an
-      // OS shutdown; this is the only positive OS-shutdown signal bundles get.
-      recordDurableCrashBreadcrumb('system_session_end', {
-        reasons: Array.isArray(event?.reasons)
-          ? event.reasons.filter((reason) => typeof reason === 'string').join(',')
-          : ''
-      })
-    })
-  }
 
   if (process.platform === 'darwin') {
     // Why: preserve hidden-window power savings; stable native sizing and frame-only invalidation

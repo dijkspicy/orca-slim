@@ -4,9 +4,19 @@ import {
   normalizeProjectRow
 } from './project-catalog-row-normalization'
 import { normalizeGitHubRemoteHost } from './git-remote-host-alias'
-import { githubRepoIdentityKey, isDefaultGitHubHost } from './github/repository-identity-key'
 import type { Project, ProjectHostSetup, ProjectProviderIdentity } from './project-types'
 import type { Repo } from './repo-types'
+
+// Moved from github/repository-identity-key (removed with the forge domain).
+function isDefaultGitHubHost(host?: string): boolean {
+  return !host?.trim() || host.trim().toLowerCase() === 'github.com'
+}
+
+function githubRepoIdentityKey(repo: { owner: string; repo: string; host?: string }): string {
+  const slug = `${repo.owner.toLowerCase()}/${repo.repo.toLowerCase()}`
+  const host = repo.host?.trim().toLowerCase()
+  return host && !isDefaultGitHubHost(host) ? `${host}/${slug}` : slug
+}
 
 /**
  * A projection-local draft. `project` is always freshly built by `createProjectFromRepo`, never a
@@ -25,24 +35,12 @@ export type ProjectHostSetupProjection = {
 }
 
 export function getProjectProviderIdentity(
-  repo: Pick<Repo, 'upstream' | 'repoIcon' | 'gitRemoteIdentity'>
+  repo: Pick<Repo, 'repoIcon' | 'gitRemoteIdentity'>
 ): ProjectProviderIdentity | null {
-  const owner = typeof repo.upstream?.owner === 'string' ? repo.upstream.owner.trim() : ''
-  const name = typeof repo.upstream?.repo === 'string' ? repo.upstream.repo.trim() : ''
-  if (owner && name) {
-    return {
-      provider: 'github',
-      owner,
-      repo: name,
-      ...(repo.upstream?.host ? { host: repo.upstream.host } : {})
-    }
-  }
   if (repo.repoIcon?.type === 'image' && repo.repoIcon.source === 'github') {
     const parts = (repo.repoIcon.label?.trim() ?? '').split('/')
     const iconOwner = parts[0]?.trim()
     const iconRepo = parts[1]?.trim()
-    // Why: repo auto-detect can know the GitHub slug through the generated
-    // avatar icon even when legacy `upstream` has not been backfilled yet.
     if (iconOwner && iconRepo && parts.length === 2) {
       let host: string | undefined
       try {
@@ -78,27 +76,24 @@ function getProjectGitRemoteIdentity(
   return canonicalKey && remoteName && remoteUrl ? { canonicalKey, remoteName, remoteUrl } : null
 }
 
-/** True when the repo resolves to a GitHub provider identity (via explicit
- *  upstream or a GitHub-sourced avatar icon). Used to scope GitHub-CLI setup
+/** True when the repo resolves to a GitHub provider identity (via a
+ *  GitHub-sourced avatar icon). Used to scope GitHub-CLI setup
  *  prompts to users who actually have GitHub-backed projects. */
-export function isGitHubBackedRepo(
-  repo: Pick<Repo, 'upstream' | 'repoIcon' | 'gitRemoteIdentity'>
-): boolean {
+export function isGitHubBackedRepo(repo: Pick<Repo, 'repoIcon' | 'gitRemoteIdentity'>): boolean {
   return getProjectProviderIdentity(repo) !== null
 }
 
 export function hasProjectRemoteIdentity(
-  repo: Pick<Repo, 'upstream' | 'repoIcon' | 'gitRemoteIdentity'>
+  repo: Pick<Repo, 'repoIcon' | 'gitRemoteIdentity'>
 ): boolean {
   return getProjectProviderIdentity(repo) !== null || getProjectGitRemoteIdentity(repo) !== null
 }
 
 /** True while nothing has settled the repo's remote identity yet: the background
  *  probe has not answered (or could not reach the host), as distinct from the
- *  resolved `null` marker meaning "checked, no usable remote". Provider-neutral —
- *  GitHub repos usually settle through persisted `upstream` instead. */
+ *  resolved `null` marker meaning "checked, no usable remote". Provider-neutral. */
 export function isProjectRemoteIdentityPending(
-  repo: Pick<Repo, 'upstream' | 'repoIcon' | 'gitRemoteIdentity'>
+  repo: Pick<Repo, 'repoIcon' | 'gitRemoteIdentity'>
 ): boolean {
   return repo.gitRemoteIdentity === undefined && !hasProjectRemoteIdentity(repo)
 }
@@ -106,7 +101,7 @@ export function isProjectRemoteIdentityPending(
 const HOST_LOCAL_PROJECT_ID_PREFIX = 'repo:'
 
 export function getProjectIdentityKey(
-  repo: Pick<Repo, 'id' | 'upstream' | 'repoIcon' | 'gitRemoteIdentity'>
+  repo: Pick<Repo, 'id' | 'repoIcon' | 'gitRemoteIdentity'>
 ): string {
   const identity = getProjectProviderIdentity(repo)
   if (identity) {
@@ -132,16 +127,14 @@ export function getProjectIdForProviderIdentity(identity: ProjectProviderIdentit
   return `github:${githubRepoIdentityKey(identity)}`
 }
 
-function getProjectId(
-  repo: Pick<Repo, 'id' | 'upstream' | 'repoIcon' | 'gitRemoteIdentity'>
-): string {
+function getProjectId(repo: Pick<Repo, 'id' | 'repoIcon' | 'gitRemoteIdentity'>): string {
   return getProjectIdentityKey(repo)
 }
 
 function isGitHubRemoteHost(host: string): boolean {
   const hostname = host.toLowerCase().replace(/:\d+$/, '')
   // A generic git remote is provider-neutral. Only infer GHES when the host
-  // itself carries a GitHub/GHE signal; upstream/icon metadata handles custom names.
+  // itself carries a GitHub/GHE signal; icon metadata handles custom names.
   return (
     isDefaultGitHubHost(hostname) ||
     hostname.startsWith('github.') ||
@@ -296,7 +289,6 @@ function createSetupFromRepo(repo: Repo, projectId: string): ProjectHostSetup {
     ...(repo.connectionId !== undefined ? { connectionId: repo.connectionId } : {}),
     ...(repo.executionHostId !== undefined ? { executionHostId: repo.executionHostId } : {}),
     ...(repo.worktreeBasePath ? { worktreeBasePath: repo.worktreeBasePath } : {}),
-    ...(repo.hookSettings ? { hookSettings: repo.hookSettings } : {}),
     ...(repo.gitUsername ? { gitUsername: repo.gitUsername } : {}),
     ...(repo.sourceControlAi ? { sourceControlAi: repo.sourceControlAi } : {}),
     setupState: 'ready',

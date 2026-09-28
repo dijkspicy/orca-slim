@@ -1,13 +1,13 @@
 import { BrowserWindow } from 'electron'
-import type { RemoteRuntimeSharedConnectionDiagnostics } from '../../shared/remote-runtime-shared-control-types'
 import { RUNTIME_ENVIRONMENT_DIAGNOSTICS_CHANNEL } from '../../shared/runtime-environment-diagnostics'
+import type { RuntimeEnvironmentConnectionDiagnostics } from './runtime-environment-request-connections'
 
 export { RUNTIME_ENVIRONMENT_DIAGNOSTICS_CHANNEL }
 
 export type RuntimeEnvironmentDiagnosticsEvent = {
   environmentId: string
   transportGeneration: number
-  diagnostics: RemoteRuntimeSharedConnectionDiagnostics
+  diagnostics: RuntimeEnvironmentConnectionDiagnostics
 }
 
 export function publishRuntimeEnvironmentDiagnostics(

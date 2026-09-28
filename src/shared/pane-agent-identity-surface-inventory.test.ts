@@ -39,11 +39,6 @@ const SURFACE_ROWS: readonly SurfaceRow[] = [
   },
   { row: 34, path: 'src/main/runtime/orchestration/groups.ts', marker: 'terminalIsAgent' },
   {
-    row: 35,
-    path: 'src/renderer/src/lib/active-agent-note-target.ts',
-    marker: 'getActiveTerminalNoteTarget'
-  },
-  {
     row: 36,
     path: 'src/renderer/src/components/terminal-pane/terminal-agent-paste-bracketing.ts',
     marker: 'resolveProtectedMultilinePasteOptionsForPane'

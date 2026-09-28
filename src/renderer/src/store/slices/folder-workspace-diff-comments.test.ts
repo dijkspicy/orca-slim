@@ -5,12 +5,9 @@ import type { DiffComment } from '../../../../shared/diff-comment-types'
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { ProjectGroup } from '../../../../shared/project-group-types'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import { createDiffCommentsSlice } from './diffComments'
+
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 
 const runtimeEnvironmentCall = vi.fn()
 const runtimeEnvironmentTransportCall = vi.fn()
@@ -92,9 +89,8 @@ function bodies(store: ReturnType<typeof createTestStore>, workspaceKey: string)
 
 beforeEach(() => {
   vi.clearAllMocks()
-  clearRuntimeCompatibilityCacheForTests()
   runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-    return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+    return runtimeEnvironmentCall(args)
   })
 })
 

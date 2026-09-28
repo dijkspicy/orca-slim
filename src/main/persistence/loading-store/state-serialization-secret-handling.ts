@@ -5,7 +5,6 @@ import type { PersistedState } from '../../../shared/persisted-state-types'
 import { collectFolderWorkspaceDiffComments } from '../../folder-workspace-diff-comments'
 import {
   PROTECTED_SECRET_SLOT,
-  sshPtyOwnerLeaseSecretSlot,
   type ProtectedSecretRetentionUpdate
 } from '../../protected-secret-persistence'
 import { stripRetiredGlobalSettings } from '../applying-settings/terminal-settings-migrations'
@@ -103,9 +102,6 @@ export class StateSerializationSecretHandlingOperations {
             )
           }
           break
-        case 'sshRemotePtyLeases':
-          stateToSave[domain] = this.runtime.state.sshRemotePtyLeases
-          break
         default:
           return undefined
       }
@@ -199,15 +195,6 @@ export class StateSerializationSecretHandlingOperations {
       ),
       folderWorkspaceDiffComments: collectFolderWorkspaceDiffComments(
         this.runtime.state.folderWorkspaces
-      ),
-      sshPtyConsumerRecoveries: (this.runtime.state.sshPtyConsumerRecoveries ?? []).map(
-        (record) => ({
-          ...record,
-          ownerLease: encryptToSentinel(
-            sshPtyOwnerLeaseSecretSlot(record.targetId),
-            record.ownerLease
-          )
-        })
       ),
       settings: this.buildSettingsToSave(encryptToSentinel),
       ui: {

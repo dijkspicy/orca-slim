@@ -75,7 +75,6 @@ describe('agent launch routing caller census', () => {
 
   it('keeps non-visible, resume, and floating launchers intentionally outside the route', () => {
     for (const file of [
-      'src/renderer/src/lib/launch-agent-background-session.ts',
       'src/renderer/src/lib/launch-ai-vault-session.ts',
       'src/renderer/src/components/floating-terminal/FloatingTerminalWindowControls.tsx'
     ]) {

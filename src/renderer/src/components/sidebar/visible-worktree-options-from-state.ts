@@ -2,12 +2,14 @@ import type { Repo } from '../../../../shared/repo-types'
 import { getSettingsFocusedExecutionHostId } from '../../../../shared/execution-host'
 import { getWorktreeIdsWithLiveAgent } from '@/lib/worktree-activity-state'
 import type { useAppStore } from '@/store'
-import { getWorktreeIdsWithStructuredChat } from './visible-worktree-activity-inputs'
 import {
   EMPTY_PAIRED_DEVICE_IDS_BY_ENVIRONMENT,
   getPairedDeviceIdsByEnvironment
 } from './workspace-creator-visibility'
 import type { VisibleWorktreeOptions } from './visible-worktrees'
+
+// Structured chat tabs no longer exist, so no worktree ever has one.
+const EMPTY_STRUCTURED_CHAT_WORKTREE_IDS: ReadonlySet<string> = new Set()
 
 /**
  * Read the store into the filter inputs `computeVisibleWorktrees` decides from.
@@ -31,7 +33,7 @@ export function buildVisibleWorktreeOptionsFromState(
       state.tabsByWorktree,
       Date.now()
     ),
-    worktreeIdsWithStructuredChat: getWorktreeIdsWithStructuredChat(state.unifiedTabsByWorktree),
+    worktreeIdsWithStructuredChat: EMPTY_STRUCTURED_CHAT_WORKTREE_IDS,
     hideDefaultBranchWorkspace: state.hideDefaultBranchWorkspace,
     hideAutomationGeneratedWorkspaces: state.hideAutomationGeneratedWorkspaces,
     hideCliCreatedWorkspaces: state.hideCliCreatedWorkspaces,

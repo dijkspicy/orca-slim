@@ -7,7 +7,6 @@ const mocks = vi.hoisted(() => ({
   closeWebRuntimeSessionTab: vi.fn(async (_args: { environmentId: string | null }) => true),
   isWebRuntimeSessionActive: vi.fn(() => true),
   closeTerminalTab: vi.fn(),
-  destroyWorkspaceWebviews: vi.fn(),
   requestEditorFileClose: vi.fn(),
   getRuntimeEnvironmentIdForWorktree: vi.fn(() => null as string | null)
 }))
@@ -17,9 +16,6 @@ vi.mock('../../runtime/web-runtime-session', () => ({
   isWebRuntimeSessionActive: mocks.isWebRuntimeSessionActive
 }))
 vi.mock('../terminal/terminal-tab-actions', () => ({ closeTerminalTab: mocks.closeTerminalTab }))
-vi.mock('../../store/slices/browser-webview-cleanup', () => ({
-  destroyWorkspaceWebviews: mocks.destroyWorkspaceWebviews
-}))
 vi.mock('../editor/editor-autosave', () => ({
   requestEditorFileClose: mocks.requestEditorFileClose
 }))
@@ -98,7 +94,6 @@ describe('closing a browser workspace owned by more than one runtime environment
     commands().closeItem('unified-browser')
 
     expect(closedEnvironmentIds()).toEqual(['env-a', 'env-b'])
-    expect(mocks.destroyWorkspaceWebviews).not.toHaveBeenCalled()
   })
 
   it('closes it on every owning host from the bulk close', () => {
@@ -113,7 +108,6 @@ describe('closing a browser workspace owned by more than one runtime environment
     commands().closeItem('unified-browser')
 
     expect(mocks.closeWebRuntimeSessionTab).not.toHaveBeenCalled()
-    expect(mocks.destroyWorkspaceWebviews).toHaveBeenCalled()
     expect(closeBrowserTab).toHaveBeenCalledWith('workspace-a', undefined)
     expect(closeUnifiedTab).toHaveBeenCalledWith('unified-browser', undefined)
   })
@@ -131,7 +125,6 @@ describe('closing a browser workspace owned by more than one runtime environment
 
     expect(closedEnvironmentIds()).toEqual(['env-focused'])
     expect(closeUnifiedTab).toHaveBeenCalledWith('unified-browser', undefined)
-    expect(mocks.destroyWorkspaceWebviews).not.toHaveBeenCalled()
   })
 
   it('routes the bulk close through the same plan for a pageless host mirror', () => {
@@ -155,7 +148,6 @@ describe('closing a browser workspace owned by more than one runtime environment
     commands().closeItem('unified-browser')
 
     expect(mocks.closeWebRuntimeSessionTab).not.toHaveBeenCalled()
-    expect(mocks.destroyWorkspaceWebviews).toHaveBeenCalled()
     expect(closeBrowserTab).toHaveBeenCalledWith('workspace-a', { reason: 'cleanup' })
     expect(closeUnifiedTab).toHaveBeenCalledWith('unified-browser', {
       preserveWorktreeSelection: true,
@@ -242,7 +234,6 @@ describe('closing a browser workspace owned by more than one runtime environment
 
     expect(closedEnvironmentIds()).toEqual(['env-a'])
     expect(closeUnifiedTab).not.toHaveBeenCalled()
-    expect(mocks.destroyWorkspaceWebviews).not.toHaveBeenCalled()
   })
 })
 

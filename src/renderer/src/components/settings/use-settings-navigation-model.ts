@@ -2,15 +2,12 @@ import { useCallback, useMemo } from 'react'
 import { applyDocumentTheme } from '@/lib/document-theme'
 import { useSettingsNavigationMetadata } from '@/hooks/useSettingsNavigationMetadata'
 import type { SettingsNavInstallStatus } from '@/lib/settings-navigation-types'
-import {
-  COMPUTER_USE_SKILL_NAME,
-  ORCHESTRATION_SKILL_NAME
-} from '@/lib/agent-feature-install-commands'
-import {
-  getAgentSkillNavInstallStatus,
-  getLinearAgentSkillNavInstallStatus
-} from '@/lib/agent-skill-nav-install-status'
 import { getProjectHostSetupProjectionFromState } from '../../store/selectors'
+
+// Skill-freshness inventory rode on the culled skill-sharing service; install
+// status now reads only the local discovery state.
+const skillInstallStatus = (installed: boolean, loading: boolean): SettingsNavInstallStatus =>
+  loading ? 'checking' : installed ? 'installed' : 'install'
 import { getSettingsSectionSearchEntries, rankSettingsSearchItems } from './settings-search'
 import { deriveNeededSectionIds } from './settings-load-performance'
 import { SCROLLBACK_PRESETS_ROWS } from './SettingsConstants'
@@ -43,61 +40,23 @@ export function useSettingsNavigationModel(
   const baseNavSections = useSettingsNavigationMetadata()
   const { installed: orchestrationSkillInstalled, loading: orchestrationSkillLoading } =
     model.orchestrationSkill
-  const {
-    installed: linearSkillInstalled,
-    loading: linearSkillLoading,
-    skills: linearSkills
-  } = model.linearSkill
   const { installed: computerUseSkillInstalled, loading: computerUseSkillLoading } =
     model.computerUseSkill
   const capabilityInstallStatusBySectionId = useMemo(() => {
-    const applicableFreshnessInventory = model.skillFreshnessApplies
-      ? model.skillFreshnessInventory
-      : null
     const next = new Map<string, SettingsNavInstallStatus>([
-      [
-        'orchestration',
-        getAgentSkillNavInstallStatus({
-          name: ORCHESTRATION_SKILL_NAME,
-          installed: orchestrationSkillInstalled,
-          loading: orchestrationSkillLoading,
-          inventory: applicableFreshnessInventory
-        })
-      ]
+      ['orchestration', skillInstallStatus(orchestrationSkillInstalled, orchestrationSkillLoading)]
     ])
-    if (model.linearConnected) {
-      next.set(
-        'linear',
-        getLinearAgentSkillNavInstallStatus({
-          skills: linearSkills,
-          installed: linearSkillInstalled,
-          loading: linearSkillLoading,
-          inventory: applicableFreshnessInventory
-        })
-      )
-    }
     if (model.showDesktopOnlySettings) {
       next.set(
         'computer-use',
-        getAgentSkillNavInstallStatus({
-          name: COMPUTER_USE_SKILL_NAME,
-          installed: computerUseSkillInstalled,
-          loading: computerUseSkillLoading,
-          inventory: applicableFreshnessInventory
-        })
+        skillInstallStatus(computerUseSkillInstalled, computerUseSkillLoading)
       )
     }
     return next
   }, [
     computerUseSkillInstalled,
     computerUseSkillLoading,
-    linearSkillInstalled,
-    linearSkillLoading,
-    linearSkills,
-    model.linearConnected,
     model.showDesktopOnlySettings,
-    model.skillFreshnessApplies,
-    model.skillFreshnessInventory,
     orchestrationSkillInstalled,
     orchestrationSkillLoading
   ])

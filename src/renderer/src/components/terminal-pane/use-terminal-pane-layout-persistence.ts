@@ -4,9 +4,7 @@ import type { ManagedPane } from '@/lib/pane-manager/pane-manager'
 import { serializeTerminalLayout } from './layout-serialization'
 import { mergeCapturedLeafState } from './merge-captured-leaf-state'
 import { resolveTerminalLayoutActiveLeafId } from './terminal-layout-leaf-ids'
-import { isRemoteRuntimePtyId } from '@/runtime/runtime-terminal-inspection'
 import { clearTerminalScrollbackAndFollowOutput } from '@/lib/pane-manager/terminal-scrollback-clear'
-import { clearWebRuntimeTerminalBuffer } from '@/runtime/web-runtime-session'
 import {
   isSyntheticSinglePaneTitle,
   sanitizeTerminalLayoutPaneTitles
@@ -25,7 +23,6 @@ export function useTerminalPaneLayoutPersistence(controller: TerminalPaneStartup
     paneTitles,
     paneTitlesRef,
     paneTransportsRef,
-    remotePaneLayoutPusherRef,
     removedTitleLeafIdsRef,
     savedLayout,
     setPaneTitles,
@@ -121,12 +118,6 @@ export function useTerminalPaneLayoutPersistence(controller: TerminalPaneStartup
       layout.titlesByLeafId = titlesByLeafId
     }
     setTabLayout(tabId, layout)
-    const hasRemotePane = Object.values(mergedPtyIds).some(
-      (ptyId) => typeof ptyId === 'string' && isRemoteRuntimePtyId(ptyId)
-    )
-    if (hasRemotePane) {
-      remotePaneLayoutPusherRef.current?.push({ worktreeId, tabId, layout })
-    }
     for (const leafId of currentLeafIds) {
       clearedScrollbackLeafIds.delete(leafId)
     }
@@ -142,8 +133,7 @@ export function useTerminalPaneLayoutPersistence(controller: TerminalPaneStartup
       clearedScrollbackLeafIdsRef.current.add(pane.leafId)
       clearTerminalScrollbackAndFollowOutput(pane.terminal)
       const ptyId = paneTransportsRef.current.get(pane.id)?.getPtyId() ?? null
-      const clearedRemoteHostBuffer = clearWebRuntimeTerminalBuffer(ptyId)
-      if (!clearedRemoteHostBuffer && ptyId) {
+      if (ptyId) {
         window.api.pty.clearBuffer(ptyId)
       }
       persistLayoutSnapshot()

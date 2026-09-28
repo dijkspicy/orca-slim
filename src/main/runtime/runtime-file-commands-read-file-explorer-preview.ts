@@ -9,10 +9,8 @@ import {
   MOBILE_FILE_READ_MAX_BYTES,
   RUNTIME_PREVIEWABLE_BINARY_MIME_TYPES,
   assertPreviewWithinTransportBudget,
-  previewableBinaryByteLimit,
-  readPreviewFileWithinCap
+  previewableBinaryByteLimit
 } from './runtime-file-commands-mobile-file-list-limit'
-import { requireRuntimeFileProvider } from './runtime-file-command-target'
 import { open, stat } from 'node:fs/promises'
 import { resolveAuthorizedPath } from '../ipc/filesystem-auth'
 import { extname } from 'node:path'
@@ -26,7 +24,6 @@ import type {
   DocPreviewFileAccessResult
 } from '../../shared/doc-preview-file-access'
 import { readAuthorizedDocPreviewFile } from '../../shared/doc-preview-file-access'
-import { readSshFileExplorerChunk } from './ssh-file-explorer-chunk-read'
 
 export class RuntimeFileCommandsWithReadFileExplorerPreview extends RuntimeFileCommandsWithAssertRemoteTerminalFileGrantPathStillCanonical {
   async readFileExplorerPreview(
@@ -39,33 +36,6 @@ export class RuntimeFileCommandsWithReadFileExplorerPreview extends RuntimeFileC
         ? LOCAL_PREVIEWABLE_BINARY_MAX_BYTES
         : previewableBinaryByteLimit(maxContentBytes)
     const target = await this.resolveFileExplorerPath(worktreeSelector, relativePath)
-    const provider = requireRuntimeFileProvider(target)
-    if (provider) {
-      const fileStats = await provider.stat(target.path)
-      if (fileStats.size > binaryMaxBytes) {
-        throw new Error('file_too_large')
-      }
-      const result = await readPreviewFileWithinCap(provider, target.path, {
-        maxBinaryBytes: binaryMaxBytes,
-        maxTextBytes: MOBILE_FILE_READ_MAX_BYTES
-      })
-      // Why: the stat gate sizes base64 binaries; text crosses the wire JSON-escaped (up to 6x), so
-      // hold it to the same decoded limit the local branch enforces before reading.
-      if (
-        !result.isBinary &&
-        Buffer.byteLength(result.content, 'utf8') > MOBILE_FILE_READ_MAX_BYTES
-      ) {
-        throw new Error('file_too_large')
-      }
-      if (
-        result.isBinary &&
-        maxContentBytes !== undefined &&
-        Buffer.byteLength(result.content, 'utf8') > maxContentBytes
-      ) {
-        throw new Error('file_too_large')
-      }
-      return assertPreviewWithinTransportBudget(result, maxContentBytes)
-    }
 
     const filePath = await resolveAuthorizedPath(target.path, this.host.requireStore())
     const mimeType = RUNTIME_PREVIEWABLE_BINARY_MIME_TYPES[extname(filePath).toLowerCase()]
@@ -134,13 +104,7 @@ export class RuntimeFileCommandsWithReadFileExplorerPreview extends RuntimeFileC
       maxTextBytes: MOBILE_FILE_READ_MAX_BYTES,
       maxBinaryBytes: binaryMaxBytes
     }
-    const provider = requireRuntimeFileProvider(target)
-    if (provider && !provider.readDocPreviewFile) {
-      throw new Error('Secure document previews require a newer SSH relay')
-    }
-    const result = provider?.readDocPreviewFile
-      ? await provider.readDocPreviewFile(request)
-      : await readAuthorizedDocPreviewFile(request)
+    const result = await readAuthorizedDocPreviewFile(request)
     return assertPreviewWithinTransportBudget(result, maxContentBytes)
   }
 
@@ -151,14 +115,6 @@ export class RuntimeFileCommandsWithReadFileExplorerPreview extends RuntimeFileC
     length: number
   ): Promise<RuntimeFileReadChunkResult> {
     const target = await this.resolveFileExplorerPath(worktreeSelector, relativePath)
-    const provider = requireRuntimeFileProvider(target)
-    if (provider) {
-      const fileStat = await provider.stat(target.path)
-      if (fileStat.type === 'directory') {
-        throw new Error('Cannot download a directory')
-      }
-      return readSshFileExplorerChunk(provider, target.path, fileStat.size, offset, length)
-    }
 
     const filePath = await resolveAuthorizedPath(target.path, this.host.requireStore())
     const fileStats = await stat(filePath)

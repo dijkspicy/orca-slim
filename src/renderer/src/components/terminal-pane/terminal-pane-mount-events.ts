@@ -1,7 +1,5 @@
 import type { PaneManager } from '@/lib/pane-manager/pane-manager'
 import { CLOSE_TERMINAL_PANE_EVENT, type CloseTerminalPaneDetail } from '@/constants/terminal'
-import { consumePendingWebRuntimeSplitMirrorTelemetry } from '@/runtime/web-runtime-session'
-import { scheduleRuntimeGraphSync } from '@/runtime/sync-runtime-graph'
 import { closeTerminalTab } from '../terminal/terminal-tab-actions'
 import { useAppStore } from '@/store'
 import { makePaneKey } from '../../../../shared/stable-pane-id'
@@ -61,13 +59,9 @@ export function installTerminalPaneMountEvents(args: {
         })
       } else {
         const createdPane = mgr.splitPane(sourcePaneId, detail.direction, splitOptions)
-        const telemetrySuppressed = createdPane
-          ? consumePendingWebRuntimeSplitMirrorTelemetry(detail.sourcePtyId, detail.direction)
-          : false
         recordRuntimeCreatedTerminalPaneSplit(createdPane, {
           source: detail.telemetrySource ?? 'command',
-          direction: detail.direction,
-          telemetrySuppressed
+          direction: detail.direction
         })
       }
     }
@@ -104,7 +98,6 @@ export function installTerminalPaneMountEvents(args: {
     if (result !== 'pane') {
       return
     }
-    scheduleRuntimeGraphSync()
     deps.syncCanExpandState()
     deps.queueResizeAll(deps.isActive)
     deps.persistLayoutSnapshot()

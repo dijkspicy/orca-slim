@@ -1,45 +1,37 @@
 import { defineMethod } from '../core'
-import { remoteRpcContentBudget } from '../../../../shared/remote-rpc-content-budget'
 import { GitBranchDiff, GitCommitDiff, GitDiff } from './git-params'
-
-// Why: clientKind is set only for WebSocket-transported requests, so desktop-local and in-process
-// callers keep uncapped full-fidelity diffs.
-function remoteDiffContentBudget(
-  clientKind: 'mobile' | 'runtime' | undefined,
-  requestId: string | undefined
-): number | undefined {
-  return clientKind && requestId ? remoteRpcContentBudget(requestId) : undefined
-}
 
 export const GIT_DIFF_METHODS = [
   defineMethod({
     name: 'git.diff',
     params: GitDiff,
-    handler: async (params, { runtime, clientKind, requestId }) =>
+    handler: async (params, { runtime }) =>
+      // The request-scoped content budget existed for the paired mobile/relay transports,
+      // which are gone; every remaining caller reads the full-fidelity diff.
       runtime.getRuntimeGitDiff(
         params.worktree,
         params.filePath,
         params.staged,
         params.compareAgainstHead,
-        remoteDiffContentBudget(clientKind, requestId)
+        undefined
       )
   }),
   defineMethod({
     name: 'git.branchDiff',
     params: GitBranchDiff,
-    handler: async (params, { runtime, clientKind, requestId }) =>
+    handler: async (params, { runtime }) =>
       runtime.getRuntimeGitBranchDiff(
         params.worktree,
         params.compare,
         params.filePath,
         params.oldPath,
-        remoteDiffContentBudget(clientKind, requestId)
+        undefined
       )
   }),
   defineMethod({
     name: 'git.commitDiff',
     params: GitCommitDiff,
-    handler: async (params, { runtime, clientKind, requestId }) =>
+    handler: async (params, { runtime }) =>
       runtime.getRuntimeGitCommitDiff(
         params.worktree,
         {
@@ -48,7 +40,7 @@ export const GIT_DIFF_METHODS = [
           filePath: params.filePath,
           oldPath: params.oldPath
         },
-        remoteDiffContentBudget(clientKind, requestId)
+        undefined
       )
   })
 ]

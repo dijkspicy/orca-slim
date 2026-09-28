@@ -18,7 +18,6 @@ import {
   AUTOMATION_OWNER_CONFLICT_CODES,
   AutomationOwnerConflictError
 } from './automation-owner-conflict'
-import { sanitizeSshTargetGeneration } from './ssh-target-generation'
 
 export type AutomationOwnerPreconditionSelector =
   | { kind: 'self' }
@@ -27,6 +26,12 @@ export type AutomationOwnerPreconditionSelector =
 
 export type AutomationOwnerPrecondition = {
   selector: AutomationOwnerPreconditionSelector
+}
+
+// Verbatim helper formerly supplied by `ssh-target-generation.ts` (culled with
+// the SSH target registry); legacy persisted rows still carry generation fences.
+function sanitizeSshTargetGeneration(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 ? value : undefined
 }
 
 /** Where a create or a selector-moving update wants the record to land. */

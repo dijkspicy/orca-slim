@@ -34,15 +34,11 @@ type IssueSourceActionsInput = Pick<
 import { useCallback, useMemo } from 'react'
 import type { LinearIssue } from '../../../../shared/linear/issue-types'
 import type { JiraIssue } from '../../../../shared/jira-types'
+import { buildLinearWorkspaceSource } from '../../../../shared/new-workspace/workspace-source'
 import {
-  toLinearLinkedWorkItem,
   getLinkedItemDisplayName,
   getSmartNameSelection as getFolderSmartNameSelection
 } from '@/components/sidebar/folder-workspace-composer-helpers'
-import {
-  buildLinearIssueLinkedWorkItem,
-  getLinearLinkedWorkItemBranchName
-} from '@/lib/linear-linked-work-item'
 import { getLinearIssueWorkspaceName } from '../../../../shared/workspace-name'
 import {
   getLinkedWorkItemSuggestedName,
@@ -91,7 +87,7 @@ export function useIssueSourceActions(input: IssueSourceActionsInput) {
   const handleSmartLinearIssueSelect = useCallback(
     (issue: LinearIssue): void => {
       if (isProjectGroupTarget) {
-        const linkedItem = toLinearLinkedWorkItem(issue)
+        const linkedItem = buildLinearWorkspaceSource(issue)
         setLinkedIssue('')
         setLinkedPR(null)
         setLinkedGitLabIssue(null)
@@ -117,7 +113,7 @@ export function useIssueSourceActions(input: IssueSourceActionsInput) {
       setLinkedGitLabIssue(null)
       setLinkedGitLabMR(null)
       setLinkedTaskSourceContext(null)
-      const linkedLinearIssue = buildLinearIssueLinkedWorkItem(issue)
+      const linkedLinearIssue = buildLinearWorkspaceSource(issue)
       setLinkedWorkItem(linkedLinearIssue)
       const suggestedName = getLinearIssueWorkspaceName(issue)
       // Why: same lookup-text rule as applyLinkedWorkItem, plus the typed Linear identifier ("STA-123") that matched this issue.
@@ -131,11 +127,10 @@ export function useIssueSourceActions(input: IssueSourceActionsInput) {
         setName(suggestedName)
         lastAutoNameRef.current = suggestedName
       }
-      const linearBranchName = getLinearLinkedWorkItemBranchName(linkedLinearIssue)
-      setBranchNameOverride(linearBranchName)
-      setBranchNameOverridePreservesNameEdits(Boolean(linearBranchName))
+      setBranchNameOverride(undefined)
+      setBranchNameOverridePreservesNameEdits(false)
       setForkPushWarning(null)
-      branchAutoNameRef.current = linearBranchName ?? ''
+      branchAutoNameRef.current = ''
       // Why: don't prefill the note for a Linear pick — that would turn a source selection into user-authored instructions (matches the GitHub flow).
     },
     [

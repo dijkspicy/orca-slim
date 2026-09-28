@@ -1,5 +1,3 @@
-import { getRegisteredSshState, listRegisteredSshTargets } from '../../../ssh/ssh-target-registry'
-import { getPublicSshState } from '../../public-ssh-state'
 import { defineMethod, defineStreamingMethod } from '../core'
 import { ClientEventsUnsubscribeParams } from '../../../../shared/rpc-contract/client-events-params'
 
@@ -40,12 +38,7 @@ export const CLIENT_EVENT_METHODS = [
           []) {
           emit(event)
         }
-        const sshStates = listRegisteredSshTargets().flatMap((target) => {
-          const state = getPublicSshState(getRegisteredSshState(target.id) ?? null)
-          return state ? [{ targetId: target.id, state }] : []
-        })
-        // Why: attaching the listener before snapshotting closes the reload gap without exposing HUB-private target configuration.
-        emit({ type: 'ready', subscriptionId, snapshot: { sshStates } })
+        emit({ type: 'ready', subscriptionId })
       })
     }
   }),

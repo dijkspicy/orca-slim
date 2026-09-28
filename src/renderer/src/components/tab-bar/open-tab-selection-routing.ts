@@ -1,9 +1,7 @@
 // Routes an omnibox switch row to the matching palette activation and reports
 // how the destination should take keyboard focus once the menu closes.
 
-import { requestBrowserFocus } from '@/components/browser-pane/host-guest/browser-focus'
 import { translate } from '@/i18n/i18n'
-import { activateBrowserPagePaletteResult } from '@/lib/browser-page-palette-activation'
 import { focusTerminalTabSurface } from '@/lib/focus-terminal-tab-surface'
 import { activateSimulatorTabPaletteResult } from '@/lib/simulator-tab-palette-activation'
 import { activateWorkspaceTabPaletteResult } from '@/lib/workspace-tab-palette-activation'
@@ -29,29 +27,6 @@ function failed(reason: string, staleMessage: string): OpenTabSelectionOutcome {
 }
 
 export function activateOpenTabSearchResult(result: OpenTabSearchResult): OpenTabSelectionOutcome {
-  if (result.source === 'browser') {
-    const activation = activateBrowserPagePaletteResult({
-      executionHostId: result.executionHostId,
-      pageId: result.pageId,
-      workspaceId: result.workspaceId,
-      worktreeId: result.worktreeId
-    })
-    if (activation.status === 'failed') {
-      return failed(
-        activation.reason,
-        translate(
-          'auto.components.tab.bar.TabBarCreateEntry.d7d496a451',
-          'Browser page no longer exists'
-        )
-      )
-    }
-    return {
-      status: 'activated',
-      focus: () =>
-        requestBrowserFocus({ pageId: activation.pageId, target: activation.focusTarget })
-    }
-  }
-
   if (result.source === 'simulator') {
     const activation = activateSimulatorTabPaletteResult({
       executionHostId: result.executionHostId,

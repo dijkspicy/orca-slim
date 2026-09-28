@@ -1,25 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
 import type { WorktreeRuntimeOwnerState } from './worktree-runtime-owner'
 import { persistWorktreeSortOrderByHost } from './worktree-sort-order-persistence'
 
-vi.mock('@/runtime/runtime-rpc-client', () => ({
-  callRuntimeRpc: vi.fn()
-}))
-
 const localPersistSortOrder = vi.fn()
-const runtimeCall = vi.mocked(callRuntimeRpc)
 const UNHANDLED_REJECTION_SETTLE_MS = 20
 
 const state: WorktreeRuntimeOwnerState = {
-  settings: { activeRuntimeEnvironmentId: 'focused-env' },
-  repos: [
-    { id: 'local-repo', connectionId: null, executionHostId: 'local' },
-    { id: 'runtime-repo', connectionId: null, executionHostId: 'runtime:env-1' }
-  ],
+  settings: { activeRuntimeEnvironmentId: null },
+  repos: [{ id: 'local-repo', connectionId: null, executionHostId: 'local' }],
   worktreesByRepo: {
-    'local-repo': [{ id: 'local-repo::wt-a', repoId: 'local-repo' }],
-    'runtime-repo': [{ id: 'runtime-repo::wt-b', repoId: 'runtime-repo' }]
+    'local-repo': [{ id: 'local-repo::wt-a', repoId: 'local-repo' }]
   }
 }
 
@@ -41,9 +31,7 @@ async function collectUnhandledRejections(run: () => void): Promise<unknown[]> {
 }
 
 beforeEach(() => {
-  runtimeCall.mockReset()
   localPersistSortOrder.mockReset()
-  runtimeCall.mockResolvedValue(undefined)
   localPersistSortOrder.mockResolvedValue(undefined)
   vi.stubGlobal('window', {
     api: {
@@ -59,24 +47,17 @@ afterEach(() => {
 })
 
 describe('persistWorktreeSortOrderByHost', () => {
-  it('persists each owner host through the matching transport', () => {
-    persistWorktreeSortOrderByHost(state, ['runtime-repo::wt-b', 'local-repo::wt-a'])
+  it('persists each owner host through the local transport', () => {
+    persistWorktreeSortOrderByHost(state, ['local-repo::wt-a'])
 
-    expect(runtimeCall).toHaveBeenCalledWith(
-      { kind: 'environment', environmentId: 'env-1' },
-      'worktree.persistSortOrder',
-      { orderedIds: ['runtime-repo::wt-b'] },
-      { timeoutMs: 15_000 }
-    )
     expect(localPersistSortOrder).toHaveBeenCalledWith({ orderedIds: ['local-repo::wt-a'] })
   })
 
-  it('handles best-effort persistence rejections from disconnected hosts', async () => {
-    runtimeCall.mockRejectedValueOnce(new Error('SSH disconnected'))
+  it('handles best-effort persistence rejections without leaking them', async () => {
     localPersistSortOrder.mockRejectedValueOnce(new Error('local store unavailable'))
 
     const unhandledRejections = await collectUnhandledRejections(() => {
-      persistWorktreeSortOrderByHost(state, ['runtime-repo::wt-b', 'local-repo::wt-a'])
+      persistWorktreeSortOrderByHost(state, ['local-repo::wt-a'])
     })
 
     expect(unhandledRejections).toEqual([])

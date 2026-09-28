@@ -15,7 +15,7 @@ import {
 import { homedir, tmpdir } from 'node:os'
 import type * as Os from 'node:os'
 import { join } from 'node:path'
-import type * as CodexFsUtils from '../codex-accounts/fs-utils'
+import type * as CodexFsUtils from './codex-atomic-file-writes'
 
 // Why: temp homes exceed sun_path on macOS but not on Linux; keep asserted config bytes host-independent.
 vi.mock('./codex-daemon-socket-path-guard', async (importOriginal) => ({
@@ -36,7 +36,7 @@ vi.mock('node:os', async (importOriginal) => {
   }
 })
 
-vi.mock('../codex-accounts/fs-utils', async (importOriginal) => {
+vi.mock('./codex-atomic-file-writes', async (importOriginal) => {
   const actual = await importOriginal<typeof CodexFsUtils>()
   return {
     ...actual,

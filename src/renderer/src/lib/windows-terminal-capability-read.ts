@@ -1,8 +1,8 @@
-import { callRuntimeRpc, type RuntimeClientTarget } from '@/runtime/runtime-rpc-client'
-import type { RuntimeStatus } from '../../../shared/runtime-types'
 import type { WindowsTerminalCapabilities } from './windows-terminal-capabilities'
 
-export type WindowsTerminalCapabilityLoadTarget = RuntimeClientTarget
+export type WindowsTerminalCapabilityLoadTarget =
+  | { kind: 'local' }
+  | { kind: 'environment'; environmentId: string }
 
 async function reconcileWslAvailability(
   available: boolean,
@@ -20,88 +20,38 @@ export async function readWindowsTerminalCapabilities(
   target: WindowsTerminalCapabilityLoadTarget,
   sshConnectionId?: string | null
 ): Promise<WindowsTerminalCapabilities> {
-  if (sshConnectionId) {
-    const remoteCapabilityPromise =
-      target.kind === 'environment'
-        ? callRuntimeRpc<Omit<WindowsTerminalCapabilities, 'isLoading'>>(
-            target,
-            'preflight.detectRemoteWindowsTerminalCapabilities',
-            { connectionId: sshConnectionId },
-            { timeoutMs: 15_000 }
-          )
-        : window.api.preflight.detectRemoteWindowsTerminalCapabilities({
-            connectionId: sshConnectionId
-          })
-    return remoteCapabilityPromise
-      .then((capabilities) => ({
-        ...capabilities,
-        wslDistros: capabilities.wslDistros ?? [],
-        isLoading: false
-      }))
-      .catch(() => ({
-        wslAvailable: false,
-        wslDistros: [],
-        pwshAvailable: false,
-        gitBashAvailable: false,
-        hostPlatform: null,
-        isLoading: false
-      }))
-  }
-
-  if (target.kind === 'local') {
-    const [wslAvailable, wslDistros, pwshAvailable, gitBashAvailable, runtimeStatus] =
-      await Promise.all([
-        window.api.wsl.isAvailable().catch(() => false),
-        window.api.wsl.listDistros().catch(() => []),
-        window.api.pwsh.isAvailable().catch(() => false),
-        window.api.gitBash.isAvailable().catch(() => false),
-        window.api.runtime.getStatus().catch(() => null)
-      ])
-    const reconciledWslAvailable = await reconcileWslAvailability(wslAvailable, wslDistros, () =>
-      window.api.wsl.isAvailable()
-    )
+  // Remote probes went with the SSH/runtime-host cull; only the local host can answer now.
+  if (target.kind !== 'local' || sshConnectionId) {
     return {
-      wslAvailable: reconciledWslAvailable,
-      wslDistros,
-      pwshAvailable,
-      gitBashAvailable,
-      hostPlatform: runtimeStatus?.hostPlatform ?? null,
-      ...(runtimeStatus?.windowsProcessStartTimeAvailable !== undefined
-        ? { windowsProcessStartTimeAvailable: runtimeStatus.windowsProcessStartTimeAvailable }
-        : {}),
+      wslAvailable: false,
+      wslDistros: [],
+      pwshAvailable: false,
+      gitBashAvailable: false,
+      hostPlatform: null,
       isLoading: false
     }
   }
 
-  const [wslAvailable, wslDistros, pwshAvailable, gitBashAvailable, hostPlatform] =
+  const [wslAvailable, wslDistros, pwshAvailable, gitBashAvailable, runtimeStatus] =
     await Promise.all([
-      callRuntimeRpc<boolean>(target, 'host.wsl.isAvailable', undefined, {
-        timeoutMs: 15_000
-      }).catch(() => false),
-      callRuntimeRpc<string[]>(target, 'host.wsl.listDistros', undefined, {
-        timeoutMs: 15_000
-      }).catch(() => []),
-      callRuntimeRpc<boolean>(target, 'host.pwsh.isAvailable', undefined, {
-        timeoutMs: 15_000
-      }).catch(() => false),
-      callRuntimeRpc<boolean>(target, 'host.gitBash.isAvailable', undefined, {
-        timeoutMs: 15_000
-      }).catch(() => false),
-      callRuntimeRpc<RuntimeStatus>(target, 'status.get', undefined, { timeoutMs: 15_000 })
-        .then((status) => status.hostPlatform ?? null)
-        .catch(() => null)
+      window.api.wsl.isAvailable().catch(() => false),
+      window.api.wsl.listDistros().catch(() => []),
+      window.api.pwsh.isAvailable().catch(() => false),
+      window.api.gitBash.isAvailable().catch(() => false),
+      window.api.runtime.getStatus().catch(() => null)
     ])
   const reconciledWslAvailable = await reconcileWslAvailability(wslAvailable, wslDistros, () =>
-    callRuntimeRpc<boolean>(target, 'host.wsl.isAvailable', undefined, {
-      timeoutMs: 15_000
-    })
+    window.api.wsl.isAvailable()
   )
   return {
     wslAvailable: reconciledWslAvailable,
     wslDistros,
     pwshAvailable,
     gitBashAvailable,
-    hostPlatform,
+    hostPlatform: runtimeStatus?.hostPlatform ?? null,
+    ...(runtimeStatus?.windowsProcessStartTimeAvailable !== undefined
+      ? { windowsProcessStartTimeAvailable: runtimeStatus.windowsProcessStartTimeAvailable }
+      : {}),
     isLoading: false
   }
 }

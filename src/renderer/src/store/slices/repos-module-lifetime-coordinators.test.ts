@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Repo } from '../../../../shared/repo-types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import { createTestStore } from './store-test-helpers'
 
 const { syncFork } = vi.hoisted(() => ({ syncFork: vi.fn() }))
@@ -20,14 +15,12 @@ vi.mock('../../runtime/runtime-git-client', async (importOriginal) => {
 const runtimeCall = vi.fn()
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   vi.clearAllMocks()
   vi.stubGlobal('window', {
     api: {
       repos: { list: vi.fn() },
       runtimeEnvironments: {
-        call: (args: RuntimeEnvironmentCallRequest) =>
-          createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeCall(args)
+        call: (args: { method: string }) => runtimeCall(args)
       }
     }
   })
@@ -37,7 +30,7 @@ describe('repo module-lifetime coordinators', () => {
   it('lets a newer runtime fetch in another store supersede the older store request', async () => {
     const { promise: olderList, resolve: resolveOlderList } = Promise.withResolvers<unknown>()
     let repoListCalls = 0
-    runtimeCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
+    runtimeCall.mockImplementation((args: { method: string }) => {
       if (args.method !== 'repo.list') {
         return {
           id: `rpc-${args.method}`,

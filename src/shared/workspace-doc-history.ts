@@ -1,5 +1,12 @@
-import type { BrowserPageDocLocation } from './browser-workspace-types'
 import { isDocPreviewUrl } from './doc-preview-scheme'
+
+// Structural copy of the persisted doc location (was browser-workspace-types,
+// removed with the browser domain).
+type WorkspaceDocLocation = {
+  kind: 'workspace-doc'
+  worktreeId: string
+  filePath: string
+}
 
 /**
  * A previewed workspace document the URL-bar dropdown can offer again. The document is the whole
@@ -7,7 +14,7 @@ import { isDocPreviewUrl } from './doc-preview-scheme'
  * nowhere to land in history: confinement by absence, like the registry split.
  */
 export type WorkspaceDocHistoryEntry = {
-  docLocation: BrowserPageDocLocation
+  docLocation: WorkspaceDocLocation
   title: string
   lastVisitedAt: number
   visitCount: number
@@ -33,7 +40,7 @@ export function workspaceDocHistoryEntriesEqual(
 /** The title fence the page store applies, for history rows: a url-as-title falls back to the file. */
 export function normalizeWorkspaceDocHistoryTitle(
   title: string | null | undefined,
-  docLocation: BrowserPageDocLocation
+  docLocation: WorkspaceDocLocation
 ): string {
   if (!title || isDocPreviewUrl(title)) {
     const fileName = docLocation.filePath.split(/[\\/]/).at(-1)

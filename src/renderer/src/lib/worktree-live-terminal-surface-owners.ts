@@ -5,7 +5,6 @@ import type {
   RuntimeTerminalSummary
 } from '../../../shared/runtime-types'
 import { worktreeIdsEqual } from '../../../shared/worktree/id'
-import { toRuntimeWorktreeSelector } from '@/runtime/runtime-worktree-selector'
 
 /** The exact surface the execution host records as owning a live PTY. */
 export type LiveTerminalSurfaceOwner = {
@@ -101,7 +100,11 @@ export async function readWorktreeLiveTerminalSurfaceOwners(
   const response = await window.api.runtime.call({
     method: 'terminal.list',
     params: {
-      worktree: toRuntimeWorktreeSelector(worktreeId),
+      // Runtime `id:` worktree selector; passes through empty or already-prefixed values.
+      worktree: (() => {
+        const trimmed = worktreeId.trim()
+        return trimmed.startsWith('id:') ? trimmed : `id:${trimmed}`
+      })(),
       limit: OWNER_LISTING_LIMIT,
       requireFreshPtyLiveness: true,
       includeVisualLayouts: false

@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { toAppSshPtyId } from '../../../shared/ssh-pty-id'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
 
 const mockCreateTab = vi.fn()
@@ -12,7 +11,6 @@ const mockPasteDraftWhenAgentReady = vi.fn()
 const mockSeedNativeChatLaunchPrompt = vi.fn()
 const mockSeedNativeChatLaunchDraft = vi.fn()
 const mockMarkNativeChatLaunchPromptFailed = vi.fn()
-const mockTrack = vi.fn()
 const mockToastMessage = vi.fn()
 const mockWaitForAgentReady = vi.fn()
 
@@ -120,29 +118,9 @@ vi.mock('@/lib/agent-ready-wait', () => ({
   waitForAgentReady: mockWaitForAgentReady
 }))
 
-vi.mock('@/lib/telemetry', () => ({
-  track: mockTrack,
-  tuiAgentToAgentKind: (agent: string) => agent
-}))
-
-const mockCreateWebRuntimeSessionTerminal = vi.fn()
-const mockCreateWebRuntimeAgentSessionTerminalWithLaunchDraft = vi.fn()
-const mockIsWebRuntimeSessionActive = vi.fn(() => false)
-
-vi.mock('@/runtime/web-runtime-session', () => ({
-  createWebRuntimeSessionTerminal: mockCreateWebRuntimeSessionTerminal,
-  createWebRuntimeAgentSessionTerminalWithLaunchDraft:
-    mockCreateWebRuntimeAgentSessionTerminalWithLaunchDraft,
-  isWebRuntimeSessionActive: mockIsWebRuntimeSessionActive,
-  isWebTerminalSurfaceTabId: vi.fn(() => false)
-}))
-
 describe('launchAgentInNewTab', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockIsWebRuntimeSessionActive.mockReturnValue(false)
-    mockCreateWebRuntimeSessionTerminal.mockResolvedValue({ status: 'created' })
-    mockCreateWebRuntimeAgentSessionTerminalWithLaunchDraft.mockResolvedValue({ status: 'created' })
     store.activeRepoId = 'repo-1'
     store.activeWorktreeId = 'wt-1'
     store.settings = {
@@ -455,128 +433,6 @@ describe('launchAgentInNewTab', () => {
     expect(mockSetTabViewMode).not.toHaveBeenCalled()
   })
 
-  it('preserves paired-host draft delivery and supported launch preferences', async () => {
-    mockIsWebRuntimeSessionActive.mockReturnValue(true)
-    store.settings = {
-      agentCmdOverrides: {},
-      agentDefaultArgs: {},
-      agentDefaultEnv: {},
-      activeRuntimeEnvironmentId: 'web-runtime',
-      experimentalNativeChat: true,
-      experimentalStructuredNativeChat: true,
-      openAgentTabsInChatByDefault: true,
-      nativeChatSessionOptions: {
-        claude: {
-          model: 'opus',
-          valuesByModel: { opus: { effort: 'high', fastMode: true } }
-        }
-      }
-    }
-    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
-
-    const result = launchAgentInNewTab({
-      agent: 'claude',
-      worktreeId: 'wt-1',
-      prompt: 'review before sending',
-      promptDelivery: 'draft',
-      agentArgs: '--permission-mode plan'
-    })
-
-    expect(result?.surface).toEqual({ kind: 'host-published' })
-    expect(result?.pasteDraftAfterLaunch).toBe(false)
-    expect(mockCreateWebRuntimeAgentSessionTerminalWithLaunchDraft).toHaveBeenCalledWith(
-      expect.objectContaining({
-        launchAgent: 'claude',
-        prompt: 'review before sending',
-        promptDelivery: 'draft',
-        agentArgs: '--permission-mode plan',
-        launchPreferences: { model: 'opus', effort: 'high' },
-        agent: 'claude',
-        launchDraft: 'review before sending'
-      })
-    )
-    expect(mockCreateWebRuntimeSessionTerminal).not.toHaveBeenCalled()
-    expect(mockCreateTab).not.toHaveBeenCalled()
-  })
-
-  it('propagates the default chat mode to paired web runtime launches', async () => {
-    mockIsWebRuntimeSessionActive.mockReturnValue(true)
-    store.settings = {
-      agentCmdOverrides: {},
-      agentDefaultArgs: {},
-      agentDefaultEnv: {},
-      activeRuntimeEnvironmentId: 'web-runtime',
-      experimentalNativeChat: true,
-      experimentalStructuredNativeChat: true,
-      openAgentTabsInChatByDefault: true
-    }
-    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
-
-    launchAgentInNewTab({ agent: 'codex', worktreeId: 'wt-1' })
-
-    expect(mockCreateWebRuntimeSessionTerminal).toHaveBeenCalledWith(
-      expect.objectContaining({
-        worktreeId: 'wt-1',
-        environmentId: 'web-runtime',
-        agentSessionKind: 'fresh',
-        agent: 'codex',
-        viewMode: 'chat'
-      })
-    )
-  })
-
-  it('propagates the resolved terminal mode to paired web runtime launches', async () => {
-    mockIsWebRuntimeSessionActive.mockReturnValue(true)
-    store.settings = {
-      agentCmdOverrides: {},
-      agentDefaultArgs: {},
-      agentDefaultEnv: {},
-      activeRuntimeEnvironmentId: 'web-runtime',
-      experimentalNativeChat: true,
-      experimentalStructuredNativeChat: true,
-      openAgentTabsInChatByDefault: false
-    }
-    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
-
-    launchAgentInNewTab({ agent: 'codex', worktreeId: 'wt-1' })
-
-    expect(mockCreateWebRuntimeSessionTerminal).toHaveBeenCalledWith(
-      expect.objectContaining({
-        worktreeId: 'wt-1',
-        environmentId: 'web-runtime',
-        agentSessionKind: 'fresh',
-        agent: 'codex',
-        viewMode: 'terminal'
-      })
-    )
-  })
-
-  it('surfaces a toast when host agent launch fails in paired web clients', async () => {
-    mockIsWebRuntimeSessionActive.mockReturnValue(true)
-    mockCreateWebRuntimeSessionTerminal.mockResolvedValue({
-      status: 'failed',
-      message: 'Upgrade the remote Orca host before starting or resuming agent sessions.'
-    })
-    store.settings = {
-      agentCmdOverrides: {},
-      agentDefaultArgs: {},
-      agentDefaultEnv: {},
-      activeRuntimeEnvironmentId: 'web-runtime'
-    }
-    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
-
-    launchAgentInNewTab({
-      agent: 'claude',
-      worktreeId: 'wt-1'
-    })
-
-    await Promise.resolve()
-    expect(mockToastError).toHaveBeenCalledWith(
-      'Upgrade the remote Orca host before starting or resuming agent sessions.'
-    )
-    expect(mockSetActiveTabType).not.toHaveBeenCalled()
-  })
-
   it('queues initial working status for Command Code argv prompt launches', async () => {
     const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
 
@@ -596,30 +452,6 @@ describe('launchAgentInNewTab', () => {
         }
       })
     )
-  })
-
-  it('does not track prompt-sent for argv prompt launches', async () => {
-    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
-
-    launchAgentInNewTab({
-      agent: 'codex',
-      worktreeId: 'wt-1',
-      prompt: 'fix the spinner',
-      launchSource: 'onboarding'
-    })
-  })
-
-  it('does not track prompt-sent for draft launches', async () => {
-    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
-
-    launchAgentInNewTab({
-      agent: 'claude',
-      worktreeId: 'wt-1',
-      prompt: 'review this before sending',
-      promptDelivery: 'draft'
-    })
-
-    expect(mockTrack).not.toHaveBeenCalledWith('agent_prompt_sent', expect.anything())
   })
 
   it('falls back to post-ready draft paste when a Windows inline draft would be too large', async () => {
@@ -691,10 +523,10 @@ describe('launchAgentInNewTab', () => {
     store.terminalLayoutsByTabId = {
       'tab-1': {
         activeLeafId: LEAF_ID,
-        ptyIdsByLeafId: { [LEAF_ID]: toAppSshPtyId('ssh-a', 'pty-1') }
+        ptyIdsByLeafId: { [LEAF_ID]: 'pty-1' }
       }
     }
-    store.ptyIdsByTabId = { 'tab-1': [toAppSshPtyId('ssh-a', 'pty-1')] }
+    store.ptyIdsByTabId = { 'tab-1': ['pty-1'] }
     await expect(result?.promptDeliveryResult).resolves.toEqual({
       delivered: true,
       failureNotified: false
@@ -730,44 +562,9 @@ describe('launchAgentInNewTab', () => {
       undefined,
       { connectionId: 'ssh-a' }
     )
-    expect(mockTrack).not.toHaveBeenCalledWith('agent_prompt_sent', expect.anything())
   })
 
-  it('does not recreate SSH status when clear arrives before disconnect state', async () => {
-    let finishDelivery: ((delivered: boolean) => void) | undefined
-    mockPasteDraftWhenAgentReady.mockReturnValue(
-      new Promise<boolean>((resolve) => {
-        finishDelivery = resolve
-      })
-    )
-    store.repos = [{ id: 'repo-1', connectionId: 'ssh-a', path: '/repo' }]
-    const ptyId = toAppSshPtyId('ssh-a', 'pty-1')
-    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
-
-    const result = launchAgentInNewTab({
-      agent: 'command-code',
-      worktreeId: 'wt-1',
-      prompt: 'pending prompt',
-      promptDelivery: 'submit-after-ready'
-    })
-    store.terminalLayoutsByTabId = {
-      'tab-1': { activeLeafId: LEAF_ID, ptyIdsByLeafId: { [LEAF_ID]: ptyId } }
-    }
-    store.ptyIdsByTabId = { 'tab-1': [ptyId] }
-
-    // Why: explicit disconnect sends the transient clear before its state
-    // event, while the old connection can still appear connected and bound.
-    store.transientClearedAgentStatusConnectionIds = { 'ssh-a': true }
-    finishDelivery?.(true)
-    await expect(result?.promptDeliveryResult).resolves.toEqual({
-      delivered: true,
-      failureNotified: false
-    })
-
-    expect(mockSetAgentStatus).not.toHaveBeenCalled()
-  })
-
-  it('does not track prompt-sent when submit-after-ready delivery fails', async () => {
+  it('resolves delivered:false when submit-after-ready delivery fails', async () => {
     mockPasteDraftWhenAgentReady.mockResolvedValue(false)
     const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
 
@@ -782,8 +579,6 @@ describe('launchAgentInNewTab', () => {
       failureNotified: false
     })
     await Promise.resolve()
-
-    expect(mockTrack).not.toHaveBeenCalledWith('agent_prompt_sent', expect.anything())
   })
 
   it('marks failed submit-after-ready delivery as notified after readiness timeout toast', async () => {

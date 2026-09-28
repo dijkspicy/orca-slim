@@ -1,16 +1,31 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
 import { OrcaRuntimeWithSerializeHeadlessTerminalBuffer } from './orca-runtime-serialize-headless-terminal-buffer'
 import type {
-  OrchestrationCompatibilityEvidence,
-  OrchestrationCompatibilityHostStamp
-} from '../../shared/orchestration-compatibility-evidence'
-import type {
   OrchestrationCompatibilityCallerAuthority,
   OrchestrationCompatibilityTerminalAuthority
 } from './runtime-terminal-contracts'
 import { createHash } from 'node:crypto'
 import type { RuntimePtyWorktreeRecord } from './runtime-terminal-state-records'
 import { parsePaneKey } from '../../shared/stable-pane-id'
+
+// The shared compatibility-evidence module was culled; the caller-supplied payload is a
+// plain record, so its shape lives here now.
+type OrchestrationCompatibilityHostStamp =
+  | { kind: 'local' }
+  | { kind: 'wsl'; hostId: string; distro: string }
+  | {
+      kind: 'ssh'
+      targetId: string
+      attachmentId: string
+      connectionIncarnation: string
+    }
+
+type OrchestrationCompatibilityEvidence = {
+  terminalHandle?: unknown
+  paneKey?: unknown
+  launchToken?: unknown
+  host?: OrchestrationCompatibilityHostStamp
+}
 
 export class OrcaRuntimeWithVerifyOrchestrationCompatibilityCaller extends OrcaRuntimeWithSerializeHeadlessTerminalBuffer {
   verifyOrchestrationCompatibilityCaller(

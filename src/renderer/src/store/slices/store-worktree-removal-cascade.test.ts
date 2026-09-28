@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type * as AgentStatusModule from '@/lib/agent-status'
 import { getDefaultSettings } from '../../../../shared/constants'
-import { createCompatibleRuntimeStatusResponseIfNeeded } from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import { toast } from 'sonner'
 import {
   createTestStore,
@@ -46,20 +44,17 @@ const mockApi = createStoreCascadesMockApi()
 describe('removeWorktree cascade', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    clearRuntimeCompatibilityCacheForTests()
     saveSessionCommitDrafts({})
     mockApi.worktrees.remove.mockResolvedValue(undefined)
     mockApi.worktrees.forceDeletePreservedBranch.mockResolvedValue({ deleted: true })
     mockApi.runtimeEnvironments.call.mockReset()
-    mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) =>
-      Promise.resolve(
-        createCompatibleRuntimeStatusResponseIfNeeded(args) ?? {
-          id: 'rpc-default',
-          ok: true,
-          result: {},
-          _meta: { runtimeId: 'remote-runtime' }
-        }
-      )
+    mockApi.runtimeEnvironments.call.mockImplementation(() =>
+      Promise.resolve({
+        id: 'rpc-default',
+        ok: true,
+        result: {},
+        _meta: { runtimeId: 'remote-runtime' }
+      })
     )
   })
 
@@ -580,10 +575,6 @@ describe('removeWorktree cascade', () => {
       const displayed = runtimeFailure
 
       mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) => {
-        const compatibility = createCompatibleRuntimeStatusResponseIfNeeded(args)
-        if (compatibility) {
-          return Promise.resolve(compatibility)
-        }
         if (args.method === 'repo.hooksCheck') {
           return Promise.resolve({
             id: 'rpc-hooks',

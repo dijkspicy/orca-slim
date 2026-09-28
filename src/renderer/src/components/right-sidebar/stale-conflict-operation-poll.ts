@@ -3,10 +3,8 @@ import type { GitConflictOperation } from '../../../../shared/git-status-types'
 import type { Repo } from '../../../../shared/repo-types'
 import { isGitRepoKind } from '../../../../shared/repo-kind'
 import { getConnectionId } from '@/lib/connection-context'
-import { getRuntimeGitConflictOperation } from '@/runtime/runtime-git-client'
 import { createCoalescedPollRunner, type SlowTaskBackoffOptions } from './coalesced-poll-runner'
 import { installWindowVisibilityInterval, isWindowVisible } from '@/lib/window-visibility-interval'
-import { getRightSidebarWorktreeRuntimeSettings } from './file-explorer-runtime-owner'
 
 const CONFLICT_POLL_INTERVAL_MS = 3000
 
@@ -82,12 +80,10 @@ export function useStaleConflictOperationPolling(args: {
           if (!isConnectionReady(connectionId)) {
             continue
           }
-          const op = (await getRuntimeGitConflictOperation({
-            settings: getRightSidebarWorktreeRuntimeSettings(id),
-            worktreeId: id,
+          const op = await window.api.git.conflictOperation({
             worktreePath: path,
             connectionId
-          })) as GitConflictOperation
+          })
           if (!active) {
             return
           }

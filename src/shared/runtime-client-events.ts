@@ -4,7 +4,6 @@ import type {
   WorktreeSetupLaunch,
   WorktreeStartupLaunch
 } from './worktree/launch-types'
-import type { SshConnectionState } from './ssh-types'
 import type { TerminalSideEffectBatch } from './terminal-side-effect-facts'
 import type { RuntimeNativeChatLaunchDraftResolution } from './runtime-types'
 
@@ -13,10 +12,6 @@ export type RuntimeClientEvent =
   | { type: 'worktreesChanged'; repoId: string }
   | ({ type: 'nativeChatLaunchDraftResolved' } & RuntimeNativeChatLaunchDraftResolution)
   | { type: 'terminalSideEffects'; batch: TerminalSideEffectBatch }
-  // Why: SSH connections live on the runtime host; paired clients have no IPC
-  // channel for ssh:state-changed, so without this event their reconnect
-  // overlays never learn the host connected (STA-1468).
-  | { type: 'sshStateChanged'; targetId: string; state: SshConnectionState }
   | {
       type: 'worktreeTerminalSleepState'
       worktreeId: string
@@ -51,7 +46,6 @@ export type RuntimeClientEventStreamMessage =
   | ({ type: 'ready'; subscriptionId: string } & {
       snapshot?: {
         repos?: unknown[]
-        sshStates?: { targetId: string; state: SshConnectionState }[]
       }
     })
   | RuntimeClientEvent

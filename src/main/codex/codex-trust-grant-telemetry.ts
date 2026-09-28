@@ -1,5 +1,5 @@
 import type { CodexTrustGrantSessionVerifyClass } from './codex-app-server-client'
-import { WSL_CODEX_NOT_FOUND_MESSAGE } from '../codex-accounts/wsl-codex-command'
+import { WSL_CODEX_NOT_FOUND_MESSAGE } from './wsl-codex-command'
 
 /** Which install surface asked for the grant: the system-default real ~/.codex
  *  or a managed (mirror/per-account) home. Telemetry attribution only — the

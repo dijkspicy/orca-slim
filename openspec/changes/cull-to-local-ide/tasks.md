@@ -6,7 +6,7 @@
 ## 1. 基线与回滚点
 
 - [x] 1.1 创建分支 `cull/local-ide` 并打 tag `pre-cull`；验证：`git tag --list pre-cull` 有输出且 `git branch --show-current` 为 `cull/local-ide`
-- [ ] 1.2 跑基线 `pnpm tc`、`pnpm lint`、`pnpm test`、`pnpm build:linux`，结果与耗时记入 `docs-slim/cull-baseline.md`（`build:win` 本机无工具链，移交 CI）；验证：命令在文档中各有记录，`pnpm test` 记录完整失败集合作为后续弱信号基线
+- [x] 1.2 跑基线 `pnpm tc`、`pnpm lint`、`pnpm test`、`pnpm build:linux`，结果与耗时记入 `docs-slim/cull-baseline.md`（`build:win` 本机无工具链，移交 CI）；验证：命令在文档中各有记录，`pnpm test` 记录完整失败集合作为后续弱信号基线。**落地偏差（已在 design.md「验证标准」记录并由用户裁定）**：`pnpm test` 在本容器 25 分钟未跑完，只捕到 41 处失败 / 20+ 文件，故「完整失败集合」不可得；`build:linux` 基线同样未取得。该两条已改为弱信号 / 最终阶段验证
 - [x] 1.3 用 `git ls-files | wc -l` 与 `find src -name '*.ts*' | wc -l` 复核规模并写入 `docs-slim/cull-baseline.md`；验证：数字与 `proposal.md` 的 7,400/9,100 量级一致，偏差超过 20% 时更新 proposal
 
 ## 2. 调用图普查与边界裁定（阻塞所有删除）
@@ -42,7 +42,7 @@
 - [ ] 4.8 删 `src/main/skills/` 与 renderer `components/skills/`、`skills/` `skill-guides/` `skill-stubs/` `resources/skills/`；验证：`pnpm tc` 通过
 - [ ] 4.9 删 `src/main/ai-vault/`、`ai-vault-search/` 与 renderer AiVault 面板；验证：`pnpm tc` 通过
 - [x] 4.10 让遥测永不传输并移除可见面：`TELEMETRY_ENABLED true→false`（主进程 `track()` 走禁用分支）、renderer `lib/telemetry.ts` 的 `track()` 改 no-op、删除首启遥测 opt-in 面（`TelemetryFirstLaunchSurface`）。**范围说明**：`telemetry`/`observability`/`crash-reporting` 三个模块及其约 300 个调用点暂留，其删除归入 Group 5 域清扫（两次尝试分别产生 300–600 处类型错误，簇与每个装配层交织；见 design F-7/F-8/F-9 与 D-2）。验证：`pnpm tc` 0（需先清 `config/*.tsbuildinfo`，见 F-7）、changed-code 质量门禁通过
-- [ ] 4.11 删 `src/main/updater/`、`UpdateCard*`、`electron-updater` 依赖（按 2.5 的 D5 结论决定是否保留 Windows 更新器）；验证：`pnpm tc` 通过且 `pnpm install` 成功
+- [x] 4.11 删 `src/main/updater/`、`UpdateCard*`、`electron-updater` 依赖（按 2.5 的 D5 结论决定是否保留 Windows 更新器）；验证：`pnpm tc` 通过且 `pnpm install` 成功。**实测**：`src/main/updater/` 目录不存在、无 `UpdateCard*` 文件、`electron-updater` 在 `package.json` 与 `pnpm-lock.yaml` 中均已消失；`src/shared/release-channel.ts` 残留的 3 处提及是**注释**（描述打包清单格式），非依赖引用。D5 结论＝**删**（精简版不提供自动更新）
 - [ ] 4.12 删 `src/main/orca-profiles/` 的账号部分（按 2.3 清单），保留本地多项目持久化件；验证：`pnpm tc` 与 `pnpm test src/main/orca-profiles` 通过
 - [ ] 4.13 删 `src/main/ipc/` 中剩余删除域 handler 散件（按 2.1 清单）；验证：`pnpm tc` 通过
 - [x] 4.14 依赖清理批次一：移除 `sherpa-onnx` + 5 个平台 optional 包（语音域已删，实测 0 代码引用）。**其余依赖暂留**：`qrcode`(6)、`@streamparser/json`(1)、`tldts`(2)、`react-grab`(3)、`@linear/sdk`(11) 仍被尚未删除的域引用，随各自域一并移除；`electron-updater` 条目已在 4.11 移除（仅剩注释）。验证：`pnpm install --lockfile-only` 退出 0（1469 条目）、`pnpm tc` 0
@@ -98,7 +98,7 @@
 - [ ] 10.2 约 60 个共享文件去 `darwin` 分支（`createMainWindow.ts`、`system-tray.ts`、`system-fonts.ts`、`ghostty/*`、`hydrate-shell-path.ts` 等），保留 `NodeJS.Platform` 联合类型；验证：`pnpm tc` 通过，`rg "=== 'darwin'|=== \"darwin\"" src --glob '!*.test.*'` 无输出
 - [ ] 10.3 renderer 去 mac 分支与 ⌘/⇧ 文案（`app-window-chrome.ts`、`TitlebarLeftControls`、`lib/shortcut-platform.ts`、`TerminalMacKeyboardSection.tsx`、TCC 通知组件）；验证：`pnpm tc` 通过，`rg "isMac|⌘" src/renderer/src --glob '!*.test.*'` 无输出
 - [ ] 10.4 构建与打包去 mac：`electron-builder.config.cjs` 的 mac 块与 mac `extraResources`、`build:native` 矩阵、`resources/darwin/`、entitlements、`icon.icns`、5 个 mac workflow 与矩阵中的 macos 条目；验证：`pnpm build:win` 与 `pnpm build:linux` 产出
-- [ ] 10.5 依赖去 darwin（`sherpa-onnx-darwin-*`）；验证：`pnpm install` 成功且 lockfile 中无 darwin 二进制
+- [x] 10.5 依赖去 darwin（`sherpa-onnx-darwin-*`）；验证：`pnpm install` 成功且 lockfile 中无 darwin 二进制。**实测**：`sherpa-onnx` 及其全部平台 optional 包已在任务 4.14 整体移除，`package.json` 与 `pnpm-lock.yaml` 对 `sherpa` 的匹配为 0 → 本条的要求被更强地满足（不是去掉 darwin 变体，而是整个依赖消失）
 - [ ] 10.6 落地 D6/D7 决策（防休眠 Windows 实现或砍掉、Dock 角标 `setOverlayIcon` 或砍掉）；验证：`pnpm tc` 通过，且结论记入 `design.md` 的 Open Questions
 
 ## 11. 门禁 / i18n / 文档
@@ -107,7 +107,7 @@
 - [ ] 11.2 lint 链去 skill/rpc-catalog 相关 verify，oxlint 配置去 `mobile` 目标，prune `config/{max-lines,ts-nocheck,runtime-electron}-baseline.txt`；验证：`pnpm lint` 通过
 - [x] 11.3 仓库卫生（部分）：`lint-staged` 的两条 glob 去掉 `!(cloud)` 排除（cloud 已删）。**待续**：`resources/onboarding/feature-wall`（属 renderer-mirror/SCC）、`orca.yaml`（setup 脚本仍有效，保留）、`config/{docker,dev-app-update.yml}`（updater 相关，已随 4.11 处理）。验证：`package.json` 仍可解析、glob 已简化
 - [x] 11.4 文档裁剪：删 `docs/site/content/docs/{ssh,remote-servers,mobile,android-apk,telemetry}.mdx` + `cli/` + `browser/`，删 `docs/reference/` 12 篇（ssh×3、skill×5、headless-linux-server、macos-press-and-hold、relay-regional-placement、remote-wire-compatibility），重写 `docs/site/content/docs/meta.json` 导航，README 移除 cloud 段落与 headless 链接，AGENTS.md 移除 SSH 与 remote-wire 两节。**待续**：`docs/site/src` 正文交叉引用、多语言 README（`docs/readme/*`）、其余 reference 篇目。验证：`pnpm run check:readme-local-links` 通过、AGENTS.md 无悬空 docs 链接
-- [ ] 11.5 更新 `docs-slim/feature-tree.md` 为裁剪后功能树；验证：树中只含 6 个保留域，且深度不超过 5 层
+- [x] 11.5 更新 `docs-slim/feature-tree.md` 为裁剪后功能树；验证：树中只含 6 个保留域，且深度不超过 5 层。**实测**：新树按 `specs/` 的 6 个能力域组织（工作区与多项目 / 本地 Git 与 Worktree / 终端 / 文件管理与编辑 / WSL 执行 / Agent 启动与状态），最深 4 层；条目路径经 `git ls-files` 抽查确认存在（`src/main/git`、`src/main/wsl`、`src/main/project-groups`、`src/main/ripgrep`、`src/main/daemon`、`src/main/agent-hooks`、`src/renderer/src/components/terminal-pane`、`src/renderer/src/components/editor` 等）；裁剪前旧树保留为 `docs-slim/feature-tree.pre-cull.md`
 
 ## 12. 集成验证
 

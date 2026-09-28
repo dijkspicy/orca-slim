@@ -1,18 +1,12 @@
 import { ChevronDown, Loader2, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { parseHostAccessLink } from '../../../../shared/remote-pairing-address'
-import type { RemotePairingFailureKind } from '../../../../shared/remote-pairing-verification'
+import { parseHostAccessLink, type RemotePairingFailureKind } from './runtime-host-access-link'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Checkbox } from '../ui/checkbox'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { translate } from '@/i18n/i18n'
-import {
-  translateHostAccessLinkError,
-  translateRemotePairingEndpointKind,
-  translateRemotePairingFailureDescription
-} from '@/lib/remote-pairing-copy'
 
 export type RuntimeHostAccessFailure = {
   kind: RemotePairingFailureKind
@@ -144,9 +138,9 @@ export function RuntimeHostAccessForm({
               'Orca shows the destination before connecting. Credentials stay hidden.'
             )}
           </p>
-          {inputError ? (
+          {inputError && !parsed.ok ? (
             <p id="runtime-server-access-link-error" className="text-xs text-destructive">
-              {parsed.ok ? null : translateHostAccessLinkError(parsed.kind)}
+              {parsed.ok ? null : parsed.kind}
             </p>
           ) : null}
         </div>
@@ -161,9 +155,7 @@ export function RuntimeHostAccessForm({
                 'Link destination'
               )}
             </span>
-            <Badge variant="outline">
-              {translateRemotePairingEndpointKind(parsed.value.endpointKind)}
-            </Badge>
+            <Badge variant="outline">{parsed.value.endpointKind}</Badge>
           </div>
           <div className="font-mono text-sm" aria-live="polite">
             {parsed.value.displayEndpoint}
@@ -217,9 +209,7 @@ export function RuntimeHostAccessForm({
                   'Endpoint kind'
                 )}
               </dt>
-              <dd className="text-foreground">
-                {translateRemotePairingEndpointKind(parsed.value.endpointKind)}
-              </dd>
+              <dd className="text-foreground">{parsed.value.endpointKind}</dd>
               <dt>
                 {translate(
                   'auto.components.settings.RuntimeHostAccessForm.networkConnection',
@@ -275,12 +265,7 @@ export function RuntimeHostAccessForm({
                         )}
           </div>
           <p className="text-xs text-muted-foreground">
-            {failure.kind === 'environment-save-failed'
-              ? failure.message
-              : translateRemotePairingFailureDescription(
-                  failure.kind,
-                  parsed.ok ? parsed.value.displayEndpoint : null
-                )}
+            {failure.kind === 'environment-save-failed' ? failure.message : failure.kind}
           </p>
         </div>
       ) : null}

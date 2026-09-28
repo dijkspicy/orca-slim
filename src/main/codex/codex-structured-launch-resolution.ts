@@ -11,10 +11,25 @@ import { agentSessionProviderHandleChainHead } from '../../shared/agent-session-
 import { LOCAL_EXECUTION_HOST_ID } from '../../shared/execution-host'
 import { resolveCodexCommand } from '../codex-cli/command'
 import type { AgentSessionRecordStore } from '../runtime/agent-session-record-store'
-import type { CodexStructuredLaunch } from './codex-structured-session-adapter'
 import type { CodexStructuredPermissionPolicy } from './codex-structured-permission-policy'
 import { resolvePinnedCodexRolloutProof } from './codex-pinned-rollout-proof'
 import { isWindowsProcessStartTimeAvailable } from '../windows/windows-process-table'
+
+/** One resolved Codex child launch: everything the spawner needs, read back
+ *  from the durable session record. */
+export type CodexStructuredLaunch = {
+  command: string
+  args: string[]
+  cwd: string
+  codexHome: string | null
+  resumeThreadId: string | null
+  resumePath?: string | null
+  /** The resumed thread is this session's own creation: when Codex answers that it holds no
+   *  rollout for it, start a new thread in its place. Never set for a thread a resume proved. */
+  supersedeIfUnsaved?: boolean
+  permissionPolicy?: CodexStructuredPermissionPolicy
+  env?: Record<string, string>
+}
 
 export type CodexStructuredLaunchResolverDeps = {
   store: AgentSessionRecordStore

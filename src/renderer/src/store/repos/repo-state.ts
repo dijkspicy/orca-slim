@@ -67,7 +67,6 @@ export type FolderWorkspaceUpdates = Partial<
     | 'name'
     | 'folderPath'
     | 'linkedTask'
-    | 'linkedTaskSourceContext'
     | 'comment'
     | 'isArchived'
     | 'isUnread'
@@ -203,7 +202,6 @@ export type RepoSlice = {
       folderPath?: string | null
       connectionId?: string | null
       linkedTask?: FolderWorkspace['linkedTask']
-      linkedTaskSourceContext?: FolderWorkspace['linkedTaskSourceContext']
       createdWithAgent?: FolderWorkspace['createdWithAgent']
       pendingFirstAgentMessageRename?: boolean
     },

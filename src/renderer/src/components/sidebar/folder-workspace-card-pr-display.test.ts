@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { CheckStatus, PRInfo } from '../../../../shared/github/pull-request-types'
+import type { HostedReviewInfo } from '../../../../shared/hosted-review'
 import type { Repo } from '../../../../shared/repo-types'
 import type { WorkspaceLineage, WorktreeLineage } from '../../../../shared/worktree/lineage-types'
 import type { Worktree } from '../../../../shared/worktree/types'
@@ -351,13 +351,15 @@ describe('getFolderWorkspaceCardPrDisplay', () => {
   })
 })
 
-function makePr(number: number, checksStatus: CheckStatus): PRInfo {
+// PR cache fixtures use the hosted-review shape now that provider PR types are gone.
+function makePr(number: number, status: HostedReviewInfo['status']): HostedReviewInfo {
   return {
+    provider: 'github',
     number,
     title: `PR ${number}`,
     state: 'open',
     url: `https://example.test/pull/${number}`,
-    checksStatus,
+    status,
     updatedAt: '2026-01-01T00:00:00.000Z',
     mergeable: 'UNKNOWN'
   }
@@ -365,7 +367,7 @@ function makePr(number: number, checksStatus: CheckStatus): PRInfo {
 
 function makePrEntry(
   number: number,
-  checksStatus: CheckStatus
-): { data: PRInfo; fetchedAt: number } {
-  return { data: makePr(number, checksStatus), fetchedAt: 2 }
+  status: HostedReviewInfo['status']
+): { data: HostedReviewInfo; fetchedAt: number } {
+  return { data: makePr(number, status), fetchedAt: 2 }
 }

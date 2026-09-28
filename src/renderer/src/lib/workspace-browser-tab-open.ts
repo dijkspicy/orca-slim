@@ -1,5 +1,4 @@
 import { translate } from '@/i18n/i18n'
-import { createWebRuntimeSessionBrowserTab } from '@/runtime/web-runtime-session'
 import { useAppStore } from '@/store'
 import type { AppState } from '@/store/types'
 import {
@@ -7,8 +6,6 @@ import {
   parseExecutionHostId,
   type ExecutionHostId
 } from '../../../shared/execution-host'
-import { SEARCH_ENGINE_LABELS, type SearchEngine } from '../../../shared/browser-url'
-import type { BrowserClientHostPlacementPreference } from '../../../shared/browser-client-host-placement'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
 import { BROWSER_SCREENCAST_RUNTIME_CAPABILITY } from '../../../shared/protocol-version'
 import {
@@ -18,6 +15,19 @@ import {
 import { resolveWorktreeOperationRoute } from './worktree-operation-route'
 import { getExecutionHostIdForWorktree } from './worktree-runtime-owner'
 import { resolveSshWorkspaceBrowserRouteEligibility } from './ssh-workspace-browser-route-eligibility'
+
+type SearchEngine = 'google' | 'duckduckgo' | 'bing' | 'kagi'
+
+// Inlined from the removed shared/browser-url module.
+const SEARCH_ENGINE_LABELS: Record<SearchEngine, string> = {
+  google: 'Google',
+  duckduckgo: 'DuckDuckGo',
+  bing: 'Bing',
+  kagi: 'Kagi'
+}
+
+// Inlined from the removed shared/browser-client-host-placement module.
+type BrowserClientHostPlacementPreference = 'auto' | 'server'
 
 export type WorkspaceBrowserTabIntent = { kind: 'url' } | { kind: 'search'; engine: SearchEngine }
 
@@ -282,30 +292,7 @@ export async function openWorkspaceBrowserTab(
     createClientBrowserTab(state, request, localHostId, presentation)
     return
   }
-  let created = false
-  try {
-    created = await createWebRuntimeSessionBrowserTab({
-      worktreeId: request.workspaceId,
-      environmentId,
-      url: request.url,
-      targetGroupId: request.targetGroupId,
-      // Owner-pinned links need the host tab published before client reconciliation.
-      ...(expectedEnvironmentId !== null ? { waitForRegistration: true } : {}),
-      ...(request.placementPreference !== undefined
-        ? { placementPreference: request.placementPreference }
-        : {}),
-      // Why: the tab is opened from this workspace's tab bar, so surface that
-      // workspace — otherwise a background worktree looks like nothing happened.
-      ...(request.focusOnCreate !== undefined ? { focusOnCreate: request.focusOnCreate } : {}),
-      selectWorktree: request.selectWorktree !== false,
-      stagedTitle: presentation.title,
-      stagedFocusAddressBar: false,
-      failureLogMode: 'operation-only'
-    })
-  } catch (error) {
-    throw openFailure(presentation.error, 'runtime browser tab creation failed', error)
-  }
-  if (!created) {
-    throw openFailure(presentation.error, 'runtime browser tab creation was unavailable')
-  }
+  // The paired-host creation transport is gone with the web-runtime cull; a runtime-owned
+  // managed browser can no longer be created from this client.
+  throw openFailure(presentation.error, 'runtime browser tab creation was unavailable')
 }

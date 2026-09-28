@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { toast } from 'sonner'
-import { useAppStore } from '@/store'
-import { callRuntimeRpc, getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
-import type { AddRepoExistingWorkspaceSource } from '../../../../shared/telemetry-events'
+import type { AddRepoExistingWorkspaceSource } from '../../../../shared/telemetry-property-schemas'
 import type { Repo } from '../../../../shared/repo-types'
 import { getCloneDestinationAutoFill } from './clone-defaults'
 import type { AddRepoDialogStep } from './add-repo-dialog-types'
@@ -126,34 +124,16 @@ export function useAddRepoCloneFlow({
     setCloneError(null)
     setCloneProgress(null)
     try {
-      const target = activeRuntimeEnvironmentId?.trim()
-        ? { kind: 'environment' as const, environmentId: activeRuntimeEnvironmentId.trim() }
-        : getActiveRuntimeTarget({
-            ...useAppStore.getState().settings,
-            activeRuntimeEnvironmentId: null
-          })
       const repo = sshTargetId?.trim()
         ? await window.api.repos.cloneRemote({
             connectionId: sshTargetId.trim(),
             url: trimmedUrl,
             destination: cloneDestination.trim()
           })
-        : target.kind === 'environment'
-          ? (
-              await callRuntimeRpc<{ repo: Repo }>(
-                target,
-                'repo.clone',
-                {
-                  url: trimmedUrl,
-                  destination: cloneDestination.trim()
-                },
-                { timeoutMs: 10 * 60_000 }
-              )
-            ).repo
-          : ((await window.api.repos.clone({
-              url: trimmedUrl,
-              destination: cloneDestination.trim()
-            })) as Repo)
+        : ((await window.api.repos.clone({
+            url: trimmedUrl,
+            destination: cloneDestination.trim()
+          })) as Repo)
       if (gen !== cloneGenRef.current || requestHostToken !== hostTokenRef.current) {
         return
       }

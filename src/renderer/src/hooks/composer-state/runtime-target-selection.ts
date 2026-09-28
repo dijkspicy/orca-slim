@@ -3,7 +3,6 @@ import type { ComposerRuntimeTargetSelectionInput } from './composer-target-inpu
 import { useEffect, useMemo, useRef } from 'react'
 import { getFolderSourceRepos } from '@/components/sidebar/folder-workspace-composer-helpers'
 import { parseExecutionHostId, getRepoExecutionHostId } from '../../../../shared/execution-host'
-import { getSelectedRepoSshGate } from '@/lib/new-workspace-ssh-gate'
 import { useFolderWorkspaceComposerPathStatus } from '@/components/sidebar/folder-workspace-composer-path-status'
 import { useDetectedAgents } from '@/hooks/useDetectedAgents'
 import type { TuiAgent } from '../../../../shared/tui-agent'
@@ -69,14 +68,13 @@ export function useComposerRuntimeTargetSelection(input: ComposerRuntimeTargetSe
     ? (sshConnectionStates.get(folderTargetConnectionId) ?? null)
     : null
 
-  const {
-    selectedRepoSshStatus: folderTargetSshStatus,
-    selectedRepoRequiresConnection: folderTargetRequiresConnection,
-    selectedRepoConnectInProgress: folderTargetConnectInProgress
-  } = getSelectedRepoSshGate({
-    connectionId: folderTargetConnectionId,
-    status: folderTargetSshState?.status ?? null
-  })
+  // Why: the SSH gate module was culled; inline the surviving local-path gate.
+  const folderTargetSshStatus = folderTargetConnectionId
+    ? (folderTargetSshState?.status ?? null)
+    : null
+  const folderTargetRequiresConnection =
+    folderTargetConnectionId !== null && folderTargetSshStatus !== 'connected'
+  const folderTargetConnectInProgress = false
 
   const { pathStatusBlocksCreate: folderPathStatusBlocksCreate, pathStatusProjectError } =
     useFolderWorkspaceComposerPathStatus(
@@ -232,11 +230,13 @@ export function useComposerRuntimeTargetSelection(input: ComposerRuntimeTargetSe
     ? (sshConnectionStates.get(selectedRepoConnectionId) ?? null)
     : null
 
-  const { selectedRepoSshStatus, selectedRepoRequiresConnection, selectedRepoConnectInProgress } =
-    getSelectedRepoSshGate({
-      connectionId: selectedRepoConnectionId,
-      status: selectedRepoSshState?.status ?? null
-    })
+  // Why: the SSH gate module was culled; inline the surviving local-path gate.
+  const selectedRepoSshStatus = selectedRepoConnectionId
+    ? (selectedRepoSshState?.status ?? null)
+    : null
+  const selectedRepoRequiresConnection =
+    selectedRepoConnectionId !== null && selectedRepoSshStatus !== 'connected'
+  const selectedRepoConnectInProgress = false
 
   const repoIdRef = useRef(repoId)
 

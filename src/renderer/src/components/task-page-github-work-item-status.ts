@@ -1,7 +1,9 @@
 import { translate } from '@/i18n/i18n'
-import type { GitHubWorkItem } from '../../../shared/github/work-item-types'
 
-export type GitHubWorkItemStatusItem = Pick<GitHubWorkItem, 'type' | 'state'>
+export type GitHubWorkItemStatusItem = {
+  type: 'issue' | 'pr'
+  state: 'open' | 'closed' | 'merged' | 'draft'
+}
 
 export function getTaskPageGitHubWorkItemStateLabel(item: GitHubWorkItemStatusItem): string {
   if (item.type === 'pr') {

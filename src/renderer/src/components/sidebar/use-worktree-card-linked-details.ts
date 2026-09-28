@@ -2,8 +2,6 @@ import React from 'react'
 
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
-import type { IssueInfo } from '../../../../shared/github/pull-request-types'
-import type { LinearIssue } from '../../../../shared/linear/issue-types'
 import { getWorktreeCardJiraIssueDisplay } from './worktree-card-jira-issue-display'
 import type { WorktreeCardIssueDisplay } from './WorktreeCardMeta'
 import {
@@ -33,7 +31,7 @@ export function useWorktreeCardLinkedDetails({
     ReviewDetails,
     'branch' | 'issueEntry' | 'linearIssueEntry' | 'linearIssueFallbackEntry' | 'prDisplay'
   >) {
-  const issue: IssueInfo | null | undefined = worktree.linkedIssue
+  const issue = worktree.linkedIssue
     ? issueEntry !== undefined
       ? issueEntry.data
       : undefined
@@ -48,7 +46,7 @@ export function useWorktreeCardLinkedDetails({
         }
       : null)
   const linearStatus = useAppStore((s) => s.linearStatus)
-  const linearIssue: LinearIssue | null | undefined = worktree.linkedLinearIssue
+  const linearIssue = worktree.linkedLinearIssue
     ? (linearIssueEntry?.data ?? linearIssueFallbackEntry?.data)
     : null
 

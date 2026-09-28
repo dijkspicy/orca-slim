@@ -15,7 +15,6 @@ vi.mock('../browser/browser-manager', async () =>
 )
 
 import { createMainWindow } from './createMainWindow'
-import { resetExpectedTeardownStateForTest } from '../crash-reporting/expected-teardown-state'
 import {
   browserWindowMock,
   powerMonitorOnMock,
@@ -26,7 +25,6 @@ import {
 describe('createMainWindow', () => {
   beforeEach(() => {
     resetMainWindowMocks()
-    resetExpectedTeardownStateForTest()
     vi.useRealTimers()
   })
 

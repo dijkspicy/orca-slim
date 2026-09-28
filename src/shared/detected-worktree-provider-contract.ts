@@ -1,5 +1,4 @@
 import type { ExecutionHostId, LOCAL_EXECUTION_HOST_ID } from './execution-host'
-import type { DirectSshAuthority } from './ssh-types'
 import type { DetectedWorktreeListResult } from './worktree/types'
 
 export const PROVIDER_REQUEST_ID_MAX_UTF8_BYTES = 128
@@ -12,34 +11,7 @@ export type LocalDetectedWorktreeRequest = {
   executionHostId: typeof LOCAL_EXECUTION_HOST_ID
 }
 
-export type DirectSshDetectedWorktreeRequest = {
-  providerRequestId: ProviderRequestId
-  repoId: string
-  executionHostId: SshExecutionHostId
-  expectedAuthority: DirectSshAuthority
-}
-
-export type ListDetectedWorktreesArgs =
-  | LocalDetectedWorktreeRequest
-  | DirectSshDetectedWorktreeRequest
-
-export type ListKnownWorktreesForExecutionHostArgs = {
-  repoId: string
-  executionHostId: SshExecutionHostId
-}
-
-export type HostQualifiedKnownWorktreeResult =
-  | {
-      status: 'complete'
-      repoId: string
-      executionHostId: SshExecutionHostId
-      result: DetectedWorktreeListResult
-    }
-  | {
-      status: 'rejected'
-      repoId: string
-      executionHostId: SshExecutionHostId
-    }
+export type ListDetectedWorktreesArgs = LocalDetectedWorktreeRequest
 
 /**
  * Hosts whose persisted metadata a scan can retire: exactly those `gcStaleWorktreeMeta` skips,
@@ -58,15 +30,10 @@ export type ForgetRemovedWorktreesForExecutionHostResult = {
   forgottenWorktreeIds: string[]
 }
 
-export type AuthoritativeDetectedWorktreeHost =
-  | {
-      kind: 'local'
-      executionHostId: typeof LOCAL_EXECUTION_HOST_ID
-    }
-  | ({
-      kind: 'direct-ssh'
-      executionHostId: SshExecutionHostId
-    } & DirectSshAuthority)
+export type AuthoritativeDetectedWorktreeHost = {
+  kind: 'local'
+  executionHostId: typeof LOCAL_EXECUTION_HOST_ID
+}
 
 export type HostQualifiedDetectedWorktreeResult =
   | {

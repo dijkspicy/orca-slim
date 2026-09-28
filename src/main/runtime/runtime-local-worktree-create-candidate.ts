@@ -1,7 +1,6 @@
 import type { Repo } from '../../shared/repo-types'
 import { WorktreeCreateCollisionError } from '../../shared/new-workspace/worktree-create-collision'
 import type { CreateWorktreeArgs } from '../../shared/worktree/create-types'
-import type { getPRForBranch } from '../github/client'
 import {
   computeWorktreePath,
   ensurePathWithinWorkspace,
@@ -20,14 +19,9 @@ import {
 import { createRetiredNameLookup } from '../../shared/worktree/retired-name-registry'
 import { getRetiredNameRegistryForRepo } from '../worktree-name-retirement'
 import type { RuntimeManagedWorktreeCreateArgs } from './runtime-managed-worktree-create-types'
-import {
-  getSelectedReviewBranch,
-  isAllowedPushTargetRemoteConflict,
-  isMatchingSelectedGitHubPr
-} from './selected-review-branch'
+import { isAllowedPushTargetRemoteConflict } from './selected-review-branch'
 import {
   canCheckoutExistingLocalBranch,
-  getLocalGitHubPrForBranch,
   getSelectedHostedReviewForBranch,
   resolveCreateBranchName
 } from './runtime-worktree-create-git'
@@ -138,50 +132,19 @@ export async function resolveRuntimeLocalWorktreeCreateCandidate(args: {
     const allowedPushTargetRemoteConflict =
       branchConflictKind &&
       isAllowedPushTargetRemoteConflict(branchConflictKind, branchName, args.request)
-    let selectedReviewConflictMatched = false
     if (branchConflictKind) {
       if (allowedPushTargetRemoteConflict) {
-        let existingPR: Awaited<ReturnType<typeof getPRForBranch>> | null = null
-        const selectedReview = getSelectedReviewBranch(args.request)
-        if (selectedReview?.provider === 'github') {
-          try {
-            existingPR = await getLocalGitHubPrForBranch(
-              args.repo.path,
-              branchName,
-              args.localWorktreeGitOptions
-            )
-          } catch {}
-          if (isMatchingSelectedGitHubPr(existingPR, args.request, branchName)) {
-            branchConflictKind = null
-            selectedReviewConflictMatched = true
-          }
-        } else if (selectedReview) {
-          const review = await getSelectedHostedReviewForBranch(
-            args.repo,
-            branchName,
-            args.request,
-            args.hostedReviewExecutionContext
-          ).catch(() => null)
-          if (review?.matchesSelected) {
-            branchConflictKind = null
-            selectedReviewConflictMatched = true
-          }
+        const review = await getSelectedHostedReviewForBranch(
+          args.repo,
+          branchName,
+          args.request,
+          args.hostedReviewExecutionContext
+        ).catch(() => null)
+        if (review?.matchesSelected) {
+          branchConflictKind = null
         }
       }
       if (branchConflictKind) {
-        continue
-      }
-    }
-    if (!checkoutExistingBranch && !selectedReviewConflictMatched) {
-      let existingPR: Awaited<ReturnType<typeof getPRForBranch>> | null = null
-      try {
-        existingPR = await getLocalGitHubPrForBranch(
-          args.repo.path,
-          branchName,
-          args.localWorktreeGitOptions
-        )
-      } catch {}
-      if (existingPR && !isMatchingSelectedGitHubPr(existingPR, args.request, branchName)) {
         continue
       }
     }

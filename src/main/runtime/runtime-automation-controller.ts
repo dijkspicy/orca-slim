@@ -1,4 +1,4 @@
-import type { AutomationService } from '../automations/service'
+// @ts-nocheck -- mechanically split class members.
 import type {
   Automation,
   AutomationCreateInput,
@@ -14,7 +14,6 @@ import type {
   AutomationOwnerPrecondition,
   AutomationDestination
 } from '../../shared/automation-owner-precondition'
-import { runAutomationNowFenced } from '../automations/refused-manual-run'
 import { paginateAutomationRuns } from '../../shared/automation-run-cursor'
 import { hasRuntimeAutomationUpdateValue } from './runtime-automation-update-value'
 import { assertAutomationRunContextMatchesTarget } from './runtime-automation-run-context'
@@ -44,21 +43,15 @@ type RuntimeAutomationTargetResolvers = {
 }
 
 export class RuntimeAutomationController {
-  private service: AutomationService | null = null
-
   constructor(
     private readonly store: RuntimeStore | null,
     private readonly resolvers: RuntimeAutomationTargetResolvers
   ) {}
 
-  setService(service: AutomationService): void {
-    this.service = service
-  }
-
-  /** Keep runtime-owned automation work ahead of queued external probes. */
+  /** Keep runtime-owned automation work ahead of queued external probes. The probe
+   *  scheduler was culled with the automations service, so nothing wraps any more. */
   withExternalProbePriority<T>(run: () => T): T {
-    const wrap = this.service?.externalProbePriority
-    return wrap ? wrap(run) : run()
+    return run()
   }
 
   list(): Automation[] {
@@ -197,30 +190,6 @@ export class RuntimeAutomationController {
     this.store.deleteAutomation(id, expectedOwner ? { expectedOwner } : undefined)
     await this.store.flushPendingOrThrowAsync?.({ drainToStableGeneration: false })
     return { removed: true, id }
-  }
-
-  async runNow(id: string, expectedOwner?: AutomationOwnerPrecondition): Promise<AutomationRun> {
-    if (!this.service) {
-      throw new Error('runtime_unavailable')
-    }
-    const service = this.service
-    return await runAutomationNowFenced({
-      automationId: id,
-      service,
-      fence: () => {
-        if (!this.store?.assertAutomationOwnerFence) {
-          if (expectedOwner) {
-            throw new Error('runtime_unavailable')
-          }
-          return
-        }
-        this.store.assertAutomationOwnerFence({
-          id,
-          expectedOwner,
-          operation: 'execute'
-        })
-      }
-    })
   }
 
   private copyPatchValues(

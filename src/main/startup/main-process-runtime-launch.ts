@@ -5,13 +5,11 @@ import {
   migrateMobilePairingDataToCanonicalUserDataPath
 } from '../persistence'
 import { OrcaRuntimeRpcServer } from '../runtime/runtime-rpc'
-import { registerMobileHandlers } from '../ipc/mobile'
 import { getLocalPtyProvider, registerHeadlessPtyRuntime } from '../ipc/pty'
 import { LocalPtyProvider } from '../providers/local-pty-provider'
 import { HEADLESS_RUNTIME_WINDOW_ID } from '../../shared/runtime-types'
 import { OffscreenBrowserBackend } from '../browser/offscreen-browser-backend'
 import { browserManager } from '../browser/browser-manager'
-import { getDesktopRelayStatus } from './main-process-relay-status'
 import { getServeOptions, getBundledWebClientRoot, printServeReady } from './main-process-serve'
 import {
   bindTerminalRuntimeStartupServices,
@@ -33,7 +31,6 @@ import { CliInstaller } from '../cli/cli-installer'
 import { installLinuxBareOrcaDispatcher } from '../cli/linux-bare-orca-dispatcher'
 import { scheduleAllPendingHistoryTreeRemovals } from '../terminal-history-deletion'
 import { triggerStartupNotificationRegistration } from '../ipc/startup-notification-registration'
-import { startDesktopPushService } from './main-process-push-startup'
 import { mainProcessState as state } from './main-process-state'
 import { logStartupMilestone } from './startup-diagnostics'
 import { emitServeBrowserIdentityActionLine } from '../server/serve-stdout-boundary'
@@ -91,21 +88,6 @@ function installRuntimeRpc(
     webClientRoot: getBundledWebClientRoot()
   })
   state.runtimeRpc = runtimeRpc
-  registerMobileHandlers(runtimeRpc, {
-    getRelayStatus: getDesktopRelayStatus,
-    consumePendingUnpairedDeviceAuthFailure: (webContentsId) => {
-      if (
-        !state.mainWindow ||
-        state.mainWindow.isDestroyed() ||
-        state.mainWindow.webContents.id !== webContentsId ||
-        !state.pendingUnpairedDeviceAuthFailure
-      ) {
-        return false
-      }
-      state.pendingUnpairedDeviceAuthFailure = false
-      return true
-    }
-  })
   // Why: repeated direct auth failures otherwise look like a client that never connects; point users to re-pairing.
   runtimeRpc.setOnUnpairedDeviceAuthFailure(() => {
     // Why: runtime startup races renderer mount; retain the one-shot until the listener consumes it.
@@ -159,9 +141,6 @@ async function launchServeMode(
     console.error('[runtime] Failed to start headless RPC transport:', error)
     throw error
   })
-  // Why: a phone paired to a headless host still registers and unregisters its token;
-  // it simply never receives a push, because nothing dispatches notifications here.
-  startDesktopPushService(runtimeRpc)
   settleDesktopActivation()
   // Why: every attempt must reach app.quit(); a page beforeunload can veto an earlier signal.
   registerServeSignalHandlers(process, () => app.quit())
@@ -246,9 +225,6 @@ async function launchDesktopMode(
   // fetcher until the persisted proxy lands, so this only has to keep the launch phase itself
   // ordered ahead of the relay — it must not gate the renderer.
   await state.initialProxyApplicationReady
-  // Why after the proxy await: the push gateway client is an app-owned fetcher, so it must not
-  // issue its first request ahead of the persisted proxy.
-  startDesktopPushService(runtimeRpc)
   // Why: macOS notification permission dialog must fire after the window is shown, else it's hidden behind the maximized window.
   win.once('show', () => {
     // Why: store can be null if init failed earlier; bail rather than throw inside an Electron event listener.

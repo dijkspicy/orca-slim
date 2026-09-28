@@ -8,7 +8,7 @@ import {
   writeHooksJson
 } from '../agent-hooks/installer-utils'
 import { resolveHooksJsonWritePath } from '../agent-hooks/hook-config-write-path'
-import { writeFileAtomically } from '../codex-accounts/fs-utils'
+import { writeFileAtomically } from './codex-atomic-file-writes'
 import { findManagedTomlBlocks } from '../agent-hooks/managed-toml-ownership'
 import { writeConfigAtomically, type CodexTrustEntry } from './config-toml-trust'
 import {

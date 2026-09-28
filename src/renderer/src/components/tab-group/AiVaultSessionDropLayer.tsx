@@ -264,7 +264,7 @@ export default function AiVaultSessionDropLayer({
             sessionId: payload.sessionId,
             filePath: payload.sessionFilePath
           })
-          const launchResult = launchAiVaultSessionInNewTab({
+          launchAiVaultSessionInNewTab({
             agent: payload.agent,
             worktreeId,
             command: startup.command,
@@ -276,23 +276,6 @@ export default function AiVaultSessionDropLayer({
             targetGroupId: dropTarget.groupId,
             splitDirection: dropTarget.zone === 'center' ? undefined : dropTarget.zone
           })
-          if (launchResult.tabId === null) {
-            void launchResult.runtimeLaunch.then((outcome) => {
-              if (outcome.status === 'failed') {
-                toast.error(
-                  outcome.message ||
-                    translate(
-                      'auto.lib.launch.agent.in.new.tab.11cce5cc77',
-                      'Could not launch {{value0}} in a new terminal.',
-                      { value0: payload.agent }
-                    )
-                )
-                return
-              }
-              showQueuedToast()
-            })
-            return
-          }
           showQueuedToast()
         })
         .catch((error: unknown) => {

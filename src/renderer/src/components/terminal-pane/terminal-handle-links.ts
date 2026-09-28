@@ -3,14 +3,7 @@ import type { AppState } from '@/store'
 import { useAppStore } from '@/store'
 import { activateTabAndFocusPane } from '@/lib/activate-tab-and-focus-pane'
 import { focusTerminalTabSurface } from '@/lib/focus-terminal-tab-surface'
-import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
-import { parseRemoteRuntimePtyId } from '@/runtime/runtime-terminal-stream'
 import { buildWrappedLogicalLine, rangeForParsedFileLink } from './wrapped-terminal-link-ranges'
-import {
-  extractOrchestrationTaskLinks,
-  focusRuntimeOrchestrationTask,
-  ORCHESTRATION_TASK_PREFIX
-} from './terminal-orchestration-task-links'
 import {
   isTerminalLinkActionActivation,
   isTerminalLinkDirectActivation
@@ -20,9 +13,6 @@ import {
   type TerminalLinkActionContext
 } from './terminal-link-action-request'
 import { translate } from '@/i18n/i18n'
-
-export { extractOrchestrationTaskLinks } from './terminal-orchestration-task-links'
-export type { ParsedOrchestrationTaskLink } from './terminal-orchestration-task-links'
 
 export type ParsedTerminalHandleLink = {
   handle: string
@@ -166,28 +156,18 @@ export function createTerminalHandleLinkProvider(
         return
       }
       const logicalLine = buildWrappedLogicalLine(terminal.buffer.active, bufferLineNumber)
-      if (
-        !logicalLine ||
-        (!logicalLine.text.includes(TERMINAL_HANDLE_PREFIX) &&
-          !logicalLine.text.includes(ORCHESTRATION_TASK_PREFIX))
-      ) {
+      if (!logicalLine || !logicalLine.text.includes(TERMINAL_HANDLE_PREFIX)) {
         callback(undefined)
         return
       }
 
-      const terminalLinks = extractTerminalHandleLinks(logicalLine.text).map((parsed) => ({
-        kind: 'terminal' as const,
-        text: parsed.handle,
-        startIndex: parsed.startIndex,
-        endIndex: parsed.endIndex
-      }))
-      const taskLinks = extractOrchestrationTaskLinks(logicalLine.text).map((parsed) => ({
-        kind: 'task' as const,
-        text: parsed.taskId,
-        startIndex: parsed.startIndex,
-        endIndex: parsed.endIndex
-      }))
-      const links = [...terminalLinks, ...taskLinks]
+      const links = extractTerminalHandleLinks(logicalLine.text)
+        .map((parsed) => ({
+          kind: 'terminal' as const,
+          text: parsed.handle,
+          startIndex: parsed.startIndex,
+          endIndex: parsed.endIndex
+        }))
         .sort((a, b) => a.startIndex - b.startIndex)
         .map((parsed): ILink | null => {
           const range = rangeForParsedFileLink(logicalLine, parsed.startIndex, parsed.endIndex)
@@ -213,16 +193,10 @@ export function createTerminalHandleLinkProvider(
                   destination: parsed.text,
                   kind: parsed.kind,
                   primary: {
-                    label:
-                      parsed.kind === 'terminal'
-                        ? translate(
-                            'auto.components.terminal.pane.TerminalLinkActionPopover.switchTerminal',
-                            'Switch terminal'
-                          )
-                        : translate(
-                            'auto.components.terminal.pane.TerminalLinkActionPopover.openTaskTerminal',
-                            'Open task terminal'
-                          ),
+                    label: translate(
+                      'auto.components.terminal.pane.TerminalLinkActionPopover.switchTerminal',
+                      'Switch terminal'
+                    ),
                     run: () => activateParsedLink(parsed, deps.getRuntimeEnvironmentId())
                   }
                 })
@@ -251,21 +225,13 @@ export function createTerminalHandleLinkProvider(
 }
 
 async function activateParsedLink(
-  parsed: { kind: 'terminal' | 'task'; text: string },
+  parsed: { kind: 'terminal'; text: string },
   runtimeEnvironmentId: string | null
 ): Promise<void> {
   try {
-    if (parsed.kind === 'terminal') {
-      if (!focusRendererTerminalHandle(parsed.text, runtimeEnvironmentId)) {
-        await focusRuntimeTerminalHandle(parsed.text, runtimeEnvironmentId)
-      }
-      return
-    }
-    // Why: a task can be retried onto a new dispatch; runtime DB is the
-    // authority for the latest terminal assigned to a stable task ID.
-    await focusRuntimeOrchestrationTask(parsed.text, runtimeEnvironmentId, (handle) =>
-      focusRendererTerminalHandle(handle, runtimeEnvironmentId)
-    )
+    // The runtime-terminal.focus RPC fallback was remote-only; local handles
+    // focus in-renderer, and there is no host left to defer to.
+    focusRendererTerminalHandle(parsed.text, runtimeEnvironmentId)
   } catch (error: unknown) {
     console.warn('[terminal-handle-link] focus failed:', error)
   }
@@ -280,15 +246,7 @@ function ptyIdMatchesTerminalHandle(
   if (ptyId === handle) {
     return targetEnvironmentId === null
   }
-  const remotePty = parseRemoteRuntimePtyId(ptyId)
-  if (!remotePty || remotePty.handle !== handle) {
-    return false
-  }
-  const ptyEnvironmentId = remotePty.environmentId?.trim() || null
-  if (runtimeEnvironmentId === undefined) {
-    return true
-  }
-  return ptyEnvironmentId === targetEnvironmentId
+  return false
 }
 
 function getTerminalHandleFocusHint(showActions: boolean): string {
@@ -296,17 +254,4 @@ function getTerminalHandleFocusHint(showActions: boolean): string {
   return navigator.userAgent.includes('Mac')
     ? `${prefix}⌘+click to switch terminal`
     : `${prefix}Ctrl+click to switch terminal`
-}
-
-async function focusRuntimeTerminalHandle(
-  handle: string,
-  runtimeEnvironmentId: string | null
-): Promise<void> {
-  const environmentId = runtimeEnvironmentId?.trim()
-  const target = environmentId
-    ? ({ kind: 'environment', environmentId } as const)
-    : ({ kind: 'local' } as const)
-  // Why: main owns the `term_*` mapping. Defer to terminal.focus on click
-  // instead of mirroring that state in renderer hover parsing.
-  await callRuntimeRpc(target, 'terminal.focus', { terminal: handle, navigation: 'host' })
 }

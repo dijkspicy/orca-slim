@@ -12,26 +12,9 @@ import {
   observeHibernationPtyBindings,
   resetHibernationPaneAgeForTests
 } from './agent-hibernation-pane-age'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../runtime/runtime-rpc-client'
 
 export const NOW = 10_000_000
 export const LEAF = '11111111-1111-4111-8111-111111111111'
-
-export type RuntimeEnvironmentCallStub = Mock<(args: RuntimeEnvironmentCallRequest) => unknown>
-
-export const mockRuntimeEnvironmentCall: RuntimeEnvironmentCallStub = vi.fn()
-
-vi.stubGlobal('window', {
-  api: {
-    runtimeEnvironments: {
-      call: mockRuntimeEnvironmentCall
-    }
-  }
-})
 
 export function tab(): TerminalTab {
   return {
@@ -120,78 +103,11 @@ export function installEligibleState(
   return shutdownCompletedAgentPaneForHibernation
 }
 
-export function runtimeListResult(ptyIds: string[], truncated = false) {
-  return {
-    terminals: ptyIds.map((ptyId) => ({
-      handle: `handle-${ptyId}`,
-      ptyId,
-      worktreeId: 'wt-bg',
-      worktreePath: '/tmp/wt-bg',
-      branch: 'feature',
-      tabId: `pty:${ptyId}`,
-      leafId: `pty:${ptyId}`,
-      title: 'Agent',
-      connected: true,
-      writable: true,
-      lastOutputAt: null,
-      preview: ''
-    })),
-    totalCount: ptyIds.length,
-    truncated
-  }
-}
-
-export function installRuntimeListResponses(
-  ...responses: (ReturnType<typeof runtimeListResult> | Error)[]
-): void {
-  const queue = [...responses]
-  mockRuntimeEnvironmentCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-    const compatible = createCompatibleRuntimeStatusResponseIfNeeded(args)
-    if (compatible) {
-      return Promise.resolve(compatible)
-    }
-    if (args.method === 'terminal.list') {
-      const response = queue.shift() ?? runtimeListResult(['pty-1'])
-      if (response instanceof Error) {
-        return Promise.reject(response)
-      }
-      return Promise.resolve({
-        id: 'terminal-list',
-        ok: true,
-        result: response,
-        _meta: { runtimeId: 'runtime-1' }
-      })
-    }
-    return Promise.resolve({
-      id: 'default',
-      ok: true,
-      result: {},
-      _meta: { runtimeId: 'runtime-1' }
-    })
-  })
-}
-
-export function deferred<T>(): {
-  promise: Promise<T>
-  resolve: (value: T) => void
-  reject: (error: Error) => void
-} {
-  let resolve!: (value: T) => void
-  let reject!: (error: Error) => void
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res
-    reject = rej
-  })
-  return { promise, resolve, reject }
-}
-
 export function resetAgentHibernationCoordinatorFixture(): void {
   resetAgentHibernationCoordinatorForTests()
-  clearRuntimeCompatibilityCacheForTests()
   resetForegroundTerminalTabIdsForTests()
   resetAgentHibernationOutputActivityForTests()
   resetHibernationPaneAgeForTests()
   hydrateDrivers([])
-  mockRuntimeEnvironmentCall.mockReset()
   vi.useRealTimers()
 }

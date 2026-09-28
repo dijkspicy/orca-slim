@@ -3,13 +3,11 @@ import { useCallback } from 'react'
 import type { LinearIssue } from '../../../shared/linear/issue-types'
 import type { LinearWorkspaceSelection } from '../../../shared/linear/workspace-types'
 import type { JiraIssue } from '../../../shared/jira-types'
-import { buildLinearIssueLinkedWorkItem } from '@/lib/linear-linked-work-item'
+import { buildLinearWorkspaceSource } from '../../../shared/new-workspace/workspace-source'
 import { getLinearIssueWorkspaceName } from '../../../shared/workspace-name'
 import { useAppStore } from '@/store'
-import { openLinearIssueWorkspaceOrStart } from '@/lib/linear-issue-workspace-open'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
-import { bindTaskPageJiraItemSourceContext } from './task-page-jira-item-source-context'
 import type { LinkedWorkItemSummary } from '@/lib/new-workspace'
 import { shouldHideTaskPageListChrome } from '@/components/task-page-list-chrome-visibility'
 import { getJiraIssueWorkspaceSeed } from './task-page-source-context'
@@ -22,10 +20,8 @@ export function useTaskPageComposerActions(model: TaskPageJiraListEffectsModel) 
     listLinearTeams,
     checkLinearConnection,
     selectedLinearWorkspaceId,
-    jiraSites,
     taskSource,
     linearTaskSourceContext,
-    jiraTaskSourceContext,
     gitlabDialogItem,
     dialogWorkItem,
     selectedLinearIssue,
@@ -60,7 +56,7 @@ export function useTaskPageComposerActions(model: TaskPageJiraListEffectsModel) 
   // Why: Linear ids are strings (e.g. "ENG-123") but the provider-generic shape needs a numeric number, so the adapter uses 0 as placeholder.
   const openComposerForLinearItem = useCallback(
     (issue: LinearIssue): void => {
-      const linkedWorkItem = buildLinearIssueLinkedWorkItem(issue)
+      const linkedWorkItem = buildLinearWorkspaceSource(issue)
       openModal('new-workspace-composer', {
         linkedWorkItem,
         taskSourceContext: linearTaskSourceContext,
@@ -78,14 +74,7 @@ export function useTaskPageComposerActions(model: TaskPageJiraListEffectsModel) 
     },
     [openComposerForLinearItem]
   )
-  const handleOpenOrUseLinearItem = useCallback(
-    (issue: LinearIssue): void => {
-      if (openLinearIssueWorkspaceOrStart(issue, () => handleUseLinearItem(issue)) === 'opened') {
-        useAppStore.getState().recordFeatureInteraction('linear-tasks')
-      }
-    },
-    [handleUseLinearItem]
-  )
+  const handleOpenOrUseLinearItem = handleUseLinearItem
   const handleLinearWorkspaceChange = useCallback(
     (workspaceId: LinearWorkspaceSelection): void => {
       clearSelectedLinearIssue()
@@ -189,21 +178,6 @@ export function useTaskPageComposerActions(model: TaskPageJiraListEffectsModel) 
   }, [setLinearTeamRefreshNonce, setLinearRefreshNonce])
   const openComposerForJiraItem = useCallback(
     (issue: JiraIssue): void => {
-      const taskSourceContext = bindTaskPageJiraItemSourceContext({
-        issue,
-        sites: jiraSites,
-        sourceContext: jiraTaskSourceContext
-      })
-      if (!taskSourceContext) {
-        // Why: composer drops Jira items without matching source context — refuse rather than create unlinked.
-        toast.error(
-          translate(
-            'auto.components.TaskPage.jiraLinkSourceUnavailable',
-            'Couldn’t link this Jira issue. Reconnect Jira or pick the matching site, then try again.'
-          )
-        )
-        return
-      }
       const linkedWorkItem: LinkedWorkItemSummary = {
         type: 'issue',
         provider: 'jira',
@@ -214,12 +188,11 @@ export function useTaskPageComposerActions(model: TaskPageJiraListEffectsModel) 
       }
       openModal('new-workspace-composer', {
         linkedWorkItem,
-        taskSourceContext,
         prefilledName: getJiraIssueWorkspaceSeed(issue),
         telemetrySource: 'sidebar'
       })
     },
-    [jiraSites, jiraTaskSourceContext, openModal]
+    [openModal]
   )
   const handleUseJiraItem = useCallback(
     (issue: JiraIssue): void => {

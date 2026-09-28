@@ -8,7 +8,6 @@ import {
 } from './agent-session-option-catalog'
 import { GROK_SESSION_OPTION_CATALOG } from './agent-session-option-catalog-grok'
 import { resolveAgentSessionOptionLaunch } from './agent-session-option-launch'
-import { parseBuiltSessionOptionCommand } from './native-chat-session-option-commands'
 
 function grokEffortOption(modelId = 'grok-4.6'): CatalogOption {
   const model = GROK_SESSION_OPTION_CATALOG.models.find((candidate) => candidate.id === modelId)!
@@ -246,8 +245,6 @@ describe('grok mid-session commands', () => {
       throw new Error('grok model changes must be a typed command, not an agent picker')
     }
     expect(midSession.build('grok-4.5')).toBe('/model grok-4.5')
-    expect(parseBuiltSessionOptionCommand(midSession.build, '/model grok-4.5')).toBe('grok-4.5')
-    expect(parseBuiltSessionOptionCommand(midSession.build, '/effort low')).toBeNull()
   })
 
   it('round-trips the effort command', () => {
@@ -256,8 +253,6 @@ describe('grok mid-session commands', () => {
       throw new Error('grok effort changes must be a typed command')
     }
     expect(midSession.build('low')).toBe('/effort low')
-    expect(parseBuiltSessionOptionCommand(midSession.build, '/effort low')).toBe('low')
-    expect(parseBuiltSessionOptionCommand(midSession.build, '/effort ')).toBeNull()
   })
 })
 

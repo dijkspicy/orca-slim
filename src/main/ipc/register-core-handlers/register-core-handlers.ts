@@ -13,7 +13,6 @@ import { registerGitLabHandlers } from '../gitlab'
 import { registerHostedReviewHandlers } from '../hosted-review'
 import { registerLinearHandlers } from '../linear'
 import { registerJiraHandlers } from '../jira'
-import { registerBitbucketHandlers } from '../bitbucket'
 import { registerFeedbackHandlers } from '../feedback'
 import { registerCrashReportingHandlers } from '../crash-reporting'
 import { registerExportHandlers } from '../export'
@@ -21,9 +20,7 @@ import { registerStatsHandlers } from '../stats'
 import { registerMemoryHandlers } from '../memory'
 import { registerRateLimitHandlers } from '../rate-limits'
 import { registerRuntimeHandlers } from '../runtime'
-import { registerRuntimeEnvironmentHandlers } from '../runtime-environments'
 import { registerNativeChatHandlers } from '../native-chat'
-import { registerNotificationHandlers } from '../notifications'
 import { registerOnboardingHandlers } from '../onboarding'
 import { registerDashboardPopoutHandlers } from '../dashboard-popout'
 import { registerTerminalPreviewHandlers } from '../terminal-preview'
@@ -32,8 +29,6 @@ import { setAgentBrowserBridgeRef, registerBrowserHandlers } from '../browser'
 import { setTrustedBrowserRendererWebContentsId } from '../browser-renderer-trust'
 import { registerSessionHandlers } from '../session'
 import { registerSettingsHandlers } from '../settings'
-import { registerDiagnosticsHandlers } from '../diagnostics'
-import { registerSkillsHandlers } from '../skills'
 import { registerSkillDeleteIpcHandlers } from '../skill-delete/handlers'
 import { registerWorkspaceSpaceHandlers } from '../workspace-space'
 import { registerWorkspacePortHandlers } from '../workspace-ports'
@@ -51,8 +46,6 @@ import { getPtyIdForPaneKey } from '../pty'
 import { registerAgentTrustHandlers } from '../agent-trust'
 import { registerClaudeAccountHandlers } from '../claude-accounts'
 import { registerMiniMaxCredentialsHandlers } from '../minimax-credentials'
-import { registerGrokAccountHandlers } from '../grok-accounts'
-import { registerCursorAccountHandlers } from '../cursor-accounts'
 import {
   registerClipboardHandlers,
   setTrustedClipboardRendererWebContentsId
@@ -124,19 +117,16 @@ export function registerCoreHandlers(
   registerUsageProviderHandlers({ claudeUsage, codexUsage, openCodeUsage, museUsage })
   registerCodexAccountHandlers(codexAccounts, () => store.getSettings())
   registerAgentHookHandlers(runtime, { getPtyIdForPaneKey })
-  registerCodexConfigSyncHandlers(codexAccounts.runtimeHomeService)
+  registerCodexConfigSyncHandlers()
   registerAgentTrustHandlers()
   registerClaudeAccountHandlers(claudeAccounts)
-  registerMiniMaxCredentialsHandlers(rateLimits)
-  registerGrokAccountHandlers()
-  registerCursorAccountHandlers()
+  registerMiniMaxCredentialsHandlers()
   registerRateLimitHandlers(rateLimits, codexAccounts)
   registerGitHubHandlers(store, stats)
   registerGitLabHandlers(store)
   registerHostedReviewHandlers(store, stats)
   registerLinearHandlers()
   registerJiraHandlers()
-  registerBitbucketHandlers()
   registerFeedbackHandlers()
   if (crashReports) {
     registerCrashReportingHandlers(crashReports)
@@ -144,19 +134,12 @@ export function registerCoreHandlers(
   registerExportHandlers()
   registerStatsHandlers(stats)
   registerMemoryHandlers(store)
-  registerNotificationHandlers(store, runtime)
   registerOnboardingHandlers(store)
   registerDashboardPopoutHandlers(store, keybindings)
   registerTerminalPreviewHandlers(runtime)
   registerDeveloperPermissionHandlers()
-  // Why: diagnostics handlers are wired alongside telemetry but the two
-  // lanes never share a code path — `ipc/diagnostics.ts` imports only from
-  // `src/main/observability/`, never from `src/main/telemetry/`. Order is
-  // not load-bearing; both register independent ipcMain channels.
-  registerDiagnosticsHandlers()
   registerTerminalRenderDesyncEvidenceHandler()
   registerSettingsHandlers(store, agentAwakeService)
-  registerSkillsHandlers(store, runtime)
   registerSkillDeleteIpcHandlers(store, runtime)
   if (automations) {
     registerAutomationHandlers(store, automations)
@@ -179,7 +162,6 @@ export function registerCoreHandlers(
   }
   registerFilesystemWatcherHandlers()
   registerRuntimeHandlers(runtime)
-  registerRuntimeEnvironmentHandlers(store)
   registerNativeChatHandlers()
   registerClipboardHandlers(store)
 }

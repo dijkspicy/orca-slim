@@ -2,7 +2,6 @@
 import './setup.spec'
 
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
-import { RuntimeBrowserCommands } from '../orca-runtime-browser'
 import {
   setRuntimeBrowserCommandsFactory,
   setRuntimeBrowserUnavailableCause
@@ -64,7 +63,6 @@ import {
 } from '../orca-runtime'
 import { RUNTIME_GRAPH_RELOAD_TIMEOUT_MS } from '../runtime-graph-reload-lifecycle'
 import { getRuntimeBrowserPageRegistry } from '../runtime-browser-page-registry'
-import { getBrowserHostLeaseRegistry } from '../browser-host-lease-registry-instance'
 import {
   appendRecentPtyPathCandidates,
   recentTerminalPathCandidatesIncludePath,
@@ -152,7 +150,6 @@ export const exportedREVIEW_HEAD_FETCH_TIMEOUT_MS = REVIEW_HEAD_FETCH_TIMEOUT_MS
 export const exportedRUNTIME_GRAPH_RELOAD_TIMEOUT_MS = RUNTIME_GRAPH_RELOAD_TIMEOUT_MS
 export const exportedRecentPtyOutputBuffer = RecentPtyOutputBuffer
 export const exportedRpcDispatcher = RpcDispatcher
-export const exportedRuntimeBrowserCommands = RuntimeBrowserCommands
 export const exportedSETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV =
   SETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV
 export const exportedSETUP_AGENT_SEQUENCE_STARTUP_SCRIPT_ENV =
@@ -196,7 +193,6 @@ export const exportedExpect = expect
 export const exportedGetAgentPromptSubmitDelayMs = getAgentPromptSubmitDelayMs
 export const exportedGetBaseRefDefault = getBaseRefDefault
 export const exportedGetBranchConflictKind = getBranchConflictKind
-export const exportedGetBrowserHostLeaseRegistry = getBrowserHostLeaseRegistry
 export const exportedGetDefaultTabsLaunch = getDefaultTabsLaunch
 export const exportedGetDefaultWorkspaceSession = getDefaultWorkspaceSession
 export const exportedGetEffectiveHooks = getEffectiveHooks

@@ -1,8 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import { getConnectionId } from '@/lib/connection-context'
-import { setRuntimeGitStatusUpstreamRefWatch } from '@/runtime/runtime-git-client'
 import type { GitStatusResult } from '../../../../shared/git-status-types'
-import { getRightSidebarWorktreeRuntimeSettings } from './file-explorer-runtime-owner'
 
 export function useGitStatusUpstreamRefWatch(args: {
   enabled: boolean
@@ -10,13 +8,10 @@ export function useGitStatusUpstreamRefWatch(args: {
   worktreeId: string | null
   worktreePath: string | null
 }): (status: GitStatusResult) => void {
-  const runtimeEnvironmentId = args.worktreeId
-    ? getRightSidebarWorktreeRuntimeSettings(args.worktreeId).activeRuntimeEnvironmentId
-    : null
   const connectionId = args.worktreeId ? (getConnectionId(args.worktreeId) ?? undefined) : undefined
   const scope =
     args.enabled && args.executionHostId
-      ? `${args.executionHostId}\0${runtimeEnvironmentId}\0${args.worktreeId}\0${args.worktreePath}`
+      ? `${args.executionHostId}\0${args.worktreeId}\0${args.worktreePath}`
       : null
 
   const publish = useCallback(
@@ -27,28 +22,18 @@ export function useGitStatusUpstreamRefWatch(args: {
       const upstreamName = status.upstreamStatus?.hasUpstream
         ? status.upstreamStatus.upstreamName
         : undefined
-      void setRuntimeGitStatusUpstreamRefWatch(
-        {
-          settings: { activeRuntimeEnvironmentId: runtimeEnvironmentId },
+      void window.api.git
+        .setStatusUpstreamRefWatch({
           worktreeId: args.worktreeId,
           worktreePath: args.worktreePath,
-          connectionId
-        },
-        {
           executionHostId: args.executionHostId,
+          ...(connectionId ? { connectionId } : {}),
           ...(status.branch ? { branch: status.branch } : {}),
           ...(upstreamName ? { upstreamName } : {})
-        }
-      ).catch(() => {})
+        })
+        .catch(() => {})
     },
-    [
-      args.executionHostId,
-      args.worktreeId,
-      args.worktreePath,
-      connectionId,
-      runtimeEnvironmentId,
-      scope
-    ]
+    [args.executionHostId, args.worktreeId, args.worktreePath, connectionId, scope]
   )
 
   useEffect(() => {
@@ -59,24 +44,16 @@ export function useGitStatusUpstreamRefWatch(args: {
     const worktreeId = args.worktreeId
     const worktreePath = args.worktreePath
     return () => {
-      void setRuntimeGitStatusUpstreamRefWatch(
-        {
-          settings: { activeRuntimeEnvironmentId: runtimeEnvironmentId },
+      void window.api.git
+        .setStatusUpstreamRefWatch({
           worktreeId,
           worktreePath,
-          connectionId
-        },
-        { executionHostId }
-      ).catch(() => {})
+          executionHostId,
+          ...(connectionId ? { connectionId } : {})
+        })
+        .catch(() => {})
     }
-  }, [
-    args.executionHostId,
-    args.worktreeId,
-    args.worktreePath,
-    connectionId,
-    runtimeEnvironmentId,
-    scope
-  ])
+  }, [args.executionHostId, args.worktreeId, args.worktreePath, connectionId, scope])
 
   return publish
 }

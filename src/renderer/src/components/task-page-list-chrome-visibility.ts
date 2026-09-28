@@ -1,4 +1,4 @@
-import type { TaskProvider } from '../../../shared/task-providers'
+export type TaskProvider = 'github' | 'gitlab' | 'linear' | 'jira'
 
 export type TaskPageListChromeVisibilityState = {
   taskSource: TaskProvider

@@ -1,11 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Repo } from '../../../../shared/repo-types'
 import { createTestStore } from './store-test-helpers'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
+
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 
 const reposList = vi.fn()
 const projectsList = vi.fn()
@@ -28,7 +25,6 @@ const reposByEnvironment: Record<string, Repo[]> = {
 type RepoListResolver = (value: unknown) => void
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   reposList.mockReset().mockResolvedValue([])
   projectsList.mockReset().mockResolvedValue([])
   listHostSetups.mockReset().mockResolvedValue([])
@@ -38,9 +34,8 @@ beforeEach(() => {
   ])
   runtimeEnvironmentCall.mockReset()
   runtimeEnvironmentTransportCall.mockReset()
-  runtimeEnvironmentTransportCall.mockImplementation(
-    (args: RuntimeEnvironmentCallRequest) =>
-      createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+  runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) =>
+    runtimeEnvironmentCall(args)
   )
   vi.stubGlobal('window', {
     api: {
@@ -55,7 +50,6 @@ beforeEach(() => {
 })
 
 async function loadWithCompletionOrder(completionOrder: string[]): Promise<string[]> {
-  clearRuntimeCompatibilityCacheForTests()
   const repoListResolvers = new Map<string, RepoListResolver>()
   runtimeEnvironmentCall.mockImplementation(
     (args: RuntimeEnvironmentCallRequest & { selector?: string }) => {

@@ -1,5 +1,3 @@
-import { isRemoteRuntimePtyId } from '@/runtime/runtime-terminal-inspection'
-import { isRemoteExecutionHostPtyId } from './remote-execution-host-pty'
 import { PTY_SESSION_ID_SEPARATOR } from '../../../../shared/pty-session-id-format'
 import { terminalProviderHasAuthoritativeSnapshot } from '../terminal/terminal-provider-snapshot-capability'
 import {
@@ -54,9 +52,7 @@ export function hasPendingRetentionSpawnWork(
   if (pendingStartupByTabId[tab.id] !== undefined) {
     return true
   }
-  // Why: paired mirrors never spawn locally; their host-backed PTY id proves
-  // activation's sort-suppression residue cannot represent unfinished work.
-  return Boolean(tab.pendingActivationSpawn && (!tab.ptyId || !isRemoteRuntimePtyId(tab.ptyId)))
+  return Boolean(tab.pendingActivationSpawn && !tab.ptyId)
 }
 
 // Why: an eviction-exempt pty is a live local one a remount cannot restore
@@ -81,7 +77,7 @@ export function classifyEvictionExemptTerminalPty(
   ptyId: string | null | undefined,
   worktreeId: string
 ): EvictionExemptTerminalPtyRoute | null {
-  if (!ptyId || isRemoteExecutionHostPtyId(ptyId)) {
+  if (!ptyId) {
     return null
   }
   const separatorIdx = ptyId.lastIndexOf(PTY_SESSION_ID_SEPARATOR)

@@ -25,7 +25,6 @@ import {
 import type { NativeChatLaunchPromptDelivery } from '@/lib/native-chat-initial-view-mode'
 import { isNativeChatTranscriptLocalReadable } from '@/lib/native-chat-transcript-readability'
 import { getExecutionHostIdForWorktree } from '@/lib/worktree-runtime-owner'
-import { readLocalRuntimeCapabilitiesOrUnknown } from '@/runtime/local-runtime-capabilities'
 
 export type ProspectiveWorkspaceKind = NonNullable<AgentLaunchRoutingInput['workspaceKind']>
 
@@ -120,7 +119,9 @@ export function buildAgentLaunchRouteInput(
     agent,
     settings: store.settings,
     executionHostId,
-    hostCapabilities: readLocalRuntimeCapabilitiesOrUnknown(),
+    // Host capability probes rode on the culled local runtime; route decisions
+    // now treat host capabilities as unknown.
+    hostCapabilities: null,
     workspaceKind: workspace.kind,
     projectRuntime: resolveProjectRuntime(store, workspace, executionHostId),
     promptDelivery: args.promptDelivery,

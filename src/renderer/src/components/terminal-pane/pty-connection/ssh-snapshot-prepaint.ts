@@ -14,8 +14,7 @@ export function bindPrepaintParkedSshSnapshot(session: ConnectPanePtySession): v
     if (
       !ptyId ||
       !session.mountFollowsTerminalPark ||
-      parsedPtyId?.connectionId !== session.connectionId ||
-      !session.capturedDirectSshRetryLeaseMatches()
+      parsedPtyId?.connectionId !== session.connectionId
     ) {
       return
     }
@@ -23,8 +22,7 @@ export function bindPrepaintParkedSshSnapshot(session: ConnectPanePtySession): v
     const isCurrent = (): boolean =>
       !session.disposed &&
       session.mountFollowsTerminalPark &&
-      session.authoritativeReattachGeneration === capturedGeneration &&
-      session.capturedDirectSshRetryLeaseMatches()
+      session.authoritativeReattachGeneration === capturedGeneration
     const fetchSnapshot = session.getSshMainModelSnapshotProbe(ptyId)
     void fetchSnapshot()
       .then(async (snapshot) => {

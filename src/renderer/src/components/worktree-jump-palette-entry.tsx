@@ -11,10 +11,7 @@ import {
   WorktreeJumpPaletteProjectRow
 } from './worktree-jump-palette-project-action-rows'
 import { WorktreeJumpPaletteWorkspaceTabRow } from './worktree-jump-palette-workspace-tab-row'
-import {
-  WorktreeJumpPaletteBrowserRow,
-  WorktreeJumpPaletteSimulatorRow
-} from './worktree-jump-palette-browser-simulator-rows'
+import { WorktreeJumpPaletteSimulatorRow } from './worktree-jump-palette-browser-simulator-rows'
 import { translate } from '@/i18n/i18n'
 
 export function WorktreeJumpPaletteEntry({
@@ -63,16 +60,10 @@ export function WorktreeJumpPaletteEntry({
     )
   }
   if (entry.type === 'create-worktree') {
-    const linearPreview = controller.currentLinearIssuePreview
     return (
       <PaletteCreateWorktreeRow
         className="group mx-0.5 mt-1 flex cursor-pointer items-center gap-3 rounded-lg border border-transparent px-3 py-1.5 text-left outline-none transition-[background-color,border-color,box-shadow] data-[selected=true]:border-border data-[selected=true]:bg-accent data-[selected=true]:text-foreground"
         createWorktreeName={controller.createWorktreeName}
-        linearIdentifier={controller.linearIssueUrlIntent?.identifier ?? null}
-        linearIssue={linearPreview?.issue ?? null}
-        linearPending={controller.linearIssueUrlIntent !== null && linearPreview?.loading !== false}
-        showLinearLoadingFeedback={controller.showLinearLoadingFeedback}
-        taskUrlPreview={controller.taskUrlCreatePreview}
         onSelect={controller.handleCreateWorktree}
       />
     )
@@ -92,15 +83,6 @@ export function WorktreeJumpPaletteEntry({
       <WorktreeJumpPaletteActionRow entry={entry} renderKey={renderKey} controller={controller} />
     )
   }
-  if (entry.type === 'workspace-tab') {
-    return (
-      <WorktreeJumpPaletteWorkspaceTabRow
-        entry={entry}
-        renderKey={renderKey}
-        controller={controller}
-      />
-    )
-  }
   if (entry.type === 'simulator-tab') {
     return (
       <WorktreeJumpPaletteSimulatorRow
@@ -111,6 +93,10 @@ export function WorktreeJumpPaletteEntry({
     )
   }
   return (
-    <WorktreeJumpPaletteBrowserRow entry={entry} renderKey={renderKey} controller={controller} />
+    <WorktreeJumpPaletteWorkspaceTabRow
+      entry={entry}
+      renderKey={renderKey}
+      controller={controller}
+    />
   )
 }

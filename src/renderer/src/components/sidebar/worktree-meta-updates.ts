@@ -1,8 +1,4 @@
 import { parseGitHubIssueOrPRLink, parseGitHubIssueOrPRNumber } from '@/lib/github-links'
-import {
-  buildLinearIssueLinkUpdates,
-  LINEAR_ISSUE_LINK_CLEARED
-} from '../../../../shared/linear/links'
 import { parseIssueLinkInput, type IssueLinkProvider } from '../../../../shared/issue-link-input'
 import type { WorkspaceSourceProvider } from '../../../../shared/new-workspace/workspace-source'
 import type { WorktreeMeta } from '../../../../shared/worktree/meta-types'
@@ -226,19 +222,9 @@ function buildIssueLinkUpdates(
       ? { linkedWorkItem: null, linkedTaskSourceContext: null }
       : {}
 
-  // Why: persistence gates the remote Linear capability on key presence, not
-  // value. A synthetic clear on a workspace that never held a Linear link would
-  // fail a GitHub-only save against an older runtime, citing Linear. Read live,
-  // not from the snapshot: a link added since the dialog opened would otherwise
-  // outlive a save that just promised to displace it.
-  const displacedLinear: Partial<WorktreeMeta> = live.linkedLinearIssue
-    ? LINEAR_ISSUE_LINK_CLEARED
-    : {}
-
   if (trimmed === '') {
     return {
       linkedIssue: null,
-      ...displacedLinear,
       ...displacedWorkItem
     }
   }
@@ -250,16 +236,9 @@ function buildIssueLinkUpdates(
     return {}
   }
 
-  if (parsed.provider === 'github') {
-    return {
-      linkedIssue: parsed.number,
-      ...displacedLinear,
-      ...displacedWorkItem
-    }
-  }
-
-  const linearUpdates = buildLinearIssueLinkUpdates(trimmed)
-  return linearUpdates ? { linkedIssue: null, ...linearUpdates, ...displacedWorkItem } : {}
+  // Why: Linear links are no longer writable, so a parsed non-GitHub identifier
+  // updates nothing.
+  return {}
 }
 
 function buildReviewLinkUpdate(

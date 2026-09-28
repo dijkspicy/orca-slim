@@ -1,7 +1,6 @@
 import type { Tab } from '../../../shared/tab-types'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../shared/execution-host'
 import { defaultAgentChatLabel } from '../../../shared/agent-session-chat-label'
-import { structuredAgentSessionTabId } from '../../../shared/structured-agent-session-projection'
 import type {
   AgentSessionLaunchPlan,
   AgentSessionLaunchTarget
@@ -22,7 +21,7 @@ export function openStructuredAgentSessionProvisionalTab(args: {
   activate?: boolean
 }): Tab {
   const state = useAppStore.getState()
-  const tabId = structuredAgentSessionTabId(args.sessionId)
+  const tabId = `structured-agent-session-${args.sessionId}`
   const existing = (state.unifiedTabsByWorktree[args.worktreeId] ?? []).find(
     (candidate) =>
       candidate.id === tabId &&

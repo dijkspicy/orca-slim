@@ -18,10 +18,6 @@ import {
 } from './agent-status-types'
 import type { AgentType, WellKnownAgentType } from './agent-status-types'
 import type { TuiAgent } from './tui-agent'
-import {
-  ORCA_DISPATCH_PROMPT_LEAD_LINE,
-  ORCA_DISPATCH_STATUS_PREAMBLE_PREFIX
-} from './orca-dispatch-status-prompt'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -142,82 +138,6 @@ describe('parseAgentStatusPayload', () => {
   })
 
   // Why: dispatch preambles bury the task body after multi-KB CLI text; naive head-truncation would keep only boilerplate.
-  it('compacts Orca dispatch preambles so the task body survives 200-char truncation', () => {
-    const longCliNoise = Array.from(
-      { length: 50 },
-      (_, i) => `orca orchestration send --to term_parent --type heartbeat --phase step-${i}`
-    ).join('\n')
-    const result = parseAgentStatusPayload(
-      JSON.stringify({
-        state: 'working',
-        prompt: `You are working inside Orca, a multi-agent IDE. You are a dispatched worker.
-Your task ID is: task_compact_1
-
-=== CLI COMMANDS ===
-${longCliNoise}
-
-=== TASK ===
-Fix dispatch fallback preview for normalized status prompts`
-      })
-    )
-    expect(result).not.toBeNull()
-    expect(result!.prompt.length).toBeLessThanOrEqual(AGENT_STATUS_MAX_FIELD_LENGTH)
-    expect(result!.prompt.includes('\n')).toBe(false)
-    expect(result!.prompt.startsWith('You are working inside Orca, a multi-agent IDE.')).toBe(true)
-    expect(result!.prompt).toContain('Your task ID is: task_compact_1')
-    expect(result!.prompt).toContain('=== TASK ===')
-    expect(result!.prompt).toContain('Fix dispatch fallback preview')
-    expect(result!.prompt).not.toContain('CLI COMMANDS')
-    expect(result!.prompt).not.toContain('heartbeat')
-  })
-
-  it('ignores task-marker text inside base-drift commit subjects', () => {
-    const result = normalizeAgentStatusPayload({
-      state: 'working',
-      // Why: CRLF covers Windows hook payloads; commit text must not impersonate the task separator.
-      prompt: [
-        'You are working inside Orca, a multi-agent IDE. You are a dispatched worker.',
-        'Your task ID is: task_drift_marker',
-        '',
-        '--- BASE DRIFT ---',
-        '  - docs: explain === TASK === marker parsing',
-        '---',
-        '',
-        '=== TASK ===',
-        'Fix the actual dispatch fallback preview'
-      ].join('\r\n')
-    })
-
-    expect(result!.prompt).toContain('=== TASK === Fix the actual dispatch fallback preview')
-    expect(result!.prompt).not.toContain('marker parsing')
-  })
-
-  it('compacts a Claude hook prompt carrying the typed lead line and paste wrapper', () => {
-    const preamble = `${ORCA_DISPATCH_STATUS_PREAMBLE_PREFIX}\nYour task ID is: task_lead\n\n=== TASK ===\nAdd greet()`
-    const normalize = (prompt: string): string =>
-      normalizeAgentStatusPayload({ state: 'working', prompt })!.prompt
-    const compact = `${ORCA_DISPATCH_STATUS_PREAMBLE_PREFIX} Your task ID is: task_lead === TASK === Add greet()`
-
-    // Why: the shape Claude Code's UserPromptSubmit hook reports for a typed lead plus a paste.
-    expect(
-      normalize(
-        `${ORCA_DISPATCH_PROMPT_LEAD_LINE}\n\n<pasted_content id="aac2">\n${preamble}\n</pasted_content id="aac2">\n`
-      )
-    ).toBe(compact)
-    expect(normalize(`\n\n<pasted_content id="965a">\n${preamble}`)).toBe(compact)
-    expect(normalize(`<pasted_content ${'x'.repeat(80)}>${preamble}`)).not.toBe(compact)
-    expect(normalize(`<pasted_content ${'x'.repeat(30_000)}`)).not.toContain('TASK')
-    expect(normalize(`please review: ${preamble}`)).toBe(
-      `please review: ${preamble.replace(/\n+/g, ' ')}`
-    )
-    // Why: the closing paste tag must not become the task body of an empty spec.
-    expect(
-      normalize(
-        `<pasted_content id="1">\n${ORCA_DISPATCH_STATUS_PREAMBLE_PREFIX}\n=== TASK ===\n</pasted_content id="1">`
-      )
-    ).toBe(ORCA_DISPATCH_STATUS_PREAMBLE_PREFIX)
-  })
-
   it('keeps dispatch detection bounded for oversized whitespace prompts', () => {
     const trimStartSpy = vi.spyOn(String.prototype, 'trimStart')
     const prompt = ' '.repeat(1_000_000)

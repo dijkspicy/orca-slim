@@ -32,7 +32,6 @@ import {
   resolveSourceControlAiForOperation,
   resolveSourceControlAiPrCreationDefaults
 } from '../../../../../shared/source-control-ai'
-import { getRuntimeGitScope } from '@/runtime/runtime-git-client'
 import type { ChecksPanelReviewStateInput } from './review-state-dependencies'
 
 export function useChecksPanelReviewState(model: ChecksPanelReviewStateInput) {
@@ -308,7 +307,10 @@ export function useChecksPanelReviewState(model: ChecksPanelReviewStateInput) {
       return DEFAULT_SOURCE_CONTROL_AI_PR_CREATION_DEFAULTS
     }
     const hostKey = getCommitMessageModelDiscoveryHostKeyForScope(
-      getRuntimeGitScope(settings, repo?.connectionId)
+      // Why: inline of the deleted runtime scope helper — an active runtime environment wins, else the repo connection.
+      settings?.activeRuntimeEnvironmentId
+        ? `runtime:${settings.activeRuntimeEnvironmentId}`
+        : (repo?.connectionId ?? null)
     )
     const resolved = resolveSourceControlAiForOperation({
       settings,

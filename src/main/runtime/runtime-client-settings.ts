@@ -1,8 +1,6 @@
 import { getAppEnvironment } from '../../shared/app-environment'
-import { isArtifactSharingEnabled } from '../../shared/artifact-sharing-gate'
 import { isAgentSkillSharingEnabled } from '../../shared/agent-skill-sharing-gate'
 import { applyPRBotAuthorOverride } from '../../shared/pr-bot-author-overrides'
-import { TASK_PROVIDERS } from '../../shared/task-providers'
 import {
   applyTerminalQuickCommandMutation,
   MAX_QUICK_COMMANDS,
@@ -10,12 +8,9 @@ import {
 } from '../../shared/terminal-quick-commands'
 import { haveSameDisabledTuiAgents } from '../../shared/tui-agent-selection'
 import type { GlobalSettings } from '../../shared/global-settings-types'
-import { applyNativeChatSessionOptionSettingsMutation } from '../../shared/native-chat-session-option-defaults'
-import type { NativeChatSessionOptionSettingsMutation } from '../../shared/native-chat-session-options'
 import { getHostDisplayLabelOverrides } from '../../shared/host-setting-overrides'
 import type { ExecutionHostId } from '../../shared/execution-host'
 import type { TerminalQuickCommand } from '../../shared/terminal-quick-command-types'
-import { recordManagedHookInstallFailure } from '../agent-hooks/install-telemetry'
 import { applyAgentStatusHooksEnabled } from '../agent-hooks/managed-agent-hook-controls'
 import type { RuntimeStore } from './runtime-store-contract'
 
@@ -43,7 +38,6 @@ export type RuntimeClientSettings = Pick<
   | 'minimaxUsageModels'
   | 'minimaxEndpoint'
   | 'prBotAuthorOverrides'
-  | 'artifactSharingEnabled'
   | 'worktreeVisibilityDefaults'
   | 'agentSkillSharingEnabled'
   | 'machineName'
@@ -105,7 +99,7 @@ export class RuntimeClientSettingsController {
       terminalCopyTrimsGutter: settings.terminalCopyTrimsGutter !== false,
       defaultTaskSource: settings.defaultTaskSource ?? 'github',
       defaultTaskViewPreset: settings.defaultTaskViewPreset ?? 'issues',
-      visibleTaskProviders: settings.visibleTaskProviders ?? [...TASK_PROVIDERS],
+      visibleTaskProviders: settings.visibleTaskProviders ?? [],
       defaultRepoSelection: settings.defaultRepoSelection ?? null,
       // Persisted settings can violate the paired client's string-array contract.
       defaultLinearTeamSelection: Array.isArray(settings.defaultLinearTeamSelection)
@@ -123,7 +117,6 @@ export class RuntimeClientSettingsController {
       minimaxUsageModels: settings.minimaxUsageModels ?? 'general',
       minimaxEndpoint: settings.minimaxEndpoint ?? 'overseas',
       prBotAuthorOverrides: settings.prBotAuthorOverrides ?? [],
-      artifactSharingEnabled: isArtifactSharingEnabled(settings),
       worktreeVisibilityDefaults: settings.worktreeVisibilityDefaults ?? { external: 'hide' },
       agentSkillSharingEnabled: isAgentSkillSharingEnabled(settings),
       machineName: settings.machineName ?? '',
@@ -193,19 +186,6 @@ export class RuntimeClientSettingsController {
     return this.get()
   }
 
-  updateNativeChatSessionOptions(mutation: NativeChatSessionOptionSettingsMutation): void {
-    if (!this.store?.getSettings || !this.store.updateSettings) {
-      throw new Error('runtime_unavailable')
-    }
-    const next = applyNativeChatSessionOptionSettingsMutation(
-      this.store.getSettings().nativeChatSessionOptions,
-      mutation
-    )
-    if (next) {
-      this.store.updateSettings({ nativeChatSessionOptions: next }, { notifyListeners: true })
-    }
-  }
-
   private reconcileManagedAgentHooks(): Promise<void> {
     const generation = ++this.reconciliationGeneration
     const reconciliation = this.reconciliationTail.then(async () => {
@@ -218,7 +198,6 @@ export class RuntimeClientSettingsController {
       }
       await applyAgentStatusHooksEnabled(settings.agentStatusHooksEnabled !== false, settings, {
         shouldHydrateShellPath: getAppEnvironment().isPackaged(),
-        onInstallError: recordManagedHookInstallFailure,
         shouldContinue: (agent) => {
           const current = this.store?.getSettings()
           return (

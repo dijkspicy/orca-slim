@@ -1,7 +1,7 @@
-export { AGENT_PROMPT_EFFECT_TIMEOUT_MS } from '../../shared/orchestration-timing-budgets'
-import { AGENT_PROMPT_EFFECT_TIMEOUT_MS } from '../../shared/orchestration-timing-budgets'
 import type { TuiAgent } from '../../shared/tui-agent'
 
+// Why: budget for the prompt-effect verification poll, formerly shared with the orchestration worker-start transports.
+const AGENT_PROMPT_EFFECT_TIMEOUT_MS = 30_000
 export const AGENT_PROMPT_HOOK_EFFECT_TIMEOUT_MS = AGENT_PROMPT_EFFECT_TIMEOUT_MS
 const AGENT_PROMPT_EFFECT_POLL_MS = 50
 

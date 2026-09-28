@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import type { IDisposable } from '@xterm/xterm'
 import { useAppStore } from '../../store'
-import { hydrateRuntimeEnvironmentSshState } from '@/runtime/runtime-environment-ssh-state'
 import { LOCAL_EXECUTION_HOST_ID, type ExecutionHostId } from '../../../../shared/execution-host'
 import type { TerminalKittyKeyboardModeTracker } from '../../../../shared/terminal-kitty-keyboard-mode-tracker'
 import type { PaneManager } from '@/lib/pane-manager/pane-manager'
@@ -82,12 +81,6 @@ export function useTerminalPaneFoundation(
   useLayoutEffect(() => {
     sshReconnectOwnsTerminalErrorsRef.current = sshReconnectOwnsTerminalErrors
   }, [sshReconnectOwnsTerminalErrors])
-  useEffect(() => {
-    if (!sshReconnectEnvironmentId) {
-      return
-    }
-    void hydrateRuntimeEnvironmentSshState(sshReconnectEnvironmentId).catch(() => {})
-  }, [sshReconnectEnvironmentId])
 
   useVisibleTerminalTabClaim({ isVisible, tabId })
   const [expandedPaneId, setExpandedPaneId] = useState<number | null>(null)

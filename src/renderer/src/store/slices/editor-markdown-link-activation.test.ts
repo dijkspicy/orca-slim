@@ -1,12 +1,9 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { createEditorStore, ownedEditorFileId } from './editor-slice-test-harness'
 import type { AppState } from '../types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
+
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 
 const { toastErrorMock } = vi.hoisted(() => ({
   toastErrorMock: vi.fn()
@@ -39,7 +36,6 @@ describe('createEditorSlice activateMarkdownLink', () => {
   const runtimeEnvironmentTransportCallMock = vi.fn()
 
   beforeEach(() => {
-    clearRuntimeCompatibilityCacheForTests()
     toastErrorMock.mockReset()
     openUrlMock.mockReset()
     openFileUriMock.mockReset()
@@ -62,10 +58,8 @@ describe('createEditorSlice activateMarkdownLink', () => {
       result: { size: 1, isDirectory: false, mtime: 1 },
       _meta: { runtimeId: 'runtime-source' }
     })
-    runtimeEnvironmentTransportCallMock.mockImplementation(
-      (args: RuntimeEnvironmentCallRequest) =>
-        createCompatibleRuntimeStatusResponseIfNeeded(args, 'runtime-source') ??
-        runtimeEnvironmentCallMock(args)
+    runtimeEnvironmentTransportCallMock.mockImplementation((args: RuntimeEnvironmentCallRequest) =>
+      runtimeEnvironmentCallMock(args)
     )
     openHttpLinkMock.mockReset()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

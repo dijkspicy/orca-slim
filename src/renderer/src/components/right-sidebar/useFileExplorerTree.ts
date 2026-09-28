@@ -2,7 +2,6 @@ import type { Dispatch, SetStateAction } from 'react'
 import { useCallback, useRef, useState } from 'react'
 import type { DirCache, FileExplorerTreeRefreshOutcome } from './file-explorer-types'
 import { splitPathSegments } from './path-tree'
-import { statRuntimePath } from '@/runtime/runtime-file-client'
 import { createFileExplorerDirLoadTracker } from './file-explorer-dir-load-tracker'
 import {
   getFileExplorerOperationOwner,
@@ -174,17 +173,12 @@ export function useFileExplorerTree(
       if (!route) {
         throw new Error(getFileExplorerOwnerUnresolvedMessage())
       }
-      return statRuntimePath(
-        {
-          settings: route.settings,
-          worktreeId: activeWorktreeId,
-          worktreePath,
-          connectionId: route.connectionId
-        },
-        path
-      )
+      return window.api.fs.stat({
+        filePath: path,
+        connectionId: route.connectionId
+      })
     },
-    [activeWorktreeId, worktreePath]
+    [activeWorktreeId]
   )
 
   const refreshTree = useCallback(async (): Promise<FileExplorerTreeRefreshOutcome> => {

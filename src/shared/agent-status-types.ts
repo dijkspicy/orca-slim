@@ -6,7 +6,6 @@ import type { AgentProviderSessionMetadata } from './agent-session-resume'
 import type { AgentMainAgentStatus } from './main-agent-status'
 import type { AgentStateHistoryEntry } from './agent-state-history'
 import { isAgentJournalTurnOutcome } from './agent-turn-outcome'
-import type { OrchestrationFleetAttention } from './orchestration-fleet-attention'
 import type { AgentStatusRowFacets } from './agent-status-observation'
 import type { TuiAgent } from './tui-agent'
 import {
@@ -49,8 +48,6 @@ export type AgentStatusOrchestrationContext = {
   parentPaneKey?: string
   coordinatorHandle?: string
   orchestrationRunId?: string
-  /** Durable orchestration categories combined with the current push-fed status observation. */
-  attention?: OrchestrationFleetAttention
 }
 
 export type AgentSubagentState = 'working' | 'blocked' | 'waiting' | 'idle' | 'unverifiable'

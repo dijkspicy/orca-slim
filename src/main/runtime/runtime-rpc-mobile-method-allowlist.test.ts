@@ -3,7 +3,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { OrcaRuntimeRpcServer } from './runtime-rpc'
-import { remoteRpcContentBudget } from '../../shared/remote-rpc-content-budget'
 import { DeviceRegistry } from './device-registry'
 import { createMobileRpcSurfaceRuntime } from './runtime-rpc-mobile-method-allowlist-fixtures'
 
@@ -636,13 +635,12 @@ describe('OrcaRuntimeRpcServer', () => {
     expect(mocks.abortRuntimeGitRebase).toHaveBeenCalledWith('id:wt-1')
     expect(mocks.bulkUnstageRuntimeGitPaths).toHaveBeenCalledWith('id:wt-1', ['c.ts'])
     expect(mocks.openMobileDiff).toHaveBeenCalledWith('id:wt-1', 'docs/readme.md', true)
-    // A mobile WebSocket client is transport-capped; a local caller gets undefined here.
     expect(mocks.getRuntimeGitDiff).toHaveBeenCalledWith(
       'id:wt-1',
       'docs/readme.md',
       false,
       undefined,
-      remoteRpcContentBudget('req_git_diff')
+      undefined
     )
     expect(mocks.browserTabCreate).toHaveBeenCalledWith(
       { worktree: 'id:wt-1', url: 'about:blank' },

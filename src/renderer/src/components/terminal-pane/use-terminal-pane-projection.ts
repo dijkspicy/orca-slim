@@ -9,11 +9,6 @@ import {
 } from '@/lib/terminal-theme'
 import { stripSshReconnectOwnedErrorLines } from './TerminalErrorToast'
 import { mapPaneTerminalErrors, terminalErrorForPane } from './terminal-error-accumulation'
-import {
-  nativeChatLaunchAgentForLeaf,
-  nativeChatLeafOwnsTabWideEvidence,
-  resolveNativeChatLeafRoute
-} from '../native-chat/native-chat-leaf-routing'
 import { canContinueAgentSessionInNewSession } from './terminal-agent-session-continuation'
 import type { TerminalPaneMobileController } from './use-terminal-pane-mobile-actions'
 import { useAppStore } from '@/store'
@@ -22,17 +17,13 @@ import { resolvePaneAgentSessionId } from './pane-agent-session-id'
 
 export function useTerminalPaneProjection(controller: TerminalPaneMobileController) {
   const {
-    applyNativeChatLeafRoute,
     canToggleChatForLeaf,
     chatLeafId,
     contextMenu,
     contextMenuLeafId,
     effectiveChatViewMode,
     getContextMenuLeafId,
-    getNativeChatLeafIds,
-    getTabWideAgentHintLeafId,
     isActive,
-    isChatEligibleForLeaf,
     isChatViewMode,
     isVisible,
     managerRef,
@@ -49,8 +40,7 @@ export function useTerminalPaneProjection(controller: TerminalPaneMobileControll
     systemPrefersDark,
     tabAgentTypeByLeaf,
     terminalError,
-    terminalErrorsByPaneId,
-    terminalTab
+    terminalErrorsByPaneId
   } = controller
   const effectiveAppearance = settings
     ? resolveEffectiveTerminalAppearance(settings, systemPrefersDark)
@@ -113,25 +103,8 @@ export function useTerminalPaneProjection(controller: TerminalPaneMobileControll
   const chatLeafStillMounted = chatLeafId
     ? managedPanes.some((pane) => pane.leafId === chatLeafId)
     : false
-  useEffect(() => {
-    const activeLeafId = activePane?.leafId ?? null
-    applyNativeChatLeafRoute(
-      resolveNativeChatLeafRoute({
-        isChatViewMode,
-        chatLeafId,
-        activeLeafId,
-        chatLeafStillMounted,
-        activeLeafIsEligible: isChatEligibleForLeaf(activeLeafId)
-      })
-    )
-  }, [
-    isChatViewMode,
-    chatLeafId,
-    activePane?.leafId,
-    chatLeafStillMounted,
-    applyNativeChatLeafRoute,
-    isChatEligibleForLeaf
-  ])
+  // The native-chat leaf router went with the native-chat domain; a persisted
+  // chat view mode can only be toggled back out, never re-derived here.
   const chatPane =
     isChatViewMode && chatLeafId
       ? (managedPanes.find((pane) => pane.leafId === chatLeafId) ?? null)
@@ -140,33 +113,15 @@ export function useTerminalPaneProjection(controller: TerminalPaneMobileControll
     ? (paneTransportsRef.current.get(chatPane.id)?.getPtyId() ?? null)
     : null
   const chatPaneResolvedAgent = chatPane ? resolveTitleAgentForLeaf(chatPane.leafId) : null
-  const chatPaneLaunchAgent = nativeChatLaunchAgentForLeaf({
-    launchAgent: terminalTab?.launchAgent,
-    launchAgentLeafId: getTabWideAgentHintLeafId(),
-    leafId: chatPane?.leafId ?? null,
-    leafIds: getNativeChatLeafIds()
-  })
-  const chatPaneOwnsTabWideLaunchDraft = nativeChatLeafOwnsTabWideEvidence({
-    ownerLeafId: getTabWideAgentHintLeafId(),
-    leafId: chatPane?.leafId ?? null,
-    leafIds: getNativeChatLeafIds()
-  })
+  // Launch-agent attribution for chat panes was native-chat evidence; it has no source anymore.
+  const chatPaneLaunchAgent = null
+  const chatPaneOwnsTabWideLaunchDraft = false
   const activePaneIsChatLeaf = Boolean(
     isChatViewMode && activePane?.leafId && activePane.leafId === chatLeafId
   )
   const resolveAgentForLeaf = (leafId: string | null): string | null => {
     const detectedAgent = leafId ? (tabAgentTypeByLeaf[leafId] ?? null) : null
-    if (detectedAgent) {
-      return detectedAgent
-    }
-    return (
-      nativeChatLaunchAgentForLeaf({
-        launchAgent: terminalTab?.launchAgent,
-        launchAgentLeafId: getTabWideAgentHintLeafId(),
-        leafId,
-        leafIds: getNativeChatLeafIds()
-      }) ?? resolveTitleAgentForLeaf(leafId)
-    )
+    return detectedAgent ?? resolveTitleAgentForLeaf(leafId)
   }
   const activePaneCanContinueInNewSession = canContinueAgentSessionInNewSession(
     resolveAgentForLeaf(activePane?.leafId ?? null)

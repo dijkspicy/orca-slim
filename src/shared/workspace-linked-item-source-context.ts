@@ -1,7 +1,52 @@
-import { parseJiraIssueUrl } from './jira-issue-url'
 import { getWorkspaceSourceProvider } from './new-workspace/workspace-source'
-import type { TaskSourceContext } from './task-source-context'
+import type { TaskProvider } from './task-providers'
+import type { TaskProviderIdentity } from './task-provider-identity'
 import type { WorkspaceLinkedItem } from './worktree/types'
+
+// Moved from jira-issue-url (removed with the forge domain).
+type ParsedJiraIssueUrl = {
+  issueKey: string
+  origin: string
+  sitePath: string
+}
+
+const JIRA_ISSUE_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_]*-\d+$/
+
+function normalizeSitePath(pathname: string): string {
+  const trimmed = pathname.replace(/\/+$/g, '')
+  return trimmed === '/' ? '' : trimmed
+}
+
+function parseJiraIssueUrl(value: string): ParsedJiraIssueUrl | null {
+  let url: URL
+  try {
+    url = new URL(value.trim())
+  } catch {
+    return null
+  }
+  if (
+    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+    url.username.length > 0 ||
+    url.password.length > 0
+  ) {
+    return null
+  }
+  const match = url.pathname.match(/^(.*)\/browse\/([^/]+)$/)
+  if (!match || !JIRA_ISSUE_KEY_PATTERN.test(match[2])) {
+    return null
+  }
+  return {
+    issueKey: match[2].toUpperCase(),
+    origin: url.origin.toLowerCase(),
+    sitePath: normalizeSitePath(match[1])
+  }
+}
+
+// Structural subset of the removed task-source-context contract that matching needs.
+type LinkedItemSourceContext = {
+  provider: TaskProvider
+  providerIdentity?: TaskProviderIdentity | null
+}
 
 function resolveLinkedItemProvider(
   item: Pick<WorkspaceLinkedItem, 'type' | 'number' | 'url'> & Partial<WorkspaceLinkedItem>
@@ -26,7 +71,7 @@ export function isWorkspaceLinkedItemSourceContextMatch(
     | (Pick<WorkspaceLinkedItem, 'type' | 'number' | 'url'> & Partial<WorkspaceLinkedItem>)
     | null
     | undefined,
-  context: TaskSourceContext | null | undefined
+  context: LinkedItemSourceContext | null | undefined
 ): boolean {
   if (!item || !context) {
     return false

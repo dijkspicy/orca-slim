@@ -1,18 +1,17 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
-import { OrcaRuntimeWithCloseStructuredAgentSessionTab } from './orca-runtime-close-structured-agent-session-tab'
+import { OrcaRuntimeWithCloseMobileSessionTab } from './orca-runtime-close-mobile-session-tab'
 import type {
   RuntimeMobileSessionTabMove,
   RuntimeMobileSessionTabMoveResult,
   RuntimeMobileSessionTabsSnapshot,
   RuntimeMobileSessionTerminalTab
 } from '../../shared/runtime-types'
-import { parseAppSshPtyId } from '../../shared/ssh-pty-id'
 import { buildHeadlessMobileSessionTabGroups } from './mobile-session-layout-projection'
 import { appendRetiredTerminalSurfaceProofs } from './mobile-session-terminal-retirement-proof'
 import type { RuntimePtyWorktreeRecord } from './runtime-terminal-state-records'
 import type { TerminalPaneLayoutNode } from '../../shared/terminal-tab-types'
 
-export class OrcaRuntimeWithCloseHeadlessMobileTerminalTab extends OrcaRuntimeWithCloseStructuredAgentSessionTab {
+export class OrcaRuntimeWithCloseHeadlessMobileTerminalTab extends OrcaRuntimeWithCloseMobileSessionTab {
   protected async closeHeadlessMobileTerminalTab(
     worktreeId: string,
     snapshot: RuntimeMobileSessionTabsSnapshot,
@@ -37,11 +36,10 @@ export class OrcaRuntimeWithCloseHeadlessMobileTerminalTab extends OrcaRuntimeWi
       return proof ? [proof] : []
     })
     const acknowledgeRetirement = this.captureTerminalTabRetirement(worktreeId, closedParentTabId)
-    const projectedPtyIds = await this.commitHeadlessTerminalTabRetirement(
-      worktreeId,
-      closedParentTabId,
-      { allowMissing: options.allowMissingPersistedTab, force: options.force }
-    )
+    await this.commitHeadlessTerminalTabRetirement(worktreeId, closedParentTabId, {
+      allowMissing: options.allowMissingPersistedTab,
+      force: options.force
+    })
     if (!acknowledgeRetirement().matches) {
       throw new Error('terminal_pane_owner_changed')
     }
@@ -53,9 +51,8 @@ export class OrcaRuntimeWithCloseHeadlessMobileTerminalTab extends OrcaRuntimeWi
       this.setPairedRendererSessionOwnership(options.authorizedPty.ptyId, false)
     }
     // Why: local provider ids can be reused after restart, so a dormant
-    // persisted id is not kill authority. SSH relay ids remain durable exact
-    // identities even before pane metadata reconnects.
-    const ptyIdsToKill = new Set(projectedPtyIds.filter((ptyId) => parseAppSshPtyId(ptyId)))
+    // persisted id is not kill authority.
+    const ptyIdsToKill = new Set<string>()
     for (const candidate of snapshot.tabs) {
       if (candidate.type !== 'terminal' || candidate.parentTabId !== closedParentTabId) {
         continue
@@ -73,7 +70,7 @@ export class OrcaRuntimeWithCloseHeadlessMobileTerminalTab extends OrcaRuntimeWi
           other.parentTabId !== closedParentTabId &&
           other.ptyId === ptyId
       )
-      if (ptyId && !hasOtherOwner && (livePty || parseAppSshPtyId(ptyId))) {
+      if (ptyId && !hasOtherOwner && livePty) {
         // Why: a live serve leaf can exist before its debounced binding reaches
         // persistence. Include it from the authoritative snapshot so split
         // close cannot leave a provider process behind.

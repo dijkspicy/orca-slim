@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ARCHIVE_HOOK_TIMEOUT_MS } from '../../../../shared/worktree/archive-hook-removal-gate'
 import type { AppState } from '../types'
-import type { RuntimeEnvironmentCallRequest } from '../../runtime/runtime-compatibility-test-fixture'
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 import { makeWorktree } from './worktrees-slice-test-fixtures'
 import {
   createTestStore,

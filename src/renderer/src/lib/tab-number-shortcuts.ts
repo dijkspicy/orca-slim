@@ -1,13 +1,8 @@
 import { focusTerminalTabSurface } from '@/lib/focus-terminal-tab-surface'
 import { useAppStore } from '@/store'
 import type { AppState } from '@/store/types'
-import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
 import { dedupeTabOrder } from '@/store/slices/tab-group-state'
 import type { Tab } from '../../../shared/tab-types'
-import {
-  activateWebRuntimeSessionTab,
-  isWebRuntimeSessionActive
-} from '@/runtime/web-runtime-session'
 
 type TabNumberShortcutState = Pick<
   AppState,
@@ -62,18 +57,10 @@ export function activateTabNumberShortcut(index: number): boolean {
   }
 
   const worktreeId = target.worktreeId
-  const runtimeEnvironmentId = getRuntimeEnvironmentIdForWorktree(store, worktreeId)
   store.focusGroup(worktreeId, target.groupId)
   store.activateTab(target.id)
 
   if (target.contentType === 'terminal') {
-    if (isWebRuntimeSessionActive(runtimeEnvironmentId)) {
-      void activateWebRuntimeSessionTab({
-        worktreeId,
-        tabId: target.entityId,
-        environmentId: runtimeEnvironmentId
-      })
-    }
     store.setActiveTab(target.entityId)
     store.setActiveTabType('terminal', worktreeId)
     focusTerminalTabSurface(target.entityId)
@@ -81,13 +68,6 @@ export function activateTabNumberShortcut(index: number): boolean {
   }
 
   if (target.contentType === 'browser') {
-    if (isWebRuntimeSessionActive(runtimeEnvironmentId)) {
-      void activateWebRuntimeSessionTab({
-        worktreeId,
-        tabId: target.id,
-        environmentId: runtimeEnvironmentId
-      })
-    }
     store.setActiveBrowserTab(target.entityId)
     store.setActiveTabType('browser', worktreeId)
     return true

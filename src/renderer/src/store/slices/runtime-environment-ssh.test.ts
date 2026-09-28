@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { SshConnectionState, SshProviderEpoch } from '../../../../shared/ssh-types'
+import type { SshConnectionState, SshProviderEpoch } from './ssh-host-state-contracts'
 import type { RuntimeStatus } from '../../../../shared/runtime-types'
 import { createTestStore } from './store-test-helpers'
 import {

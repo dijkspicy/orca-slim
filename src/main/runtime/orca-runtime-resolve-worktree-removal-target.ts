@@ -9,7 +9,6 @@ import { runtimeWorktreeIdsEqual } from './runtime-worktree-path-identity'
 import { hasWorktreeRemovalRepoOwnerOnOtherHost } from '../worktree-removal-repo-owner'
 import { advertisedUrlWatcher } from '../ports/advertised-url-watcher'
 import { deleteWorktreeHistoryDir } from '../terminal-history-deletion'
-import { closeClientHostedBrowserPagesForWorktree } from './worktree-browser-client-page-close'
 import type { ForceDeleteWorktreeBranchResult } from '../../shared/worktree/create-types'
 import type { RuntimeTerminalRename } from '../../shared/runtime-types'
 import type { TerminalWorkspaceLaunchScope } from './runtime-legacy-worker-terminal-recovery-types'
@@ -83,20 +82,6 @@ export class OrcaRuntimeWithResolveWorktreeRemovalTarget extends OrcaRuntimeWith
       this.notifyMobileSessionTabsRemoved(worktreeId)
       advertisedUrlWatcher.forgetWorktree(worktreeId)
       deleteWorktreeHistoryDir(worktreeId)
-      this.closeHeadlessBrowserPagesForWorktree(worktreeId)
-      closeClientHostedBrowserPagesForWorktree(this, worktreeId)
-    }
-  }
-
-  // Why: headless offscreen browser pages are main-process BrowserWindows that
-  // outlive a worktree unless explicitly closed — removing a worktree without
-  // closing its open panes leaks the windows for the life of the serve process.
-  protected closeHeadlessBrowserPagesForWorktree(worktreeId: string): void {
-    if (!this.offscreenBrowserBackend || !this.agentBrowserBridge?.tabList) {
-      return
-    }
-    for (const tab of this.agentBrowserBridge.tabList(worktreeId).tabs) {
-      void this.offscreenBrowserBackend.closeTab(tab.browserPageId).catch(() => {})
     }
   }
 

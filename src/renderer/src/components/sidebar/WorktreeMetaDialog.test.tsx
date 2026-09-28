@@ -5,7 +5,6 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAppStore } from '@/store'
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
-import type { LinearIssue } from '../../../../shared/linear/issue-types'
 import type { Repo } from '../../../../shared/repo-types'
 import type { WorktreeMeta } from '../../../../shared/worktree/meta-types'
 import type { WorktreeMetaUpdateOptions } from '@/store/slices/worktree-helpers'
@@ -66,12 +65,14 @@ const updateWorktreeMeta =
       options?: WorktreeMetaUpdateOptions
     ) => Promise<{ ok: true } | { ok: false; error: string }>
   >()
-const fetchLinearIssue = vi.fn<(...args: never[]) => Promise<LinearIssue | null>>()
+/** Only `url` is read by the open-issue path. */
+type LinearIssueFixture = { url: string }
+
+const fetchLinearIssue = vi.fn<(...args: never[]) => Promise<LinearIssueFixture | null>>()
 const openUrl = vi.fn<(url: string) => void>()
 
-/** Only `url` is read by the open-issue path. */
-function makeLinearIssue(url: string): LinearIssue {
-  return { url } as LinearIssue
+function makeLinearIssue(url: string): LinearIssueFixture {
+  return { url }
 }
 
 function makeRepo(id: string = REPO_ID, path: string = '/repo'): Repo {
@@ -527,7 +528,7 @@ describe('WorktreeMetaDialog issue link row', () => {
   // Promise.race cannot cancel the lookup, and the field stays editable while it
   // runs — a late result must not open the issue the user just replaced.
   it('does not open a lookup result after the field moved on', async () => {
-    let resolveLookup: ((issue: LinearIssue | null) => void) | undefined
+    let resolveLookup: ((issue: LinearIssueFixture | null) => void) | undefined
     fetchLinearIssue.mockReturnValue(
       new Promise<LinearIssue | null>((resolve) => {
         resolveLookup = resolve

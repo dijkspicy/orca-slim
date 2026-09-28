@@ -4,7 +4,7 @@ import {
   isPathInsideOrEqual,
   normalizeRuntimePathForComparison
 } from '../../shared/cross-platform-path'
-import { writeFileAtomically } from '../codex-accounts/fs-utils'
+import { writeFileAtomically } from './codex-atomic-file-writes'
 import { streamCodexSessionLedgerRecords } from './codex-session-ledger-stream'
 
 // State files for the session index heal: which backfilled rollouts exist

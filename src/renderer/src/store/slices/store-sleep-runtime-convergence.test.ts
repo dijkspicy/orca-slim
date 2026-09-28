@@ -1,11 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type * as AgentStatusModule from '@/lib/agent-status'
 import { getDefaultSettings } from '../../../../shared/constants'
-import { createCompatibleRuntimeStatusResponseIfNeeded } from '../../runtime/runtime-compatibility-test-fixture'
-import {
-  clearRuntimeCompatibilityCacheForTests,
-  RuntimeRpcCallError
-} from '../../runtime/runtime-rpc-client'
 import {
   createTestStore,
   makeRuntimeOwnedWorktree,
@@ -47,7 +42,6 @@ const mockApi = createStoreCascadesMockApi()
 describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    clearRuntimeCompatibilityCacheForTests()
     mockApi.pty.kill.mockResolvedValue(undefined)
     mockUnregisterPtyDataHandlers.mockReturnValue([])
     applySleepRuntimeRpcDefault(mockApi)
@@ -168,10 +162,6 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
     const store = createTestStore()
     const wt = 'repo1::/path/wt1'
     mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) => {
-      const compatible = createCompatibleRuntimeStatusResponseIfNeeded(args)
-      if (compatible) {
-        return Promise.resolve(compatible)
-      }
       return args.method === 'terminal.sleep'
         ? Promise.reject(new Error('runtime graph unavailable'))
         : Promise.resolve({
@@ -209,24 +199,22 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
     const store = createTestStore()
     const wt = 'repo1::/path/wt1'
     mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) =>
-      Promise.resolve(
-        createCompatibleRuntimeStatusResponseIfNeeded(args) ?? {
-          id: 'rpc-default',
-          ok: true,
-          result:
-            args.method === 'terminal.sleep'
-              ? {
-                  stopped: 1,
-                  stoppedPtyIds: ['pty-1'],
-                  livePtyIds: ['pty-1'],
-                  postStopVerified: false,
-                  postStopFailure: 'terminal_worktree_sleep_still_live',
-                  remainingLivePtyIds: ['pty-1']
-                }
-              : {},
-          _meta: { runtimeId: 'remote-runtime' }
-        }
-      )
+      Promise.resolve({
+        id: 'rpc-default',
+        ok: true,
+        result:
+          args.method === 'terminal.sleep'
+            ? {
+                stopped: 1,
+                stoppedPtyIds: ['pty-1'],
+                livePtyIds: ['pty-1'],
+                postStopVerified: false,
+                postStopFailure: 'terminal_worktree_sleep_still_live',
+                remainingLivePtyIds: ['pty-1']
+              }
+            : {},
+        _meta: { runtimeId: 'remote-runtime' }
+      })
     )
     seedStore(store, {
       settings: { ...getDefaultSettings('/tmp'), activeRuntimeEnvironmentId: 'runtime-1' },
@@ -252,14 +240,12 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
     const store = createTestStore()
     const wt = 'repo1::/path/wt1'
     mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) =>
-      Promise.resolve(
-        createCompatibleRuntimeStatusResponseIfNeeded(args) ?? {
-          id: 'rpc-default',
-          ok: true,
-          result: args.method === 'terminal.sleep' ? sleepResult : {},
-          _meta: { runtimeId: 'remote-runtime' }
-        }
-      )
+      Promise.resolve({
+        id: 'rpc-default',
+        ok: true,
+        result: args.method === 'terminal.sleep' ? sleepResult : {},
+        _meta: { runtimeId: 'remote-runtime' }
+      })
     )
     seedStore(store, {
       settings: { ...getDefaultSettings('/tmp'), activeRuntimeEnvironmentId: 'runtime-1' },
@@ -281,10 +267,6 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
     const wt = 'repo1::/path/wt1'
     const ptyId = 'remote:runtime-1@@pty-1'
     mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) => {
-      const compatible = createCompatibleRuntimeStatusResponseIfNeeded(args)
-      if (compatible) {
-        return Promise.resolve(compatible)
-      }
       if (args.method === 'terminal.sleep') {
         expect(store.getState().pendingPtyShutdownIds[ptyId]).toBe(1)
         store.getState().clearTabPtyId('tab-1', ptyId)
@@ -336,10 +318,6 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
     })
     let sleepCallCount = 0
     mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) => {
-      const compatible = createCompatibleRuntimeStatusResponseIfNeeded(args)
-      if (compatible) {
-        return Promise.resolve(compatible)
-      }
       if (args.method === 'terminal.sleep') {
         sleepCallCount += 1
         return sleepCallCount === 1 ? Promise.reject(new Error('first owner failed')) : pendingSleep
@@ -380,19 +358,13 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
     const store = createTestStore()
     const wt = 'repo1::/path/wt1'
     mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) => {
-      const compatible = createCompatibleRuntimeStatusResponseIfNeeded(args)
-      if (compatible) {
-        return Promise.resolve(compatible)
-      }
       if (args.method === 'terminal.sleep') {
-        return Promise.reject(
-          new RuntimeRpcCallError({
-            id: 'rpc-sleep',
-            ok: false,
-            error: { code: 'method_not_found', message: 'Unknown method' },
-            _meta: { runtimeId: 'old-runtime' }
-          })
-        )
+        return Promise.resolve({
+          id: 'rpc-sleep',
+          ok: false,
+          error: { code: 'method_not_found', message: 'Unknown method' },
+          _meta: { runtimeId: 'old-runtime' }
+        })
       }
       if (args.method === 'terminal.list') {
         return Promise.resolve({
@@ -444,19 +416,13 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
     let listCount = 0
     let stopCount = 0
     mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) => {
-      const compatible = createCompatibleRuntimeStatusResponseIfNeeded(args)
-      if (compatible) {
-        return Promise.resolve(compatible)
-      }
       if (args.method === 'terminal.sleep') {
-        return Promise.reject(
-          new RuntimeRpcCallError({
-            id: 'rpc-sleep',
-            ok: false,
-            error: { code: 'method_not_found', message: 'Unknown method' },
-            _meta: { runtimeId: 'old-runtime' }
-          })
-        )
+        return Promise.resolve({
+          id: 'rpc-sleep',
+          ok: false,
+          error: { code: 'method_not_found', message: 'Unknown method' },
+          _meta: { runtimeId: 'old-runtime' }
+        })
       }
       if (args.method === 'terminal.list') {
         listCount += 1
@@ -508,20 +474,14 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
     try {
       mockApi.runtimeEnvironments.call.mockImplementation(
         (args: { method: string; timeoutMs?: number }) => {
-          const compatible = createCompatibleRuntimeStatusResponseIfNeeded(args)
-          if (compatible) {
-            return Promise.resolve(compatible)
-          }
           observedTimeouts.push({ method: args.method, timeoutMs: args.timeoutMs })
           if (args.method === 'terminal.sleep') {
-            return Promise.reject(
-              new RuntimeRpcCallError({
-                id: 'rpc-sleep',
-                ok: false,
-                error: { code: 'method_not_found', message: 'Unknown method' },
-                _meta: { runtimeId: 'old-runtime' }
-              })
-            )
+            return Promise.resolve({
+              id: 'rpc-sleep',
+              ok: false,
+              error: { code: 'method_not_found', message: 'Unknown method' },
+              _meta: { runtimeId: 'old-runtime' }
+            })
           }
           now += 6_000
           if (args.method === 'terminal.list') {
@@ -576,19 +536,13 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
       const wt = 'repo1::/path/wt1'
       let listCount = 0
       mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) => {
-        const compatible = createCompatibleRuntimeStatusResponseIfNeeded(args)
-        if (compatible) {
-          return Promise.resolve(compatible)
-        }
         if (args.method === 'terminal.sleep') {
-          return Promise.reject(
-            new RuntimeRpcCallError({
-              id: 'rpc-sleep',
-              ok: false,
-              error: { code: 'method_not_found', message: 'Unknown method' },
-              _meta: { runtimeId: 'old-runtime' }
-            })
-          )
+          return Promise.resolve({
+            id: 'rpc-sleep',
+            ok: false,
+            error: { code: 'method_not_found', message: 'Unknown method' },
+            _meta: { runtimeId: 'old-runtime' }
+          })
         }
         if (args.method === 'terminal.list') {
           listCount += 1
@@ -637,19 +591,13 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
   it('does not fall back for non-compatibility runtime sleep failures', async () => {
     const store = createTestStore()
     const wt = 'repo1::/path/wt1'
-    mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) => {
-      const compatible = createCompatibleRuntimeStatusResponseIfNeeded(args)
-      if (compatible) {
-        return Promise.resolve(compatible)
-      }
-      return Promise.reject(
-        new RuntimeRpcCallError({
-          id: 'rpc-sleep',
-          ok: false,
-          error: { code: 'terminal_liveness_unavailable', message: 'Daemon unavailable' },
-          _meta: { runtimeId: 'runtime-1' }
-        })
-      )
+    mockApi.runtimeEnvironments.call.mockImplementation(() => {
+      return Promise.resolve({
+        id: 'rpc-sleep',
+        ok: false,
+        error: { code: 'terminal_liveness_unavailable', message: 'Daemon unavailable' },
+        _meta: { runtimeId: 'runtime-1' }
+      })
     })
     seedStore(store, {
       settings: { ...getDefaultSettings('/tmp'), activeRuntimeEnvironmentId: 'runtime-1' },

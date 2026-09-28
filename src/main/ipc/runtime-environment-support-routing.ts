@@ -8,23 +8,15 @@ import type { KnownRuntimeEnvironment } from '../../shared/runtime-environments'
 import { getPreferredPairingOffer } from '../../shared/runtime-environments'
 import { markEnvironmentUsed, resolveEnvironment } from '../../shared/runtime-environment-store'
 import { recordRuntimeEnvironmentUsage } from './runtime-environment-usage-record'
-import { ELECTRON_REMOTE_RUNTIME_CLIENT_CAPABILITIES } from '../../shared/protocol-version'
-import {
-  subscribeRemoteRuntimeRequest,
-  type RemoteRuntimeSubscription
-} from '../../shared/remote-runtime-client'
-import { withRemoteRuntimeTailscaleHint } from '../../shared/remote-runtime-tailscale-hint'
 import {
   isRuntimeEnvironmentCapabilityOutcomeCurrent,
   type RuntimeEnvironmentCapabilityOutcome
 } from './runtime-environment-capability-evidence'
 import { runtimeEnvironmentRevisionFailure } from './runtime-environment-revision-guard'
 import { supportsSharedControl } from './runtime-environment-shared-control-support'
-import {
-  sendRemoteRuntimeRequestAbortable,
-  sendRemoteRuntimeSharedControlRequestAbortable
-} from './runtime-environment-abortable-requests'
-import { subscribeRemoteRuntimeSharedControlRequest } from './runtime-environment-request-connections'
+import { sendRemoteRuntimeSharedControlRequestAbortable } from './runtime-environment-abortable-requests'
+
+const TRANSPORT_UNAVAILABLE_MESSAGE = 'Runtime environment transport is unavailable'
 
 type SupportRoute = {
   environment: KnownRuntimeEnvironment
@@ -91,16 +83,10 @@ export function executeSupportRoutedCall(args: {
         args.envelope,
         args.signal
       ),
-    unsupported: (route) =>
-      sendRemoteRuntimeRequestAbortable(
-        route.pairing,
-        args.method,
-        args.params,
-        args.timeoutMs,
-        args.envelope,
-        args.signal,
-        ELECTRON_REMOTE_RUNTIME_CLIENT_CAPABILITIES
-      ),
+    unsupported: () => {
+      // The direct one-shot socket client was removed with the remote runtime domain.
+      throw new Error(TRANSPORT_UNAVAILABLE_MESSAGE)
+    },
     markUsed: (environmentId, response) => {
       if (response.ok) {
         markEnvironmentUsed(args.userDataPath, environmentId, {
@@ -119,49 +105,32 @@ export async function subscribeSupportRoutedRuntimeEnvironment(args: {
   timeoutMs: number
   callbacks: SubscriptionCallbacks
   isCurrent: () => boolean
-}): Promise<RemoteRuntimeSubscription> {
+}): Promise<never> {
   let markedUsed = false
-  let supportOutcome: SupportRoute['outcome'] | null = null
   const callbacks = subscriptionCallbacks(args, () => {
-    if (
-      markedUsed ||
-      !args.isCurrent() ||
-      (supportOutcome && !isRuntimeEnvironmentCapabilityOutcomeCurrent(supportOutcome))
-    ) {
+    if (markedUsed || !args.isCurrent()) {
       return false
     }
     markedUsed = true
     return true
   })
-  const routed = await routeRuntimeEnvironmentSubscriptionBySupport({
+  await routeRuntimeEnvironmentSubscriptionBySupport({
     userDataPath: args.userDataPath,
     environment: args.environment,
     timeoutMs: args.timeoutMs,
     isCurrent: args.isCurrent,
     supported: (route) => {
-      supportOutcome = route.outcome
-      return subscribeRemoteRuntimeSharedControlRequest(
-        args.environment.id,
-        route.pairing,
-        args.method,
-        args.params,
-        args.timeoutMs,
-        callbacks
-      )
+      void route
+      // The shared-control subscription transport was removed with the remote runtime domain.
+      throw new Error(TRANSPORT_UNAVAILABLE_MESSAGE)
     },
-    unsupported: (route) => {
-      supportOutcome = route.outcome
-      return subscribeRemoteRuntimeRequest(
-        route.pairing,
-        args.method,
-        args.params,
-        args.timeoutMs,
-        callbacks,
-        { clientCapabilities: ELECTRON_REMOTE_RUNTIME_CLIENT_CAPABILITIES }
-      )
-    }
+    unsupported: () => {
+      // The direct subscription client was removed with the remote runtime domain.
+      throw new Error(TRANSPORT_UNAVAILABLE_MESSAGE)
+    },
+    callbacks
   })
-  return routed.subscription
+  throw new Error(TRANSPORT_UNAVAILABLE_MESSAGE)
 }
 
 export async function routeRuntimeEnvironmentCallBySupport(args: {
@@ -208,14 +177,15 @@ export async function routeRuntimeEnvironmentCallBySupport(args: {
   return runtimeEnvironmentChangedFailure(environment, args.method)
 }
 
-export async function routeRuntimeEnvironmentSubscriptionBySupport<TSubscription>(args: {
+export async function routeRuntimeEnvironmentSubscriptionBySupport(args: {
   userDataPath: string
   environment: KnownRuntimeEnvironment
   timeoutMs: number
   isCurrent: () => boolean
-  supported: (route: SupportRoute) => Promise<TSubscription>
-  unsupported: (route: SupportRoute) => Promise<TSubscription>
-}): Promise<{ subscription: TSubscription; outcome: SupportRoute['outcome'] }> {
+  supported: (route: SupportRoute) => Promise<never>
+  unsupported: (route: SupportRoute) => Promise<never>
+  callbacks: SubscriptionCallbacks
+}): Promise<never> {
   const pairing = getPreferredPairingOffer(args.environment)
   const outcome = await supportsSharedControl(
     args.userDataPath,
@@ -231,10 +201,7 @@ export async function routeRuntimeEnvironmentSubscriptionBySupport<TSubscription
     throw new Error('Runtime environment pairing changed; refresh and try again')
   }
   const route = { environment: args.environment, pairing, outcome }
-  const subscription = await (outcome.kind === 'supported'
-    ? args.supported(route)
-    : args.unsupported(route))
-  return { subscription, outcome }
+  return outcome.kind === 'supported' ? args.supported(route) : args.unsupported(route)
 }
 
 function runtimeEnvironmentChangedFailure(
@@ -258,8 +225,7 @@ function subscriptionCallbacks(
     'userDataPath' | 'environment' | 'callbacks'
   >,
   shouldMarkUsed: () => boolean
-) {
-  const pairing = getPreferredPairingOffer(args.environment)
+): SubscriptionCallbacks {
   return {
     onResponse: (response: RuntimeRpcResponse<unknown>) => {
       if (response.ok && shouldMarkUsed()) {
@@ -272,11 +238,7 @@ function subscriptionCallbacks(
     onBinary: (bytes: Uint8Array<ArrayBufferLike>) =>
       args.callbacks.onEvent({ type: 'binary' as const, bytes }),
     onError: (error: { code: string; message: string }) =>
-      args.callbacks.onEvent({
-        type: 'error' as const,
-        code: error.code,
-        message: withRemoteRuntimeTailscaleHint(error.message, pairing.endpoint)
-      }),
+      args.callbacks.onEvent({ type: 'error' as const, code: error.code, message: error.message }),
     onClose: () => {
       args.callbacks.onEvent({ type: 'close' as const })
       args.callbacks.onClose()

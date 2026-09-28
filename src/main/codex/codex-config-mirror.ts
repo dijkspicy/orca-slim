@@ -5,7 +5,7 @@ import {
   recoverInterruptedGuardedFileOperation,
   writeFileAtomically,
   writeFileAtomicallyIfUnchanged
-} from '../codex-accounts/fs-utils'
+} from './codex-atomic-file-writes'
 import { getOrcaManagedCodexHomePath, getSystemCodexHomePath } from './codex-home-paths'
 import { rewriteRelativePathConfigValues } from './codex-config-path-reference-rewrite'
 import { normalizeDeprecatedCodexHookFeatureFlag } from './config-toml-deprecated-hook-flag'

@@ -22,7 +22,9 @@ export type FolderWorkspacePathConnectionResolution =
   | { kind: 'ambiguous' }
 
 type FolderWorkspacePathStatusDeps = {
-  getSshFilesystemProvider: (connectionId: string) => IFilesystemProvider | undefined
+  /** Optional: the SSH filesystem dispatch was culled; without it an ssh-connection
+   *  workspace's path reads as `unavailable` instead of stat-ing remotely. */
+  getSshFilesystemProvider?: (connectionId: string) => IFilesystemProvider | undefined
 }
 
 function getFolderScopeCandidateRepos(args: {
@@ -113,7 +115,7 @@ async function statFolderPath(
     return { path, exists: false, reason: 'ambiguous-connection' }
   }
   if (connection.kind === 'ssh') {
-    const provider = deps.getSshFilesystemProvider(connection.connectionId)
+    const provider = deps.getSshFilesystemProvider?.(connection.connectionId)
     if (!provider) {
       return { path, exists: false, reason: 'unavailable' }
     }

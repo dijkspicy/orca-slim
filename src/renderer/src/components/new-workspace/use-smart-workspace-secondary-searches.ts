@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { searchRuntimeRepoBaseRefDetails } from '@/runtime/runtime-repo-client'
-import { lookupLinearIssueUrl } from '@/lib/linear-issue-url-lookup'
 import { linearWorkspaceScopeSignature } from '../../../../shared/linear/workspace-types'
 import { getSmartWorkspaceLinearSearchQuery } from '../../../../shared/new-workspace/smart-workspace-linear-intent'
 import type { parseBoundedSmartWorkspaceLinearIssueUrlIntent } from '../../../../shared/new-workspace/smart-workspace-linear-intent'
@@ -158,27 +157,20 @@ export function useSmartWorkspaceSecondarySearches({
     if (trimmed === '') {
       setLinearIssues([])
     }
-    const request = linearUrlIntent
-      ? lookupLinearIssueUrl({
-          intent: linearUrlIntent,
-          knownStatus: linearStatusRef.current,
-          sourceContext: linearSourceContext,
-          fetchLinearIssue: linearReadMethodsRef.current.fetchLinearIssue
-        }).then((issue) => (issue ? [issue] : []))
-      : trimmed
-        ? linearReadMethodsRef.current.searchLinearIssues(
-            getSmartWorkspaceLinearSearchQuery(trimmed),
-            RESULT_LIMIT,
-            {
-              sourceContext: linearSourceContext
-            }
+    const request = trimmed
+      ? linearReadMethodsRef.current.searchLinearIssues(
+          getSmartWorkspaceLinearSearchQuery(trimmed),
+          RESULT_LIMIT,
+          {
+            sourceContext: linearSourceContext
+          }
+        )
+      : linearReadMethodsRef.current
+          .listLinearIssues(
+            { kind: 'list', filter: 'assigned', limit: RESULT_LIMIT },
+            { sourceContext: linearSourceContext }
           )
-        : linearReadMethodsRef.current
-            .listLinearIssues(
-              { kind: 'list', filter: 'assigned', limit: RESULT_LIMIT },
-              { sourceContext: linearSourceContext }
-            )
-            .then((result) => result.items)
+          .then((result) => result.items)
     void request
       .then((issues) => {
         if (!stale) {

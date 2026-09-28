@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { WSL_CODEX_NOT_FOUND_MESSAGE } from '../codex-accounts/wsl-codex-command'
+import { WSL_CODEX_NOT_FOUND_MESSAGE } from './wsl-codex-command'
 import { CodexAppServerTimeoutError } from './codex-app-server-client'
 import { classifyCodexTrustGrantError } from './codex-trust-grant-telemetry'
 

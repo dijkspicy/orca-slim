@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import type { LinearTeam } from '../../../shared/linear/workspace-types'
 import {
   reconcileLinearTeamSelection,
   storedLinearTeamSelection
 } from './task-page-linear-team-selection'
 
-function team(id: string): LinearTeam {
+type LinearTeamRef = { id: string }
+
+function team(id: string): LinearTeamRef {
   return {
     id,
     name: id,

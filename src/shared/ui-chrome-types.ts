@@ -1,6 +1,3 @@
-import type { LinearConcreteWorkspaceId } from './linear/workspace-types'
-import type { LinearCustomViewModel } from './linear/project-types'
-
 export type TaskViewPresetId = 'all' | 'issues' | 'review' | 'my-issues' | 'my-prs' | 'prs'
 
 export type OpenInApplication = {
@@ -76,12 +73,6 @@ export type TaskResumeState = {
   linearMode?: 'issues' | 'projects' | 'views' | 'in-orca'
   linearPreset?: 'assigned' | 'created' | 'all' | 'completed'
   linearQuery?: string
-  linearContext?: {
-    kind: 'project' | 'view'
-    id: string
-    workspaceId: LinearConcreteWorkspaceId
-    model?: LinearCustomViewModel
-  }
   jiraPreset?: 'assigned' | 'reported' | 'all' | 'done'
   jiraQuery?: string
 }

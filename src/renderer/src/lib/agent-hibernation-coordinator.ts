@@ -22,15 +22,7 @@ import {
   observeHibernationPtyBindings
 } from './agent-hibernation-pane-age'
 import { mergePendingTerminalInputActivity } from './terminal-input-activity-coalescing'
-import { getRuntimeEnvironmentIdForWorktree } from './worktree-runtime-owner'
-import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
-import { toRuntimeWorktreeSelector } from '@/runtime/runtime-worktree-selector'
-import type {
-  RuntimeTerminalListResult,
-  RuntimeTerminalSummary
-} from '../../../shared/runtime-types'
 import { getWindowParkVisible, subscribeWindowParkVisibility } from './window-park-visibility'
-import { getEntryTabId } from './agent-hibernation-pane-eligibility'
 
 export const AGENT_HIBERNATION_TICK_MS = 60 * 1000
 
@@ -59,15 +51,16 @@ const coordinator: AgentHibernationCoordinatorState = {
   now: () => Date.now()
 }
 
-type RuntimePtyLivenessSample = {
-  runtimeLivePtyIdsByWorktreeId: Record<string, string[]>
-  runtimeLivenessRequiredWorktreeIds: string[]
-}
+// Remote runtime liveness rode on the culled mirror; every workspace is local
+// now, so the planner plans from client PTY state alone.
+const RUNTIME_PTY_LIVENESS_SAMPLE = {
+  runtimeLivePtyIdsByWorktreeId: {},
+  runtimeLivenessRequiredWorktreeIds: []
+} as const
 
 function snapshotFromState(
   state: AppState,
   now: number,
-  runtimeLiveness: RuntimePtyLivenessSample,
   targetWorktreeId?: string
 ): AgentHibernationPlannerSnapshot {
   return {
@@ -79,17 +72,9 @@ function snapshotFromState(
       : state.tabsByWorktree,
     terminalLayoutsByTabId: state.terminalLayoutsByTabId,
     ptyIdsByTabId: state.ptyIdsByTabId,
-    runtimeLivePtyIdsByWorktreeId: runtimeLiveness.runtimeLivePtyIdsByWorktreeId,
-    // Why: a workspace can gain tabs or resolve its runtime owner while the inventory above
-    // is in flight, and the plan is built from this later state. Union the fresh targets in
-    // so such a workspace is required-but-absent and the planner skips it, rather than
-    // answering for the execution host from client PTYs. Union, never replace: dropping a
-    // pre-await target would narrow the fail-closed set instead of widening it.
+    runtimeLivePtyIdsByWorktreeId: RUNTIME_PTY_LIVENESS_SAMPLE.runtimeLivePtyIdsByWorktreeId,
     runtimeLivenessRequiredWorktreeIds: [
-      ...new Set([
-        ...runtimeLiveness.runtimeLivenessRequiredWorktreeIds,
-        ...getRuntimeLivenessTargetWorktrees(state, targetWorktreeId).keys()
-      ])
+      ...RUNTIME_PTY_LIVENESS_SAMPLE.runtimeLivenessRequiredWorktreeIds
     ],
     mobileLockedPtyIds: [...getAllDrivers()]
       .filter(([, driver]) => driver.kind === 'mobile')
@@ -107,96 +92,7 @@ function snapshotFromState(
   }
 }
 
-function getRuntimeLivenessTargetWorktrees(
-  state: AppState,
-  targetWorktreeId?: string
-): Map<string, string> {
-  const targets = new Map<string, string>()
-  const worktreeIds = targetWorktreeId
-    ? Object.hasOwn(state.tabsByWorktree, targetWorktreeId)
-      ? [targetWorktreeId]
-      : []
-    : Object.keys(state.tabsByWorktree)
-  for (const worktreeId of worktreeIds) {
-    const runtimeEnvironmentId = getRuntimeEnvironmentIdForWorktree(state, worktreeId)
-    if (runtimeEnvironmentId) {
-      targets.set(worktreeId, runtimeEnvironmentId)
-    }
-  }
-  return targets
-}
-
-function getTypedRuntimePtyId(terminal: RuntimeTerminalSummary): string | null {
-  if (terminal.ptyId) {
-    return terminal.ptyId
-  }
-  if (terminal.tabId.startsWith('pty:') && terminal.tabId === terminal.leafId) {
-    return terminal.tabId.slice('pty:'.length) || null
-  }
-  return null
-}
-
-async function collectRuntimePtyLiveness(
-  state: AppState,
-  targetWorktreeId?: string
-): Promise<RuntimePtyLivenessSample> {
-  const targets = getRuntimeLivenessTargetWorktrees(state, targetWorktreeId)
-  const runtimeLivePtyIdsByWorktreeId: Record<string, string[]> = {}
-  const runtimeLivenessRequiredWorktreeIds = [...targets.keys()]
-  if (targets.size === 0) {
-    // Why: an all-local install has nothing to ask, so it must not pay the status scan below.
-    return { runtimeLivePtyIdsByWorktreeId, runtimeLivenessRequiredWorktreeIds }
-  }
-  const completedTabIds = new Set<string>()
-  for (const entry of Object.values(state.agentStatusByPaneKey)) {
-    const tabId = entry?.state === 'done' ? getEntryTabId(entry) : null
-    if (tabId) {
-      completedTabIds.add(tabId)
-    }
-  }
-  await Promise.all(
-    [...targets].map(async ([worktreeId, runtimeEnvironmentId]) => {
-      if (!state.tabsByWorktree[worktreeId]?.some((tab) => completedTabIds.has(tab.id))) {
-        // Skipped owners still require host evidence if an agent completes during this pass.
-        return
-      }
-      try {
-        const result = await callRuntimeRpc<RuntimeTerminalListResult>(
-          { kind: 'environment', environmentId: runtimeEnvironmentId },
-          'terminal.list',
-          {
-            worktree: toRuntimeWorktreeSelector(worktreeId),
-            limit: 10_000,
-            requireFreshPtyLiveness: true,
-            includeVisualLayouts: false
-          },
-          { timeoutMs: 10_000 }
-        )
-        if (result.truncated) {
-          return
-        }
-        const ptyIds = new Set<string>()
-        for (const terminal of result.terminals) {
-          if (!terminal.connected || terminal.worktreeId !== worktreeId) {
-            continue
-          }
-          const ptyId = getTypedRuntimePtyId(terminal)
-          if (ptyId) {
-            ptyIds.add(ptyId)
-          }
-        }
-        runtimeLivePtyIdsByWorktreeId[worktreeId] = [...ptyIds].sort()
-      } catch {
-        // Why: stale runtime liveness is unsafe for all-or-nothing hibernation;
-        // omitting the worktree makes the planner fail closed for this pass.
-      }
-    })
-  )
-  return { runtimeLivePtyIdsByWorktreeId, runtimeLivenessRequiredWorktreeIds }
-}
-
 async function currentCandidates(now: number, targetWorktreeId?: string) {
-  const runtimeLiveness = await collectRuntimePtyLiveness(useAppStore.getState(), targetWorktreeId)
   const freshState = useAppStore.getState()
   // Why: age the PTY bindings from the same state the plan is built from, so a pane
   // observed for the first time this pass cannot also be judged long-idle in it.
@@ -206,22 +102,14 @@ async function currentCandidates(now: number, targetWorktreeId?: string) {
     now,
     idleMs: getEffectiveAgentHibernationIdleMs(freshState.settings?.agentHibernationIdleMs)
   })
-  return planAgentHibernationCandidates(
-    snapshotFromState(freshState, now, runtimeLiveness, targetWorktreeId)
-  )
-    .filter((candidate) => {
-      const runtimeEnvironmentId = getRuntimeEnvironmentIdForWorktree(
-        freshState,
-        candidate.worktreeId
-      )
-      return !runtimeEnvironmentId || candidate.expectedRuntimePtyIds.length === 1
-    })
-    .map((candidate) => ({
+  return planAgentHibernationCandidates(snapshotFromState(freshState, now, targetWorktreeId)).map(
+    (candidate) => ({
       ...candidate,
       // Why: terminal output after the first stable tick can mean the session
       // is still alive even when agent status remains done; require it to stay quiet.
       signature: `${candidate.signature}|output:${getAgentHibernationOutputSignature(candidate.paneKeys)}`
-    }))
+    })
+  )
 }
 
 async function hibernatePaneIfStillEligible(
@@ -244,15 +132,11 @@ async function hibernatePaneIfStillEligible(
   coordinator.shuttingDownCandidateIds.add(id)
   try {
     const state = useAppStore.getState()
-    const runtimeEnvironmentId = getRuntimeEnvironmentIdForWorktree(state, worktreeId)
     await state.shutdownCompletedAgentPaneForHibernation(worktreeId, {
       paneKey: confirmedCandidate.paneKey,
       tabId: confirmedCandidate.tabId,
       leafId: confirmedCandidate.leafId,
-      ptyId: confirmedCandidate.targetPtyIds[0],
-      ...(runtimeEnvironmentId
-        ? { expectedRuntimePtyId: confirmedCandidate.expectedRuntimePtyIds[0] }
-        : {})
+      ptyId: confirmedCandidate.targetPtyIds[0]
     })
   } catch (err) {
     console.warn('[agent-hibernation] failed to hibernate agent pane:', id, err)

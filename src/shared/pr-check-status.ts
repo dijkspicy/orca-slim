@@ -1,6 +1,5 @@
 import { summarizeProviderChecks } from './provider-check-summary'
-import type { PRCheckDetail } from './github/check-types'
-import type { CheckStatus } from './github/pull-request-types'
+import type { CheckStatus, PRCheckDetail } from './pr-review-data-types'
 
 /** Derives the review status from the normalized check contract. */
 export function derivePRCheckStatus(checks: readonly PRCheckDetail[]): CheckStatus {

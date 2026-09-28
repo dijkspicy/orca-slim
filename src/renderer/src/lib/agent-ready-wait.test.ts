@@ -1,16 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { waitForAgentReady } from './agent-ready-wait'
 import { useAppStore } from '@/store'
-import { inspectRuntimeTerminalProcess } from '@/runtime/runtime-terminal-inspection'
 
 vi.mock('@/store', () => ({
   useAppStore: {
     getState: vi.fn()
   }
-}))
-
-vi.mock('@/runtime/runtime-terminal-inspection', () => ({
-  inspectRuntimeTerminalProcess: vi.fn()
 }))
 
 vi.mock('./tui-agent-startup', () => ({
@@ -20,7 +15,10 @@ vi.mock('./tui-agent-startup', () => ({
 describe('waitForAgentReady', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.stubGlobal('window', { setTimeout })
+    vi.stubGlobal('window', {
+      setTimeout,
+      api: { pty: { inspectProcess: vi.fn() } }
+    })
     vi.mocked(useAppStore.getState).mockReturnValue({
       ptyIdsByTabId: { 'tab-1': ['pty-1'] },
       runtimePaneTitlesByTabId: {},
@@ -30,7 +28,7 @@ describe('waitForAgentReady', () => {
   })
 
   it('recognizes a Windows foreground process reported as a full executable path', async () => {
-    vi.mocked(inspectRuntimeTerminalProcess).mockResolvedValue({
+    vi.mocked(window.api.pty.inspectProcess).mockResolvedValue({
       foregroundProcess: String.raw`C:\Users\dev\AppData\Roaming\npm\claude.exe`,
       hasChildProcesses: false
     })

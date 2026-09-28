@@ -1,6 +1,5 @@
 import { execFile, type ExecFileException, type ExecFileOptions } from 'node:child_process'
 import { isIP } from 'node:net'
-import { classifyRemotePairingHostname } from '../../shared/remote-pairing-address'
 import type {
   LocalNetworkConnectionTestFailure,
   LocalNetworkConnectionTestResult
@@ -59,6 +58,49 @@ type LocalNetworkConnectionTestOptions = {
   runChild?: ConnectionChildRunner
 }
 
+// Why inline: the pairing-address classifier lived in the removed remote-pairing
+// domain; the LAN test only needs its loopback/LAN verdict, over the same ranges
+// the connect script itself accepts.
+const LOOPBACK_HOSTS = new Set([
+  'localhost',
+  'localhost.localdomain',
+  'localhost6',
+  'localhost6.localdomain6',
+  'ip6-localhost',
+  'ip6-loopback',
+  '127.0.0.1',
+  '::1'
+])
+
+function isPrivateIPv4Address(hostname: string): boolean {
+  const octets = hostname.split('.').map(Number)
+  if (octets.length !== 4 || octets.some((octet) => !Number.isInteger(octet))) {
+    return false
+  }
+  return (
+    octets[0] === 10 ||
+    (octets[0] === 172 && octets[1]! >= 16 && octets[1]! <= 31) ||
+    (octets[0] === 192 && octets[1] === 168)
+  )
+}
+
+function isPrivateIPv6Address(hostname: string): boolean {
+  const firstHextet = Number.parseInt(hostname.split(':')[0] ?? '', 16)
+  return (
+    Number.isInteger(firstHextet) &&
+    ((firstHextet & 0xfe00) === 0xfc00 || (firstHextet & 0xffc0) === 0xfe80)
+  )
+}
+
+function isLoopbackHostname(hostname: string): boolean {
+  const normalized = hostname.toLowerCase().replace(/\.$/, '')
+  return (
+    LOOPBACK_HOSTS.has(normalized) ||
+    normalized.endsWith('.localhost') ||
+    normalized.startsWith('127.')
+  )
+}
+
 function normalizeTargetHost(rawHost: unknown): string | null {
   if (typeof rawHost !== 'string') {
     return null
@@ -75,12 +117,15 @@ function normalizeTargetHost(rawHost: unknown): string | null {
     return null
   }
   const addressWithoutZone = host.split('%', 1)[0] ?? host
-  const kind = classifyRemotePairingHostname(addressWithoutZone)
   if (isIP(addressWithoutZone) === 0) {
-    return kind === 'loopback' ? null : host
+    return isLoopbackHostname(addressWithoutZone) ? null : host
   }
   const isLinkLocalIpv4 = addressWithoutZone.startsWith('169.254.')
-  return kind === 'lan' || isLinkLocalIpv4 ? host : null
+  return isPrivateIPv4Address(addressWithoutZone) ||
+    isPrivateIPv6Address(addressWithoutZone) ||
+    isLinkLocalIpv4
+    ? host
+    : null
 }
 
 function normalizeTargetPort(rawPort: unknown): number | null {

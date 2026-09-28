@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/button'
 import CommentMarkdown from '@/components/sidebar/CommentMarkdown'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
-import type { GitLabProjectRef } from '../../../../../shared/gitlab-types'
-import type { PRCheckDetail } from '../../../../../shared/github/check-types'
-import type { GitHubRepositoryIdentity } from '../../../../../shared/github/pull-request-types'
 import { CheckJobLogTail } from '../check-job-log-tail'
 import { translate } from '@/i18n/i18n'
 import {
   type CheckDetailsLoadState,
   type CheckDetailsStickySurface,
+  type ChecksPanelCheck,
+  type ChecksPanelGitHubRepositoryIdentity,
+  type ChecksPanelGitLabProjectRef,
   formatCheckTimestamp,
   getCheckConclusion,
   getCheckDetailsStickySurfaceClass,
@@ -50,24 +50,24 @@ export function CheckRunDetails({
   githubRepository,
   onRetry
 }: {
-  check: PRCheckDetail
+  check: ChecksPanelCheck
   state: CheckDetailsLoadState | undefined
   checkDetailsContextKey: string
   worktreeId: string | null
   detailsStickySurface?: CheckDetailsStickySurface
   /** Why: a getter, not a value — the source ref is filled by an async fetch and would read stale during render. */
-  getGitLabProjectRef?: () => GitLabProjectRef | null
-  githubRepository?: GitHubRepositoryIdentity | null
+  getGitLabProjectRef?: () => ChecksPanelGitLabProjectRef | null
+  githubRepository?: ChecksPanelGitHubRepositoryIdentity | null
   onRetry: () => void
 }): React.JSX.Element {
   const openCheckRunDetails = useAppStore((s) => s.openCheckRunDetails)
   const details = state?.details
   const startedAt = formatCheckTimestamp(details?.startedAt)
   const completedAt = formatCheckTimestamp(details?.completedAt)
-  const detailsStatusCheck: PRCheckDetail = {
+  const detailsStatusCheck: ChecksPanelCheck = {
     ...check,
-    status: (details?.status as PRCheckDetail['status'] | undefined) ?? check.status,
-    conclusion: (details?.conclusion as PRCheckDetail['conclusion'] | undefined) ?? check.conclusion
+    status: details?.status ?? check.status,
+    conclusion: details?.conclusion ?? check.conclusion
   }
   const failedJobs =
     details?.jobs.filter((job) => {

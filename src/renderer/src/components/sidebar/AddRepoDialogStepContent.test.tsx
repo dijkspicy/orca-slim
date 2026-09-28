@@ -42,12 +42,6 @@ function renderStepContent(overrides: Partial<StepContentProps>): string {
     cloneError: null,
     cloneProgress: null,
     isCloning: false,
-    sshTargets: [],
-    selectedTargetId: null,
-    remotePath: '',
-    remoteError: null,
-    isAddingRemote: false,
-    isScanningRemoteNested: false,
     nestedScan,
     nestedSelectedPaths: new Set(nestedScan.repos.map((repo) => repo.path)),
     nestedGroupName: 'platform',
@@ -66,12 +60,6 @@ function renderStepContent(overrides: Partial<StepContentProps>): string {
     onStopNestedScan: vi.fn(),
     onServerPathChange: vi.fn(),
     onAddServerPath: vi.fn(),
-    onSelectTarget: vi.fn(),
-    onRemotePathChange: vi.fn(),
-    onAddRemoteRepo: vi.fn(),
-    onOpenSshSettings: vi.fn(),
-    onConnectTarget: vi.fn(),
-    onStopRemoteNestedScan: vi.fn(),
     onCloneUrlChange: vi.fn(),
     onCloneDestinationChange: vi.fn(),
     onPickCloneDestination: vi.fn(),
@@ -179,79 +167,6 @@ describe('AddRepoDialogStepContent nested imports', () => {
     expect(html).toContain('Parent folder')
     expect(html).toContain('aria-label="Browse host filesystem"')
     expect(html).not.toContain('aria-label="Choose folder"')
-  })
-
-  it('hides the SSH target chooser after a host was already selected', () => {
-    const html = renderStepContent({
-      step: 'remote',
-      lockSshTargetSelection: true,
-      selectedTargetId: 'openclaw-2',
-      sshTargets: [
-        {
-          id: 'github',
-          label: 'github.com',
-          host: 'github.com',
-          port: 22,
-          username: 'git',
-          state: {
-            targetId: 'github',
-            status: 'connected',
-            error: null,
-            reconnectAttempt: 0
-          }
-        },
-        {
-          id: 'openclaw-2',
-          label: 'openclaw 2',
-          host: 'openclaw.example.com',
-          port: 22,
-          username: 'dev',
-          state: {
-            targetId: 'openclaw-2',
-            status: 'connected',
-            error: null,
-            reconnectAttempt: 0
-          }
-        }
-      ]
-    })
-
-    expect(html).toContain('Open project on SSH host')
-    expect(html).toContain('openclaw 2')
-    expect(html).toContain('Host path')
-    expect(html).not.toContain('SSH target')
-    expect(html).not.toContain('github.com')
-    expect(html).not.toContain('Connect')
-  })
-
-  it('shows a connect affordance for a selected disconnected SSH host', () => {
-    const html = renderStepContent({
-      step: 'remote',
-      lockSshTargetSelection: true,
-      selectedTargetId: 'openclaw-2',
-      sshTargets: [
-        {
-          id: 'openclaw-2',
-          label: 'openclaw 2',
-          host: 'openclaw.example.com',
-          port: 22,
-          username: 'dev',
-          state: {
-            targetId: 'openclaw-2',
-            status: 'disconnected',
-            error: null,
-            reconnectAttempt: 0
-          }
-        }
-      ]
-    })
-
-    expect(html).toContain('openclaw 2')
-    expect(html).toContain('is disconnected')
-    expect(html).toContain('Connect')
-    expect(html).not.toContain('SSH target')
-    expect(html).toContain('placeholder="/home/user/project"')
-    expect(html).toContain('disabled=""')
   })
 
   it('uses SSH-aware copy on the add step when an SSH host is selected', () => {

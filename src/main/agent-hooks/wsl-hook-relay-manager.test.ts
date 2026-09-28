@@ -2,14 +2,22 @@
 // bridge (including a full run of the unchanged remote hook installers), and
 // the per-distro relay manager state machine with fault injection.
 import { EventEmitter } from 'node:events'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, mkdtempSync, promises as fs, readFileSync, rmSync } from 'node:fs'
+import { join, posix } from 'node:path'
 import type { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { RelayDispatcher } from '../../relay/dispatcher'
-import { registerWslHookFsHandlers } from '../../relay/wsl-hook-fs-bridge'
-import { SshChannelMultiplexer, type MultiplexerTransport } from '../ssh/ssh-channel-multiplexer'
+import { FrameDecoder, type DecodedFrame } from '../../shared/relay-frame-decoder'
+import {
+  MessageType,
+  encodeJsonRpcFrame,
+  parseJsonRpcMessage,
+  type JsonRpcRequest
+} from '../hook-relay/relay-protocol'
+import {
+  SshChannelMultiplexer,
+  type MultiplexerTransport
+} from '../hook-relay/ssh-channel-multiplexer'
 import { createWslHookSftpAdapter } from './wsl-hook-fs-adapter'
 import {
   installRemoteManagedAgentHooks,
@@ -18,19 +26,180 @@ import {
 import { WslHookRelayManager } from './wsl-hook-relay-manager'
 import { awaitExplicitPiOmpGuestReadiness } from './wsl-pi-omp-guest-readiness'
 import { FAILURE_COOLDOWN_BASE_MS, type WslHookRelayManagerDeps } from './wsl-hook-relay-deps'
+import { WSL_HOOK_FS_METHODS, type WslFsFailure } from '../../shared/wsl-hook-relay-contract'
 import {
   AGENT_HOOK_INSTALL_PLUGINS_METHOD,
   AGENT_HOOK_NOTIFICATION_METHOD,
   AGENT_HOOK_REQUEST_REPLAY_METHOD
 } from '../../shared/agent-hook-relay'
 
+type GuestRequestHandler = (params: Record<string, unknown>) => Promise<unknown>
+
+/** Minimal guest peer speaking the relay wire protocol: request routing and
+ *  notification send over the mux transport. Test stand-in for the deleted
+ *  guest bundle's dispatcher. */
+class FakeGuestLink {
+  private readonly decoder = new FrameDecoder((frame) => void this.handleFrame(frame))
+  private readonly requestHandlers = new Map<string, GuestRequestHandler>()
+  private nextSeq = 0
+  private disposed = false
+
+  constructor(private readonly writeFrame: (frame: Buffer) => void) {}
+
+  onRequest(method: string, handler: GuestRequestHandler): void {
+    this.requestHandlers.set(method, handler)
+  }
+
+  notify(method: string, params?: Record<string, unknown>): void {
+    this.send({ jsonrpc: '2.0', method, ...(params !== undefined ? { params } : {}) })
+  }
+
+  feed(data: Buffer): void {
+    if (!this.disposed) {
+      this.decoder.feed(data)
+    }
+  }
+
+  dispose(): void {
+    this.disposed = true
+    this.decoder.reset()
+    this.requestHandlers.clear()
+  }
+
+  private send(msg: Record<string, unknown>): void {
+    this.writeFrame(encodeJsonRpcFrame(msg as never, this.nextSeq, 0))
+    this.nextSeq += 1
+  }
+
+  private async handleFrame(frame: DecodedFrame): Promise<void> {
+    if (frame.type !== MessageType.Regular || this.disposed) {
+      return
+    }
+    const msg = parseJsonRpcMessage(frame.payload)
+    if (!('id' in msg) || !('method' in msg)) {
+      return
+    }
+    const request = msg as JsonRpcRequest
+    const handler = this.requestHandlers.get(request.method)
+    if (!handler) {
+      this.send({
+        jsonrpc: '2.0',
+        id: request.id,
+        error: { code: -32601, message: `Method not found: ${request.method}` }
+      })
+      return
+    }
+    try {
+      const result = await handler(request.params ?? {})
+      this.send({ jsonrpc: '2.0', id: request.id, result: result ?? null })
+    } catch (err) {
+      this.send({
+        jsonrpc: '2.0',
+        id: request.id,
+        error: {
+          code: (err as { code?: number }).code ?? -32000,
+          message: err instanceof Error ? err.message : String(err)
+        }
+      })
+    }
+  }
+}
+
+function fsBridgeFailure(err: unknown): WslFsFailure {
+  const e = err as NodeJS.ErrnoException
+  return { ok: false, errno: e?.code ?? 'EUNKNOWN', message: e?.message ?? String(err) }
+}
+
+/** Guest fs bridge over the fake guest link: the home-scoped file operations the
+ *  remote hook installers need (same contract as the shared wsl-hook-relay-contract). */
+function registerFakeGuestFsHandlers(guest: FakeGuestLink, home: string): void {
+  const homeRoot = posix.resolve(home)
+  const scoped = (rawPath: unknown): string => {
+    if (typeof rawPath !== 'string' || rawPath.length === 0) {
+      throw Object.assign(new Error('invalid path'), { code: 'EINVAL' })
+    }
+    const resolved = posix.resolve(rawPath)
+    if (resolved !== homeRoot && !resolved.startsWith(`${homeRoot}/`)) {
+      throw Object.assign(new Error(`path outside home: ${resolved}`), { code: 'EACCES' })
+    }
+    return resolved
+  }
+  guest.onRequest(WSL_HOOK_FS_METHODS.home, async () => ({ ok: true, home: homeRoot }))
+  guest.onRequest(WSL_HOOK_FS_METHODS.readFile, async (params) => {
+    try {
+      return { ok: true, content: await fs.readFile(scoped(params.path), 'utf8') }
+    } catch (err) {
+      return fsBridgeFailure(err)
+    }
+  })
+  guest.onRequest(WSL_HOOK_FS_METHODS.writeFile, async (params) => {
+    try {
+      const mode = typeof params.mode === 'number' ? params.mode : undefined
+      await fs.writeFile(scoped(params.path), String(params.content ?? ''), {
+        encoding: 'utf8',
+        mode
+      })
+      return { ok: true }
+    } catch (err) {
+      return fsBridgeFailure(err)
+    }
+  })
+  guest.onRequest(WSL_HOOK_FS_METHODS.stat, async (params) => {
+    try {
+      return { ok: true, mode: (await fs.stat(scoped(params.path))).mode }
+    } catch (err) {
+      return fsBridgeFailure(err)
+    }
+  })
+  guest.onRequest(WSL_HOOK_FS_METHODS.rename, async (params) => {
+    try {
+      await fs.rename(scoped(params.src), scoped(params.dst))
+      return { ok: true }
+    } catch (err) {
+      return fsBridgeFailure(err)
+    }
+  })
+  guest.onRequest(WSL_HOOK_FS_METHODS.unlink, async (params) => {
+    try {
+      await fs.unlink(scoped(params.path))
+      return { ok: true }
+    } catch (err) {
+      return fsBridgeFailure(err)
+    }
+  })
+  guest.onRequest(WSL_HOOK_FS_METHODS.chmod, async (params) => {
+    try {
+      await fs.chmod(scoped(params.path), Number(params.mode))
+      return { ok: true }
+    } catch (err) {
+      return fsBridgeFailure(err)
+    }
+  })
+  guest.onRequest(WSL_HOOK_FS_METHODS.readdir, async (params) => {
+    try {
+      const names = await fs.readdir(scoped(params.path))
+      return { ok: true, entries: names.map((filename) => ({ filename })) }
+    } catch (err) {
+      return fsBridgeFailure(err)
+    }
+  })
+  guest.onRequest(WSL_HOOK_FS_METHODS.mkdir, async (params) => {
+    try {
+      await fs.mkdir(scoped(params.path))
+      return { ok: true }
+    } catch (err) {
+      return fsBridgeFailure(err)
+    }
+  })
+}
+
 type GuestHarness = {
   transport: MultiplexerTransport
-  guestDispatcher: RelayDispatcher
+  guest: FakeGuestLink
   mux: SshChannelMultiplexer
 }
 
-/** In-memory stdio pair: host mux on one end, guest dispatcher on the other
+/** In-memory stdio pair: host mux on one end, fake guest link on the other
  *  (same harness shape as the relay agent-hook integration test). */
 function createGuestHarness(): GuestHarness {
   let relayFeed: ((data: Buffer) => void) | undefined
@@ -51,20 +220,16 @@ function createGuestHarness(): GuestHarness {
       closeCallbacks.push(cb)
     }
   }
-  const guestDispatcher = new RelayDispatcher(
-    (data: Buffer, onSettled) => {
-      setImmediate(() => {
-        for (const cb of clientDataCallbacks) {
-          cb(data)
-        }
-        onSettled({ ok: true })
-      })
-    },
-    { supportsWriteCallback: true }
-  )
-  relayFeed = (data) => guestDispatcher.feed(data)
+  const guest = new FakeGuestLink((frame) => {
+    setImmediate(() => {
+      for (const cb of clientDataCallbacks) {
+        cb(frame)
+      }
+    })
+  })
+  relayFeed = (data) => guest.feed(data)
   const mux = new SshChannelMultiplexer(transport)
-  return { transport, guestDispatcher, mux }
+  return { transport, guest, mux }
 }
 
 // Why skipIf: the fs bridge runs inside the Linux guest and is POSIX-only;
@@ -78,12 +243,12 @@ describe.skipIf(process.platform === 'win32')(
     beforeEach(() => {
       home = mkdtempSync(join('/tmp', 'wsl-guest-home-'))
       harness = createGuestHarness()
-      registerWslHookFsHandlers(harness.guestDispatcher, home)
+      registerFakeGuestFsHandlers(harness.guest, home)
     })
 
     afterEach(() => {
       harness.mux.dispose()
-      harness.guestDispatcher.dispose()
+      harness.guest.dispose()
       rmSync(home, { recursive: true, force: true })
     })
 
@@ -161,7 +326,7 @@ describe('WslHookRelayManager', () => {
   afterEach(() => {
     for (const h of harnesses) {
       h.mux.dispose()
-      h.guestDispatcher.dispose()
+      h.guest.dispose()
     }
   })
 
@@ -191,17 +356,17 @@ describe('WslHookRelayManager', () => {
     const { registerInstallPlugins = true, detectedAgents = ['codex'], claudeVersion } = options
     const harness = createGuestHarness()
     harnesses.push(harness)
-    registerWslHookFsHandlers(harness.guestDispatcher, home)
-    harness.guestDispatcher.onRequest(AGENT_HOOK_REQUEST_REPLAY_METHOD, async () => ({
+    registerFakeGuestFsHandlers(harness.guest, home)
+    harness.guest.onRequest(AGENT_HOOK_REQUEST_REPLAY_METHOD, async () => ({
       replayed: 0
     }))
-    harness.guestDispatcher.onRequest('preflight.detectAgents', async () => ({
+    harness.guest.onRequest('preflight.detectAgents', async () => ({
       agents: detectedAgents,
       ...(claudeVersion ? { versions: { claude: claudeVersion } } : {})
     }))
     // A guest bundle predating the plugin overlay omits this handler (-32601).
     if (registerInstallPlugins) {
-      harness.guestDispatcher.onRequest(AGENT_HOOK_INSTALL_PLUGINS_METHOD, async () => ({
+      harness.guest.onRequest(AGENT_HOOK_INSTALL_PLUGINS_METHOD, async () => ({
         installed: { opencode: true, opencode2: true, pi: false, omp: false },
         overlayDirs: {
           opencode: opencodeOverlayDir,
@@ -275,7 +440,7 @@ describe('WslHookRelayManager', () => {
       `${home}/.orca-wsl/agent-hooks/instance-testinstance/endpoint.env`
     )
 
-    const guest = harnesses[0].guestDispatcher
+    const guest = harnesses[0].guest
     guest.notify(AGENT_HOOK_NOTIFICATION_METHOD, {
       paneKey: 'tab:leaf',
       payload: { state: 'working' }

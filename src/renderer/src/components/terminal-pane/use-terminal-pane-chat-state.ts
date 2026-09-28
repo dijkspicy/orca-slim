@@ -8,20 +8,12 @@ import { sanitizeTerminalLayoutPaneTitles } from '@/lib/terminal-pane-title-sani
 import { resolveNativeChatLeafTitleAgent } from './native-chat-leaf-title-agent'
 import { useTerminalPaneStoreActions } from './use-terminal-pane-store-actions'
 import { selectUnifiedTerminalTabFields } from './terminal-unified-tab-lookup'
-import { canToggleNativeChat } from '../native-chat/native-chat-availability'
-import {
-  nativeChatLaunchAgentForLeaf,
-  resolveNativeChatLeafRoute,
-  type NativeChatLeafRoute
-} from '../native-chat/native-chat-leaf-routing'
 import type { TerminalPaneTitleController } from './use-terminal-pane-title-state'
 
 export function useTerminalPaneChatState(controller: TerminalPaneTitleController) {
   const {
     chatLeafId,
     managerRef,
-    nativeChatTranscriptIsLocalReadable,
-    onAgentExitedRef,
     paneCount,
     setChatLeafId,
     setTabWideAgentHintLeafId,
@@ -33,7 +25,6 @@ export function useTerminalPaneChatState(controller: TerminalPaneTitleController
     clearCodexRestartNotice,
     consumePendingCodexPaneRestart,
     setTabCanExpandPane,
-    setTabLayout,
     setTabPaneExpanded,
     setTabViewMode,
     suppressPtyExit,
@@ -119,91 +110,9 @@ export function useTerminalPaneChatState(controller: TerminalPaneTitleController
       unifiedTabLabel
     ]
   )
-  const isChatEligibleForLeaf = useCallback(
-    (leafId: string | null): boolean => {
-      const detectedAgent = leafId ? (tabAgentTypeByLeaf[leafId] ?? null) : null
-      const launchAgent = nativeChatLaunchAgentForLeaf({
-        launchAgent: terminalTab?.launchAgent,
-        launchAgentLeafId: getTabWideAgentHintLeafId(),
-        leafId,
-        leafIds: getNativeChatLeafIds()
-      })
-      return canToggleNativeChat({
-        experimentalNativeChatEnabled: nativeChatEnabled,
-        contentType: 'terminal',
-        launchAgent: detectedAgent ? null : launchAgent,
-        detectedAgent,
-        resolvedAgent: detectedAgent ? null : resolveTitleAgentForLeaf(leafId),
-        nativeChatTranscriptIsLocalReadable
-      })
-    },
-    [
-      tabAgentTypeByLeaf,
-      nativeChatEnabled,
-      nativeChatTranscriptIsLocalReadable,
-      terminalTab?.launchAgent,
-      getNativeChatLeafIds,
-      getTabWideAgentHintLeafId,
-      resolveTitleAgentForLeaf
-    ]
-  )
-  const applyNativeChatLeafRoute = useCallback(
-    (route: NativeChatLeafRoute): void => {
-      const state = useAppStore.getState()
-      const currentMode = selectUnifiedTerminalTabFields(
-        state.unifiedTabsByWorktree,
-        worktreeId,
-        tabId
-      ).isChatViewMode
-      if (!isChatViewMode && currentMode && chatLeafId && route.chatLeafId === null) {
-        // Keep the owner through the batched toggle that turns chat mode on.
-        return
-      }
-      if (route.chatLeafId !== chatLeafId) {
-        setChatLeafId(route.chatLeafId)
-      }
-      const existingLayout = useAppStore.getState().terminalLayoutsByTabId[tabId]
-      if (existingLayout && existingLayout.chatLeafId !== (route.chatLeafId ?? undefined)) {
-        if (route.chatLeafId) {
-          setTabLayout(tabId, { ...existingLayout, chatLeafId: route.chatLeafId })
-        } else if (existingLayout?.chatLeafId) {
-          const nextLayout = { ...existingLayout }
-          delete nextLayout.chatLeafId
-          setTabLayout(tabId, nextLayout)
-        }
-      }
-      if (route.exitChat && unifiedTabId) {
-        setTabViewMode(unifiedTabId, 'terminal')
-      }
-    },
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- Preserve the pre-split dependency contract.
-    [chatLeafId, isChatViewMode, setTabLayout, setTabViewMode, tabId, unifiedTabId, worktreeId]
-  )
-  const handleConfirmedAgentExit = useCallback(
-    (leafId: string): void => {
-      if (leafId !== chatLeafId) {
-        return
-      }
-      const panes = managerRef.current?.getPanes() ?? []
-      const activeLeafId = managerRef.current?.getActivePane()?.leafId ?? null
-      applyNativeChatLeafRoute(
-        resolveNativeChatLeafRoute({
-          isChatViewMode,
-          chatLeafId,
-          activeLeafId,
-          chatLeafStillMounted: panes.some((pane) => pane.leafId === chatLeafId),
-          activeLeafIsEligible: isChatEligibleForLeaf(activeLeafId),
-          chatLeafHasConfirmedAgentExit: true
-        })
-      )
-    },
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- Preserve the pre-split dependency contract.
-    [applyNativeChatLeafRoute, chatLeafId, isChatEligibleForLeaf, isChatViewMode]
-  )
-  useEffect(() => {
-    onAgentExitedRef.current = handleConfirmedAgentExit
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- Preserve the pre-split dependency contract.
-  }, [handleConfirmedAgentExit])
+  // Native chat went with the native-chat domain: no leaf can enter chat view
+  // anymore. Only a tab persisted in chat mode may still toggle back out.
+  const isChatEligibleForLeaf = useCallback((_leafId: string | null): boolean => false, [])
   const canToggleChatForLeaf = useCallback(
     (leafId: string | null): boolean => {
       // Scope the "always allow toggling back" rule to the leaf showing chat; must not make an unsupported sibling look eligible.
@@ -280,7 +189,6 @@ export function useTerminalPaneChatState(controller: TerminalPaneTitleController
     canToggleChatForLeaf,
     toggleNativeChatForLeaf,
     handleToggleNativeChat,
-    applyNativeChatLeafRoute,
     switchNativeChatToTerminal,
     readNativeChatTerminalScreen
   }

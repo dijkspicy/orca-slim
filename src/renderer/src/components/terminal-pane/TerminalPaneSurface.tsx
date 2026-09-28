@@ -14,13 +14,11 @@ import { TerminalAgentSessionForkDialog } from './TerminalAgentSessionForkDialog
 import { SessionRestoredBannerPortals } from './SessionRestoredBannerPortals'
 import { handleInternalTerminalFileDrop } from './terminal-drop-handler'
 import { TerminalQuickCommandEditorDialog } from './TerminalQuickCommandEditorDialog'
-import { TerminalPaneNativeChatPortal } from './TerminalPaneNativeChatPortal'
 import {
   TerminalPaneCodexRestartPortals,
   TerminalPaneMobileDriverPortals,
   TerminalPaneProcessExitPortals,
-  TerminalPaneRecoveryPortals,
-  TerminalPaneSshReconnectPortals
+  TerminalPaneRecoveryPortals
 } from './TerminalPaneRuntimePortals'
 import type { TerminalPaneController } from './use-terminal-pane-controller'
 
@@ -197,7 +195,6 @@ export function TerminalPaneSurface({
           )
         : null}
       <TerminalPaneProcessExitPortals controller={controller} />
-      <TerminalPaneSshReconnectPortals controller={controller} />
       <DaemonActionDialog api={daemonActions} />
       {isActive && (
         <TerminalSessionStateSaveFailureDialog
@@ -221,7 +218,6 @@ export function TerminalPaneSurface({
         panes={managerRef.current?.getPanes() ?? []}
         paneIds={sessionRestoredBannerPaneIds}
       />
-      <TerminalPaneNativeChatPortal controller={controller} />
       <TerminalContextMenu
         open={contextMenu.open}
         onOpenChange={contextMenu.setOpen}

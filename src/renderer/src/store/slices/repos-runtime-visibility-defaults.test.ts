@@ -4,11 +4,9 @@ import {
   RUNTIME_PROTOCOL_VERSION,
   WORKTREE_VISIBILITY_SOURCE_DEFAULTS_RUNTIME_CAPABILITY
 } from '../../../../shared/protocol-version'
-import { clearRuntimeCompatibilityCacheForTests } from '@/runtime/runtime-rpc-client'
 import { createTestStore } from './store-test-helpers'
 
 it('hydrates a runtime owner default when refreshing its repositories', async () => {
-  clearRuntimeCompatibilityCacheForTests()
   vi.stubGlobal('window', {
     api: {
       runtimeEnvironments: {
@@ -54,7 +52,6 @@ it('hydrates a runtime owner default when refreshing its repositories', async ()
 })
 
 it('clears focused support when a runtime omits the default', async () => {
-  clearRuntimeCompatibilityCacheForTests()
   vi.stubGlobal('window', {
     api: {
       runtimeEnvironments: {
@@ -97,7 +94,6 @@ it('clears focused support when a runtime omits the default', async () => {
 })
 
 it('preserves focused support when runtime default hydration fails', async () => {
-  clearRuntimeCompatibilityCacheForTests()
   vi.stubGlobal('window', {
     api: {
       runtimeEnvironments: {

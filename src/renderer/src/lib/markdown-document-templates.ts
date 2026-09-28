@@ -1,12 +1,17 @@
 import type { DirEntry } from '../../../shared/filesystem-entry-types'
 import type { GlobalSettings } from '../../../shared/global-settings-types'
-import type { RuntimeFileOperationArgs } from '@/runtime/runtime-file-client'
-import {
-  readRuntimeDirectory,
-  readRuntimeFileContent,
-  runtimePathExists
-} from '@/runtime/runtime-file-client'
+import { readRuntimeFileContent } from '@/runtime/runtime-file-read-client'
+import { readRuntimeDirectory, runtimePathExists } from '@/runtime/runtime-file-metadata-client'
 import { basename, joinPath, normalizeRelativePath } from './path'
+
+// Why: the runtime file-client barrel and its args type were culled; templates only need
+// the local-read subset of the operation context.
+type MarkdownTemplateFileContext = {
+  settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined
+  worktreeId: string | null | undefined
+  worktreePath: string | null | undefined
+  connectionId?: string
+}
 
 const MARKDOWN_TEMPLATE_ROOT = '.orca/templates'
 const MARKDOWN_TEMPLATE_MAX_DEPTH = 8
@@ -132,7 +137,7 @@ export function applyMarkdownTemplatePlaceholders(
 }
 
 export async function listMarkdownDocumentTemplates(
-  context: RuntimeFileOperationArgs,
+  context: MarkdownTemplateFileContext,
   worktreePath: string
 ): Promise<MarkdownDocumentTemplate[]> {
   const templates: MarkdownDocumentTemplate[] = []
@@ -210,11 +215,7 @@ export async function listMarkdownDocumentTemplates(
 }
 
 export async function readMarkdownDocumentTemplateContent(
-  context: {
-    settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined
-    worktreeId: string
-    connectionId?: string
-  },
+  context: MarkdownTemplateFileContext,
   template: MarkdownDocumentTemplate
 ): Promise<string> {
   const result = await readRuntimeFileContent({

@@ -1,7 +1,16 @@
 import { renderToStaticMarkup } from 'react-dom/server'
+import type { ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
 import CommentMarkdown, { remarkGitHubReferences } from './CommentMarkdown'
-import { NativeChatCodeBlock } from '@/components/native-chat/NativeChatCodeBlock'
+
+// Local stand-in for the deleted native-chat code block; exercises the same renderCodeBlock contract.
+function StubCodeBlock({ children, language }: { children?: ReactNode; language?: string }) {
+  return (
+    <div aria-label="Copy code" data-code-language={language}>
+      {children}
+    </div>
+  )
+}
 
 describe('CommentMarkdown', () => {
   it('marks compact headings so a parent can opt into block flow', () => {
@@ -230,7 +239,7 @@ describe('CommentMarkdown', () => {
       <CommentMarkdown
         variant="document"
         content={'```ts\nconst answer = 42\n```'}
-        renderCodeBlock={NativeChatCodeBlock}
+        renderCodeBlock={StubCodeBlock}
       />
     )
 
@@ -244,7 +253,7 @@ describe('CommentMarkdown', () => {
       <CommentMarkdown
         variant="document"
         content={'```\nconst answer = 42\n```'}
-        renderCodeBlock={NativeChatCodeBlock}
+        renderCodeBlock={StubCodeBlock}
       />
     )
 

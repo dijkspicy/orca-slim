@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { findActivityTerminalPortal } from './activity/activity-terminal-portal'
 import { shouldAutoCreateInitialTerminal } from './terminal/initial-terminal'
 import {
   canWatcherCoverParkedTerminalTab,
@@ -26,7 +25,6 @@ type TerminalWatcherController = Pick<
   | 'activeTabIdByWorktree'
   | 'activeView'
   | 'activeWorktreeId'
-  | 'activityTerminalPortals'
   | 'anyMountedWorktreeHasLayout'
   | 'backgroundMountRevision'
   | 'createTab'
@@ -58,7 +56,6 @@ export function useTerminalWatcherEffects(controller: TerminalWatcherController)
     activeTabIdByWorktree,
     activeView,
     activeWorktreeId,
-    activityTerminalPortals,
     anyMountedWorktreeHasLayout,
     backgroundMountRevision,
     createTab,
@@ -109,11 +106,7 @@ export function useTerminalWatcherEffects(controller: TerminalWatcherController)
           effectiveParkedTerminalWorktreeIds.has(workspaceId)
         if (parked) {
           for (const tab of tabs) {
-            const activityTerminalPortal = findActivityTerminalPortal(activityTerminalPortals, {
-              worktreeId: workspaceId,
-              tabId: tab.id
-            })
-            if (!activityTerminalPortal && !evictionExemptTerminalTabIds.has(tab.id)) {
+            if (!evictionExemptTerminalTabIds.has(tab.id)) {
               mountedParkedTabIds.add(tab.id)
             }
           }
@@ -123,11 +116,7 @@ export function useTerminalWatcherEffects(controller: TerminalWatcherController)
           if (
             deferredTabIds?.has(tab.id) &&
             !mountedParkedTabIds.has(tab.id) &&
-            canWatcherCoverParkedTerminalTab(workspaceId, tab) &&
-            !findActivityTerminalPortal(activityTerminalPortals, {
-              worktreeId: workspaceId,
-              tabId: tab.id
-            })
+            canWatcherCoverParkedTerminalTab(workspaceId, tab)
           ) {
             mountedParkedTabIds.add(tab.id)
           }
@@ -135,14 +124,7 @@ export function useTerminalWatcherEffects(controller: TerminalWatcherController)
       }
       if (tabs.length > 0 && !mountedWorktreeIdsRef.current.has(workspaceId)) {
         const backgroundTabIds = tabs
-          .filter(
-            (tab) =>
-              canWatcherCoverParkedTerminalTab(workspaceId, tab) &&
-              !findActivityTerminalPortal(activityTerminalPortals, {
-                worktreeId: workspaceId,
-                tabId: tab.id
-              })
-          )
+          .filter((tab) => canWatcherCoverParkedTerminalTab(workspaceId, tab))
           .map((tab) => tab.id)
         if (backgroundTabIds.length > 0) {
           // CLI-created live terminals have never mounted a pane to consume host title facts.
@@ -161,7 +143,6 @@ export function useTerminalWatcherEffects(controller: TerminalWatcherController)
   }, [
     activeTabId,
     activeView,
-    activityTerminalPortals,
     activeTabIdByWorktree,
     anyMountedWorktreeHasLayout,
     backgroundMountRevision,

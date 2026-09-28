@@ -2,7 +2,6 @@ import { expect, it, vi } from 'vitest'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { createGlobalSettingsFixture } from '../../../../shared/global-settings-test-fixture'
 import { createTestStore } from './store-test-helpers'
-import { markRuntimeEnvironmentCompatible } from '@/runtime/runtime-rpc-client'
 
 it('does not overwrite a settings write with an older owner hydration', async () => {
   let resolveSettingsRead!: (settings: GlobalSettings) => void
@@ -27,7 +26,6 @@ it('does not overwrite a settings write with an older owner hydration', async ()
 })
 
 it('preserves host defaults added while owner hydration is in flight', async () => {
-  markRuntimeEnvironmentCompatible('env-1')
   let resolveOwnerRead!: (value: unknown) => void
   const ownerRead = new Promise((resolve) => (resolveOwnerRead = resolve))
   vi.stubGlobal('window', {
@@ -62,7 +60,6 @@ it('preserves host defaults added while owner hydration is in flight', async () 
 })
 
 it('publishes startup settings before remote owner hydration and local catalog work', async () => {
-  markRuntimeEnvironmentCompatible('env-1')
   let resolveOwnerRead!: (value: unknown) => void
   const ownerRead = new Promise((resolve) => (resolveOwnerRead = resolve))
   vi.stubGlobal('window', {
@@ -111,7 +108,6 @@ it('publishes startup settings before remote owner hydration and local catalog w
 })
 
 it('preserves deferred owner hydration across a no-op runtime selection', async () => {
-  markRuntimeEnvironmentCompatible('env-no-op')
   let resolveOwnerRead!: (value: unknown) => void
   const ownerRead = new Promise((resolve) => (resolveOwnerRead = resolve))
   vi.stubGlobal('window', {
@@ -146,7 +142,6 @@ it('preserves deferred owner hydration across a no-op runtime selection', async 
 })
 
 it('waits for a replacement owner hydration before publishing remote rows', async () => {
-  markRuntimeEnvironmentCompatible('env-replacement')
   let resolveFirstOwnerRead!: (value: unknown) => void
   let resolveSecondOwnerRead!: (value: unknown) => void
   let resolveReplacementSettingsRead!: (value: GlobalSettings) => void
@@ -210,7 +205,6 @@ it('waits for a replacement owner hydration before publishing remote rows', asyn
 })
 
 it('preserves owner defaults when an unrelated settings write settles after hydration', async () => {
-  markRuntimeEnvironmentCompatible('env-write-race')
   let resolveOwnerRead!: (value: unknown) => void
   let resolveSettingsWrite!: (value: GlobalSettings) => void
   const ownerRead = new Promise((resolve) => (resolveOwnerRead = resolve))

@@ -1,10 +1,8 @@
-// Builds one worktree's tabs, browser pages and simulator tabs into the shapes
-// the three Cmd+J engines search.
+// Builds one worktree's tabs and simulator tabs into the shapes
+// the Cmd+J engines search.
 
 import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
-import { buildSearchableBrowserPages } from '@/lib/browser-palette-page-entries'
-import type { SearchableBrowserPage } from '@/lib/browser-palette-search'
 import {
   buildSearchableSimulatorTabs,
   type SearchableSimulatorTab
@@ -23,7 +21,6 @@ import { getPaletteOwnershipWorktreeIds } from '@/lib/unified-tab-host-ownership
 
 export type OpenTabSearchEntries = {
   workspaceTabs: readonly SearchableWorkspaceTab[]
-  browserPages: readonly SearchableBrowserPage[]
   simulatorTabs: readonly SearchableSimulatorTab[]
 }
 
@@ -38,8 +35,6 @@ export type OpenTabSearchEntryState = Pick<
   | 'activeTabType'
   | 'activeTabTypeByWorktree'
   | 'activeWorktreeId'
-  | 'browserPagesByWorkspace'
-  | 'browserTabsByWorktree'
   | 'folderWorkspaces'
   | 'groupsByWorktree'
   | 'openFiles'
@@ -89,7 +84,6 @@ export function selectOpenTabSearchEntryState(
   // when neither the worktree nor a repo names a host.
   const executionHostId = getWorktreeExecutionHostId(worktree, repo ?? undefined, preferredHostId)
   return {
-    activeBrowserTabId: state.activeBrowserTabId,
     activeFileId: state.activeFileId,
     activeFileIdByWorktree: state.activeFileIdByWorktree,
     activeGroupIdByWorktree: state.activeGroupIdByWorktree,
@@ -98,8 +92,6 @@ export function selectOpenTabSearchEntryState(
     activeTabType: state.activeTabType,
     activeTabTypeByWorktree: state.activeTabTypeByWorktree,
     activeWorktreeId: state.activeWorktreeId,
-    browserPagesByWorkspace: state.browserPagesByWorkspace,
-    browserTabsByWorktree: state.browserTabsByWorktree,
     executionHostId,
     folderWorkspaces: state.folderWorkspaces,
     generatedTitlesEnabled: state.settings?.tabAutoGenerateTitle === true,
@@ -161,15 +153,6 @@ export function buildOpenTabSearchEntries(
       activeFileIdByWorktree: state.activeFileIdByWorktree,
       activeTabTypeByWorktree: state.activeTabTypeByWorktree,
       generatedTitlesEnabled: state.generatedTitlesEnabled
-    }),
-    browserPages: buildSearchableBrowserPages({
-      ...scope,
-      browserTabsByWorktree: state.browserTabsByWorktree,
-      browserPagesByWorkspace: state.browserPagesByWorkspace,
-      unifiedTabsByWorktree: state.unifiedTabsByWorktree,
-      activeBrowserTabId: state.activeBrowserTabId,
-      activeWorktreeId: state.activeWorktreeId,
-      activeTabType: state.activeTabType
     }),
     simulatorTabs: buildSearchableSimulatorTabs({
       ...scope,

@@ -12,11 +12,7 @@ import { buildPersistedUnifiedTabSessionData } from './workspace-session-unified
 import { buildLastVisitedAtByWorktreeId } from './workspace-session-focus-recency'
 import { buildSleepingAgentSessionData } from './workspace-session-sleeping-agents'
 import { buildPersistedClosedTerminalTabTombstones } from './workspace-session-closed-tab-tombstones'
-import { buildActiveConnectionIdsAtShutdown } from './workspace-session-reconnect-targets'
 import { withoutStagedBrowserTabs } from './workspace-session-staged-browser-tabs'
-import { buildBrowserSessionData } from './workspace-session-browser-tabs'
-
-export { buildActiveConnectionIdsAtShutdown }
 
 /** Why (issue #1158): require both flags so a hydration failure can't overwrite orca-data.json with empty error-path state. */
 export function shouldPersistWorkspaceSession(
@@ -307,21 +303,11 @@ export function buildWorkspaceSessionPayload(
       snapshot.activeFileIdByWorktree,
       snapshot.activeTabTypeByWorktree
     ),
-    ...buildBrowserSessionData(
-      snapshot.browserTabsByWorktree,
-      snapshot.browserPagesByWorkspace,
-      snapshot.activeBrowserTabIdByWorktree,
-      snapshot.remoteBrowserPageHandlesByPageId
-    ),
     // Why: enforce the history storage cap here so stale renderer state can't make every write stringify an oversized legacy array.
     browserUrlHistory: normalizeBrowserHistoryEntries(snapshot.browserUrlHistory),
     workspaceDocHistory: normalizeWorkspaceDocHistoryEntries(snapshot.workspaceDocHistory ?? []),
     // Why: persist only layouts backed by real tabs so a reload can't restore a blank split pane from the split-before-tab midpoint.
     ...buildPersistedUnifiedTabSessionData(snapshot),
-    activeConnectionIdsAtShutdown: buildActiveConnectionIdsAtShutdown(
-      snapshot,
-      terminalSessionData.remoteSessionIdsByTabId ?? null
-    ),
     remoteSessionIdsByTabId: terminalSessionData.remoteSessionIdsByTabId,
     // Why: omit when empty so builds that never stamped focus-recency don't bloat the payload. See docs/cmd-j-empty-query-ordering.md.
     lastVisitedAtByWorktreeId: buildLastVisitedAtByWorktreeId(snapshot),

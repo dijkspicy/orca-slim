@@ -1,12 +1,11 @@
 import type { HostedReviewInfo } from '../../../../shared/hosted-review'
-import type { PRInfo } from '../../../../shared/github/pull-request-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { isGitHubPRSuppressed } from '../../../../shared/worktree/github-pr-suppression'
 
 type LinkedReviewMetadataProvider = Exclude<HostedReviewInfo['provider'], 'unsupported'>
 
 export function isCachedMergedBranchPRCurrentForWorktree(
-  cachedPR: PRInfo | HostedReviewInfo | null | undefined,
+  cachedPR: HostedReviewInfo | null | undefined,
   worktree: Pick<Worktree, 'head'>
 ): boolean {
   return (

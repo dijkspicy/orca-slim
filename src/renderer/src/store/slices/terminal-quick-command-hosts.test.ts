@@ -7,7 +7,6 @@ import {
   RUNTIME_PROTOCOL_VERSION,
   TERMINAL_QUICK_COMMANDS_RUNTIME_CAPABILITY
 } from '../../../../shared/protocol-version'
-import { clearRuntimeCompatibilityCacheForTests } from '@/runtime/runtime-rpc-client'
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }))
 
@@ -53,7 +52,6 @@ function installRuntime(supported = true): ReturnType<typeof vi.fn> {
 }
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   vi.clearAllMocks()
 })
 

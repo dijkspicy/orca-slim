@@ -4,7 +4,6 @@ import {
   TerminalInspectProcess,
   TerminalListParams,
   TerminalRead,
-  TerminalRecoverPane,
   TerminalRename,
   TerminalResolveActive,
   TerminalResolvePane
@@ -36,17 +35,6 @@ export const TERMINAL_QUERY_METHODS = [
     params: TerminalResolvePane,
     handler: async (params, { runtime }) => ({
       terminal: runtime.resolveTerminalPane(params.paneKey, params.worktreeId)
-    })
-  }),
-  defineMethod({
-    name: 'terminal.recoverPane',
-    params: TerminalRecoverPane,
-    handler: async (params, { runtime }) => ({
-      terminal: await runtime.recoverTerminalPane(
-        params.paneKey,
-        params.worktreeId,
-        params.expectedTerminal
-      )
     })
   }),
   defineMethod({

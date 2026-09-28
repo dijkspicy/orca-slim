@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { HostedReviewInfo } from '../../../../shared/hosted-review'
-import type { PRInfo } from '../../../../shared/github/pull-request-types'
 import {
   getWorktreeCardPrDisplay,
   isCachedMergedBranchPRCurrentForWorktree
@@ -176,12 +175,12 @@ describe('getWorktreeCardPrDisplay', () => {
 })
 
 describe('isCachedMergedBranchPRCurrentForWorktree', () => {
-  const mergedPR: PRInfo = {
+  const mergedPR: HostedReviewInfo = {
     number: 55,
     title: 'Merged PR',
     state: 'merged',
     url: 'https://github.com/stablyai/orca/pull/55',
-    checksStatus: 'success',
+    status: 'success',
     updatedAt: '2026-07-03T00:00:00.000Z',
     mergeable: 'MERGEABLE',
     headSha: 'final-head'

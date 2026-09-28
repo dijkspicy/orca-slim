@@ -3,8 +3,6 @@ import {
   type EagerPtyHandle
 } from '@/components/terminal-pane/pty-dispatcher'
 import { createBrowserUuid } from '@/lib/browser-uuid'
-import { getSettingsForWorktreeRuntimeOwner } from '@/lib/worktree-runtime-owner'
-import { getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
 import { singlePaneLayoutSnapshot } from '@/store/slices/terminal-helpers'
 import { retireUnownedTerminal } from '@/lib/retire-unowned-background-terminal'
 import { useAppStore } from '@/store'
@@ -197,8 +195,7 @@ async function createBackgroundTab(args: {
   if (
     await retireUnownedTerminal({
       owner: { tabId: tab.id },
-      ptyId: pane.ptyId,
-      runtimeTarget: { kind: 'local' }
+      ptyId: pane.ptyId
     })
   ) {
     throw new Error('The terminal tab was closed before its session finished starting.')
@@ -229,8 +226,7 @@ async function addSetupSplit(args: {
   if (
     await retireUnownedTerminal({
       owner: { tabId: args.tab.tabId },
-      ptyId: setupPane.ptyId,
-      runtimeTarget: { kind: 'local' }
+      ptyId: setupPane.ptyId
     })
   ) {
     return
@@ -268,14 +264,6 @@ export async function launchWorktreeBackgroundTerminals(
     return
   }
   const store = useAppStore.getState()
-  const runtimeTarget = getActiveRuntimeTarget(
-    getSettingsForWorktreeRuntimeOwner(store, args.worktreeId)
-  )
-  if (runtimeTarget.kind === 'environment') {
-    // Runtime-owned worktrees materialize setup/defaultTabs inside createManagedWorktree.
-    return
-  }
-
   const worktree = store.allWorktrees().find((entry) => entry.id === args.worktreeId)
   if (!worktree) {
     throw new Error('The target workspace is no longer available.')

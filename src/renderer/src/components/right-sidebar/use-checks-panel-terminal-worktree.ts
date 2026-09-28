@@ -3,8 +3,6 @@ import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '@/store'
 import { installWindowVisibilityInterval } from '@/lib/window-visibility-interval'
 import { useAllWorktrees, useRepoMap } from '@/store/selectors'
-import { isRemoteRuntimePtyId } from '@/runtime/runtime-terminal-inspection'
-import { parseAppSshPtyId } from '../../../../shared/ssh-pty-id'
 import { getRepoExecutionHostId, LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
 import type { Worktree } from '../../../../shared/worktree/types'
 import {
@@ -30,8 +28,7 @@ type ChecksPanelTerminalWorktree = {
  * Reads the cwd authoritatively from the local PTY's process (getCwd) rather
  * than the shell-reported OSC 7 cwd: a local terminal running `ssh`/tmux emits
  * the *remote* shell's OSC 7 path, which must not resolve a local worktree.
- * getCwd reads the local shell pid, so it is correct for that case. Remote
- * runtime PTYs are skipped (their cwd lives on the relay host). Polling is
+ * getCwd reads the local shell pid, so it is correct for that case. Polling is
  * gated on both panel visibility and window visibility, so a hidden panel or a
  * hidden/minimized window does no background work (no `lsof` spawns) and the
  * caller's fallback worktree is used.
@@ -71,12 +68,8 @@ export function useChecksPanelTerminalWorktree(args: {
     )
   )
 
-  // Only poll local PTYs. Remote-runtime (`remote:`) and SSH (`ssh:`) PTYs
-  // report a cwd on their relay host, which must not resolve a local worktree.
-  const isLocalTerminalPty =
-    activeTerminalPtyId !== null &&
-    !isRemoteRuntimePtyId(activeTerminalPtyId) &&
-    parseAppSshPtyId(activeTerminalPtyId) === null
+  // Only poll local PTYs.
+  const isLocalTerminalPty = activeTerminalPtyId !== null
   const shouldPollCwd = isPanelVisible && isLocalTerminalPty
 
   const [polledCwd, setPolledCwd] = useState<{ ptyId: string; cwd: string | null } | null>(null)

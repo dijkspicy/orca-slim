@@ -26,7 +26,6 @@ import {
 } from './terminal-side-effect-facts-handler'
 import { dispatchTerminalNotification } from './use-notification-dispatch'
 import { acquireHiddenRendererPtyDeliveryClaim } from './pty-renderer-delivery-claims'
-import { isRemoteRuntimePtyId } from '@/runtime/runtime-terminal-inspection'
 
 // Why: keep the live path's BEL-vs-completion race window so notification behavior is identical whether a tab is parked or mounted.
 const PARKED_NOTIFICATION_GRACE_MS = AGENT_TASK_COMPLETE_NOTIFICATION_GRACE_MS
@@ -63,7 +62,6 @@ export function startParkedTerminalByteWatcher(
   options: ParkedTerminalByteWatcherOptions
 ): () => void {
   const { ptyId, tabId, worktreeId, paneId } = options
-  const remoteRuntimePty = isRemoteRuntimePtyId(ptyId)
   const drivesTabTitle = options.drivesTabTitle ?? true
   const paneKey = makePaneKey(tabId, options.leafId)
 
@@ -195,13 +193,11 @@ export function startParkedTerminalByteWatcher(
   })
 
   // Why: with the authority switch on, the fact consumer is the single policy consumer — registering byte parsers too would double-fire bells.
-  const mainSideEffectAuthority =
-    !remoteRuntimePty &&
-    isMainTerminalSideEffectAuthorityForPty({
-      settings: useAppStore.getState().settings,
-      runtimeEnvironmentId: null
-    })
-  const factSideEffectAuthority = mainSideEffectAuthority || remoteRuntimePty
+  const mainSideEffectAuthority = isMainTerminalSideEffectAuthorityForPty({
+    settings: useAppStore.getState().settings,
+    runtimeEnvironmentId: null
+  })
+  const factSideEffectAuthority = mainSideEffectAuthority
   const hiddenDeliveryGateActive =
     mainSideEffectAuthority &&
     isRendererHiddenPtyDeliveryGateEnabled(useAppStore.getState().settings)

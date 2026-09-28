@@ -2,7 +2,6 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostedReviewInfo } from '../../../../shared/hosted-review'
-import type { PRInfo } from '../../../../shared/github/pull-request-types'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { Repo } from '../../../../shared/repo-types'
 import type { WorktreeCardProperty } from '../../../../shared/ui-chrome-types'
@@ -110,20 +109,6 @@ function makeWorktree(overrides: Partial<Worktree> = {}): Worktree {
   }
 }
 
-function makePRInfo(overrides: Partial<PRInfo> = {}): PRInfo {
-  return {
-    number: 6340,
-    title: 'Merged PR still checked out',
-    state: 'merged',
-    url: 'https://github.com/acme/orca/pull/6340',
-    checksStatus: 'success',
-    updatedAt: '2026-05-17T00:00:00.000Z',
-    mergeable: 'MERGEABLE',
-    headSha: 'abc123',
-    ...overrides
-  }
-}
-
 function makeHostedReviewInfo(overrides: Partial<HostedReviewInfo> = {}): HostedReviewInfo {
   return {
     provider: 'github',
@@ -160,7 +145,7 @@ describe('WorktreeCard merged PR fallback display', () => {
   it('shows cached merged PR when a newer hosted-review miss still matches the worktree head', async () => {
     prCache = {
       'repo-1::feature/local-branch': {
-        data: makePRInfo(),
+        data: makeHostedReviewInfo(),
         fetchedAt: 100
       }
     }
@@ -181,7 +166,7 @@ describe('WorktreeCard merged PR fallback display', () => {
   it('suppresses cached merged PR after a newer hosted-review miss when the worktree head moved', async () => {
     prCache = {
       'repo-1::feature/local-branch': {
-        data: makePRInfo({
+        data: makeHostedReviewInfo({
           title: 'Merged PR no longer checked out',
           headSha: 'old-head'
         }),

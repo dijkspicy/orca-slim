@@ -4,12 +4,9 @@ import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { ProjectGroup } from '../../../../shared/project-group-types'
 import type { Project, ProjectHostSetup } from '../../../../shared/project-types'
 import type { Repo } from '../../../../shared/repo-types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import { getSetupScriptPromptDismissalKey } from '../../lib/setup-script-prompt'
+
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 
 const localRepo: Repo = {
   id: 'local-repo',
@@ -118,7 +115,6 @@ const runtimeEnvironmentTransportCall = vi.fn()
 const dispatchEventMock = vi.fn()
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   reposList.mockReset()
   projectsList.mockReset()
   listHostSetups.mockReset()
@@ -168,7 +164,7 @@ beforeEach(() => {
     }
   })
   runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-    return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+    return runtimeEnvironmentCall(args)
   })
 
   vi.stubGlobal('window', {
@@ -850,7 +846,7 @@ describe('fetchReposForAllHosts', () => {
             }
           })
         }
-        return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+        return runtimeEnvironmentCall(args)
       }
     )
     const store = createTestStore()

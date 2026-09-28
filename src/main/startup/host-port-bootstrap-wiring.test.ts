@@ -28,7 +28,6 @@ describe('host port bootstrap wiring', () => {
     'setSecretStore(new ElectronSecretStore())',
     'setPtyHostBindings({',
     'setRuntimeDesktopSurface(electronRuntimeDesktopSurface)',
-    'setRuntimeBrowserCommandsFactory(electronRuntimeBrowserCommandsFactory)',
     'setDefaultProxySessionResolver(',
     'setMainHttpClient(electronHttpClient)',
     'setSpeechServiceFactories(electronSpeechServiceFactories)',

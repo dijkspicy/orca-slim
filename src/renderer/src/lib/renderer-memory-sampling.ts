@@ -5,10 +5,6 @@
  */
 import type { CrashReportDetailValue } from '../../../shared/crash-reporting'
 import type { RendererProcessMemory } from '../../../shared/renderer-process-memory'
-import {
-  getBrowserWebviewMemoryProfile,
-  type BrowserWebviewMemoryProfile
-} from '../components/browser-pane/host-guest/webview-registry'
 import { recordRendererCrashBreadcrumb } from './crash-breadcrumb-recorder'
 import { compactBreadcrumbData, toMegabytes } from './crash-breadcrumb-data'
 import { collectRendererMemoryProfileCounts } from './renderer-memory-profile'
@@ -66,7 +62,6 @@ export function recordRendererMemorySample(reason: string): void {
   if (!memory) {
     return
   }
-  const browserWebviews = getBrowserWebviewMemoryProfile()
   // Why the previous read: the footprint bridge is async, and awaiting it here
   // would make every sample (and its highwater arming) reentrant. Refresh in the
   // background and annotate with the last answer instead — one sample interval
@@ -85,12 +80,10 @@ export function recordRendererMemorySample(reason: string): void {
       heapSource: memory.exact ? 'v8' : 'quantized',
       mallocedMB: toMegabytes(memory.mallocedBytes),
       blinkAllocatedMB: toMegabytes(memory.blinkAllocatedBytes),
-      ...describeProcessFootprint(memory, footprint),
-      browserWebviews: browserWebviews.browserWebviewCount,
-      registeredBrowserGuests: browserWebviews.registeredBrowserGuestCount
+      ...describeProcessFootprint(memory, footprint)
     })
   )
-  recordRendererMemoryHighwater(memory, browserWebviews, footprint)
+  recordRendererMemoryHighwater(memory, footprint)
 }
 
 /** Stays null on shells without the bridge, or when the runtime withholds it. */
@@ -148,7 +141,6 @@ function describeProcessFootprint(
 
 function recordRendererMemoryHighwater(
   memory: HeapMetrics,
-  browserWebviews: BrowserWebviewMemoryProfile,
   footprint: RendererProcessMemory | null = null
 ): void {
   const used = memory.usedJSHeapSize
@@ -191,8 +183,6 @@ function recordRendererMemoryHighwater(
     ...describeProcessFootprint(memory, footprint),
     domNodes: document.getElementsByTagName('*').length,
     terminalElements: document.querySelectorAll('.xterm').length,
-    browserWebviews: browserWebviews.browserWebviewCount,
-    registeredBrowserGuests: browserWebviews.registeredBrowserGuestCount,
     ...collectRendererMemoryProfileCounts()
   })
   if (ratio !== null) {

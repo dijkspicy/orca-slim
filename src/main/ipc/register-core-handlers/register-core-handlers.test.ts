@@ -27,7 +27,6 @@ const {
   setTrustedUIRendererWebContentsIdMock,
   registerFilesystemHandlersMock,
   registerRuntimeHandlersMock,
-  registerRuntimeEnvironmentHandlersMock,
   registerEphemeralVmHandlersMock,
   registerAiVaultHandlersMock,
   registerAiVaultSearchHandlersMock,
@@ -60,7 +59,6 @@ const {
   isDashboardPopoutRendererMock,
   registerTerminalPreviewHandlersMock,
   registerSpeechHandlersMock,
-  registerSkillsHandlersMock,
   registerSkillDeleteIpcHandlersMock,
   registerWorkspaceSpaceHandlersMock,
   registerWorkspacePortHandlersMock,
@@ -93,7 +91,6 @@ const {
   setTrustedUIRendererWebContentsIdMock: vi.fn(),
   registerFilesystemHandlersMock: vi.fn(),
   registerRuntimeHandlersMock: vi.fn(),
-  registerRuntimeEnvironmentHandlersMock: vi.fn(),
   registerEphemeralVmHandlersMock: vi.fn(),
   registerAiVaultHandlersMock: vi.fn(),
   registerAiVaultSearchHandlersMock: vi.fn(),
@@ -126,7 +123,6 @@ const {
   isDashboardPopoutRendererMock: vi.fn(),
   registerTerminalPreviewHandlersMock: vi.fn(),
   registerSpeechHandlersMock: vi.fn(),
-  registerSkillsHandlersMock: vi.fn(),
   registerSkillDeleteIpcHandlersMock: vi.fn(),
   registerWorkspaceSpaceHandlersMock: vi.fn(),
   registerWorkspacePortHandlersMock: vi.fn(),
@@ -225,10 +221,6 @@ vi.mock('../settings', () => ({
   registerSettingsHandlers: registerSettingsHandlersMock
 }))
 
-vi.mock('../skills', () => ({
-  registerSkillsHandlers: registerSkillsHandlersMock
-}))
-
 vi.mock('../skill-delete/handlers', () => ({
   registerSkillDeleteIpcHandlers: registerSkillDeleteIpcHandlersMock
 }))
@@ -288,10 +280,6 @@ vi.mock('../rate-limits', () => ({
 
 vi.mock('../runtime', () => ({
   registerRuntimeHandlers: registerRuntimeHandlersMock
-}))
-
-vi.mock('../runtime-environments', () => ({
-  registerRuntimeEnvironmentHandlers: registerRuntimeEnvironmentHandlersMock
 }))
 
 vi.mock('../ephemeral-vm', () => ({
@@ -420,7 +408,6 @@ describe('registerCoreHandlers', () => {
     setTrustedUIRendererWebContentsIdMock.mockReset()
     registerFilesystemHandlersMock.mockReset()
     registerRuntimeHandlersMock.mockReset()
-    registerRuntimeEnvironmentHandlersMock.mockReset()
     registerEphemeralVmHandlersMock.mockReset()
     registerAiVaultHandlersMock.mockReset()
     registerOrcaProfileHandlersMock.mockReset()
@@ -447,7 +434,6 @@ describe('registerCoreHandlers', () => {
     registerDashboardPopoutHandlersMock.mockReset()
     registerTerminalPreviewHandlersMock.mockReset()
     registerSpeechHandlersMock.mockReset()
-    registerSkillsHandlersMock.mockReset()
     registerSkillDeleteIpcHandlersMock.mockReset()
     registerWorkspaceSpaceHandlersMock.mockReset()
     registerWorkspacePortHandlersMock.mockReset()
@@ -538,7 +524,6 @@ describe('registerCoreHandlers', () => {
     expect(registerDashboardPopoutHandlersMock).toHaveBeenCalledWith(store, undefined)
     expect(registerTerminalPreviewHandlersMock).toHaveBeenCalledWith(runtime)
     expect(registerSettingsHandlersMock).toHaveBeenCalledWith(store, agentAwakeService)
-    expect(registerSkillsHandlersMock).toHaveBeenCalledWith(store, runtime)
     expect(registerSkillDeleteIpcHandlersMock).toHaveBeenCalledWith(store, runtime)
     expect(registerWorkspaceSpaceHandlersMock).toHaveBeenCalledWith(store)
     expect(registerWorkspacePortHandlersMock).toHaveBeenCalledWith(store)
@@ -551,7 +536,6 @@ describe('registerCoreHandlers', () => {
     })
     expect(registerFilesystemHandlersMock).toHaveBeenCalledWith(store)
     expect(registerRuntimeHandlersMock).toHaveBeenCalledWith(runtime)
-    expect(registerRuntimeEnvironmentHandlersMock).toHaveBeenCalledWith(store)
     expect(registerEphemeralVmHandlersMock).toHaveBeenCalledWith(store, undefined)
     expect(registerAiVaultHandlersMock).toHaveBeenCalledWith(
       expect.objectContaining({

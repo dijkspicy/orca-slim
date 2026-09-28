@@ -8,9 +8,52 @@
  * path. Both paths must share the carry/dedupe semantics or links split across
  * chunks would resolve differently per authority mode.
  */
-import type { RepoSlug } from './github/links'
-import { parseGitHubIssueOrPRLink } from './github/links'
+// GitHub URL parse core moved from github/links (removed with the forge domain).
+const GH_ITEM_PATH_RE = /^\/([^/]+)\/([^/]+)\/(issues|pull)\/(\d+)(?:\/.*)?$/i
 
+type RepoSlug = {
+  owner: string
+  repo: string
+  host?: string
+}
+
+function parseGitHubIssueOrPRLink(input: string): {
+  slug: RepoSlug
+  number: number
+  type: 'issue' | 'pr'
+} | null {
+  const trimmed = input.trim()
+  if (!trimmed) {
+    return null
+  }
+
+  let url: URL
+  try {
+    url = new URL(trimmed)
+  } catch {
+    return null
+  }
+
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    return null
+  }
+
+  const match = GH_ITEM_PATH_RE.exec(url.pathname.replace(/\/+$/, ''))
+  if (!match) {
+    return null
+  }
+  const number = Number.parseInt(match[4], 10)
+  if (!(number > 0)) {
+    return null
+  }
+
+  return {
+    // Why: the URL proves the host — GHES links must keep their server identity.
+    slug: { owner: match[1], repo: match[2], host: url.host },
+    type: match[3].toLowerCase() === 'pull' ? 'pr' : 'issue',
+    number
+  }
+}
 const GITHUB_PR_PATH_MARKER = '/pull/'
 const TERMINAL_SGR_PATTERN = /\x1b\[[0-?]*[ -/]*m/g
 const TERMINAL_CURSOR_CONTROL_PATTERN = /[\x08\x0b\x0c]/g

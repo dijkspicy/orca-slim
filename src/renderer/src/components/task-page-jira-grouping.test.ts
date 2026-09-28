@@ -9,25 +9,16 @@ import userEvent from '@testing-library/user-event'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { sortJiraIssues } from './jira-issue-sorter'
-import { groupJiraIssuesByStatus, TaskPageJiraIssueList } from './task-page-jira-issue-list'
 import {
-  getSingleJiraProjectScope,
-  loadTaskPageJiraProjectStatusOrder
-} from './task-page-jira-status-order'
-import type { JiraIssue, JiraProjectStatusOrder } from '../../../shared/jira-types'
-
-const { jiraGetProjectStatusOrderMock } = vi.hoisted(() => ({
-  jiraGetProjectStatusOrderMock: vi.fn()
-}))
-
-vi.mock('@/runtime/runtime-jira-client', () => ({
-  jiraGetProjectStatusOrder: (...args: unknown[]) => jiraGetProjectStatusOrderMock(...args)
-}))
+  groupJiraIssuesByStatus,
+  TaskPageJiraIssueList,
+  type TaskPageJiraIssue
+} from './task-page-jira-issue-list'
+import { getSingleJiraProjectScope } from './task-page-jira-status-order'
 
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
-  jiraGetProjectStatusOrderMock.mockReset()
 })
 
 function jiraIssue(
@@ -36,7 +27,7 @@ function jiraIssue(
   statusId: string,
   statusName: string,
   options: { priority?: string; projectKey?: string; siteId?: string } = {}
-): JiraIssue {
+): TaskPageJiraIssue {
   const siteId = options.siteId ?? 'site-1'
   const projectKey = options.projectKey ?? 'ALP'
   return {
@@ -148,21 +139,6 @@ describe('Jira issue status grouping', () => {
     expect(multipleSites).toBeNull()
     expect(multipleProjects).toBeNull()
     expect(getSingleJiraProjectScope([missingSite])).toBeNull()
-  })
-
-  it('uses alphabetical fallback when status-order metadata is unavailable', async () => {
-    const error = new Error('Unknown RPC method')
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    jiraGetProjectStatusOrderMock.mockRejectedValueOnce(error)
-    const scope = getSingleJiraProjectScope([jiraIssue('ALP-1', 'First', '1', 'To Do')])
-    if (!scope) {
-      throw new Error('Expected one Jira project scope')
-    }
-
-    await expect(loadTaskPageJiraProjectStatusOrder(null, 'runtime:old', scope)).resolves.toEqual({
-      statusIdsByColumn: []
-    })
-    expect(warn).toHaveBeenCalledWith('[jira] Failed to load project status order:', error)
   })
 
   it('collapses and expands a status group through its accessible trigger', async () => {

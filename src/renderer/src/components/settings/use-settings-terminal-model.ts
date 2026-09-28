@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { Repo } from '../../../../shared/repo-types'
-import { getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
+import { getActiveRuntimeTarget } from '@/runtime/runtime-client-target'
 import {
   isWindowsTerminalCapabilityHost,
   useLocalWindowsTerminalCapabilities,

@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react'
 import { toast } from 'sonner'
 
-import type { GitHubWorkItem } from '../../../../shared/github/work-item-types'
 import { translate } from '@/i18n/i18n'
 import { openWorkspaceBrowserTab } from '@/lib/workspace-browser-tab-open'
 import { hasWorktreeCardDetails } from './WorktreeCardMeta'
@@ -18,7 +17,6 @@ type ReviewDetails = ReturnType<typeof useWorktreeCardReviewDetails>
 
 export function useWorktreeCardSecondaryDetails({
   worktree,
-  repo,
   statusPrDisplay,
   showStatus,
   showIssue,
@@ -46,7 +44,7 @@ export function useWorktreeCardSecondaryDetails({
   openTaskPage,
   updateWorktreeMeta,
   settings
-}: Pick<WorktreeCardProps, 'worktree' | 'repo' | 'statusPrDisplay'> &
+}: Pick<WorktreeCardProps, 'worktree' | 'statusPrDisplay'> &
   Pick<
     Foundation,
     | 'cardProps'
@@ -98,52 +96,6 @@ export function useWorktreeCardSecondaryDetails({
     agentActivityDisplayMode === 'compact' &&
     compactInlineAgentRows.length > 0
   const showAggregateCacheTimer = !compactCards && !compactInlineAgentRowsVisible
-  const handleOpenGitHubIssueInOrca = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
-      const issueUrl = hoverIssue && 'url' in hoverIssue ? hoverIssue.url : undefined
-      if (!repo || !hoverIssue || !issueUrl) {
-        return
-      }
-      const item: GitHubWorkItem = {
-        id: issueUrl,
-        type: 'issue',
-        number: hoverIssue.number,
-        title: hoverIssue.title,
-        state: 'state' in hoverIssue ? (hoverIssue.state ?? 'open') : 'open',
-        url: issueUrl,
-        labels: 'labels' in hoverIssue ? (hoverIssue.labels ?? []) : [],
-        updatedAt: new Date().toISOString(),
-        author: null,
-        repoId: repo.id
-      }
-      openTaskPage({ taskSource: 'github', preselectedRepoId: repo.id, openGitHubWorkItem: item })
-    },
-    [hoverIssue, openTaskPage, repo]
-  )
-  const handleOpenReviewInOrca = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
-      if (!repo || !hoverReview?.url || hoverReview.provider !== 'github') {
-        return
-      }
-      const item: GitHubWorkItem = {
-        id: hoverReview.url,
-        type: 'pr',
-        number: hoverReview.number,
-        title: hoverReview.title,
-        state: hoverReview.state ?? 'open',
-        url: hoverReview.url,
-        labels: [],
-        updatedAt: 'updatedAt' in hoverReview ? hoverReview.updatedAt : new Date().toISOString(),
-        author: null,
-        headSha: 'headSha' in hoverReview ? hoverReview.headSha : undefined,
-        repoId: repo.id
-      }
-      openTaskPage({ taskSource: 'github', preselectedRepoId: repo.id, openGitHubWorkItem: item })
-    },
-    [hoverReview, openTaskPage, repo]
-  )
   const openLinkedUrlInBrowser = useCallback(
     (url: string): void => {
       void openWorkspaceBrowserTab({
@@ -259,9 +211,7 @@ export function useWorktreeCardSecondaryDetails({
     metaComment,
     showInlineAgentList,
     compactInlineAgentRows,
-    handleOpenGitHubIssueInOrca,
     handleOpenIssueInBrowser,
-    handleOpenReviewInOrca,
     canUnlinkReview,
     handleOpenReviewInBrowser,
     hasExplicitLinkedReview,

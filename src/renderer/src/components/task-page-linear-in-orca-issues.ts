@@ -1,28 +1,17 @@
-import type { LinearIssue } from '../../../shared/linear/issue-types'
-import type { LinearWorkspace } from '../../../shared/linear/workspace-types'
 import type { Worktree } from '../../../shared/worktree/types'
-import { parseLinearIssueInput } from '../../../shared/linear/links'
-import {
-  getTaskSourceCacheScope,
-  type TaskSourceContext
-} from '../../../shared/task-source-context'
-import { normalizeLinearIdentifier } from '../lib/linear-issue-workspace-attachment'
+import type { TaskPageLinearIssue } from './task-page-linear-cache-selectors'
 
 export type LinkedLinearIssueRef = {
   identifier: string
   workspaceId: string | null
   organizationUrlKey?: string
-  sourceContext?: TaskSourceContext | null
 }
 
 type LinkedLinearWorktreeFields = Pick<Worktree, 'linkedLinearIssue'> &
   Partial<
     Pick<
       Worktree,
-      | 'isArchived'
-      | 'linkedLinearIssueWorkspaceId'
-      | 'linkedLinearIssueOrganizationUrlKey'
-      | 'linkedTaskSourceContext'
+      'isArchived' | 'linkedLinearIssueWorkspaceId' | 'linkedLinearIssueOrganizationUrlKey'
     >
   >
 
@@ -31,7 +20,7 @@ export function collectLinkedLinearIssueRefsFromWorktrees(
   worktrees: readonly LinkedLinearWorktreeFields[],
   options?: {
     workspaceId?: string | null
-    workspaces?: readonly Pick<LinearWorkspace, 'id' | 'organizationUrlKey'>[]
+    workspaces?: readonly { id: string; organizationUrlKey?: string }[]
   }
 ): LinkedLinearIssueRef[] {
   const selectedWorkspaceId =
@@ -48,22 +37,14 @@ export function collectLinkedLinearIssueRefsFromWorktrees(
     if (worktree.isArchived) {
       continue
     }
-    // Why: links can be stored as a URL or in any casing; the Linear read needs the bare identifier.
-    const identifier = normalizeLinearIdentifier(worktree.linkedLinearIssue)
+    // Why: links can be stored in any casing; the Linear read needs the bare identifier.
+    const identifier = worktree.linkedLinearIssue?.trim().toUpperCase() || null
     if (!identifier) {
       continue
     }
-    const organizationUrlKey =
-      worktree.linkedLinearIssueOrganizationUrlKey?.trim() ||
-      parseLinearIssueInput(worktree.linkedLinearIssue ?? '')?.organizationUrlKey
-    const sourceContext = worktree.linkedTaskSourceContext
-    const sourceWorkspaceId =
-      sourceContext?.providerIdentity?.provider === 'linear'
-        ? sourceContext.providerIdentity.workspaceId
-        : null
+    const organizationUrlKey = worktree.linkedLinearIssueOrganizationUrlKey?.trim() || null
     const workspaceId =
       worktree.linkedLinearIssueWorkspaceId?.trim() ||
-      sourceWorkspaceId?.trim() ||
       (organizationUrlKey
         ? (workspaceIdByOrgKey.get(organizationUrlKey.toLowerCase()) ?? null)
         : null)
@@ -73,47 +54,28 @@ export function collectLinkedLinearIssueRefsFromWorktrees(
     const ref: LinkedLinearIssueRef = {
       identifier,
       workspaceId,
-      ...(organizationUrlKey ? { organizationUrlKey } : {}),
-      ...(sourceContext !== undefined ? { sourceContext } : {})
+      ...(organizationUrlKey ? { organizationUrlKey } : {})
     }
-    const sourceScope = sourceContext ? getTaskSourceCacheScope(sourceContext) : ''
-    const refScope = `${workspaceId ?? ''}::${organizationUrlKey?.toLowerCase() ?? ''}::${sourceScope}`
+    const refScope = `${workspaceId ?? ''}::${organizationUrlKey?.toLowerCase() ?? ''}`
     const existing = byIdentifier.get(identifier)
     if (!existing) {
       byIdentifier.set(identifier, [ref])
       continue
     }
     if (
-      existing.some((candidate) => {
-        const candidateSourceScope = candidate.sourceContext
-          ? getTaskSourceCacheScope(candidate.sourceContext)
-          : ''
-        return (
-          `${candidate.workspaceId ?? ''}::${candidate.organizationUrlKey?.toLowerCase() ?? ''}::${candidateSourceScope}` ===
+      existing.some(
+        (candidate) =>
+          `${candidate.workspaceId ?? ''}::${candidate.organizationUrlKey?.toLowerCase() ?? ''}` ===
           refScope
-        )
-      })
+      )
     ) {
       continue
     }
     const unscopedIndex = existing.findIndex(
-      (candidate) =>
-        !candidate.workspaceId &&
-        !candidate.organizationUrlKey &&
-        (candidate.sourceContext ? getTaskSourceCacheScope(candidate.sourceContext) : '') ===
-          sourceScope
+      (candidate) => !candidate.workspaceId && !candidate.organizationUrlKey
     )
     if ((workspaceId || organizationUrlKey) && unscopedIndex !== -1) {
       existing[unscopedIndex] = ref
-    } else if (!workspaceId && !organizationUrlKey) {
-      const hasSameSourceScope = existing.some(
-        (candidate) =>
-          (candidate.sourceContext ? getTaskSourceCacheScope(candidate.sourceContext) : '') ===
-          sourceScope
-      )
-      if (!hasSameSourceScope) {
-        existing.push(ref)
-      }
     } else {
       existing.push(ref)
     }
@@ -123,9 +85,9 @@ export function collectLinkedLinearIssueRefsFromWorktrees(
 }
 
 export function filterLinearIssuesForInOrcaWorkspace(
-  issues: readonly LinearIssue[],
+  issues: readonly TaskPageLinearIssue[],
   workspaceId: string | null | undefined
-): LinearIssue[] {
+): TaskPageLinearIssue[] {
   if (!workspaceId || workspaceId === 'all') {
     return [...issues]
   }
@@ -133,9 +95,9 @@ export function filterLinearIssuesForInOrcaWorkspace(
 }
 
 export function filterLinearIssuesBySearchQuery(
-  issues: readonly LinearIssue[],
+  issues: readonly TaskPageLinearIssue[],
   query: string
-): LinearIssue[] {
+): TaskPageLinearIssue[] {
   const trimmed = query.trim().toLowerCase()
   if (!trimmed) {
     return [...issues]
@@ -152,20 +114,20 @@ export function filterLinearIssuesBySearchQuery(
 
 export function linkedLinearIssueRefsSignature(refs: readonly LinkedLinearIssueRef[]): string {
   return refs
-    .map((ref) => {
-      const sourceScope = ref.sourceContext ? getTaskSourceCacheScope(ref.sourceContext) : ''
-      return `${ref.identifier.toUpperCase()}::${ref.workspaceId ?? ''}::${ref.organizationUrlKey?.toLowerCase() ?? ''}::${sourceScope}`
-    })
+    .map(
+      (ref) =>
+        `${ref.identifier.toUpperCase()}::${ref.workspaceId ?? ''}::${ref.organizationUrlKey?.toLowerCase() ?? ''}`
+    )
     .sort()
     .join('|')
 }
 
 export async function readLinkedLinearIssuesWithLimit(
   refs: readonly LinkedLinearIssueRef[],
-  read: (ref: LinkedLinearIssueRef) => Promise<LinearIssue | null>,
+  read: (ref: LinkedLinearIssueRef) => Promise<TaskPageLinearIssue | null>,
   concurrency = 6
-): Promise<(LinearIssue | null)[]> {
-  const results = Array.from({ length: refs.length }, (): LinearIssue | null => null)
+): Promise<(TaskPageLinearIssue | null)[]> {
+  const results = Array.from({ length: refs.length }, (): TaskPageLinearIssue | null => null)
   let nextIndex = 0
   const workerCount = Math.min(refs.length, Math.max(1, Math.floor(concurrency)))
   await Promise.all(

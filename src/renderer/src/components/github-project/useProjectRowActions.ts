@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useRepoSlugIndex } from '@/lib/repo-slug-index'
-import { launchWorkItemDirect } from '@/lib/launch-work-item-direct'
 import { useAppStore } from '@/store'
 import { translate } from '@/i18n/i18n'
 import { buildTaskSourceContextFromRepo } from '../../../../shared/task-source-context'
@@ -210,18 +209,10 @@ export function useProjectRowActions({
       if (!workItem) {
         return
       }
-      // Why: issue #4756 changed only TaskPage's "Create workspace"; Project view stays on direct "start work now" launch.
-      void launchWorkItemDirect({
-        item: workItem,
-        repoId: resolution.repo.id,
-        launchSource: 'task_page',
-        telemetrySource: 'sidebar',
-        openModalFallback: () => {
-          if (row.content.url) {
-            void window.api.shell.openUrl(row.content.url)
-          }
-        }
-      })
+      // Why: the direct work-item launch is gone with the forge cull; degrade to opening the item URL.
+      if (row.content.url) {
+        void window.api.shell.openUrl(row.content.url)
+      }
     },
     [buildOrigin, messageForResolution, resolveRow, table]
   )

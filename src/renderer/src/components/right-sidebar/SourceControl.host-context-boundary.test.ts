@@ -10,10 +10,6 @@ const PR_GENERATION_SOURCE = readFileSync(
   join(__dirname, 'source-control/review/use-pull-request-generation.ts'),
   'utf8'
 )
-const CREATE_REVIEW_COMPOSER_SOURCE = readFileSync(
-  join(__dirname, 'source-control/review/use-create-review-composer.ts'),
-  'utf8'
-)
 const STATUS_REFRESH_SOURCE = readFileSync(
   join(__dirname, 'source-control/sync/use-status-refresh.ts'),
   'utf8'
@@ -55,23 +51,6 @@ describe('SourceControl host-context boundaries', () => {
     )
     expect(refreshSection).toContain('settings: context.runtimeTargetSettings')
     expect(refreshSection).not.toContain('settings: activeRepoSettings')
-  })
-
-  it('routes create-review field generation through caller-provided owner settings', () => {
-    const composerCall = sourceBetween(
-      CREATE_REVIEW_COMPOSER_SOURCE,
-      '} = useCreatePullRequestDialogFields({',
-      'const handleGeneratePullRequestFieldsClick = useCallback'
-    )
-    expect(composerCall).toContain('settings: activeRepoSettings')
-
-    const hookSource = readFileSync(
-      join(__dirname, 'use-create-pull-request-field-generation.ts'),
-      'utf8'
-    )
-    const requestContext = sourceBetween(hookSource, 'const requestContext = {', 'const seed = {')
-    expect(requestContext).toContain('settings,')
-    expect(requestContext).not.toContain('useAppStore.getState().settings')
   })
 
   it('keeps eligibility base refreshes scoped to repo execution ownership', () => {

@@ -1,13 +1,5 @@
-import {
-  ORCHESTRATION_CONTRACT_RUNTIME_CAPABILITY,
-  ORCHESTRATION_CONTRACT_VERSION
-} from '../../shared/protocol-version'
+import { ORCHESTRATION_CONTRACT_VERSION } from '../../shared/protocol-version'
 import type { RuntimeOrchestrationEnvelope } from '../../shared/runtime-rpc-envelope'
-import {
-  isOrchestrationMutation,
-  orchestrationMigrationData
-} from '../../shared/orchestration-rpc-contract'
-import type { RuntimeStatus } from '../../shared/runtime-types'
 import type {
   OrchestrationEnvironmentCallOptions,
   OrchestrationEnvironmentTransport,
@@ -76,31 +68,6 @@ export class RuntimeOrchestrationFederation {
         'server_required',
         'Connected-server orchestration is unavailable in this runtime.'
       )
-    }
-    if (isOrchestrationMutation(method, params) && !internal?.contractVerified) {
-      const statusResponse = await this.transport.call(
-        selector,
-        'status.get',
-        undefined,
-        timeoutMs,
-        undefined,
-        internal?.expectedEnvironmentPairingRevision
-      )
-      if (statusResponse.ok === false) {
-        throw new OrchestrationError(
-          statusResponse.error.code,
-          statusResponse.error.message,
-          statusResponse.error.data
-        )
-      }
-      const status = statusResponse.result as RuntimeStatus
-      if (!status.capabilities?.includes(ORCHESTRATION_CONTRACT_RUNTIME_CAPABILITY)) {
-        throw new OrchestrationError(
-          'orchestration_migration_required',
-          'The connected worker server does not support the current orchestration contract. No effects were applied.',
-          orchestrationMigrationData('runtime_capability_missing')
-        )
-      }
     }
     const response = await this.transport.call(
       selector,

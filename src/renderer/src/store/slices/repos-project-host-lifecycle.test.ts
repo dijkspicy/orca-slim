@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Project, ProjectHostSetup } from '../../../../shared/project-types'
 import type { Repo } from '../../../../shared/repo-types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import { createTestStore } from './store-test-helpers'
 
 const projectsCreateHostSetup = vi.fn()
@@ -46,14 +41,13 @@ const runtimeSetup: ProjectHostSetup = {
 }
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   projectsCreateHostSetup.mockReset()
   projectsUpdateHostSetup.mockReset()
   projectsDeleteHostSetup.mockReset()
   runtimeEnvironmentCall.mockReset()
   runtimeEnvironmentTransportCall.mockReset()
-  runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-    return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+  runtimeEnvironmentTransportCall.mockImplementation((args: { method: string }) => {
+    return runtimeEnvironmentCall(args)
   })
   vi.stubGlobal('window', {
     api: {
@@ -241,7 +235,7 @@ describe('repo slice project host setup lifecycle', () => {
       path: '',
       setupState: 'setting-up'
     }
-    runtimeEnvironmentCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
+    runtimeEnvironmentCall.mockImplementation((args: { method: string }) => {
       if (args.method === 'repo.list') {
         return {
           id: 'rpc-repos',

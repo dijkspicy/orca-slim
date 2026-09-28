@@ -11,8 +11,6 @@ import {
 import { createLaunchFunnelStore, resetLaunchFunnelStore } from './agent-launch-funnel-test-harness'
 
 const store = createLaunchFunnelStore()
-const mockIsWebRuntimeSessionActive = vi.fn(() => false)
-const mockLaunchAgentInWebHostTab = vi.fn()
 const mockLaunchAgentInStructuredNewTab = vi.fn()
 const mockHostCapabilities = vi.fn<() => readonly string[] | null>(() => [])
 
@@ -22,25 +20,11 @@ vi.mock('@/lib/connection-context', () => ({ getConnectionIdFromState: () => nul
 vi.mock('@/lib/native-chat-transcript-readability', () => ({
   isNativeChatTranscriptLocalReadable: () => true
 }))
-vi.mock('@/runtime/web-runtime-session', () => ({
-  isWebRuntimeSessionActive: mockIsWebRuntimeSessionActive
-}))
 vi.mock('@/lib/worktree-runtime-owner', () => ({
-  getExecutionHostIdForWorktree: () => 'local',
-  getRuntimeEnvironmentIdForWorktree: () => 'web-runtime'
-}))
-vi.mock('@/lib/launch-agent-web-host-tab', () => ({
-  launchAgentInWebHostTab: mockLaunchAgentInWebHostTab
+  getExecutionHostIdForWorktree: () => 'local'
 }))
 vi.mock('@/components/tab-bar/reconcile-order', () => ({
   reconcileTabOrder: (_stored: unknown, terminalIds: string[]) => terminalIds
-}))
-vi.mock('@/lib/telemetry', () => ({
-  track: vi.fn(),
-  tuiAgentToAgentKind: (agent: string) => agent
-}))
-vi.mock('@/components/native-chat/native-chat-session-option-cache', () => ({
-  seedNativeChatAppliedSessionOptions: vi.fn()
 }))
 vi.mock('@/lib/agent-paste-draft', () => ({ pasteDraftWhenAgentReady: vi.fn(async () => true) }))
 vi.mock('@/lib/agent-ready-wait', () => ({
@@ -73,14 +57,12 @@ describe('agent launch caller routing', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     resetLaunchFunnelStore(store)
-    mockIsWebRuntimeSessionActive.mockReturnValue(false)
     mockHostCapabilities.mockReturnValue([STRUCTURED_AGENT_SESSION_RUNTIME_CAPABILITY])
     mockLaunchAgentInStructuredNewTab.mockReturnValue({
       sessionId: 'session-1',
       tabId: 'tab-structured',
       structuredSettlement: Promise.resolve({ kind: 'structured' })
     })
-    mockLaunchAgentInWebHostTab.mockResolvedValue({ delivered: true, failureNotified: false })
   })
 
   it.each(cases)('routes %s to a local terminal under default settings', async (_id, profile) => {
@@ -91,25 +73,6 @@ describe('agent launch caller routing', () => {
     expect(mockLaunchAgentInStructuredNewTab).not.toHaveBeenCalled()
     expect(mockLaunchAgentInWebHostTab).not.toHaveBeenCalled()
   })
-
-  it.each(cases)(
-    'routes %s to the paired host when a web runtime owns it',
-    async (_id, profile) => {
-      mockIsWebRuntimeSessionActive.mockReturnValue(true)
-
-      const result = await launch(profile)
-
-      expect(result?.surface).toEqual({ kind: 'host-published' })
-      // Placement never rides this route's payload as a tab; the host owns the surface.
-      expect(store.createTab).not.toHaveBeenCalled()
-      expect(mockLaunchAgentInWebHostTab).toHaveBeenCalledTimes(1)
-      expect(mockLaunchAgentInWebHostTab.mock.calls[0]?.[0]).toMatchObject({
-        agent: profile.args.agent,
-        worktreeId: profile.args.worktreeId,
-        environmentId: 'web-runtime'
-      })
-    }
-  )
 
   it.each(cases)(
     'settles %s on the structured or terminal surface its own arguments allow',
@@ -167,18 +130,6 @@ describe('agent launch caller routing', () => {
     expect(store.queueTabStartupCommand).not.toHaveBeenCalled()
   })
 
-  it('aborts a host-published open when beforeSurfaceOpen refuses', async () => {
-    mockIsWebRuntimeSessionActive.mockReturnValue(true)
-    const beforeSurfaceOpen = vi.fn(() => false)
-    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
-
-    const result = launchAgentInNewTab({ agent: 'codex', worktreeId: 'wt-1', beforeSurfaceOpen })
-
-    expect(result).toBeNull()
-    expect(beforeSurfaceOpen).toHaveBeenCalledExactlyOnceWith({ kind: 'host-published' })
-    expect(mockLaunchAgentInWebHostTab).not.toHaveBeenCalled()
-  })
-
   it('hands the structured branch a session-scoped refusal hook', async () => {
     store.settings = { ...store.settings, ...CHAT_DEFAULT_SETTINGS }
     const beforeSurfaceOpen = vi.fn(() => false)
@@ -221,6 +172,5 @@ describe('agent launch caller routing', () => {
 
     expect(result).toBeNull()
     expect(store.createTab).not.toHaveBeenCalled()
-    expect(mockLaunchAgentInWebHostTab).not.toHaveBeenCalled()
   })
 })

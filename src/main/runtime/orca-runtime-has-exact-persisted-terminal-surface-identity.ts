@@ -13,7 +13,6 @@ import type {
   TerminalWorkspaceLaunchScope
 } from './runtime-legacy-worker-terminal-recovery-types'
 import { getLatestPtyTitle } from './runtime-worktree-status-projection'
-import type { AutomationService } from '../automations/service'
 
 export class OrcaRuntimeWithHasExactPersistedTerminalSurfaceIdentity extends OrcaRuntimeWithAutomationOperations {
   protected hasExactPersistedTerminalSurfaceIdentity(expected: {
@@ -166,9 +165,5 @@ export class OrcaRuntimeWithHasExactPersistedTerminalSurfaceIdentity extends Orc
       identity.leafId === candidate.leafId &&
       identity.ptyId === candidate.ptyId
     )
-  }
-
-  setAutomationService(service: AutomationService): void {
-    this.automation.setService(service)
   }
 }

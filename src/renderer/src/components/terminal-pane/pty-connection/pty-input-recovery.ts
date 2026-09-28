@@ -1,6 +1,5 @@
 import { useAppStore } from '@/store'
 import { createIpcPtyTransport } from '../pty-transport'
-import { createRemoteRuntimePtyTransport } from '../remote-runtime-pty-transport'
 import { toAgentLaunchPreferences } from '../../../../../shared/agent-launch-preferences'
 import { createUnresolvedOwnerPtyTransport } from '../unresolved-owner-pty-transport'
 import { recordTerminalTabParkedOnUnresolvedHost } from '@/lib/parked-terminal-host-hydration'
@@ -109,7 +108,6 @@ export function installPtyInputRecovery(session: ConnectPanePtySession): void {
       : {}),
     ...(session.launchToken ? { launchToken: session.launchToken } : {}),
     ...(session.paneStartup?.launchAgent ? { launchAgent: session.paneStartup.launchAgent } : {}),
-    ...(session.paneStartup?.telemetry ? { telemetry: session.paneStartup.telemetry } : {}),
     onPtyExit: session.onExit,
     onPtySpawn: session.onPtySpawn,
     onPtyRebind: session.onPtyRebind,
@@ -150,9 +148,7 @@ export function installPtyInputRecovery(session: ConnectPanePtySession): void {
             ? 'Workspace identity is ambiguous across hosts. Refresh projects and try again.'
             : 'Workspace host is still loading. Retry when the project finishes hydrating.'
         )
-      : session.runtimeEnvironmentId
-        ? createRemoteRuntimePtyTransport(session.runtimeEnvironmentId, session.transportOptions)
-        : createIpcPtyTransport(session.transportOptions)
+      : createIpcPtyTransport(session.transportOptions)
   session.canSendDesktopQueryReply = (): boolean => {
     const ptyId = session.transport.getPtyId()
     return !ptyId || !isPtyLocked(ptyId)

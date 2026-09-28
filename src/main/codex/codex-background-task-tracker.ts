@@ -3,23 +3,17 @@ import type {
   AgentSessionBackgroundTaskState
 } from '../../shared/agent-session-wire'
 import {
-  readCodexBackgroundTaskFrame,
+  CodexBackgroundCommandTracker,
   type CodexBackgroundTaskEvent
-} from './codex-background-task-frames'
-import { CodexSubagentExecutions } from './codex-subagent-executions'
-import { CodexBackgroundCommandTracker } from './codex-background-command-tracker'
-import { boundSubagentField } from './codex-subagent-group-body'
+} from './codex-background-command-tracker'
 
-/** Projects the same child execution facts the durable roster consumes. */
+/** Projects provider background-command frames into the tasks strip. */
 export class CodexBackgroundTaskTracker {
   private publishedFingerprint = '[]'
   private publishedState: AgentSessionBackgroundTaskState | null = null
   private readonly commands: CodexBackgroundCommandTracker
 
-  constructor(
-    private readonly primaryThreadId: string,
-    private readonly executions = new CodexSubagentExecutions()
-  ) {
+  constructor(private readonly primaryThreadId: string) {
     this.commands = new CodexBackgroundCommandTracker(primaryThreadId)
   }
 
@@ -36,41 +30,18 @@ export class CodexBackgroundTaskTracker {
     const itemEvent = event.method === 'item/started' || event.method === 'item/completed'
     if (itemEvent) {
       this.commands.observe(event)
+      return this.refresh()
     }
-    const frame = readCodexBackgroundTaskFrame(event, this.primaryThreadId)
-    if (!frame) {
-      return itemEvent ? this.refresh() : false
-    }
-    if (frame.kind === 'subagent') {
-      this.executions.register(frame.agentThreadId, frame.label, frame.parentTurnId)
-    } else if (frame.threadId !== this.primaryThreadId) {
-      this.executions.observeTurn(frame.threadId, frame.turnId, frame.state)
-    }
-    // A primary-turn frame only prompts a republish: turn end reveals children,
-    // it never settles them. Codex `spawn_agent` children keep reporting well
-    // past their parent turn, so nothing here may sweep the roster.
-    return this.refresh()
+    return false
   }
 
   clear(): boolean {
-    this.executions.clear()
     this.commands.clear()
     return this.refresh()
   }
 
   private tasks(): AgentSessionBackgroundTask[] {
-    const children = this.executions.workingChildren()
-    const agents: AgentSessionBackgroundTask[] = children.map((child, index) => ({
-      id: `codex-agent:${child.agentThreadId}`,
-      kind: 'agent',
-      ...(child.label ? { description: boundSubagentField(child.label, index) } : {})
-    }))
-    return [
-      ...agents,
-      ...this.commands.tasks(new Set(children.map((child) => child.agentThreadId)), (threadId) =>
-        this.executions.label(threadId)
-      )
-    ]
+    return [...this.commands.tasks()]
   }
 
   private refresh(): boolean {

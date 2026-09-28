@@ -1,6 +1,4 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
-import { sessionIdFromStructuredWorkerIncarnation } from './structured-worker-identity'
-import { observeStructuredWorker } from './rpc/methods/orchestration-structured-worker-lifecycle'
 import { OrcaRuntimeWithApplyMobileDisplayMode } from './orca-runtime-apply-mobile-display-mode'
 import { addListenerToMap } from './orca-runtime-core'
 import { notifyRuntimeListeners, withTimeoutResult } from './runtime-async-boundaries'
@@ -23,7 +21,6 @@ import {
   parseWorkerTerminalHostScope
 } from './orchestration/worker-terminal-process-liveness'
 import { getRepoIdFromWorktreeId } from '../../shared/worktree/id'
-import { buildOrchestrationTaskDisplayMetadata } from '../../shared/orchestration-task-display'
 
 export class OrcaRuntimeWithSubscribeToTerminalResize extends OrcaRuntimeWithApplyMobileDisplayMode {
   subscribeToTerminalResize(
@@ -108,16 +105,9 @@ export class OrcaRuntimeWithSubscribeToTerminalResize extends OrcaRuntimeWithApp
         return
       }
       const task = this._orchestrationDb.getTask?.(dispatch.task_id, dispatch.run_id)
-      // Why: prefer the explicit task title and keep the derived one single-line and bounded;
-      // a raw multi-paragraph spec inlined here breaks the coordinator's escalation banner.
-      const title =
-        typeof task?.spec === 'string'
-          ? buildOrchestrationTaskDisplayMetadata({
-              spec: task.spec,
-              taskTitle: task.task_title,
-              displayName: task.display_name
-            }).taskTitle
-          : ''
+      // Why: prefer the explicit task title; the spec-derived bounded-title helper was
+      // culled with the shared orchestration-task-display module.
+      const title = task?.task_title ?? task?.display_name ?? ''
       const named = title ? `"${title}" (${dispatch.task_id})` : dispatch.task_id
       const escalation = this._orchestrationDb.insertMessage({
         from: handle,
@@ -161,16 +151,6 @@ export class OrcaRuntimeWithSubscribeToTerminalResize extends OrcaRuntimeWithApp
     processIncarnation: string,
     serializedHostScope: string | null
   ): Promise<'live' | 'exited' | 'unverifiable'> {
-    const structuredSessionId = sessionIdFromStructuredWorkerIncarnation(processIncarnation)
-    if (structuredSessionId) {
-      // A structured session has no PTY, so the process table can only ever fail to find it —
-      // answering `exited` from that absence would release a running provider child. The durable
-      // agent-session record is asked directly rather than through the in-memory identity
-      // registry: settlement forgets the registry entry, so gating on one made a stopped worker's
-      // resource answer `unverifiable` forever and stay in `worker-list --terminalState retained`
-      // for the life of the DB.
-      return observeStructuredWorker({ sessionId: structuredSessionId }).status
-    }
     const hostScope = parseWorkerTerminalHostScope(serializedHostScope)
     if (!hostScope || !this.ptyController?.listProcesses) {
       return 'unverifiable'

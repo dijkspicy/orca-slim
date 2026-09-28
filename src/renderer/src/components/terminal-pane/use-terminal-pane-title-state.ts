@@ -1,9 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
 import type { PaneTitleOverlayRect } from './TerminalPaneHeaderOverlay'
-import {
-  createRemotePaneLayoutPusher,
-  type RemotePaneLayoutPusher
-} from './remote-pane-layout-push'
 import { isTerminalSessionStateSaveFailure } from '../../../../shared/terminal-session-state-save-failure'
 import { appendPaneTerminalError, clearPaneTerminalError } from './terminal-error-accumulation'
 import { stripSshReconnectOwnedErrorLines } from './TerminalErrorToast'
@@ -29,8 +25,6 @@ export function useTerminalPaneTitleState(controller: TerminalPaneFoundation) {
   paneTitlesRef.current = paneTitles
   const removedTitleLeafIdsRef = useRef<Set<string>>(new Set())
   const clearedScrollbackLeafIdsRef = useRef<Set<string>>(new Set())
-  const remotePaneLayoutPusherRef = useRef<RemotePaneLayoutPusher | null>(null)
-  remotePaneLayoutPusherRef.current ??= createRemotePaneLayoutPusher()
   const [paneTitleOverlayRects, setPaneTitleOverlayRects] = useState<
     Record<number, PaneTitleOverlayRect>
   >({})
@@ -127,7 +121,6 @@ export function useTerminalPaneTitleState(controller: TerminalPaneFoundation) {
     paneTitlesRef,
     removedTitleLeafIdsRef,
     clearedScrollbackLeafIdsRef,
-    remotePaneLayoutPusherRef,
     paneTitleOverlayRects,
     setPaneTitleOverlayRects,
     renamingPaneId,

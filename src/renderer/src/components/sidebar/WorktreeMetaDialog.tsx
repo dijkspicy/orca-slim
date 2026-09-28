@@ -117,10 +117,7 @@ const WorktreeMetaDialog = React.memo(function WorktreeMetaDialog() {
       worktreeId,
       ownerRepoId,
       issueInput,
-      issueProvider,
-      linearOrganizationUrlKey: worktree?.linkedLinearIssueOrganizationUrlKey ?? null,
-      linkedLinearIssue: worktree?.linkedLinearIssue ?? null,
-      linearSourceContext: worktree?.linkedTaskSourceContext ?? null
+      issueProvider
     })
 
   const issueInputRef = useRef<HTMLInputElement>(null)

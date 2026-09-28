@@ -120,17 +120,16 @@ describe('TaskPage workspace creation source boundaries', () => {
     expect(actions.match(/onSelect=\{\(\) => handleUseWorkItem\(item\)\}/g)).toHaveLength(2)
   })
 
-  it('keeps project-view GitHub actions on the direct start-work path for issue #4756', () => {
+  it('degrades project-view GitHub start-work to opening the item URL after the forge cull', () => {
     const startAnchor = PROJECT_VIEW_SOURCE.includes('const handleStartWork')
       ? 'const handleStartWork = useCallback('
-      : '// Why: issue #4756 keeps project-view actions on the direct'
+      : 'onUse={(item) => {'
     const endAnchor = PROJECT_VIEW_SOURCE.includes('const handleStartWork')
       ? 'const closeDialogRepoItem'
-      : 'openModalFallback: () => {'
+      : 'onClose={() => rowActions.setDialogRepoItem(null)}'
     const section = sourceBetween(PROJECT_VIEW_SOURCE, startAnchor, endAnchor)
 
-    expect(section).toContain('void launchWorkItemDirect({')
-    expect(section).toContain("launchSource: 'task_page'")
+    expect(section).toContain('window.api.shell.openUrl(item.url)')
     expect(section).not.toContain('createGitHubWorkItemWorkspaceInBackground')
   })
 })

@@ -1,12 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useAppStore } from '../store'
 import { isIntentionalAppRestartInProgress } from '@/lib/app-restart-beforeunload'
 import { preventUnloadAndScheduleShutdownCheckpointReset } from '@/lib/shutdown-checkpoint-guard'
 import { setWindowCloseRequestHandler } from './window-close-request-coordinator'
-import {
-  collectBrowserWebviewIds,
-  destroyRemovedBrowserWebview
-} from '../store/slices/browser-webview-cleanup'
 import type { TerminalActivationController } from './use-terminal-activation-actions'
 
 export function useTerminalWindowLifecycle(controller: TerminalActivationController): void {
@@ -57,38 +53,6 @@ export function useTerminalWindowLifecycle(controller: TerminalActivationControl
     return () => setWindowCloseRequestHandler(null)
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- controller refs preserve their original stable identities.
   }, [proceedToNativeWindowClose, queueEditorCloseRequests])
-
-  // Why lazy: a `useRef(expr)` argument re-runs on every render and is thrown away, and this
-  // walks every browser page and tab across all worktrees on a component that renders constantly.
-  const prevBrowserWebviewIdsRef = useRef<Set<string>>(undefined!)
-  prevBrowserWebviewIdsRef.current ??= collectBrowserWebviewIds(
-    useAppStore.getState().browserTabsByWorktree,
-    useAppStore.getState().browserPagesByWorkspace
-  )
-  useEffect(() => {
-    let prevBrowserTabs = useAppStore.getState().browserTabsByWorktree
-    let prevBrowserPages = useAppStore.getState().browserPagesByWorkspace
-    return useAppStore.subscribe((state) => {
-      if (
-        state.browserTabsByWorktree === prevBrowserTabs &&
-        state.browserPagesByWorkspace === prevBrowserPages
-      ) {
-        return
-      }
-      prevBrowserTabs = state.browserTabsByWorktree
-      prevBrowserPages = state.browserPagesByWorkspace
-      const currentIds = collectBrowserWebviewIds(
-        state.browserTabsByWorktree,
-        state.browserPagesByWorkspace
-      )
-      for (const prevId of prevBrowserWebviewIdsRef.current) {
-        if (!currentIds.has(prevId)) {
-          destroyRemovedBrowserWebview(prevId)
-        }
-      }
-      prevBrowserWebviewIdsRef.current = currentIds
-    })
-  }, [])
 
   useEffect(() => {
     const activeWorktreeBrowserTabs = renderedActiveWorktreeId

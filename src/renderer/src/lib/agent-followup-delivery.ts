@@ -1,28 +1,20 @@
 import {
-  inspectRuntimeTerminalProcess,
-  sendRuntimePtyInputVerified
-} from '@/runtime/runtime-terminal-inspection'
-import {
   isAgentForegroundWrapperProcess,
   isExpectedAgentProcess
 } from '../../../shared/agent-process-recognition'
 import { isShellProcess } from '../../../shared/shell-process-detection'
-import type { GlobalSettings } from '../../../shared/global-settings-types'
-
-type RuntimeOwnerSettings = Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined
 
 export async function sendFollowupPromptWhenAgentReady(args: {
   ptyId: string
   expectedProcess: string
   prompt: string
-  settings: RuntimeOwnerSettings
 }): Promise<boolean> {
-  const { ptyId, expectedProcess, prompt, settings } = args
-  if (!(await waitForAgentForeground(ptyId, expectedProcess, settings))) {
+  const { ptyId, expectedProcess, prompt } = args
+  if (!(await waitForAgentForeground(ptyId, expectedProcess))) {
     return false
   }
   try {
-    return await sendRuntimePtyInputVerified(settings, ptyId, `${prompt}\r`)
+    return await sendPtyInputVerified(ptyId, `${prompt}\r`)
   } catch {
     return false
   }
@@ -30,17 +22,13 @@ export async function sendFollowupPromptWhenAgentReady(args: {
 
 // Why: delayed follow-ups must not type into an arbitrary shell. Require a
 // positive readiness signal before writing user/task text to the PTY.
-async function waitForAgentForeground(
-  ptyId: string,
-  expectedProcess: string,
-  settings: RuntimeOwnerSettings
-): Promise<boolean> {
+async function waitForAgentForeground(ptyId: string, expectedProcess: string): Promise<boolean> {
   for (let attempt = 0; attempt < 30; attempt += 1) {
     if (attempt > 0) {
       await new Promise((resolve) => globalThis.setTimeout(resolve, 150))
     }
     try {
-      const process = await inspectRuntimeTerminalProcess(settings, ptyId)
+      const process = await window.api.pty.inspectProcess(ptyId)
       const foreground = process.foregroundProcess?.toLowerCase() ?? ''
       if (isExpectedAgentProcess(foreground, expectedProcess)) {
         return true
@@ -64,4 +52,14 @@ async function waitForAgentForeground(
     }
   }
   return false
+}
+
+// Verified local PTY write: prefer the acked bridge write, fall back to the
+// fire-and-forget one so UX flow never blocks on an unacked transport.
+async function sendPtyInputVerified(ptyId: string, data: string): Promise<boolean> {
+  const accepted = await window.api.pty.writeAccepted(ptyId, data)
+  if (!accepted) {
+    window.api.pty.write(ptyId, data)
+  }
+  return true
 }

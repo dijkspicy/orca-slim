@@ -1,5 +1,11 @@
-import type { SshMutationExpectation } from '../../../shared/ssh-types'
 import type { AppState } from '@/store/types'
+
+// Why: the shared ssh-types module was culled; the expectation carries plain fencing fields.
+type SshMutationExpectation = {
+  expectedExecutionHostId?: 'local' | `ssh:${string}`
+  expectedSshTargetId?: string
+  expectedSshConnectionGeneration?: number
+}
 import { parseExecutionHostId, toSshExecutionHostId } from '../../../shared/execution-host'
 import { resolveWorktreeOperationRoute } from './worktree-operation-route'
 

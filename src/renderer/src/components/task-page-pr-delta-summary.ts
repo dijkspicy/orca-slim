@@ -1,6 +1,8 @@
-import type { GitHubWorkItem } from '../../../shared/github/work-item-types'
-
-export function formatPRDelta(item: GitHubWorkItem): string | null {
+export function formatPRDelta(item: {
+  additions?: number
+  deletions?: number
+  changedFiles?: number
+}): string | null {
   const parts: string[] = []
   if (typeof item.additions === 'number') {
     parts.push(`+${item.additions}`)

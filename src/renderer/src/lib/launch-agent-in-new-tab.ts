@@ -2,7 +2,6 @@ import { useAppStore } from '@/store'
 import type { AgentStartupPlan } from '@/lib/tui-agent-startup'
 import { planLaunchAgentStartupPrompt } from '@/lib/launch-agent-startup-prompt-plan'
 import { persistAgentLaunchTabOrder } from '@/lib/launch-agent-tab-order'
-import { tuiAgentToAgentKind } from '@/lib/telemetry'
 import { createPasteReadinessTimeoutNotice } from '@/lib/launch-agent-paste-timeout-notice'
 import {
   deliverLaunchPromptToAgentTab,
@@ -10,9 +9,6 @@ import {
 } from '@/lib/agent-launch-prompt-delivery'
 import { initialAgentTabViewModeProps } from '@/lib/native-chat-initial-view-mode'
 import { isNativeChatTranscriptLocalReadable } from '@/lib/native-chat-transcript-readability'
-import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
-import { isWebRuntimeSessionActive } from '@/runtime/web-runtime-session'
-import { launchAgentInWebHostTab } from '@/lib/launch-agent-web-host-tab'
 import {
   resolveTuiAgentLaunchArgs,
   resolveTuiAgentLaunchEnv
@@ -20,10 +16,7 @@ import {
 import { TUI_AGENT_CONFIG } from '../../../shared/tui-agent-config'
 import { seedCommandCodeSubmittedPromptStatus } from '@/lib/command-code-prompt-status-seed'
 import type { TuiAgent } from '../../../shared/tui-agent'
-import type { LaunchSource } from '../../../shared/telemetry-events'
 import { resolveAgentLaunchExecutionContext } from '@/lib/launch-agent-execution-context'
-import { resolveInitialNativeChatSessionOptions } from '@/components/native-chat/native-chat-launch-session-options'
-import { seedNativeChatAppliedSessionOptions } from '@/components/native-chat/native-chat-session-option-cache'
 import { launchAgentInStructuredNewTab } from '@/lib/launch-agent-in-new-tab-structured'
 import type { StructuredAgentLaunchSettlement } from '@/lib/structured-agent-launch-settlement'
 import { workspaceKindForWorktreeId } from '@/lib/agent-launch-route-input'
@@ -44,8 +37,8 @@ export type LaunchAgentInNewTabArgs = {
   initialCwd?: string | null
   /** How to deliver the prompt: `draft` leaves it editable, `submit-after-ready` sends it once the TUI is ready. */
   promptDelivery?: 'auto-submit' | 'draft' | 'submit-after-ready'
-  /** Telemetry surface that initiated this launch. Defaults to the tab-bar quick-launch entry point. */
-  launchSource?: LaunchSource
+  /** Launch entry point reported by callers; retained for caller compatibility after the telemetry cull. */
+  launchSource?: string
   /** User-authored Quick Command label for local tabs created from the tab bar. */
   quickCommandLabel?: string | null
   /** Shell platform for the startup command; defaults to renderer OS. SSH/WSL worktrees run Linux even from Windows. */
@@ -62,17 +55,13 @@ export type LaunchAgentInNewTabArgs = {
   agentSessionLaunchPlan?: AgentSessionLaunchPlan
   /** Lets a workspace reveal itself before the selected surface opens. */
   beforeSurfaceOpen?: (
-    surface:
-      | { kind: 'local-terminal' }
-      | { kind: 'local-agent-session'; sessionId: string }
-      | { kind: 'host-published' }
+    surface: { kind: 'local-terminal' } | { kind: 'local-agent-session'; sessionId: string }
   ) => boolean | void
 }
 
 export type AgentLaunchSurface =
   | { kind: 'local-terminal'; tabId: string }
   | { kind: 'local-agent-session'; tabId: string; sessionId: string }
-  | { kind: 'host-published' }
 
 export type LaunchAgentInNewTabResult = {
   surface: AgentLaunchSurface
@@ -82,12 +71,6 @@ export type LaunchAgentInNewTabResult = {
   /** Structured route only: what the launch did once it settled. The call stays synchronous. */
   structuredSettlement?: Promise<StructuredAgentLaunchSettlement>
 } | null
-
-export function shouldQueueTerminalFocusAfterMenuClose(
-  result: NonNullable<LaunchAgentInNewTabResult>
-): boolean {
-  return result.surface.kind === 'host-published'
-}
 
 /**
  * Create a new terminal tab and queue the agent's launch command, optionally
@@ -108,7 +91,6 @@ function launchAgentInNewTabInternal(args: LaunchAgentInNewTabArgs): LaunchAgent
     agentArgs,
     initialCwd,
     promptDelivery = 'auto-submit',
-    launchSource,
     quickCommandLabel,
     launchPlatform,
     onPromptDelivered,
@@ -150,8 +132,7 @@ function launchAgentInNewTabInternal(args: LaunchAgentInNewTabArgs): LaunchAgent
     shell: queuedShell,
     isRemote,
     agentArgs: effectiveAgentArgs,
-    agentEnv,
-    sessionOptions: resolveInitialNativeChatSessionOptions(store.settings, initialViewModeOptions)
+    agentEnv
   }
   const { startupPlan, pasteDraftAfterLaunch, submitPastedPrompt } = planLaunchAgentStartupPrompt({
     base: startupPlanBase,
@@ -163,38 +144,6 @@ function launchAgentInNewTabInternal(args: LaunchAgentInNewTabArgs): LaunchAgent
 
   if (!startupPlan) {
     return null
-  }
-
-  const runtimeEnvironmentId = getRuntimeEnvironmentIdForWorktree(store, worktreeId)
-  if (isWebRuntimeSessionActive(runtimeEnvironmentId)) {
-    if (beforeSurfaceOpen?.({ kind: 'host-published' }) === false) {
-      return null
-    }
-    const webHostDelivery = launchAgentInWebHostTab({
-      agent,
-      worktreeId,
-      environmentId: runtimeEnvironmentId,
-      groupId,
-      cwd: initialCwd,
-      startupPlan,
-      prompt: trimmedPrompt,
-      promptDelivery,
-      pastePromptAfterReady: pasteDraftAfterLaunch,
-      submitPastedPrompt,
-      agentArgs,
-      // Why: omission means terminal locally, but would let a paired host apply
-      // its own default; send the client's resolved terminal choice explicitly.
-      viewMode: initialViewModeProps.viewMode ?? 'terminal',
-      onPromptDelivered
-    })
-    return {
-      surface: { kind: 'host-published' },
-      startupPlan,
-      pasteDraftAfterLaunch: pasteDraftAfterLaunch !== null,
-      ...(pasteDraftAfterLaunch !== null && promptDelivery === 'submit-after-ready'
-        ? { promptDeliveryResult: webHostDelivery }
-        : {})
-    }
   }
 
   const plan =
@@ -247,7 +196,6 @@ function launchAgentInNewTabInternal(args: LaunchAgentInNewTabArgs): LaunchAgent
     quickCommandLabel,
     ...initialViewModeProps
   })
-  seedNativeChatAppliedSessionOptions(tab.id, agent, startupPlan.sessionOptions)
   if (initialCwd?.trim()) {
     // Why: queue before mount so local, WSL, and SSH continuations preserve their subdirectory.
     store.queueTabInitialCwd(tab.id, initialCwd)
@@ -264,12 +212,7 @@ function launchAgentInNewTabInternal(args: LaunchAgentInNewTabArgs): LaunchAgent
       : {}),
     ...(agent === 'command-code' && hasPrompt && promptDelivery === 'auto-submit'
       ? { initialAgentStatus: { agent, prompt: trimmedPrompt } }
-      : {}),
-    telemetry: {
-      agent_kind: tuiAgentToAgentKind(agent),
-      launch_source: launchSource ?? 'tab_bar_quick_launch',
-      request_kind: 'new'
-    }
+      : {})
   })
   // Why: fire-and-forget the paste-after-ready delivery so callers keep the synchronous { tabId, startupPlan } signature.
   // Why: safe to call unconditionally — the helper short-circuits (no paste) for native-prefill agents already holding the draft.

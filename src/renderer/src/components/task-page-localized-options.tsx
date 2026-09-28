@@ -4,19 +4,45 @@ import { Github, Gitlab, LayoutGrid, List } from 'lucide-react'
 import { JiraIcon } from '@/components/icons/JiraIcon'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { translate } from '@/i18n/i18n'
-import {
-  LINEAR_DISPLAY_PROPERTIES,
-  LINEAR_GROUP_BY_OPTIONS,
-  LINEAR_ORDER_BY_OPTIONS,
-  LINEAR_VIEW_MODES,
-  type LinearDisplayProperty,
-  type LinearGroupBy,
-  type LinearOrderBy,
-  type LinearViewMode
-} from '../../../shared/linear/issue-view-resume-state'
-import { getTaskPresetQuery } from '../../../shared/task-preset-query'
-import type { TaskProvider } from '../../../shared/task-providers'
 import type { TaskViewPresetId } from '../../../shared/ui-chrome-types'
+
+export const LINEAR_VIEW_MODES = ['list', 'board'] as const
+export const LINEAR_GROUP_BY_OPTIONS = ['none', 'status', 'assignee', 'priority', 'team'] as const
+export const LINEAR_ORDER_BY_OPTIONS = ['priority', 'updated', 'identifier'] as const
+export const LINEAR_DISPLAY_PROPERTIES = [
+  'state',
+  'priority',
+  'assignee',
+  'team',
+  'labels',
+  'updated'
+] as const
+
+export type LinearViewMode = (typeof LINEAR_VIEW_MODES)[number]
+export type LinearGroupBy = (typeof LINEAR_GROUP_BY_OPTIONS)[number]
+export type LinearOrderBy = (typeof LINEAR_ORDER_BY_OPTIONS)[number]
+export type LinearDisplayProperty = (typeof LINEAR_DISPLAY_PROPERTIES)[number]
+
+export type TaskProvider = 'github' | 'gitlab' | 'linear' | 'jira'
+
+// Why: inline of the deleted shared preset map — these static queries were the
+// single source for the task-page search presets.
+function getTaskPresetQuery(
+  presetId: 'issues' | 'my-issues' | 'prs' | 'my-prs' | 'review'
+): string {
+  switch (presetId) {
+    case 'issues':
+      return 'is:issue is:open'
+    case 'my-issues':
+      return 'assignee:@me is:issue is:open'
+    case 'prs':
+      return 'is:pr is:open'
+    case 'my-prs':
+      return 'author:@me is:pr is:open'
+    case 'review':
+      return 'review-requested:@me is:pr is:open'
+  }
+}
 
 export type GitLabTaskFilter = 'opened' | 'merged' | 'closed' | 'all'
 export type GitLabIssueFilter = 'opened' | 'assigned-to-me'
@@ -42,13 +68,6 @@ export type JiraPreset = { id: JiraPresetId; label: string }
 export type GitHubModeButton = { id: GitHubTaskKind | 'project'; label: string }
 
 export type LinearMode = 'issues' | 'projects' | 'views' | 'in-orca'
-export type {
-  LinearDisplayProperty,
-  LinearGroupBy,
-  LinearOrderBy,
-  LinearViewMode
-} from '../../../shared/linear/issue-view-resume-state'
-
 export function LinearIcon({ className }: { className?: string }): React.JSX.Element {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={className} fill="currentColor">

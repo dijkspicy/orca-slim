@@ -1,4 +1,4 @@
-// Merges the three Cmd+J open-tab engines into one ranked list for the new-tab
+// Merges the Cmd+J open-tab engines into one ranked list for the new-tab
 // omnibox. Pure: no store, no React.
 
 import { capPaletteSection } from '../cmd-j/palette-section-render-cap'
@@ -12,11 +12,6 @@ import {
   type PaletteSearchContext
 } from '@/lib/palette-match/palette-ranking'
 import { LOCAL_EXECUTION_HOST_ID, type ExecutionHostId } from '../../../../shared/execution-host'
-import {
-  searchBrowserPages,
-  type BrowserPaletteSearchResult,
-  type SearchableBrowserPage
-} from '@/lib/browser-palette-search'
 import {
   searchSimulatorTabs,
   type SearchableSimulatorTab,
@@ -36,7 +31,7 @@ export const OPEN_TAB_SEARCH_RESULT_LIMIT = 4
 // Why its own guard: searchWorkspaceTabs has no size limit of its own.
 export const OPEN_TAB_SEARCH_QUERY_MAX_BYTES = 2 * 1024
 
-export type OpenTabSearchSource = 'workspace' | 'browser' | 'simulator'
+export type OpenTabSearchSource = 'workspace' | 'simulator'
 
 type OpenTabSearchResultBase = {
   executionHostId: ExecutionHostId
@@ -60,14 +55,6 @@ export type OpenTabSearchResult =
       occupantAgent: TuiAgent | null
     })
   | (OpenTabSearchResultBase & {
-      source: 'browser'
-      contentType: 'browser'
-      pageId: string
-      workspaceId: string
-      url: string
-      faviconUrl: string | null
-    })
-  | (OpenTabSearchResultBase & {
       source: 'simulator'
       contentType: 'simulator'
       tabId: string
@@ -76,7 +63,6 @@ export type OpenTabSearchResult =
 
 export type OpenTabSearchInput = {
   workspaceTabs: readonly SearchableWorkspaceTab[]
-  browserPages: readonly SearchableBrowserPage[]
   simulatorTabs: readonly SearchableSimulatorTab[]
   query: string
   context?: PaletteSearchContext
@@ -93,8 +79,7 @@ type RankedResult = {
 
 const SOURCE_RANK: Record<OpenTabSearchSource, number> = {
   workspace: 0,
-  browser: 1,
-  simulator: 2
+  simulator: 1
 }
 
 function isOpenTabSearchQueryTooLarge(
@@ -104,10 +89,7 @@ function isOpenTabSearchQueryTooLarge(
   return isClipboardTextByteLengthOverLimit(query, maxBytes)
 }
 
-type EngineResult =
-  | WorkspaceTabPaletteSearchResult
-  | BrowserPaletteSearchResult
-  | SimulatorPaletteSearchResult
+type EngineResult = WorkspaceTabPaletteSearchResult | SimulatorPaletteSearchResult
 
 function getMatchedText(result: EngineResult): string | null {
   return result.secondaryRanges.length > 0 ? result.secondaryText : null
@@ -162,7 +144,6 @@ function rank<TEngine extends EngineResult>(
 
 export function searchOpenTabCandidates({
   workspaceTabs,
-  browserPages,
   simulatorTabs,
   query,
   context: suppliedContext
@@ -208,19 +189,6 @@ export function searchOpenTabCandidates({
           )
         ),
         occupantAgent: result.occupantAgent
-      })
-    ),
-    ...rank(
-      'browser',
-      searchBrowserPages([...browserPages], trimmed, { context, fieldMode: 'omnibox' }),
-      (result) => ({
-        ...baseResult(result, result.executionHostId ?? LOCAL_EXECUTION_HOST_ID),
-        source: 'browser',
-        contentType: 'browser',
-        pageId: result.pageId,
-        workspaceId: result.workspaceId,
-        url: result.url,
-        faviconUrl: result.faviconUrl
       })
     ),
     ...rank(

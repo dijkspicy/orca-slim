@@ -4,7 +4,6 @@ import type { AppState } from '../../../types'
 import type { WorktreeMeta } from '../../../../../../shared/worktree/meta-types'
 import { applyWorktreeUpdates } from '../../worktree-helpers'
 import { projectWorktreeTabModelReconciliation } from '../../tabs'
-import { moveFocusToRendererBeforeFocusedWebviewHidden } from '../../browser-webview-cleanup'
 import { tabHasLivePty } from '@/lib/tab-has-live-pty'
 import { markInputQuietSchedulerInput, scheduleAfterInputQuiet } from '@/lib/input-quiet-scheduler'
 import {
@@ -47,9 +46,6 @@ export function createSetActiveWorktree(
       markInputQuietSchedulerInput()
     }
 
-    if (get().activeWorktreeId !== worktreeId) {
-      moveFocusToRendererBeforeFocusedWebviewHidden()
-    }
     let shouldClearUnread = false
     let shouldPrepareTerminalTabs = false
     let shouldTagTerminalTabs = false

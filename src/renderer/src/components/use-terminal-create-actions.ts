@@ -3,14 +3,7 @@ import { toast } from 'sonner'
 import type { TuiAgent } from '../../../shared/tui-agent'
 import { useAppStore } from '../store'
 import { focusTerminalTabSurface } from '@/lib/focus-terminal-tab-surface'
-import {
-  createWebRuntimeSessionBrowserTab,
-  createWebRuntimeSessionTerminal,
-  isWebRuntimeSessionActive
-} from '@/runtime/web-runtime-session'
 import { launchAgentInNewTab } from '@/lib/launch-agent-in-new-tab'
-import { buildDuplicatedBrowserTabOptions } from '@/lib/duplicate-browser-tab-options'
-import { browserWorkspaceHasRemoteOwner } from '@/runtime/remote-browser-tab-ownership'
 import { getClientCreationActionPolicy } from '@/lib/client-creation-action-policy'
 import { showClientCreationActionError } from '@/lib/client-creation-action-error'
 import { openTabBarEntry, type TabCreateEntryArgs } from './tab-bar/tab-create-entry-action'
@@ -37,17 +30,6 @@ export function useTerminalCreateActions(controller: TerminalColdActivationContr
       const targetGroupId =
         useAppStore.getState().activeGroupIdByWorktree[activeWorktreeId] ??
         useAppStore.getState().groupsByWorktree[activeWorktreeId]?.[0]?.id
-      const runtimeEnvironmentId = getActiveWorktreeRuntimeEnvironmentId(activeWorktreeId)
-      if (isWebRuntimeSessionActive(runtimeEnvironmentId)) {
-        void createWebRuntimeSessionTerminal({
-          worktreeId: activeWorktreeId,
-          environmentId: runtimeEnvironmentId,
-          targetGroupId,
-          command: shellOverride,
-          activate: true
-        })
-        return
-      }
       if (!shellOverride && targetGroupId) {
         void openNewTerminalTabInActiveWorkspace(targetGroupId)
         return
@@ -134,14 +116,6 @@ export function useTerminalCreateActions(controller: TerminalColdActivationContr
     }
     const defaultUrl = state.browserDefaultUrl ?? 'about:blank'
     const runtimeEnvironmentId = getActiveWorktreeRuntimeEnvironmentId(activeWorktreeId)
-    if (browserAvailability.provider === 'paired-runtime' && runtimeEnvironmentId) {
-      void createWebRuntimeSessionBrowserTab({
-        worktreeId: activeWorktreeId,
-        environmentId: runtimeEnvironmentId,
-        url: defaultUrl
-      }).catch(showClientCreationActionError)
-      return
-    }
     createBrowserTab(activeWorktreeId, defaultUrl, {
       title: translate('auto.components.Terminal.37da0d736f', 'New Browser Tab'),
       focusAddressBar: true,
@@ -172,22 +146,11 @@ export function useTerminalCreateActions(controller: TerminalColdActivationContr
         toast.error(browserAvailability.reason)
         return
       }
-      if (
-        browserAvailability.provider === 'paired-runtime' &&
-        runtimeEnvironmentId &&
-        browserWorkspaceHasRemoteOwner(state, source.id, runtimeEnvironmentId)
-      ) {
-        void createWebRuntimeSessionBrowserTab({
-          worktreeId: activeWorktreeId,
-          environmentId: runtimeEnvironmentId,
-          url: source.url,
-          profileId: source.sessionProfileId
-        }).catch(showClientCreationActionError)
-        return
-      }
       try {
         createBrowserTab(activeWorktreeId, source.url, {
-          ...buildDuplicatedBrowserTabOptions(source),
+          title: source.title,
+          sessionProfileId: source.sessionProfileId ?? null,
+          sessionPartition: source.sessionPartition ?? null,
           ...(runtimeEnvironmentId ? { browserRuntimeEnvironmentId: null } : {})
         })
       } catch (error) {

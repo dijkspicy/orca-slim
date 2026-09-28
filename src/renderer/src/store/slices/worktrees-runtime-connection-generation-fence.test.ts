@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppState } from '../types'
-import type { RuntimeEnvironmentCallRequest } from '../../runtime/runtime-compatibility-test-fixture'
 import { advanceRuntimeEnvironmentConnectionGeneration } from './runtime-status-connection-generation'
 import { makeDetectedResult } from './worktrees-detected-listing-fixtures'
 import { makeWorktree } from './worktrees-slice-test-fixtures'
@@ -47,7 +46,7 @@ function detectedFor(repoId: string) {
   ])
 }
 
-function repoOf(args: RuntimeEnvironmentCallRequest): string {
+function repoOf(args: { method: string }): string {
   return (args.params as { repo: string }).repo
 }
 
@@ -70,7 +69,7 @@ describe('fetchAllWorktrees across a runtime connection-generation change', () =
   it('publishes every repo when nothing perturbs the connection', async () => {
     const store = createTestStore()
     seedRuntimeRepos(store)
-    runtimeEnvironmentCall.mockImplementation((args: RuntimeEnvironmentCallRequest) =>
+    runtimeEnvironmentCall.mockImplementation((args: { method: string }) =>
       detectedListReply(repoOf(args))
     )
 
@@ -87,7 +86,7 @@ describe('fetchAllWorktrees across a runtime connection-generation change', () =
     seedRuntimeRepos(store)
     const parked = new Map<string, () => void>()
     let bumped = false
-    runtimeEnvironmentCall.mockImplementation(async (args: RuntimeEnvironmentCallRequest) => {
+    runtimeEnvironmentCall.mockImplementation(async (args: { method: string }) => {
       const repo = repoOf(args)
       // Park every repo but the first, so the bump lands with four scans outstanding.
       if (repo !== 'repo1' && !bumped) {
@@ -115,7 +114,7 @@ describe('fetchAllWorktrees across a runtime connection-generation change', () =
     const store = createTestStore()
     seedRuntimeRepos(store)
     const attemptsByRepo = new Map<string, number>()
-    runtimeEnvironmentCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
+    runtimeEnvironmentCall.mockImplementation((args: { method: string }) => {
       const repo = repoOf(args)
       attemptsByRepo.set(repo, (attemptsByRepo.get(repo) ?? 0) + 1)
       // Bump on every answer: the retried read is stale again the moment it lands.

@@ -35,7 +35,6 @@ import { filterEnabledTuiAgents, isTuiAgentEnabled } from '../../../../shared/tu
 import { getAgentCatalog } from '@/lib/agent-catalog'
 import { readRuntimeIssueCommand } from '@/runtime/runtime-hooks-client'
 import { useAppStore } from '@/store'
-import { isSshConnectInProgress } from '@/lib/new-workspace-ssh-gate'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 
@@ -195,7 +194,7 @@ export function useHostRuntimeEffects(input: HostRuntimeEffectsInput) {
       return
     }
     const liveStatus = liveState.sshConnectionStates.get(targetId)?.status ?? null
-    if (liveStatus === 'connected' || isSshConnectInProgress(liveStatus)) {
+    if (liveStatus === 'connected') {
       return
     }
 

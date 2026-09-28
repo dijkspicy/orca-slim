@@ -1,9 +1,4 @@
 import { useEffect } from 'react'
-import type { OrcaHooks } from '../../../../shared/orca-yaml-hook-types'
-import { isFolderRepo } from '../../../../shared/repo-kind'
-import { getRepoExecutionHostId, parseExecutionHostId } from '../../../../shared/execution-host'
-import { checkRuntimeHooks } from '@/runtime/runtime-hooks-client'
-import { getRepoHostIdentity } from '../../store/slices/repo-host-identity'
 import type { SettingsStoreModel } from './use-settings-store-model'
 import type { SettingsInteractionController } from './use-settings-interaction-controller'
 import type { SettingsNavigationModel } from './use-settings-navigation-model'
@@ -21,15 +16,14 @@ export function useSettingsRepoScrollEffects(
   model: SettingsStoreModel,
   interactions: SettingsInteractionController,
   navigation: SettingsNavigationModel,
-  terminal: SettingsTerminalModel
+  // Why: hooks loading moved out with the runtime-hooks domain, but callers still pass the terminal model.
+  _terminal: SettingsTerminalModel
 ): void {
   const {
     activeSectionId,
     pendingNavRequestTick,
-    repos,
     setActiveSectionId,
     setPendingNavRequestTick,
-    setRepoHooksMap,
     setSettingsSearchQuery,
     settingsSearchQuery
   } = model
@@ -38,91 +32,9 @@ export function useSettingsRepoScrollEffects(
     pendingNavSectionRef,
     pendingScrollTargetRef,
     pendingScrollTargetWatchRef,
-    pendingSubsectionScrollFrameRef,
-    repoHooksRequestSeqRef
+    pendingSubsectionScrollFrameRef
   } = interactions
   const { visibleNavSections, visibleSectionIds } = navigation
-  const { neededRepos } = terminal
-
-  useEffect(() => {
-    const repoHostIdentitySet = new Set(repos.map(getRepoHostIdentity))
-    setRepoHooksMap((previous) => {
-      const next = Object.fromEntries(
-        Object.entries(previous).filter(([identity]) => repoHostIdentitySet.has(identity))
-      ) as Record<string, { hasHooks: boolean; hooks: OrcaHooks | null; mayNeedUpdate: boolean }>
-      return Object.keys(next).length === Object.keys(previous).length ? previous : next
-    })
-  }, [repos, setRepoHooksMap])
-
-  useEffect(() => {
-    if (neededRepos.length === 0) {
-      return
-    }
-
-    let stale = false
-    const requestSeq = ++repoHooksRequestSeqRef.current
-    const liveRepoHostIdentities = new Set(repos.map(getRepoHostIdentity))
-
-    void Promise.all(
-      neededRepos.map(async (repo) => {
-        const repoHostIdentity = getRepoHostIdentity(repo)
-        if (isFolderRepo(repo)) {
-          setRepoHooksMap((previous) => {
-            if (previous[repoHostIdentity]) {
-              return previous
-            }
-            return {
-              ...previous,
-              [repoHostIdentity]: { hasHooks: false, hooks: null, mayNeedUpdate: false }
-            }
-          })
-          return
-        }
-        try {
-          const hostId = getRepoExecutionHostId(repo)
-          const parsedHost = parseExecutionHostId(hostId)
-          const result = await checkRuntimeHooks(
-            {
-              activeRuntimeEnvironmentId:
-                parsedHost?.kind === 'runtime' ? parsedHost.environmentId : null
-            },
-            repo.id,
-            hostId
-          )
-          if (stale || requestSeq !== repoHooksRequestSeqRef.current) {
-            return
-          }
-          setRepoHooksMap((previous) => {
-            if (!liveRepoHostIdentities.has(repoHostIdentity)) {
-              return previous
-            }
-            return { ...previous, [repoHostIdentity]: result }
-          })
-        } catch {
-          // Keep last known value on transient failures.
-          if (stale || requestSeq !== repoHooksRequestSeqRef.current) {
-            return
-          }
-          setRepoHooksMap((previous) => {
-            if (!liveRepoHostIdentities.has(repoHostIdentity)) {
-              return previous
-            }
-            if (previous[repoHostIdentity]) {
-              return previous
-            }
-            return {
-              ...previous,
-              [repoHostIdentity]: { hasHooks: false, hooks: null, mayNeedUpdate: false }
-            }
-          })
-        }
-      })
-    )
-
-    return () => {
-      stale = true
-    }
-  }, [neededRepos, repoHooksRequestSeqRef, repos, setRepoHooksMap])
 
   useEffect(() => {
     const scrollTargetId = pendingScrollTargetRef.current

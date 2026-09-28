@@ -13,7 +13,6 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import type * as NodeFsPromises from 'node:fs/promises'
 import { prepareLegacySharedCodexSessionResume } from './codex-legacy-session-resume'
-import { ManagedCodexHomeTemporarilyUnavailableError } from '../codex-accounts/host-codex-managed-home-ownership'
 
 const lstatFaults = vi.hoisted(() => ({
   path: null as string | null,
@@ -264,7 +263,7 @@ describe('per-account resume repin', () => {
     expect(result).toEqual({ useRealCodexHome: false })
   })
 
-  it('refuses when the selected rollout is temporarily unreadable', async () => {
+  it('declines when the selected rollout is temporarily unreadable', async () => {
     lstatFaults.path = recordedRolloutPath
 
     await expect(
@@ -277,7 +276,7 @@ describe('per-account resume repin', () => {
         },
         repinOptions()
       )
-    ).rejects.toBeInstanceOf(ManagedCodexHomeTemporarilyUnavailableError)
+    ).resolves.toEqual({ useRealCodexHome: false })
   })
 
   it('declines a session owned by another host', async () => {

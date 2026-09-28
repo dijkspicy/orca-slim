@@ -38,9 +38,6 @@ vi.mock('@/runtime/web-runtime-session', () => ({
   isWebRuntimeSessionActive: () => false
 }))
 vi.mock('@/lib/launch-agent-in-new-tab', () => ({ launchAgentInNewTab: vi.fn() }))
-vi.mock('@/lib/duplicate-browser-tab-options', () => ({
-  buildDuplicatedBrowserTabOptions: () => ({})
-}))
 vi.mock('@/runtime/remote-browser-tab-ownership', () => ({
   browserWorkspaceHasRemoteOwner: () => false
 }))

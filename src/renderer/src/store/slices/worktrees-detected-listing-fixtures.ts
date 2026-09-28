@@ -1,6 +1,6 @@
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
 import type { DetectedWorktreeListResult, Worktree } from '../../../../shared/worktree/types'
-import type { DirectSshAuthority, SshProviderEpoch } from '../../../../shared/ssh-types'
+import type { DirectSshAuthority, SshProviderEpoch } from './ssh-host-state-contracts'
 import type {
   HostQualifiedDetectedWorktreeResult,
   ListDetectedWorktreesArgs

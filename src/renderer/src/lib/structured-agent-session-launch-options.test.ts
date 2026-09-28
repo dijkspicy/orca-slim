@@ -11,7 +11,7 @@ type CallParams = {
 }
 
 const mocks = vi.hoisted(() => ({
-  call: vi.fn<(target: unknown, method: string, params: CallParams) => Promise<unknown>>(),
+  call: vi.fn<(payload: { method: string; params?: CallParams }) => Promise<unknown>>(),
   createIntent: vi.fn(),
   retryIntent: vi.fn(),
   launch: vi.fn()
@@ -31,13 +31,9 @@ vi.mock('@/lib/launch-structured-agent-session', () => {
   }
 })
 
-vi.mock('@/runtime/local-structured-session-tabs-sync', () => ({
-  refreshLocalStructuredSessionTabs: vi.fn()
-}))
-
-vi.mock('@/runtime/structured-agent-session-client', () => ({
-  callStructuredAgentSession: mocks.call
-}))
+// Why: the tabs-sync and structured-session RPC clients were culled; the launch rides
+// window.api.runtime.call directly, stubbed through mocks.call.
+vi.stubGlobal('window', { api: { runtime: { call: mocks.call } } })
 
 vi.mock('@/store', () => ({
   useAppStore: {
@@ -60,7 +56,6 @@ vi.mock('@/lib/agent-catalog', () => ({
 }))
 
 import { StructuredAgentSessionCreateRefusalError } from '@/lib/launch-structured-agent-session'
-import { refreshLocalStructuredSessionTabs } from '@/runtime/local-structured-session-tabs-sync'
 import {
   cancelStructuredAgentLaunch,
   getStructuredAgentSessionLaunchLifecycle,
@@ -131,14 +126,15 @@ const ACCEPTED = { ok: true, value: { key: 'model', value: 'x' } }
 
 function mutations(): { method: string; fence?: unknown; key?: unknown; value?: unknown }[] {
   return mocks.call.mock.calls
-    .filter(([, method]) => method === 'agentSession.setOption' || method === 'agentSession.send')
-    .map(([, method, params]) =>
+    .map(([payload]) => payload)
+    .filter(({ method }) => method === 'agentSession.setOption' || method === 'agentSession.send')
+    .map(({ method, params }) =>
       method === 'agentSession.setOption'
         ? {
             method,
-            fence: params.envelope?.expectedRuntimeFence,
-            key: params.key,
-            value: params.value
+            fence: params?.envelope?.expectedRuntimeFence,
+            key: params?.key,
+            value: params?.value
           }
         : { method }
     )
@@ -168,15 +164,21 @@ describe('picks made while a chat launches', () => {
       ...intent,
       seedOptions: { model: 'gpt-saved-since' }
     }))
-    vi.mocked(refreshLocalStructuredSessionTabs).mockResolvedValue([PUBLISHED])
-    mocks.call.mockImplementation((_target, method) => {
+    mocks.call.mockImplementation(({ method }) => {
+      if (method === 'session.tabs.listAll') {
+        return Promise.resolve({ ok: true, result: { snapshots: [PUBLISHED] } })
+      }
       if (method === 'agentSession.setOption') {
         const reply = deferred<unknown>()
         setOptionReplies.push(reply)
-        return reply.promise
+        // Why: the bridge wraps results; the helper unwraps `result` before the mutation result.
+        return reply.promise.then((value) => ({ ok: true, result: value }))
       }
       if (method === 'agentSession.send') {
-        return Promise.resolve({ ok: true, value: { submission: { dispatchState: 'accepted' } } })
+        return Promise.resolve({
+          ok: true,
+          result: { ok: true, value: { submission: { dispatchState: 'accepted' } } }
+        })
       }
       return new Promise(() => {})
     })

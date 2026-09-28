@@ -1,4 +1,4 @@
-/* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: quick-open file lists are fetched over local or SSH runtime IPC, so loading/error/results track the request lifecycle. */
+/* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: quick-open file lists are fetched over local/WSL preload IPC, so loading/error/results track the request lifecycle. */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import type { Worktree } from '../../../shared/worktree/types'
@@ -7,11 +7,11 @@ import { createBrowserUuid } from '@/lib/browser-uuid'
 import { isQuickOpenRemoteQueryTooLarge } from '@/components/quick-open-search'
 import { QUICK_OPEN_LISTING_MAX_RESULTS } from '../../../shared/quick-open-listing-limits'
 import {
-  cancelRuntimeFileList,
-  listRuntimeFiles,
-  searchRuntimeFilePaths
-} from '@/runtime/runtime-file-client'
-import { debounceRuntimeFileRequest } from '@/runtime/runtime-file-request-debounce'
+  cancelQuickOpenFileList,
+  debounceFileRequest,
+  listQuickOpenFiles,
+  searchQuickOpenFilePaths
+} from '@/components/quick-open-file-listing-requests'
 import { splitFileNameFilterTokens } from '../../../shared/file-name-filter-tokens'
 import {
   nextCappedLocalListing,
@@ -238,42 +238,23 @@ export function useRuntimeFileListForWorktree({
     const requestToken = createBrowserUuid()
     const requestAbortController = new AbortController()
     const requestOperationOwner = operationOwnerRef.current
-    const requestContext = {
-      settings: { activeRuntimeEnvironmentId: runtimeEnvironmentId },
-      worktreeId,
-      worktreePath,
-      connectionId
+    const listingArgs = {
+      rootPath: worktreePath,
+      connectionId,
+      excludePaths,
+      requestToken
     }
-
     const listFiles = (nameFilter?: string) =>
-      listRuntimeFiles(requestContext, {
-        rootPath: worktreePath,
-        excludePaths,
-        requestToken,
-        maxResults: QUICK_OPEN_LISTING_MAX_RESULTS,
-        ...(nameFilter ? { nameFilter } : {}),
-        signal: requestAbortController.signal
-      }).then((files) => ({
-        // #12547: naming the cap is what makes a full page readable as "there is more". Reporting
-        // false unconditionally is what made the truncation silent — the host bounds the scan to
-        // the cap it is given, so a full page means there are more paths behind it.
+      listQuickOpenFiles(listingArgs, QUICK_OPEN_LISTING_MAX_RESULTS, nameFilter).then((files) => ({
         files,
         truncated: files.length >= QUICK_OPEN_LISTING_MAX_RESULTS
       }))
     const request = usesRuntimePathSearch
-      ? debounceRuntimeFileRequest(120, requestAbortController.signal, () =>
-          searchRuntimeFilePaths(requestContext, {
-            query: remoteQuery,
-            limit: 32,
-            excludePaths,
-            ...(connectionId ? { requestToken } : {}),
-            signal: requestAbortController.signal
-          })
+      ? debounceFileRequest(120, requestAbortController.signal, () =>
+          searchQuickOpenFilePaths(listingArgs, remoteQuery)
         )
       : hostNameFilter
-        ? debounceRuntimeFileRequest(120, requestAbortController.signal, () =>
-            listFiles(hostNameFilter)
-          )
+        ? debounceFileRequest(120, requestAbortController.signal, () => listFiles(hostNameFilter))
         : listFiles()
 
     void request
@@ -306,11 +287,9 @@ export function useRuntimeFileListForWorktree({
     return () => {
       cancelled = true
       requestAbortController.abort()
-      // Why #7721: switching workspaces (or closing the palette) must abort
-      // the previous full-tree scan host- and relay-side. Over SSH, abandoned
-      // scans otherwise stack up and starve fs.readDir/fs.stat past their
-      // 30s timeout ("Could not load files for this workspace").
-      cancelRuntimeFileList(requestContext, requestToken)
+      // Why #7721: switching workspaces must abort the previous full-tree scan,
+      // which otherwise starves fs.readDir/fs.stat past their 30s timeout.
+      cancelQuickOpenFileList(requestToken)
     }
   }, [
     enabled,

@@ -1,5 +1,4 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
-import { resolveStructuredWorkerAuthority } from './structured-worker-authority'
 import { OrcaRuntimeWithAdoptTerminalOrphansFromInventory } from './orca-runtime-adopt-terminal-orphans-from-inventory'
 import type {
   RuntimeTerminalAgentStatus,
@@ -9,8 +8,6 @@ import type { RuntimeTerminalAgentStatusSnapshot } from './runtime-terminal-agen
 import { withTimeout } from './runtime-async-boundaries'
 import { TERMINAL_INTERACTIVE_WAIT_PROBE_TIMEOUT_MS } from './orca-runtime-core'
 import { parsePaneKey } from '../../shared/stable-pane-id'
-import type { ExactWorkerProviderSession } from '../../shared/orchestration-worker-output'
-import { selectExactWorkerProviderSession } from './orchestration/worker-provider-session'
 import type { TuiAgent } from '../../shared/tui-agent'
 import { isTuiAgentEnabled } from '../../shared/tui-agent-selection'
 import { OrchestrationError } from './orchestration/orchestration-error'
@@ -120,13 +117,6 @@ export class OrcaRuntimeWithGetTerminalInteractiveWait extends OrcaRuntimeWithAd
   }
 
   getTerminalProcessIncarnation(handle: string): string | null {
-    const structured = resolveStructuredWorkerAuthority(
-      handle,
-      this.getOrchestrationDbIfAvailable?.() ?? null
-    )
-    if (structured) {
-      return structured.identity.processIncarnation
-    }
     const live = this.getLivePtyForHandle(handle)
     const record = live?.record ?? this.handles.get(handle)
     if (!record?.ptyId) {
@@ -138,44 +128,6 @@ export class OrcaRuntimeWithGetTerminalInteractiveWait extends OrcaRuntimeWithAd
     }
     // Why: legacy providers may omit process incarnation; retain the prior restart-degraded fence.
     return `${this.runtimeId}:${record.ptyId}:${record.ptyGeneration}`
-  }
-
-  getExactWorkerProviderSession(
-    handle: string,
-    observedAfter: number
-  ): ExactWorkerProviderSession | null {
-    const paneKey = this.getTerminalPaneKey(handle)
-    const processIncarnation = this.getTerminalProcessIncarnation(handle)
-    if (!paneKey || !processIncarnation) {
-      return null
-    }
-    let connectionId: string | null | undefined
-    let launchToken: string | null | undefined
-    let wslDistro: string | undefined
-    try {
-      const ptyId = this.getTerminalAgentStatusPtyId(handle)
-      const pty = this.ptysById.get(ptyId)
-      connectionId = pty?.connectionId ?? null
-      launchToken = pty?.launchToken ?? null
-      // A WSL pane's PTY is local, so its hook events only match once the distro is supplied.
-      wslDistro = pty?.connectionId
-        ? undefined
-        : (this.wslDistroByPtyId.get(ptyId) ?? pty?.wslDistro ?? undefined)
-    } catch {
-      // Exact worker validation rejects this in production; test/legacy providers may not expose PTY metadata.
-      connectionId = undefined
-      launchToken = undefined
-      wslDistro = undefined
-    }
-    return selectExactWorkerProviderSession({
-      paneKey,
-      processIncarnation,
-      connectionId,
-      launchToken,
-      wslDistro,
-      observedAfter,
-      statuses: this.getAgentStatusSnapshotFn?.() ?? []
-    })
   }
 
   validateOrchestrationAgentLauncher(agent: TuiAgent): void {

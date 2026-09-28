@@ -1,13 +1,33 @@
-import type { RuntimeMobileSessionTabsResult } from '../../shared/runtime-types'
-import { dropRetirementProofsForLiveSurfaces } from './mobile-session-terminal-retirement-proof'
 import type {
-  RuntimeMobileSessionProjectionHost,
-  RuntimeMobileSessionProjectionInput
-} from './runtime-mobile-session-projection-contract'
+  RuntimeMobileSessionClientTab,
+  RuntimeMobileSessionTabsResult,
+  RuntimeMobileSessionTabsSnapshot
+} from '../../shared/runtime-types'
+import { dropRetirementProofsForLiveSurfaces } from './mobile-session-terminal-retirement-proof'
+import type { RuntimeMobileSessionTabGroup, TabGroupLayoutNode } from '../../shared/tab-types'
+
+/** Structural stand-in for the culled projection contract: only the group/layout seams
+ *  the surviving finalization still needs. */
+type FinalizationHost = {
+  sanitizeGroups(
+    groups: readonly RuntimeMobileSessionTabGroup[] | undefined,
+    tabs: readonly RuntimeMobileSessionClientTab[]
+  ): RuntimeMobileSessionTabGroup[] | undefined
+  pruneGroupLayout(
+    layout: TabGroupLayoutNode | null | undefined,
+    validGroupIds: ReadonlySet<string>
+  ): TabGroupLayoutNode | null
+  collectTabIds(tabs: readonly RuntimeMobileSessionClientTab[]): ReadonlySet<string>
+}
+
+type ProjectionInput = {
+  snapshot: RuntimeMobileSessionTabsSnapshot
+  tabs: readonly RuntimeMobileSessionClientTab[]
+}
 
 export function finalizeRuntimeMobileSessionTabsResult(
-  { snapshot, tabs }: RuntimeMobileSessionProjectionInput,
-  host: RuntimeMobileSessionProjectionHost
+  { snapshot, tabs }: ProjectionInput,
+  host: FinalizationHost
 ): RuntimeMobileSessionTabsResult {
   const active =
     tabs.find((tab) => tab.isActive && tab.id === snapshot.activeTabId) ??

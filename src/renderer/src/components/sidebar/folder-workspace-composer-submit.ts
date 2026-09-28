@@ -3,16 +3,12 @@ import { seedNativeChatLaunchDraftForAgentTab } from '@/lib/agent-launch-prompt-
 import { preflightAgentTrust } from '@/lib/agent-trust-preflight'
 import { createBrowserUuid } from '@/lib/browser-uuid'
 import { buildAgentStartupPlan } from '@/lib/tui-agent-startup'
-import { tuiAgentToAgentKind } from '@/lib/telemetry'
 import { activateAndRevealFolderWorkspace } from '@/lib/worktree-activation'
 import { isWorkItemLookupText } from '@/lib/work-item-lookup-text'
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { ProjectGroup } from '../../../../shared/project-group-types'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import { resolveLocalWindowsAgentStartupShell } from '../../../../shared/windows-terminal-shell'
-import type { LaunchSource } from '../../../../shared/telemetry-events'
-import type { SessionOptionValue } from '../../../../shared/native-chat-session-options'
-import type { TaskSourceContext } from '../../../../shared/task-source-context'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import {
   getLinkedItemDisplayName,
@@ -39,27 +35,29 @@ type FolderWorkspaceCreateInput = {
   name: string
   connectionId?: string | null
   linkedTask: FolderWorkspace['linkedTask']
-  linkedTaskSourceContext?: TaskSourceContext | null
   createdWithAgent?: TuiAgent
   pendingFirstAgentMessageRename?: boolean
 }
+
+// Why: reuses the kept startup-plan contract instead of the removed chat-session-options module.
+type FolderWorkspaceSessionOptions = NonNullable<
+  Parameters<typeof buildAgentStartupPlan>[0]['sessionOptions']
+>
 
 type SubmitFolderWorkspaceCreateParams = {
   projectGroup: ProjectGroup
   name: string
   lastAutoName: string
   linkedWorkItem: LinkedWorkItemSummary | null
-  linkedTaskSourceContext?: TaskSourceContext | null
   note: string
   quickAgent: TuiAgent | null
   autoRenameBranchFromWork: boolean | undefined
   agentCmdOverrides: Record<string, string> | undefined
   agentArgs?: string | null
   agentEnv?: Record<string, string>
-  sessionOptions?: Record<string, SessionOptionValue>
+  sessionOptions?: FolderWorkspaceSessionOptions
   terminalWindowsShell?: string | null
   isRemote?: boolean
-  launchSource?: LaunchSource
   runtimeEnvironmentId?: string | null
   createFolderWorkspace: (input: FolderWorkspaceCreateInput) => Promise<FolderWorkspace | null>
   onOpenChange: (open: boolean) => void
@@ -70,7 +68,6 @@ export async function submitFolderWorkspaceCreate({
   name,
   lastAutoName,
   linkedWorkItem,
-  linkedTaskSourceContext,
   note,
   quickAgent,
   autoRenameBranchFromWork,
@@ -79,7 +76,6 @@ export async function submitFolderWorkspaceCreate({
   agentEnv,
   sessionOptions,
   terminalWindowsShell,
-  launchSource = 'sidebar',
   runtimeEnvironmentId = null,
   createFolderWorkspace,
   onOpenChange
@@ -161,7 +157,6 @@ export async function submitFolderWorkspaceCreate({
     // focused runtime is local or another host.
     connectionId: projectGroup.connectionId ?? null,
     linkedTask: toFolderWorkspaceLinkedTask(linkedWorkItem),
-    ...(linkedTaskSourceContext ? { linkedTaskSourceContext } : {}),
     ...(quickAgent ? { createdWithAgent: quickAgent } : {}),
     ...(pendingFirstAgentMessageRename ? { pendingFirstAgentMessageRename: true } : {})
   })
@@ -196,12 +191,7 @@ export async function submitFolderWorkspaceCreate({
           ...(launchDraftPrompt ? { launchDraftText: launchDraftPrompt } : {}),
           ...(startupPlan.startupCommandDelivery
             ? { startupCommandDelivery: startupPlan.startupCommandDelivery }
-            : {}),
-          telemetry: {
-            agent_kind: tuiAgentToAgentKind(quickAgent),
-            launch_source: launchSource,
-            request_kind: 'new' as const
-          }
+            : {})
         }
       : undefined
   onOpenChange(false)

@@ -1,6 +1,5 @@
 import { AlertTriangle, Loader2, Plus, X } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
-import { selectCodexProviderAccount } from '@/runtime/runtime-provider-accounts-client'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Label } from '../ui/label'
@@ -25,7 +24,6 @@ export function renderCodexAccountsSection(model: AccountsPaneSectionModel): Rea
     isRemoteAccountScope,
     remoteAccountScopeNotice,
     runCodexAccountAction,
-    settings,
     systemCodexActive,
     systemCodexIdentity,
     systemCodexMissingSignIn,
@@ -205,7 +203,7 @@ export function renderCodexAccountsSection(model: AccountsPaneSectionModel): Rea
             type="button"
             onClick={() =>
               void runCodexAccountAction('select:system', () =>
-                selectCodexProviderAccount(settings, {
+                window.api.codexAccounts.select({
                   accountId: null,
                   runtime: accountRuntime.runtime,
                   wslDistro: accountRuntime.wslDistro

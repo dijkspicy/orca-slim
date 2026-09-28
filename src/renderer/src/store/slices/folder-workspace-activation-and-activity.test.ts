@@ -3,12 +3,9 @@ import type { AppState } from '../types'
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { ProjectGroup } from '../../../../shared/project-group-types'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import { createTestStore } from './store-test-helpers'
+
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 
 const folderWorkspacesUpdate = vi.fn()
 const folderWorkspacesList = vi.fn()
@@ -76,13 +73,12 @@ type FolderWorkspaceUpdateArgs = {
 }
 
 function stubFolderWorkspaceApis(): void {
-  clearRuntimeCompatibilityCacheForTests()
   folderWorkspacesUpdate.mockReset()
   folderWorkspacesList.mockReset()
   runtimeEnvironmentCall.mockReset()
   runtimeEnvironmentTransportCall.mockReset()
   runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-    return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+    return runtimeEnvironmentCall(args)
   })
   vi.stubGlobal('window', {
     api: {

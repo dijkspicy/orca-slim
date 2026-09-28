@@ -6,11 +6,11 @@ import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-p
 import { parseWslUncPath } from '../../shared/wsl-paths'
 import { withManagedHookInstallLock } from '../agent-hooks/managed-hook-install-lock'
 import { readManagedHookHostIdentity } from '../agent-hooks/managed-hook-owner-identity'
-import { buildWslCodexAppServerArgs } from '../codex-accounts/wsl-codex-command'
+import { buildWslCodexAppServerArgs } from './wsl-codex-command'
 import { resolveCodexCommand } from '../codex-cli/command'
 import { withCliRuntimeOnPath } from '../../shared/node-cli-command-resolution'
 import { CODEX_READ_ONLY_APP_SERVER_ARGS } from '../codex-cli/codex-read-only-app-server-args'
-import { terminateCodexProbeChild } from '../rate-limits/codex-probe-termination'
+import { terminateCodexProbeChild } from './codex-probe-termination'
 import { getSpawnArgsForWindows } from '../win32-utils'
 import { getOrcaUserDataPath } from './codex-home-paths'
 import {

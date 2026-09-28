@@ -1,10 +1,7 @@
 import type { RecognizedAgentProcess } from '../../../../shared/agent-process-recognition'
 import { recognizeAgentProcess } from '../../../../shared/agent-process-recognition'
-import { parseAppSshPtyId } from '../../../../shared/ssh-pty-id'
-import { admitRemoteForegroundEvidence } from '../../../../shared/remote-foreground-evidence-admission'
 import { isClientOnlyUnverifiableInspection } from '../../../../shared/terminal-process-inspection'
-import { getRemoteRuntimeTerminalHandle } from '@/runtime/runtime-terminal-stream'
-import type { RuntimeTerminalProcessInspection } from '@/runtime/runtime-terminal-inspection'
+import type { TerminalProcessInspection } from '../../../../shared/terminal-process-inspection'
 import type { AgentCompletionCoordinatorOptions } from './agent-completion-coordinator-types'
 import type {
   AgentCompletionIdentityScope,
@@ -30,7 +27,7 @@ type CompletionDispatch = (
 const LOCAL_PROCESS_EXIT_SETTLE_MS = POLL_TIER_INTERVAL_MS.active * 2
 
 export function handleAgentCompletionInspectionResult(args: {
-  result: RuntimeTerminalProcessInspection
+  result: TerminalProcessInspection
   requestStartedAtMonotonic: number
   options: AgentCompletionCoordinatorOptions
   state: ProcessMonitorState
@@ -44,7 +41,7 @@ export function handleAgentCompletionInspectionResult(args: {
 }): boolean {
   const {
     result,
-    requestStartedAtMonotonic,
+    requestStartedAtMonotonic: _requestStartedAtMonotonic,
     options,
     state,
     identityScope,
@@ -52,85 +49,17 @@ export function handleAgentCompletionInspectionResult(args: {
     hasPendingHookDone,
     scheduleNextPoll,
     handleRecognizedProcess,
-    dispatchCompletion,
-    remoteInspection
+    dispatchCompletion
   } = args
-  const remote = options.isRemotePtyId?.(options.getPtyId() ?? '') === true
+  // Remote/SSH hosts are gone, so every inspection result is local evidence.
   if (
     isClientOnlyUnverifiableInspection(result) ||
-    (!remote && result.childProcessEvidence === 'unverifiable')
+    result.childProcessEvidence === 'unverifiable'
   ) {
     state.pendingProcessExit = null
     state.consecutiveInspectionErrors += 1
     scheduleNextPoll()
     return false
-  }
-  if (remote) {
-    const evidence = result.foregroundProcessEvidence
-    // Remote identity is host-authoritative. Compatibility names and unverifiable observations
-    // never mutate routing state or synthesize process exit.
-    const expectedIncarnationId = options.getExpectedIncarnationId?.() ?? null
-    const ptyId = options.getPtyId()
-    const bindingKey = `${ptyId ?? ''}\0${expectedIncarnationId ?? ''}`
-    if (remoteInspection.bindingKey !== bindingKey) {
-      remoteInspection.bindingKey = bindingKey
-      remoteInspection.authorityGeneration = null
-      remoteInspection.observationEpoch = -1
-      remoteInspection.knownAuthorityGenerations.clear()
-    }
-    const expectedRemotePtyId = (id: string): string =>
-      parseAppSshPtyId(id)?.relayPtyId ?? getRemoteRuntimeTerminalHandle(id) ?? id
-    const admitted = admitRemoteForegroundEvidence(evidence, {
-      expectedPtyId: ptyId ? expectedRemotePtyId(ptyId) : '',
-      expectedIncarnationId,
-      requestStartedAtMonotonic,
-      receivedAtMonotonic: performance.now(),
-      lastAuthorityGeneration: remoteInspection.authorityGeneration,
-      lastObservationEpoch: remoteInspection.observationEpoch,
-      knownAuthorityGenerations: remoteInspection.knownAuthorityGenerations
-    })
-    if (!admitted) {
-      state.pendingProcessExit = null
-      state.consecutiveInspectionErrors += 1
-      return false
-    }
-    remoteInspection.authorityGeneration = admitted.authorityGeneration
-    remoteInspection.observationEpoch = admitted.observationEpoch
-    remoteInspection.knownAuthorityGenerations.add(admitted.authorityGeneration)
-    if (admitted.verdict === 'exited') {
-      const exited = state.lastForegroundAgent
-      if (exited && state.hasAgentRunEvidence) {
-        if (options.shouldSuppressConfirmedProcessExitCompletion?.(exited) !== true) {
-          dispatchCompletion('process-exit', exited.processName, {
-            terminalIdleConfirmed: true,
-            completionIdentity: {
-              source: 'process-exit',
-              identity: `${exited.agent}:${exited.processName}`,
-              agentIdentity: exited.agent
-            }
-          })
-        }
-      }
-      state.lastForegroundAgent = null
-      clearAgentRunEvidence()
-      return false
-    }
-    if (admitted.verdict !== 'live') {
-      state.pendingProcessExit = null
-      return false
-    }
-    state.consecutiveInspectionErrors = 0
-    if (admitted.processName === null) {
-      state.pendingProcessExit = null
-      return false
-    }
-    const recognizedRemote = recognizeAgentProcess(admitted.processName)
-    if (!recognizedRemote) {
-      state.pendingProcessExit = null
-      return false
-    }
-    handleRecognizedProcess(recognizedRemote)
-    return true
   }
   state.consecutiveInspectionErrors = 0
   const recognized = recognizeAgentProcess(result.foregroundProcess)

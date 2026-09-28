@@ -17,17 +17,19 @@ vi.mock('./agent-draft-readiness', () => ({
   waitForAgentDraftInputReady: testState.waitForReady
 }))
 
-vi.mock('@/runtime/runtime-terminal-inspection', () => ({
-  inspectRuntimeTerminalProcess: testState.inspectProcess,
-  sendRuntimePtyInputVerified: testState.sendInput
-}))
-
 describe('pty-bound agent draft readiness budget', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.stubGlobal('window', {
       setTimeout: globalThis.setTimeout,
-      clearTimeout: globalThis.clearTimeout
+      clearTimeout: globalThis.clearTimeout,
+      api: {
+        pty: {
+          inspectProcess: testState.inspectProcess,
+          writeAccepted: testState.sendInput,
+          write: vi.fn()
+        }
+      }
     })
     testState.waitForReady.mockReset()
     testState.waitForReady.mockImplementation(

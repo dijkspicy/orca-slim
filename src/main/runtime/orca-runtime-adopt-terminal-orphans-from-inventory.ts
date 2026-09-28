@@ -4,10 +4,6 @@ import {
   spawnSurfaceClaimSequence,
   SURFACE_CLAIM_WITHOUT_STANDING
 } from './pty-recorded-surface-topology'
-import {
-  observeStructuredWorker,
-  resolveStructuredWorkerAuthority
-} from './structured-worker-authority'
 import type { RuntimeLeafRecord } from './runtime-terminal-state-records'
 import { OrcaRuntimeWithSubscribeToTerminalResize } from './orca-runtime-subscribe-to-terminal-resize'
 import type {
@@ -194,29 +190,11 @@ export class OrcaRuntimeWithAdoptTerminalOrphansFromInventory extends OrcaRuntim
     throw new Error('no_active_terminal')
   }
 
-  // Why: orchestration records the pane key as the remint-stable assignee
-  // identity at dispatch time; null (best-effort) rather than throwing so
-  // dispatch still works for handles without a resolvable pane.
   getTerminalPaneKey(handle: string): string | null {
-    return (
-      resolveStructuredWorkerAuthority(handle, this.getOrchestrationDbIfAvailable?.() ?? null)
-        ?.identity.paneKey ?? this.getPaneKeyForTerminalHandle(handle)
-    )
+    return this.getPaneKeyForTerminalHandle(handle)
   }
 
   getLiveTerminalPaneKey(handle: string): string | null {
-    const structured = resolveStructuredWorkerAuthority(
-      handle,
-      this.getOrchestrationDbIfAvailable?.() ?? null
-    )
-    if (structured) {
-      // `resolveBareOrchestrationRecipient` routes direct mail through this, not through
-      // getTerminalPaneKey. The connected-gate below exists so mail is never routed to a corpse,
-      // so the structured answer needs a real liveness proof too, not just a registry hit.
-      return observeStructuredWorker(structured.identity).status === 'live'
-        ? structured.identity.paneKey
-        : null
-    }
     const runtimePty = this.getLivePtyForHandle(handle)
     if (runtimePty) {
       return runtimePty.pty.connected ? (runtimePty.pty.paneKey ?? null) : null

@@ -171,7 +171,6 @@ export function useQuickCreationExecution(input: QuickCreationExecutionInput) {
             repoId,
             'vmRecipe',
             selectedRepoExecutionHostId ?? undefined,
-            undefined,
             isSubmissionCancelled
           ),
           isSubmissionCancelled

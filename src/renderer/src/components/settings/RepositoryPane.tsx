@@ -1,6 +1,4 @@
-import type { GhAccountBinding } from '../../../../shared/github/account-binding'
 import { useCallback, useRef, useState } from 'react'
-import type { OrcaHooks, RepoHookSettings } from '../../../../shared/orca-yaml-hook-types'
 import type { Project, ProjectUpdateArgs } from '../../../../shared/project-types'
 import type { Repo } from '../../../../shared/repo-types'
 import { getRepoKindLabel, isFolderRepo } from '../../../../shared/repo-kind'
@@ -11,7 +9,6 @@ import { Separator } from '../ui/separator'
 import { Trash2 } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
-import { RepositoryHooksSection } from './RepositoryHooksSection'
 import { McpConfigSection } from './McpConfigSection'
 import { WorktreeSymlinksSection } from './WorktreeSymlinksSection'
 import { SparsePresetSettingsSection } from './SparsePresetSettingsSection'
@@ -19,13 +16,9 @@ import { RepositorySourceControlAiSection } from './RepositorySourceControlAiSec
 import { SearchableSetting } from './SearchableSetting'
 import { matchesSettingsSearch } from './settings-search'
 import { useAppStore } from '../../store'
-import { getRepositoryIconSectionId } from './repository-settings-targets'
-import { RepositoryIconPicker } from './RepositoryIconPicker'
 import { getRepositoryPaneSearchEntries } from './repository-search'
-import { RepositoryHostSetupsSection } from './RepositoryHostSetupsSection'
 import { RepoSettingsDraftInput } from './RepositorySettingsDraftInput'
 import { RepositoryForkSyncSection } from './RepositoryForkSyncSection'
-import { RepositoryGitHubAccountSection } from './RepositoryGitHubAccountSection'
 import { translate } from '@/i18n/i18n'
 import { RepositoryWindowsRuntimeSection } from './RepositoryWindowsRuntimeSection'
 import { matchesRepositoryIdentitySearch } from './repository-identity-search'
@@ -37,21 +30,16 @@ export { matchesRepositoryIdentitySearch } from './repository-identity-search'
 
 type RepositoryPaneRepoUpdate = Omit<
   Partial<Repo>,
-  'sourceControlAi' | 'externalWorktreeVisibility' | 'ghAccount'
+  'sourceControlAi' | 'externalWorktreeVisibility'
 > & {
   sourceControlAi?: Repo['sourceControlAi'] | null
   externalWorktreeVisibility?: Repo['externalWorktreeVisibility'] | null
-  ghAccount?: GhAccountBinding | null
 }
 
 const EMPTY_WSL_DISTROS: string[] = []
 
 type RepositoryPaneProps = {
   repo: Repo
-  yamlHooks: OrcaHooks | null
-  hasHooksFile: boolean
-  hooksInspectionReady: boolean
-  mayNeedUpdate: boolean
   updateRepo: (
     repoId: string,
     updates: RepositoryPaneRepoUpdate,
@@ -72,14 +60,9 @@ type RepositoryPaneProps = {
 
 export function RepositoryPane({
   repo,
-  yamlHooks,
-  hasHooksFile,
-  hooksInspectionReady,
-  mayNeedUpdate,
   updateRepo,
   removeProject,
   project = null,
-  selectedProjectSetupId,
   isLocalWindowsProject = false,
   wslAvailable = false,
   wslDistros = EMPTY_WSL_DISTROS,
@@ -117,8 +100,6 @@ export function RepositoryPane({
     useShallow((state) => getProjectRuntimeSessionSummary(state, repo.id))
   )
   const [confirmingRemove, setConfirmingRemove] = useState<string | null>(null)
-  const [copiedTemplate, setCopiedTemplate] = useState(false)
-  const copiedTemplateResetTimerRef = useRef<number | null>(null)
   // Why: clipboard IPC can resolve after settings navigation; avoid starting
   // a reset timer that will outlive this pane.
   const isMountedRef = useRef(false)
@@ -126,22 +107,9 @@ export function RepositoryPane({
   // request to hide every child row that does not repeat the project name.
   const forceFullPaneForRepoMatch = matchesRepositoryIdentitySearch(searchQuery, repo)
 
-  const clearCopiedTemplateResetTimer = useCallback((): void => {
-    if (copiedTemplateResetTimerRef.current !== null) {
-      window.clearTimeout(copiedTemplateResetTimerRef.current)
-      copiedTemplateResetTimerRef.current = null
-    }
+  const setRepositoryPaneRootRef = useCallback((node: HTMLDivElement | null) => {
+    isMountedRef.current = node !== null
   }, [])
-
-  const setRepositoryPaneRootRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      isMountedRef.current = node !== null
-      if (node === null) {
-        clearCopiedTemplateResetTimer()
-      }
-    },
-    [clearCopiedTemplateResetTimer]
-  )
 
   const handleRemoveProject = (repoId: string) => {
     if (confirmingRemove === repoId) {
@@ -151,31 +119,6 @@ export function RepositoryPane({
     }
 
     setConfirmingRemove(repoId)
-  }
-
-  const updateSelectedRepoHookSettings = (nextSettings: RepoHookSettings) => {
-    updateSelectedRepo(repo.id, {
-      hookSettings: nextSettings
-    })
-  }
-
-  const handleCopyTemplate = async () => {
-    // Why: the missing-`orca.yaml` state is a migration aid, so copying the shared-template
-    // snippet should be one click rather than forcing users to reconstruct the expected shape.
-    await window.api.ui.writeClipboardText(`scripts:
-  setup: |
-    pnpm worktree:setup
-  archive: |
-    echo "Cleaning up before archive"`)
-    if (!isMountedRef.current) {
-      return
-    }
-    clearCopiedTemplateResetTimer()
-    setCopiedTemplate(true)
-    copiedTemplateResetTimerRef.current = window.setTimeout(() => {
-      copiedTemplateResetTimerRef.current = null
-      setCopiedTemplate(false)
-    }, 1500)
   }
 
   const allEntries = getRepositoryPaneSearchEntries(repo, { isLocalWindowsProject })
@@ -197,38 +140,12 @@ export function RepositoryPane({
   const sparsePresetEntries = allEntries.filter((entry) =>
     ['Sparse Checkout Presets'].includes(entry.title)
   )
-  const hooksEntries = allEntries.filter((entry) =>
-    [
-      'Setup Script',
-      'Archive Script',
-      'Advanced',
-      'When to Run Setup',
-      'Custom GitHub Issue Command'
-    ].includes(entry.title)
-  )
   const mcpEntries = allEntries.filter((entry) => entry.title === 'MCP Configs')
   const symlinkEntries = allEntries.filter((entry) => entry.title === 'Worktree Shared Paths')
   const sourceControlAiEntries = allEntries.filter((entry) => entry.title === 'Git AI Author')
-  const hostSetupEntries = allEntries.filter((entry) => entry.title === 'Available Hosts')
   const projectRuntimeEntries = allEntries.filter((entry) => entry.title === 'Project Runtime')
   const removeProjectLabel =
     confirmingRemove === repo.id ? 'Confirm Remove Project' : 'Remove Project'
-
-  const hooksSection =
-    !isFolder && (forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, hooksEntries)) ? (
-      <RepositoryHooksSection
-        key="hooks"
-        repo={repo}
-        yamlHooks={yamlHooks}
-        hasHooksFile={hasHooksFile}
-        hooksInspectionReady={hooksInspectionReady}
-        mayNeedUpdate={mayNeedUpdate}
-        copiedTemplate={copiedTemplate}
-        forceVisible={forceFullPaneForRepoMatch}
-        onCopyTemplate={() => void handleCopyTemplate()}
-        onUpdateHookSettings={updateSelectedRepoHookSettings}
-      />
-    ) : null
 
   // Why: Identity (name, icon, base ref) stays at the top so it's the first
   // thing a user sees. Setup commands follow immediately because they're the
@@ -315,39 +232,8 @@ export function RepositoryPane({
           />
         </SearchableSetting>
 
-        <SearchableSetting
-          title={translate('auto.components.settings.RepositoryPane.26fef02bf3', 'Project Icon')}
-          description={translate(
-            'auto.components.settings.RepositoryPane.e641c359de',
-            'Project icon and color used in the sidebar and tabs.'
-          )}
-          keywords={[
-            repo.displayName,
-            repo.path,
-            'project icon',
-            'repository icon',
-            'color',
-            'badge',
-            'emoji',
-            'favicon'
-          ]}
-          className="space-y-2"
-          id={getRepositoryIconSectionId(repo.id)}
-          forceVisible={forceFullPaneForRepoMatch}
-        >
-          <RepositoryIconPicker repo={repo} updateRepo={updateSelectedRepo} />
-        </SearchableSetting>
-
         {!isFolder ? (
           <>
-            <RepositoryHostSetupsSection
-              repo={repo}
-              selectedProjectSetupId={selectedProjectSetupId}
-              forceVisible={forceFullPaneForRepoMatch}
-              searchQuery={searchQuery}
-              searchEntries={hostSetupEntries}
-            />
-
             <RepositoryWindowsRuntimeSection
               repoDisplayName={repo.displayName}
               project={project}
@@ -369,12 +255,6 @@ export function RepositoryPane({
               forceVisible={forceFullPaneForRepoMatch}
             />
 
-            <RepositoryGitHubAccountSection
-              repo={repo}
-              updateRepo={updateSelectedRepo}
-              forceVisible={forceFullPaneForRepoMatch}
-            />
-
             <RepositoryWorktreeDefaultsSection
               repo={repo}
               settings={repoOwnerSettings}
@@ -391,7 +271,6 @@ export function RepositoryPane({
         ) : null}
       </section>
     ) : null,
-    hooksSection,
     !isFolder &&
     (forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, sourceControlAiEntries)) ? (
       <RepositorySourceControlAiSection

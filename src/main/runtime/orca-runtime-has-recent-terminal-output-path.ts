@@ -165,8 +165,4 @@ export class OrcaRuntimeWithHasRecentTerminalOutputPath extends OrcaRuntimeWithG
   getAllTerminalDrivers(): Map<string, DriverState> {
     return this.terminalDrivers.getAll()
   }
-
-  getBrowserRemoteViewerPages(): string[] {
-    return this.edgeCommands.getBrowserRemoteViewerPages()
-  }
 }

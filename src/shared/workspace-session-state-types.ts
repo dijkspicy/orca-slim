@@ -3,8 +3,81 @@ import type { SleepingAgentSessionRecord } from './agent-session-resume'
 import type { WorkspaceKey } from './folder-workspace-types'
 import type { Tab, TabGroup, TabGroupLayoutNode, WorkspaceVisibleTabType } from './tab-types'
 import type { TerminalLayoutSnapshot, TerminalTab } from './terminal-tab-types'
-import type { BrowserHistoryEntry, BrowserPage, BrowserWorkspace } from './browser-workspace-types'
 import type { WorkspaceDocHistoryEntry } from './workspace-doc-history'
+
+// Structural copies of the persisted browser rows (was browser-workspace-types,
+// removed with the browser domain) so legacy sessions keep round-tripping.
+type PersistedBrowserLoadError = {
+  code: number
+  description: string
+  validatedUrl: string
+}
+type PersistedBrowserDocLocation = {
+  kind: 'workspace-doc'
+  worktreeId: string
+  filePath: string
+}
+type PersistedBrowserViewportPresetId =
+  | 'mobile-s'
+  | 'mobile-m'
+  | 'mobile-l'
+  | 'tablet'
+  | 'laptop'
+  | 'laptop-l'
+  | 'desktop'
+type PersistedBrowserConversionOrigin =
+  | { kind: 'workspace-doc'; docLocation: PersistedBrowserDocLocation }
+  | {
+      kind: 'url'
+      url: string
+      browserRuntimeEnvironmentId?: string | null
+    }
+type PersistedBrowserHistoryEntry = {
+  url: string
+  normalizedUrl: string
+  title: string
+  faviconUrl?: string | null
+  lastVisitedAt: number
+  visitCount: number
+}
+type PersistedBrowserPage = {
+  id: string
+  workspaceId: string
+  worktreeId: string
+  url: string
+  title: string
+  loading: boolean
+  faviconUrl: string | null
+  canGoBack: boolean
+  canGoForward: boolean
+  loadError: PersistedBrowserLoadError | null
+  createdAt: number
+  browserRuntimeEnvironmentId?: string | null
+  remoteBrowserPageId?: string | null
+  remoteBrowserPageClientHosted?: boolean
+  viewportPresetId?: PersistedBrowserViewportPresetId | null
+  docLocation?: PersistedBrowserDocLocation | null
+  convertedFrom?: PersistedBrowserConversionOrigin | null
+  convertedTo?: PersistedBrowserConversionOrigin | null
+}
+type PersistedBrowserWorkspace = {
+  id: string
+  worktreeId: string
+  label?: string
+  sessionProfileId?: string | null
+  sessionPartition?: string | null
+  activePageId?: string | null
+  pageIds?: string[]
+  url: string
+  title: string
+  loading: boolean
+  faviconUrl: string | null
+  canGoBack: boolean
+  canGoForward: boolean
+  loadError: PersistedBrowserLoadError | null
+  createdAt: number
+  docLocation?: PersistedBrowserDocLocation | null
+}
 import type { ClientHostedBrowserCloseIntent } from './client-hosted-browser-close-intent'
 import type { PersistedClientHostedBrowserPage } from './client-hosted-browser-page-record'
 import type { ClosedTerminalTabTombstonesByTabId } from './closed-terminal-tab-tombstones'
@@ -77,9 +150,9 @@ export type WorkspaceSessionState = {
   /** Per-file markdown preview front-matter visibility. Absent entry means hidden. */
   markdownFrontmatterVisible?: Record<string, boolean>
   /** Persisted browser workspaces, keyed by worktree ID. */
-  browserTabsByWorktree?: Record<string, BrowserWorkspace[]>
+  browserTabsByWorktree?: Record<string, PersistedBrowserWorkspace[]>
   /** Persisted browser pages, keyed by workspace ID. */
-  browserPagesByWorkspace?: Record<string, BrowserPage[]>
+  browserPagesByWorkspace?: Record<string, PersistedBrowserPage[]>
   /** Per-worktree active browser workspace ID at shutdown. */
   activeBrowserTabIdByWorktree?: Record<string, string | null>
   /**
@@ -97,7 +170,7 @@ export type WorkspaceSessionState = {
   /** Per-worktree active tab type (terminal vs editor vs browser) at shutdown. */
   activeTabTypeByWorktree?: Record<string, WorkspaceVisibleTabType>
   /** Global browser URL history for address bar autocomplete. */
-  browserUrlHistory?: BrowserHistoryEntry[]
+  browserUrlHistory?: PersistedBrowserHistoryEntry[]
   /** Previewed workspace documents for the same dropdown — document identities, never URLs. */
   workspaceDocHistory?: WorkspaceDocHistoryEntry[]
   /** Per-worktree last-active terminal tab ID at shutdown. */

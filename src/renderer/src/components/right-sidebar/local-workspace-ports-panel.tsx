@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { useAppStore } from '@/store'
 import { useActiveWorktree, useRepoById } from '@/store/selectors'
 import { cn } from '@/lib/utils'
-import { useWorktreeRuntimeTarget } from '@/runtime/use-worktree-runtime-target'
+import type { RuntimeClientTarget } from '@/runtime/runtime-client-target'
 import {
   killWorkspacePortForTarget,
   openWorkspacePortInBrowser,
@@ -26,6 +26,8 @@ import {
 import { LocalPortSection } from './local-port-section'
 import { LocalPortDetailsDialog } from './local-port-details-dialog'
 
+const LOCAL_WORKSPACE_PORT_TARGET: RuntimeClientTarget = { kind: 'local' }
+
 /** Right-sidebar Ports panel scoped to the active workspace's owner host. */
 export function LocalWorkspacePortsPanel({ isVisible }: { isVisible: boolean }): React.JSX.Element {
   const activeWorktree = useActiveWorktree()
@@ -45,8 +47,8 @@ export function LocalWorkspacePortsPanel({ isVisible }: { isVisible: boolean }):
 
   // Why: the Ports panel acts on the active workspace; use that workspace's
   // host owner even if the sidebar is focused elsewhere.
-  const runtimeTarget = useWorktreeRuntimeTarget(activeWorktree?.id)
-  const scanKey = runtimeTarget ? `${workspacePortRuntimeTargetKey(runtimeTarget)}:all` : null
+  const runtimeTarget = LOCAL_WORKSPACE_PORT_TARGET
+  const scanKey = `${workspacePortRuntimeTargetKey(runtimeTarget)}:all`
 
   const refresh = useCallback(() => {
     if (!activeRepo || !runtimeTarget || !scanKey) {
@@ -208,7 +210,7 @@ export function LocalWorkspacePortsPanel({ isVisible }: { isVisible: boolean }):
               size="icon-xs"
               className="text-muted-foreground hover:text-foreground"
               onClick={() => void refresh()}
-              disabled={refreshing || !runtimeTarget}
+              disabled={refreshing}
               aria-label={translate(
                 'auto.components.right.sidebar.PortsPanel.7822e3edc6',
                 'Refresh Ports'

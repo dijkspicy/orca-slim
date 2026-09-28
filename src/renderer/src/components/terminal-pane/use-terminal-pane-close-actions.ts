@@ -1,9 +1,7 @@
 import { useCallback, useImperativeHandle, useRef } from 'react'
 import { useAppStore } from '../../store'
-import { retireUnboundRuntimeTerminalPane } from './retire-unbound-runtime-terminal-pane'
 import type { PaneExternalDropTarget } from '@/lib/pane-manager/pane-manager'
 import { makePaneKey } from '../../../../shared/stable-pane-id'
-import { closeWebRuntimeTerminal } from '@/runtime/web-runtime-session'
 import { resolveLeafCloseCopyKind } from '../terminal/terminal-close-copy-kind'
 import { RUNNING_CLOSE_PROBE_TIMEOUT_MS } from '../terminal/running-terminal-close-guard'
 import { probePtyRunningWork } from '../terminal/pty-running-work-probe'
@@ -45,8 +43,6 @@ export function useTerminalPaneCloseActions(controller: TerminalPaneBindingContr
       if (manager.getPanes().length <= 1) {
         onCloseTab()
       } else {
-        const ptyId = paneTransportsRef.current.get(paneId)?.getPtyId() ?? null
-        closeWebRuntimeTerminal(ptyId)
         clearSessionRestoredBannerForPane(paneId)
         const leafId = manager.getLeafId(paneId)
         if (leafId) {
@@ -62,13 +58,6 @@ export function useTerminalPaneCloseActions(controller: TerminalPaneBindingContr
         }
         setTerminalErrorsByPaneId((current) => clearPaneTerminalError(current, paneId))
         if (leafId) {
-          retireUnboundRuntimeTerminalPane({
-            getState: useAppStore.getState,
-            tabId,
-            leafId,
-            transport: paneTransportsRef.current.get(paneId),
-            getTransports: () => paneTransportsRef.current
-          })
           syncPanePtyLayoutBindingForLeaf?.(leafId, null, paneId)
         } else {
           syncPanePtyLayoutBinding(paneId, null)

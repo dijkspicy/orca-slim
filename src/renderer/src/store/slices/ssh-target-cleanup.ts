@@ -1,7 +1,6 @@
 import type { AppState } from '../types'
-import type { SshConnectionState, SshTarget, SshTargetSummary } from '../../../../shared/ssh-types'
-import { parseAppSshPtyId } from '../../../../shared/ssh-pty-id'
-import { sanitizeSshTargetGeneration } from '../../../../shared/ssh-target-generation'
+import type { SshConnectionState, SshTargetRef, SshTargetSummary } from './ssh-host-state-contracts'
+import { parseAppSshPtyId, sanitizeSshTargetGeneration } from './ssh-host-state-contracts'
 import { resolveDirectSshTargetScope } from '../../lib/direct-ssh-target-scope'
 
 export function sshConnectionStatesEqual(
@@ -22,7 +21,7 @@ export function sshConnectionStatesEqual(
 
 export function sshTargetLabelsEqual(
   labels: Map<string, string>,
-  targets: Pick<SshTarget, 'id' | 'label'>[]
+  targets: SshTargetRef[]
 ): boolean {
   if (labels.size !== targets.length) {
     return false

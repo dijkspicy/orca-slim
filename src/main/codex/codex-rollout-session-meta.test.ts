@@ -1,22 +1,12 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import type * as WslFsAccessModule from '../native-chat/wsl-transcript-fs-access'
+import { afterEach, describe, expect, it } from 'vitest'
 import { readCodexRolloutSessionMetaId } from './codex-rollout-session-meta'
-
-const mocks = vi.hoisted(() => ({ readTranscriptSlice: vi.fn() }))
-
-vi.mock('../native-chat/wsl-transcript-fs-access', async (importOriginal) => {
-  const original = await importOriginal<typeof WslFsAccessModule>()
-  mocks.readTranscriptSlice.mockImplementation(original.readTranscriptSlice)
-  return { ...original, readTranscriptSlice: mocks.readTranscriptSlice }
-})
 
 let tempRoots: string[] = []
 
 afterEach(async () => {
-  mocks.readTranscriptSlice.mockClear()
   await Promise.all(tempRoots.map((root) => rm(root, { recursive: true, force: true })))
   tempRoots = []
 })
@@ -44,35 +34,13 @@ describe('readCodexRolloutSessionMetaId', () => {
     await expect(readCodexRolloutSessionMetaId(malformed)).resolves.toBeNull()
   })
 
-  // Why: AI Vault hands this every scan candidate, so a `\\wsl.localhost\...`
-  // rollout must fail on the transcript gate's deadline rather than block the
-  // scan behind a stalled distro (#15453).
-  it('reads through the gated transcript filesystem at interactive priority', async () => {
+  it('still accepts the scan-priority argument the AI Vault sweep passes', async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-codex-session-meta-'))
     tempRoots.push(root)
     const rollout = join(root, 'rollout.jsonl')
-    await writeFile(rollout, JSON.stringify({ type: 'session_meta', payload: { id: 'gated' } }))
-    const controller = new AbortController()
+    await writeFile(rollout, JSON.stringify({ type: 'session_meta', payload: { id: 'scanned' } }))
 
-    await expect(readCodexRolloutSessionMetaId(rollout, controller.signal)).resolves.toBe('gated')
-
-    // Default `exact`: the live-resume proof is interactive and must not queue
-    // behind an AI Vault sweep of the same WSL distro.
-    expect(mocks.readTranscriptSlice).toHaveBeenCalledWith(
-      rollout,
-      0,
-      expect.any(Number),
-      'exact',
-      controller.signal
-    )
-    await expect(readCodexRolloutSessionMetaId(rollout, undefined, 'scan')).resolves.toBe('gated')
-    expect(mocks.readTranscriptSlice).toHaveBeenLastCalledWith(
-      rollout,
-      0,
-      expect.any(Number),
-      'scan',
-      undefined
-    )
+    await expect(readCodexRolloutSessionMetaId(rollout, undefined, 'scan')).resolves.toBe('scanned')
   })
 
   it('surfaces an aborted read instead of reporting an unprovable rollout', async () => {
@@ -81,13 +49,8 @@ describe('readCodexRolloutSessionMetaId', () => {
     const rollout = join(root, 'rollout.jsonl')
     await writeFile(rollout, JSON.stringify({ type: 'session_meta', payload: { id: 'aborted' } }))
     const controller = new AbortController()
-    mocks.readTranscriptSlice.mockImplementationOnce(async () => {
-      controller.abort()
-      throw new Error('aborted')
-    })
+    controller.abort()
 
-    await expect(readCodexRolloutSessionMetaId(rollout, controller.signal)).rejects.toThrow(
-      'aborted'
-    )
+    await expect(readCodexRolloutSessionMetaId(rollout, controller.signal)).rejects.toThrow()
   })
 })

@@ -1,9 +1,5 @@
 import { BrowserWindow } from 'electron'
-import { sendRemoteRuntimeRequest } from '../../shared/remote-runtime-client'
-import {
-  ELECTRON_REMOTE_RUNTIME_CLIENT_CAPABILITIES,
-  REMOTE_RUNTIME_SHARED_CONTROL_CAPABILITY
-} from '../../shared/protocol-version'
+import { REMOTE_RUNTIME_SHARED_CONTROL_CAPABILITY } from '../../shared/protocol-version'
 import {
   getPreferredPairingOffer,
   type KnownRuntimeEnvironment
@@ -16,7 +12,6 @@ import {
 } from '../../shared/runtime-host-status'
 import {
   applyRuntimeEnvironmentCapabilityVerdict,
-  getAcceptedRuntimeEnvironmentCapabilityOutcome,
   captureRuntimeEnvironmentCapabilityEvidence
 } from './runtime-environment-capability-evidence'
 import { isRuntimeEnvironmentManuallyDisconnected } from './runtime-environment-manual-disconnect'
@@ -38,19 +33,7 @@ export function createRuntimeEnvironmentStatusOwner(
     pairingRevision: environment.pairingRevision ?? environment.createdAt,
     request: (signal) => {
       evidence = captureRuntimeEnvironmentCapabilityEvidence(environment.id, pairing)
-      return transport.isReady() &&
-        getAcceptedRuntimeEnvironmentCapabilityOutcome(environment.id, pairing, null)?.kind ===
-          'supported'
-        ? transport.request(signal)
-        : sendRemoteRuntimeRequest(
-            pairing,
-            'status.get',
-            undefined,
-            15_000,
-            undefined,
-            signal,
-            ELECTRON_REMOTE_RUNTIME_CLIENT_CAPABILITIES
-          )
+      return transport.request(signal)
     },
     verified: (response, active) => {
       const capable =

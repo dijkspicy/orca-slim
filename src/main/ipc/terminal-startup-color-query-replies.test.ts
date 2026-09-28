@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { getStartupTerminalIngressIntent } from './terminal-startup-color-query-replies'
 
-it.each([{ launchAgent: 'omp' }, { command: 'omp' }, { telemetry: { agent_kind: 'omp' } }])(
+it.each([{ launchAgent: 'omp' }, { command: 'omp' }])(
   'keeps keyboard startup support without theme colors: %j',
   (launch) => {
     expect(

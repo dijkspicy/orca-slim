@@ -1,5 +1,7 @@
 import { isAgentSessionHandleProvider } from '../../../shared/agent-session-provider-handle'
-import type { StructuredAgentSessionResumeSource } from '../../../shared/structured-agent-session-create'
+// The shared wire module (structured-agent-session-create) was culled with the
+// mirror; only this structural resume pointer survives locally.
+type StructuredAgentSessionResumeSource = { providerSessionId: string }
 import type { TuiAgent } from '../../../shared/tui-agent'
 import {
   buildAgentLaunchRouteInput,

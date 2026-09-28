@@ -1,18 +1,7 @@
 import React from 'react'
 import type { TabGroupLayoutNode } from '../../../shared/tab-types'
-import type { ActivityTerminalPortalTarget } from './activity/activity-terminal-portal'
-import {
-  useBrowserGuestPaintRetention,
-  useWorktreeBrowserPageIds
-} from './browser-pane/host-guest/browser-guest-paint-retention'
-import {
-  shouldKeepHiddenWorktreeSurfacePaintable,
-  shouldMountRetainedBrowserOverlay
-} from './browser-pane/host-guest/browser-worktree-surface-paintability'
 import TabGroupSplitLayout from './tab-group/TabGroupSplitLayout'
 import TerminalPaneOverlayLayer from './terminal-pane/TerminalPaneOverlayLayer'
-import { RetainedBrowserPaneOverlayLayer } from './browser-pane/assemble-chrome/BrowserPaneOverlayLayer'
-import StructuredAgentSessionPaneOverlayLayer from './native-chat/StructuredAgentSessionPaneOverlayLayer'
 import AiVaultSessionDropLayer from './tab-group/AiVaultSessionDropLayer'
 
 export const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
@@ -24,7 +13,6 @@ export const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
   shouldMeasureHiddenWorktree,
   shouldColdParkTerminalPanes,
   isForceParked,
-  activityTerminalPortals,
   backgroundMountTabIds,
   activationDeferredMountTabIds
 }: {
@@ -36,23 +24,15 @@ export const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
   shouldMeasureHiddenWorktree: boolean
   shouldColdParkTerminalPanes: boolean
   isForceParked: boolean
-  activityTerminalPortals: ActivityTerminalPortalTarget[]
   backgroundMountTabIds: ReadonlySet<string> | null
   activationDeferredMountTabIds: ReadonlySet<string> | null
 }): React.JSX.Element {
-  const browserPageIds = useWorktreeBrowserPageIds(worktreeId)
-  const needsBrowserGuestPaint = useBrowserGuestPaintRetention(browserPageIds)
-  const shouldKeepPaintable = shouldKeepHiddenWorktreeSurfacePaintable({
-    shouldMeasureHiddenWorktree,
-    needsBrowserGuestPaint
-  })
-
   return (
     <div
       className={
         isVisible
           ? 'absolute inset-0 flex'
-          : shouldKeepPaintable
+          : shouldMeasureHiddenWorktree
             ? 'absolute inset-0 flex opacity-0 pointer-events-none'
             : 'absolute inset-0 hidden'
       }
@@ -72,22 +52,8 @@ export const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
         coldParkTerminalPanes={shouldColdParkTerminalPanes}
         isForceParked={isForceParked}
         shouldMeasureHiddenWorktree={shouldMeasureHiddenWorktree}
-        activityTerminalPortals={activityTerminalPortals}
         backgroundMountTabIds={backgroundMountTabIds}
         activationDeferredMountTabIds={activationDeferredMountTabIds}
-      />
-      <RetainedBrowserPaneOverlayLayer
-        worktreeId={worktreeId}
-        isWorktreeActive={isVisible}
-        mountEligible={shouldMountRetainedBrowserOverlay({
-          isWorktreeVisible: isVisible,
-          hasDeferredBackgroundMounts: backgroundMountTabIds !== null,
-          needsBrowserGuestPaint
-        })}
-      />
-      <StructuredAgentSessionPaneOverlayLayer
-        worktreeId={worktreeId}
-        isWorktreeActive={isVisible}
       />
       <AiVaultSessionDropLayer worktreeId={worktreeId} enabled={isVisible} />
     </div>

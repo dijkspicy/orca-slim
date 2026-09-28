@@ -17,9 +17,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import type { GlobalSettings } from '../../../shared/global-settings-types'
 import type { Repo } from '../../../shared/repo-types'
-import { callRuntimeRpc, getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
 import {
   deleteRepoSlugCacheKey,
+  githubRepoIdentityKey,
   nextRepoSlugFailureRetryDelay,
   readRepoSlugCache,
   rememberRepoSlug,
@@ -30,7 +30,6 @@ import {
   type RepoSlugMatches,
   type SlugIndex
 } from './repo-slug-cache'
-import { githubRepoIdentityKey } from '../../../shared/github/repository-identity-key'
 
 export { lookupReposBySlugFromCache } from './repo-slug-cache'
 
@@ -112,16 +111,7 @@ async function resolveRepoSlug(
       return value
     }
     try {
-      const target = getActiveRuntimeTarget(settings)
-      const result =
-        target.kind === 'environment'
-          ? await callRuntimeRpc<{ owner: string; repo: string; host?: string } | null>(
-              target,
-              'github.repoSlug',
-              { repo: repo.id },
-              { timeoutMs: 30_000 }
-            )
-          : await window.api.gh.repoSlug({ repoPath: repo.path, repoId: repo.id })
+      const result = await window.api.gh.repoSlug({ repoPath: repo.path, repoId: repo.id })
       if (!result) {
         return commit(null)
       }

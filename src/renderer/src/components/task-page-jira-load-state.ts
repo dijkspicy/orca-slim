@@ -1,12 +1,10 @@
-import type { JiraIssue } from '../../../shared/jira-types'
-
 export type TaskPageJiraLoadError = {
   title: string
   details: string | null
 }
 
 export type TaskPageJiraLoadFailureState = {
-  issues: JiraIssue[]
+  issues: { id: string; key: string }[]
   error: TaskPageJiraLoadError
 }
 

@@ -3,7 +3,10 @@ import type {
   CatalogMidSessionApply,
   AgentSessionOptionCatalog
 } from './agent-session-option-catalog'
-import type { SessionOptionValue, SessionOptionValueSource } from './native-chat-session-options'
+import type {
+  SessionOptionValue,
+  SessionOptionValueSource
+} from './agent-session-option-descriptors'
 
 export type TrackedNativeChatSessionOption = {
   value: SessionOptionValue

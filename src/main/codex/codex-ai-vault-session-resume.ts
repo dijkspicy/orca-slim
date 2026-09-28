@@ -2,13 +2,13 @@ import type {
   AiVaultPrepareSessionResumeArgs,
   AiVaultPrepareSessionResumeResult
 } from '../../shared/ai-vault-resume-preparation'
-import type { CodexRuntimeHomeService } from '../codex-accounts/runtime-home-service'
 import { prepareLegacySharedCodexSessionResume } from './codex-legacy-session-resume'
 
-type CodexAiVaultRuntimeHome = Pick<
-  CodexRuntimeHomeService,
-  'isHostSystemDefaultRealHome' | 'resolveSelectedHostAccountCodexHomePathForResume'
->
+/** Structural slice of the runtime home service this resume gate needs. */
+type CodexAiVaultRuntimeHome = {
+  isHostSystemDefaultRealHome: (launchEnv?: NodeJS.ProcessEnv) => boolean
+  resolveSelectedHostAccountCodexHomePathForResume: () => string | null
+}
 
 /** Keeps window and serve AI Vault resumes behind the same refusing account-home gate. */
 export function prepareCodexAiVaultSessionResume(

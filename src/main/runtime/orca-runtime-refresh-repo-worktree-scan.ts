@@ -13,7 +13,6 @@ import { withTimeoutResult } from './runtime-async-boundaries'
 import { readRepoWorktreeAdminFingerprint } from './repo-worktree-admin-fingerprint'
 import type { RuntimeWorktreeScanResult } from './repo-worktree-resolution-scan'
 import { scanLocalRepoWorktreesForResolution } from './repo-worktree-resolution-scan'
-import { getSshGitProvider } from '../providers/ssh-git-dispatch'
 import type { GitWorktreeInfo } from '../../shared/worktree/types'
 import { listStoredWorktreeRowsForRepo } from './repo-worktree-row-resolution'
 import type { ResolvedWorktree } from './runtime-worktree-path-identity'
@@ -94,25 +93,10 @@ export class OrcaRuntimeWithRefreshRepoWorktreeScan extends OrcaRuntimeWithListK
     repo: Repo,
     projectRuntime: ProjectExecutionRuntimeResolution | undefined
   ): Promise<RuntimeWorktreeScanResult> {
-    // Why not `repo.connectionId`: SSH ownership has two spellings, and a repo carrying only
-    // `executionHostId: 'ssh:*'` would otherwise be scanned on the client against a remote path —
-    // `git worktree list` then reports nothing, so the remote worktrees never resolve at all.
-    const sshConnectionId = getRepoSshConnectionId(repo)
-    if (!sshConnectionId) {
-      return await scanLocalRepoWorktreesForResolution(
-        repo.path,
-        getLocalProjectWorktreeGitOptionsForRuntime(repo, projectRuntime)
-      )
-    }
-    const provider = getSshGitProvider(sshConnectionId)
-    if (!provider) {
-      return { ok: false, worktrees: this.listStoredWorktreesForResolution(repo) }
-    }
-    try {
-      return { ok: true, worktrees: await provider.listWorktrees(repo.path) }
-    } catch {
-      return { ok: false, worktrees: this.listStoredWorktreesForResolution(repo) }
-    }
+    return await scanLocalRepoWorktreesForResolution(
+      repo.path,
+      getLocalProjectWorktreeGitOptionsForRuntime(repo, projectRuntime)
+    )
   }
 
   protected listStoredWorktreesForResolution(repo: Repo): GitWorktreeInfo[] {

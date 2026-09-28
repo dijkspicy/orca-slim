@@ -163,8 +163,6 @@ export function normalizeProfileProjectState(
     workspaceSessionsByHostId: isRecord<WorkspaceSessionState>(parsed.workspaceSessionsByHostId)
       ? parsed.workspaceSessionsByHostId
       : {},
-    sshTargets: arrayOrEmpty(parsed.sshTargets),
-    sshRemotePtyLeases: arrayOrEmpty(parsed.sshRemotePtyLeases),
     migrationUnsupportedPtyEntries: arrayOrEmpty(parsed.migrationUnsupportedPtyEntries),
     legacyPaneKeyAliasEntries: arrayOrEmpty(parsed.legacyPaneKeyAliasEntries),
     automations: arrayOrEmpty(parsed.automations),

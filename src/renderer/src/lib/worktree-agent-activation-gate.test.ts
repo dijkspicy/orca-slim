@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { SleepingAgentSessionRecord } from '../../../shared/agent-session-resume'
-import { structuredAgentSessionTabId } from '../../../shared/structured-agent-session-projection'
 import type { PtyListedSession } from '../../../shared/pty-listed-session'
 import type { RuntimeMobileSessionTabsResult } from '../../../shared/runtime-types'
 import type { TerminalLayoutSnapshot, TerminalTab } from '../../../shared/terminal-tab-types'
@@ -322,7 +321,7 @@ describe('worktree agent activation gate', () => {
   })
 
   it('does not activate a terminal for a stale structured sleeping projection', async () => {
-    const tabId = structuredAgentSessionTabId(STALE_STRUCTURED_SESSION_ID)
+    const tabId = `structured-agent-session-${STALE_STRUCTURED_SESSION_ID}`
     const stale = sleepingRecord(tabId, LIVE_LEAF_ID, STALE_STRUCTURED_SESSION_ID)
     const { deps, createTab, resume } = testDeps({ structured: true, sleeping: [stale] })
 

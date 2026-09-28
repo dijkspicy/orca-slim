@@ -1,6 +1,5 @@
 import type { ChecksPanelControllerState } from './use-checks-panel-controller-state'
 import type { ChecksPanelContextState } from './use-checks-panel-context-state'
-import type { ChecksPanelPollingState } from './use-checks-panel-polling'
 import type { ChecksPanelComposerState } from './use-checks-panel-composer-state'
 
 export type ChecksPanelManualRefreshInput = Pick<
@@ -49,5 +48,4 @@ export type ChecksPanelManualRefreshInput = Pick<
     | 'prCacheKey'
     | 'prNumber'
   > &
-  Pick<ChecksPanelPollingState, 'fetchGitLabDetails'> &
   Pick<ChecksPanelComposerState, 'isCurrentAsyncResult'>

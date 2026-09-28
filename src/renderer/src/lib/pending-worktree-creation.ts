@@ -12,8 +12,29 @@ import type {
 } from '../../../shared/worktree/types'
 import type { AgentStartupPlan } from '@/lib/tui-agent-startup'
 import type { AgentStartedTelemetry } from '@/lib/worktree-startup-payload'
-import type { TaskSourceContext, WorkspaceRunContext } from '../../../shared/task-source-context'
+// Why: the shared task-source context module was culled with the forge domain; the create
+// request still carries these opaque serializable values verbatim for retry.
+type TaskSourceContext = {
+  kind: 'task-source'
+  provider: string
+  projectId: string
+  hostId: string
+  projectHostSetupId?: string | null
+  repoId?: string | null
+  providerIdentity?: TaskProviderIdentity | null
+  accountLabel?: string | null
+}
+
+type WorkspaceRunContext = {
+  kind: 'workspace-run'
+  projectId: string
+  hostId: string
+  projectHostSetupId: string
+  repoId: string
+  path: string
+}
 import type { AgentLaunchRoute } from '@/lib/agent-launch-routing'
+import type { TaskProviderIdentity } from '../../../shared/task-provider-identity'
 
 /** Two-phase status reported by the main process while a worktree is created.
  *  `preparing` covers renderer-side preflight before `createWorktree` starts;

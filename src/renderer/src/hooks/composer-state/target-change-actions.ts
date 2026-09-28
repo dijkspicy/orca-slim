@@ -36,10 +36,6 @@ type TargetChangeActionsInput = Pick<
 >
 
 import { useCallback } from 'react'
-import {
-  isLinearLinkedWorkItem,
-  getLinearLinkedWorkItemBranchName
-} from '@/lib/linear-linked-work-item'
 import { shouldPreserveWorkspaceSourceOnRepoChange } from '../../../../shared/new-workspace/workspace-source'
 import {
   buildProjectHostSetupOptions,
@@ -109,10 +105,6 @@ export function useTargetChangeActions(input: TargetChangeActionsInput) {
           hint = `was ${baseBranch}`
         }
       }
-      const preserveLinearLinkedWorkItem = isLinearLinkedWorkItem(linkedWorkItem)
-      const preservedLinearBranchName = preserveLinearLinkedWorkItem
-        ? getLinearLinkedWorkItemBranchName(linkedWorkItem)
-        : undefined
       setRepoId(value)
       if (!options.preserveStartFrom) {
         setSelectedProjectHostSetupOverrideId(null)
@@ -153,10 +145,9 @@ export function useTargetChangeActions(input: TargetChangeActionsInput) {
         setBaseBranch(undefined)
         setCompareBaseRef(undefined)
         setPushTarget(undefined)
-        // Why: Linear sources are workspace-scoped, so their canonical branch survives choosing a different implementation repo.
-        setBranchNameOverride(preservedLinearBranchName)
-        setBranchNameOverridePreservesNameEdits(Boolean(preservedLinearBranchName))
-        branchAutoNameRef.current = preservedLinearBranchName ?? ''
+        setBranchNameOverride(undefined)
+        setBranchNameOverridePreservesNameEdits(false)
+        branchAutoNameRef.current = ''
         // Why (#5181): reuse state is branch-scoped, so a repo switch clears it even when a workspace-scoped Linear override is restored.
         setReuseEligibleBranch(null)
         setReuseSelectedBranch(false)

@@ -21,18 +21,9 @@ export function cleanupTerminalPaneMount(args: {
   refs: TerminalPaneLifecycleRefs
   deferredSplitHandoffs: Map<number, DeferredSplitPaneHandoffHandle>
   expandedStyleSnapshots: Map<HTMLElement, { display: string; flex: string }>
-  unregisterRuntimeTab: () => void
   cancelResize: () => void
 }): void {
-  const {
-    manager,
-    deps,
-    refs,
-    deferredSplitHandoffs,
-    expandedStyleSnapshots,
-    unregisterRuntimeTab,
-    cancelResize
-  } = args
+  const { manager, deps, refs, deferredSplitHandoffs, expandedStyleSnapshots, cancelResize } = args
   const { tabId, worktreeId, managerRef, paneTransportsRef, panePtyBindingsRef } = deps
   const currentStore = useAppStore.getState()
   const currentWorktreeTabs = currentStore.tabsByWorktree[worktreeId]
@@ -48,7 +39,6 @@ export function cleanupTerminalPaneMount(args: {
   // worktree bucket before the replacement surface mounts, so use the shared
   // global ownership check to let an ID-less deferred split survive a rehome.
   const tabStillExists = isTerminalTabPresent(currentStore, tabId)
-  unregisterRuntimeTab()
   cancelResize()
   restoreExpandedLayoutFrom(expandedStyleSnapshots)
   disposeAll(refs.linkProviderDisposablesRef.current)

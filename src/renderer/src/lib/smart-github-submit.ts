@@ -1,12 +1,33 @@
-import type { GitHubWorkItem } from '../../../shared/github/work-item-types'
 import type { GitPushTarget } from '../../../shared/worktree/types'
-import type { TaskSourceContext } from '../../../shared/task-source-context'
-import { getTaskSourceCacheScope } from '../../../shared/task-source-context'
 import { getLinkedWorkItemWorkspaceName } from '../../../shared/workspace-name'
 import type { LinkedWorkItemSummary } from './new-workspace'
 import { parseGitHubIssueOrPRLink } from './github-links'
 import { resolveGitHubWorkItemIdentity } from '@/lib/github-work-item-identity'
-import { githubRepoIdentityKey } from '../../../shared/github/repository-identity-key'
+import { githubRepoIdentityKey } from './repo-slug-cache'
+
+// Why: the shared GitHub/task-source types were culled with the forge domain; the submit
+// resolver only needs these structural subsets, which richer caller-side items satisfy.
+type GitHubSubmitItem = {
+  type: 'issue' | 'pr'
+  number: number
+  title: string
+  url: string
+  updatedAt: string
+  branchName?: string
+  baseRefName?: string
+  isCrossRepository?: boolean
+}
+
+type ScopedSourceContext = {
+  provider?: string
+  hostId?: string
+  projectId?: string
+} | null
+
+function sourceScopeKey(sourceContext: ScopedSourceContext): string {
+  const parts = [sourceContext?.provider, sourceContext?.hostId, sourceContext?.projectId]
+  return parts.every((part) => !part?.trim()) ? 'default' : parts.join(':')
+}
 
 export type SmartGitHubSubmitIntent =
   | {
@@ -37,24 +58,25 @@ export type SmartGitHubSubmitResolution = {
 export type SmartGitHubSubmitLookup = {
   repoId: string
   repoPath: string
-  sourceContext?: TaskSourceContext | null
+  sourceContext?: ScopedSourceContext
   intent: SmartGitHubSubmitIntent
-  workItem: (args: {
+  /** Method syntax keeps callback assignability bivariant across caller-side context types. */
+  workItem(args: {
     repoPath: string
     repoId: string
-    sourceContext?: TaskSourceContext | null
+    sourceContext?: ScopedSourceContext
     number: number
-  }) => Promise<GitHubWorkItem | null>
-  workItemByOwnerRepo: (args: {
+  }): Promise<GitHubSubmitItem | null>
+  workItemByOwnerRepo(args: {
     repoPath: string
     repoId: string
-    sourceContext?: TaskSourceContext | null
+    sourceContext?: ScopedSourceContext
     owner: string
     repo: string
     host?: string
     number: number
     type: 'issue' | 'pr'
-  }) => Promise<GitHubWorkItem | null>
+  }): Promise<GitHubSubmitItem | null>
 }
 
 const SMART_GITHUB_SUBMIT_LOOKUP_TTL_MS = 60_000
@@ -64,7 +86,7 @@ const TRAILING_GITHUB_ITEM_URL_PUNCTUATION_RE = /[),.;\]}]+$/
 
 type SmartGitHubSubmitLookupCacheEntry = {
   expiresAt: number
-  promise: Promise<GitHubWorkItem | null>
+  promise: Promise<GitHubSubmitItem | null>
 }
 
 const smartGitHubSubmitLookupCache = new Map<string, SmartGitHubSubmitLookupCacheEntry>()
@@ -129,11 +151,10 @@ function getSmartGitHubSubmitLookupCacheKey({
 }: {
   repoId: string
   repoPath: string
-  sourceContext?: TaskSourceContext | null
+  sourceContext?: ScopedSourceContext
   intent: SmartGitHubSubmitIntent
 }): string {
-  const sourceScope = sourceContext ? getTaskSourceCacheScope(sourceContext) : 'default'
-  const repoScope = `${sourceScope}:${repoId}:${repoPath}`
+  const repoScope = `${sourceScopeKey(sourceContext ?? null)}:${repoId}:${repoPath}`
   if (intent.kind === 'hash-number') {
     return `${repoScope}:hash:${intent.number}`
   }
@@ -147,7 +168,7 @@ export function lookupSmartGitHubSubmitItem({
   intent,
   workItem,
   workItemByOwnerRepo
-}: SmartGitHubSubmitLookup): Promise<GitHubWorkItem | null> {
+}: SmartGitHubSubmitLookup): Promise<GitHubSubmitItem | null> {
   const key = getSmartGitHubSubmitLookupCacheKey({ repoId, repoPath, sourceContext, intent })
   const now = Date.now()
   pruneSmartGitHubSubmitLookupCache(now)
@@ -199,7 +220,7 @@ export function getSmartGitHubSubmitLookupCacheSizeForTests(): number {
 }
 
 export function getSmartGitHubSubmitResolution(
-  item: Pick<GitHubWorkItem, 'number' | 'title' | 'type' | 'url'>
+  item: Pick<GitHubSubmitItem, 'number' | 'title' | 'type' | 'url'>
 ): SmartGitHubSubmitResolution {
   const identity = resolveGitHubWorkItemIdentity(item)
   const normalizedItem = { ...item, type: identity.type, number: identity.number }

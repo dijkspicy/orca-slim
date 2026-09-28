@@ -26,7 +26,6 @@ type LinkedItemLookupEffectsInput = Pick<
   | 'sshConnectedGeneration'
 >
 
-import { canUseRepoBackedComposerSources } from '@/lib/new-workspace-ssh-gate'
 import { useEffect } from 'react'
 import { PER_REPO_FETCH_LIMIT } from '@/lib/new-workspace'
 import type { GitHubWorkItem } from '../../../../shared/github/work-item-types'
@@ -62,10 +61,8 @@ export function useLinkedItemLookupEffects(input: LinkedItemLookupEffectsInput) 
   } = input
 
   // Why: warm the Start-from picker's PR cache so opening it paints instantly from cache.
-  const canPrefetchSelectedRepoWorkItems = canUseRepoBackedComposerSources({
-    connectionId: selectedRepoConnectionId,
-    status: selectedRepoSshStatus
-  })
+  // Why: the SSH gate was culled; repo-backed sources are no longer connection-gated.
+  const canPrefetchSelectedRepoWorkItems = true
 
   const prefetchSshConnectedGeneration =
     selectedRepoConnectionId && selectedRepoSshStatus === 'connected' ? sshConnectedGeneration : 0

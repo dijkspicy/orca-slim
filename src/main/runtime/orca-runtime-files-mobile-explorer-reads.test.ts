@@ -9,7 +9,6 @@ import {
   createRuntimeFileCommands,
   useRuntimeFileCommandsLifecycle
 } from './orca-runtime-files-test-harness'
-import { getSshFilesystemProvider } from '../providers/ssh-filesystem-dispatch'
 
 vi.mock('fs', async () => (await import('./orca-runtime-files-mock-registry')).fsModuleMock())
 vi.mock('fs/promises', async () =>
@@ -134,31 +133,6 @@ describe('RuntimeFileCommands', () => {
 
     await expect(commands.openMobileFile('id:wt-1', 'docs/missing.md')).rejects.toThrow(
       "ENOENT: no such file or directory, open '/repo/docs/missing.md'"
-    )
-    expect(openFile).not.toHaveBeenCalled()
-  })
-
-  it('rejects missing remote files without creating an editor tab', async () => {
-    const openFile = vi.fn()
-    const resolveRuntimeFileTarget = vi.fn(async () => ({
-      worktree: {
-        id: 'wt-1',
-        repoId: 'repo-1',
-        path: '/remote/repo'
-      },
-      executionHostId: 'ssh:ssh-1'
-    }))
-    const { commands } = createRuntimeFileCommands({
-      openFile,
-      path: '/remote/repo',
-      resolveRuntimeFileTarget
-    })
-    vi.mocked(getSshFilesystemProvider).mockReturnValue({
-      stat: vi.fn().mockRejectedValue(new Error('ENOENT: no such file or directory'))
-    } as never)
-
-    await expect(commands.openMobileFile('id:wt-1', 'docs/missing.md')).rejects.toThrow(
-      "ENOENT: no such file or directory, open '/remote/repo/docs/missing.md'"
     )
     expect(openFile).not.toHaveBeenCalled()
   })

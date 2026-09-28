@@ -14,7 +14,6 @@ import { parseExecutionHostId } from '../../shared/execution-host'
 import { parseWorkspaceKey } from '../../shared/workspace-scope'
 import { navigationTargetsHost } from '../../shared/runtime-navigation'
 import { isAutomaticTabActivation } from '../../shared/tab-activation-intent'
-import { parseAppSshPtyId } from '../../shared/ssh-pty-id'
 
 export class OrcaRuntimeWithPerformMobileSessionPtyRecordsRefresh extends OrcaRuntimeWithBuildHeadlessMobileSessionBrowserTabs {
   protected async performMobileSessionPtyRecordsRefresh(
@@ -131,16 +130,14 @@ export class OrcaRuntimeWithPerformMobileSessionPtyRecordsRefresh extends OrcaRu
     }
 
     if (tab.type === 'terminal') {
-      const publicTab = this.toMobileSessionTabsResult(snapshot!).tabs.find(
-        (candidate) => candidate.type === 'terminal' && candidate.id === tab.id
-      )
       // Why: serve-created tabs can be visible before any renderer has adopted
       // their tab id, so focusing the renderer would silently no-op.
       // Phone-local activation also needs this path for inactive restored tabs:
       // desktop focus is intentionally suppressed, but the PTY still must exist.
+      // Why no readiness gate: the live-projection status ('ready'/'pending-handle')
+      // was culled with runtime-mobile-session-projection; materialize is safe to
+      // re-run because providers skip startup commands when attaching to live sessions.
       const shouldMaterializePendingTerminal =
-        publicTab?.type === 'terminal' &&
-        publicTab.status !== 'ready' &&
         // Why: opening a tab is the documented wake gesture for a slept pane
         // (#11598), so only a background probe may be refused for one.
         (!isAutomaticTabActivation(opts.intent) ||
@@ -172,29 +169,20 @@ export class OrcaRuntimeWithPerformMobileSessionPtyRecordsRefresh extends OrcaRu
             // untappable; fall back to the plain-shell materialize.
           }
         }
-        try {
-          await this.createRuntimeOwnedMobileSessionTerminal(worktreeId, targetsHost, undefined, {
-            identity: {
-              tabId: tab.parentTabId,
-              leafId: tab.leafId,
-              sessionId
-            },
-            cwd: tab.startupCwd,
-            command: agentStartup.command,
-            env: agentStartup.env,
-            startupCommandDelivery: agentStartup.startupCommandDelivery,
-            launchConfig: agentStartup.launchConfig,
-            launchAgent: tab.launchAgent,
-            targetGroupId
-          })
-        } catch (err) {
-          if (sessionId && parseAppSshPtyId(sessionId)) {
-            // Why: an expired SSH reattach clears durable bindings in the store,
-            // but this in-memory headless snapshot can still carry the old id.
-            this.hydrateHeadlessMobileSessionTabsFromWorkspaceSession(worktreeId, { force: true })
-          }
-          throw err
-        }
+        await this.createRuntimeOwnedMobileSessionTerminal(worktreeId, targetsHost, undefined, {
+          identity: {
+            tabId: tab.parentTabId,
+            leafId: tab.leafId,
+            sessionId
+          },
+          cwd: tab.startupCwd,
+          command: agentStartup.command,
+          env: agentStartup.env,
+          startupCommandDelivery: agentStartup.startupCommandDelivery,
+          launchConfig: agentStartup.launchConfig,
+          launchAgent: tab.launchAgent,
+          targetGroupId
+        })
         return this.applyMobileSessionTabNavigation(
           this.getMobileSessionTabsForWorktree(worktreeId),
           tab.id,

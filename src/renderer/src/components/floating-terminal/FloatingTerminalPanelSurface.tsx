@@ -5,7 +5,6 @@ import TerminalPane from '@/components/terminal-pane/TerminalPane'
 import { shouldDeferParkedPtyExitTabClose } from '@/components/terminal-pane/terminal-parked-tab-watchers'
 import { closeTerminalTab } from '@/components/terminal/terminal-tab-actions'
 import { isTerminalImeInputContextRefreshing } from '@/components/terminal-pane/terminal-ime-input-context-refresh'
-import { buildDuplicatedBrowserTabOptions } from '@/lib/duplicate-browser-tab-options'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
@@ -181,7 +180,9 @@ export function renderFloatingTerminalPanelSurface({
                   return
                 }
                 createBrowserTab(FLOATING_TERMINAL_WORKTREE_ID, source.url, {
-                  ...buildDuplicatedBrowserTabOptions(source),
+                  title: source.title,
+                  sessionProfileId: source.sessionProfileId ?? null,
+                  sessionPartition: source.sessionPartition ?? null,
                   targetGroupId: activeGroup?.id,
                   browserRuntimeEnvironmentId: null
                 })

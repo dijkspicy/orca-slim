@@ -1,8 +1,4 @@
 import { translate } from '@/i18n/i18n'
-import {
-  removeClaudeProviderAccount,
-  removeCodexProviderAccount
-} from '@/runtime/runtime-provider-accounts-client'
 import { Button } from '../ui/button'
 import {
   Dialog,
@@ -23,8 +19,7 @@ export function renderAccountsRemovalDialogs(
     runClaudeAccountAction,
     runCodexAccountAction,
     setRemoveClaudeTarget,
-    setRemoveCodexTarget,
-    settings
+    setRemoveCodexTarget
   } = model
   return (
     <>
@@ -61,7 +56,7 @@ export function renderAccountsRemovalDialogs(
                 setRemoveCodexTarget(null)
                 void runCodexAccountAction(
                   `remove:${target.id}`,
-                  () => removeCodexProviderAccount(settings, target.id),
+                  () => window.api.codexAccounts.remove({ accountId: target.id }),
                   target.runtime
                 )
               }}
@@ -104,7 +99,7 @@ export function renderAccountsRemovalDialogs(
                 setRemoveClaudeTarget(null)
                 void runClaudeAccountAction(
                   `remove:${target.id}`,
-                  () => removeClaudeProviderAccount(settings, target.id),
+                  () => window.api.claudeAccounts.remove({ accountId: target.id }),
                   target.runtime
                 )
               }}

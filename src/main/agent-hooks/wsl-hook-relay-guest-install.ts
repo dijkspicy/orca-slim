@@ -7,8 +7,8 @@ import type { installRemoteManagedAgentHooks } from './remote-managed-hook-insta
 import { requestGuestOpenCodeOverlayDir } from './wsl-guest-plugin-install'
 import { installWslGuestHooks } from './wsl-hook-fs-adapter'
 import { REINSTALL_MIN_INTERVAL_MS, type WslHookRelayManagerDeps } from './wsl-hook-relay-deps'
-import type { SshChannelMultiplexer } from '../ssh/ssh-channel-multiplexer'
-import type { PluginSources } from '../../relay/plugin-overlay'
+import type { SshChannelMultiplexer } from '../hook-relay/ssh-channel-multiplexer'
+import type { PluginSources } from './wsl-guest-plugin-install'
 
 /** Structural slice of WslHookRelayManagerDeps — only what an install pass uses. */
 type GuestInstallDeps = {

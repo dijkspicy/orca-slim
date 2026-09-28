@@ -1,14 +1,6 @@
 import type { StateCreator } from 'zustand'
 import type { AppState } from '../types'
 import { findWorktreeById } from './worktree-helpers'
-import type { GitHubWorkItem } from '../../../../shared/github/work-item-types'
-import type { JiraIssue } from '../../../../shared/jira-types'
-import type { LinearIssue } from '../../../../shared/linear/issue-types'
-import type { GitLabWorkItem } from '../../../../shared/gitlab-types'
-import {
-  getTaskSourceCacheScope,
-  type TaskSourceContext
-} from '../../../../shared/task-source-context'
 import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
 
 // Why: bound per-session history growth; 50 keeps goBack/goForward's linear scans cheap yet is never hit in normal use.
@@ -22,35 +14,7 @@ const SIMPLE_VIEW_ENTRIES: readonly WorktreeNavHistorySimpleViewEntry[] = [
   'artifacts',
   'skills'
 ]
-export type WorktreeNavHistoryTaskDetailEntry =
-  | {
-      kind: 'task-detail'
-      source: 'github'
-      workItem: GitHubWorkItem
-      sourceContext?: TaskSourceContext | null
-      initialTab?: 'conversation' | 'checks' | 'files'
-    }
-  | {
-      kind: 'task-detail'
-      source: 'linear'
-      issue: LinearIssue
-      sourceContext?: TaskSourceContext | null
-    }
-  | {
-      kind: 'task-detail'
-      source: 'gitlab'
-      workItem: GitLabWorkItem
-      sourceContext?: TaskSourceContext | null
-    }
-  | {
-      kind: 'task-detail'
-      source: 'jira'
-      issue: JiraIssue
-      sourceContext?: TaskSourceContext | null
-    }
-export type WorktreeNavHistoryViewEntry =
-  | WorktreeNavHistorySimpleViewEntry
-  | WorktreeNavHistoryTaskDetailEntry
+export type WorktreeNavHistoryViewEntry = WorktreeNavHistorySimpleViewEntry
 export type WorktreeNavHistoryEntry = (string & {}) | WorktreeNavHistoryViewEntry
 
 export type WorktreeNavHistorySlice = {
@@ -94,43 +58,15 @@ function isSimpleViewEntry(
 
 // Why: view entries count as live unconditionally — findWorktreeById can't resolve page sentinels.
 function isViewEntry(entry: WorktreeNavHistoryEntry): entry is WorktreeNavHistoryViewEntry {
-  return isSimpleViewEntry(entry) || typeof entry === 'object'
+  return isSimpleViewEntry(entry)
 }
 
 function isTaskStackEntry(entry: WorktreeNavHistoryEntry): boolean {
-  return entry === 'tasks' || (typeof entry === 'object' && entry.kind === 'task-detail')
+  return entry === 'tasks'
 }
 
 function getHistoryEntryKey(entry: WorktreeNavHistoryEntry): string {
-  if (typeof entry === 'string') {
-    return isSimpleViewEntry(entry) ? `view:${entry}` : `worktree:${entry}`
-  }
-  if (entry.source === 'github') {
-    const sourceScope =
-      entry.sourceContext?.provider === 'github'
-        ? getTaskSourceCacheScope(entry.sourceContext)
-        : 'legacy'
-    return `view:task-detail:github:${sourceScope}:${entry.workItem.repoId}:${entry.workItem.type}:${entry.workItem.number}:${entry.initialTab ?? 'conversation'}`
-  }
-  if (entry.source === 'gitlab') {
-    const sourceScope =
-      entry.sourceContext?.provider === 'gitlab'
-        ? getTaskSourceCacheScope(entry.sourceContext)
-        : 'legacy'
-    return `view:task-detail:gitlab:${sourceScope}:${entry.workItem.repoId}:${entry.workItem.type}:${entry.workItem.number}`
-  }
-  if (entry.source === 'jira') {
-    const sourceScope =
-      entry.sourceContext?.provider === 'jira'
-        ? getTaskSourceCacheScope(entry.sourceContext)
-        : 'legacy'
-    return `view:task-detail:jira:${sourceScope}:${entry.issue.siteId ?? 'selected'}:${entry.issue.key}`
-  }
-  const sourceScope =
-    entry.sourceContext?.provider === 'linear'
-      ? getTaskSourceCacheScope(entry.sourceContext)
-      : 'legacy'
-  return `view:task-detail:linear:${sourceScope}:${entry.issue.workspaceId ?? 'selected'}:${entry.issue.id}`
+  return isSimpleViewEntry(entry) ? `view:${entry}` : `worktree:${entry}`
 }
 
 function isLiveEntry(entry: WorktreeNavHistoryEntry, state: AppState): boolean {

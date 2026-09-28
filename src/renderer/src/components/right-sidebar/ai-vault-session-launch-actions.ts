@@ -111,31 +111,11 @@ export function useAiVaultSessionLaunchActions({
       }
       void prepareAiVaultSessionForResume(session)
         .then((preparedSession) => {
-          const launchResult = launchAiVaultSessionInNewTab({
+          launchAiVaultSessionInNewTab({
             agent: session.agent,
             worktreeId: targetId.worktreeId,
             ...buildResumeStartup(preparedSession, targetId.worktreeId)
           })
-          if (launchResult.tabId === null) {
-            void launchResult.runtimeLaunch.then((outcome) => {
-              if (outcome.status === 'failed') {
-                toast.error(
-                  outcome.message ||
-                    translate(
-                      'auto.lib.launch.agent.in.new.tab.11cce5cc77',
-                      'Could not launch {{value0}} in a new terminal.',
-                      { value0: agentLabel(session.agent) }
-                    )
-                )
-                return
-              }
-              if (useAppStore.getState().activeWorktreeId !== targetId.worktreeId) {
-                activateAiVaultResumeWorkspace(targetId.worktreeId)
-              }
-              showQueuedToast()
-            })
-            return
-          }
           if (useAppStore.getState().activeWorktreeId !== targetId.worktreeId) {
             activateAiVaultResumeWorkspace(targetId.worktreeId)
           }

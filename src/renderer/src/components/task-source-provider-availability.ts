@@ -1,8 +1,7 @@
 import { parseExecutionHostId } from '../../../shared/execution-host'
-import type { TaskProvider } from '../../../shared/task-providers'
 import type { PreflightStatus } from '../../../preload/api-types'
-import type { TaskSourceContext } from '../../../shared/task-source-context'
 import type { TaskSourceHostAvailability } from './task-source-context-summary'
+import type { TaskProvider, TaskSourceContextRef } from './task-source-summary-types'
 
 type ProviderToolStatus = {
   installed: boolean
@@ -16,7 +15,7 @@ export type RuntimeProviderPreflightStatus = {
   status: PreflightStatus | null
 }
 
-function isDesktopOwnedHost(hostId: TaskSourceContext['hostId']): boolean {
+function isDesktopOwnedHost(hostId: string): boolean {
   const parsed = parseExecutionHostId(hostId)
   return parsed?.kind !== 'runtime'
 }
@@ -55,13 +54,10 @@ function getProviderReason(
 
 export function getRepoBackedProviderAvailability(args: {
   provider: Extract<TaskProvider, 'github' | 'gitlab'>
-  contexts: readonly TaskSourceContext[]
+  contexts: readonly TaskSourceContextRef[]
   preflightStatus: PreflightStatus | null
   preflightReady: boolean
-  runtimePreflightStatusByHostId?: ReadonlyMap<
-    TaskSourceContext['hostId'],
-    RuntimeProviderPreflightStatus
-  >
+  runtimePreflightStatusByHostId?: ReadonlyMap<string, RuntimeProviderPreflightStatus>
 }): TaskSourceHostAvailability[] {
   return args.contexts.flatMap((context) => {
     const hostPreflight = isDesktopOwnedHost(context.hostId)

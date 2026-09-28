@@ -15,9 +15,10 @@ import { listQuickOpenFiles } from '../ipc/filesystem-list-files'
 import {
   MOBILE_FILE_LIST_LIMIT,
   MOBILE_FILE_PATH_SEARCH_CACHE_LIMIT,
+  MOBILE_FILE_PATH_SEARCH_CACHE_ENTRIES,
+  MOBILE_FILE_PATH_SEARCH_CACHE_TTL_MS,
   isMobilePreviewableImagePath
 } from './runtime-file-commands-mobile-file-list-limit'
-import { rankRuntimeMobileFilePaths } from './runtime-mobile-file-path-search'
 import { isQuickOpenQueryTooLarge } from '../../shared/quick-open-path-search'
 import { searchQuickOpenFilePaths as searchHostQuickOpenFilePaths } from '../ipc/filesystem-search-file-paths'
 import { stat } from 'node:fs/promises'
@@ -26,7 +27,100 @@ import { resolveAuthorizedPath } from '../ipc/filesystem-auth'
 import { isENOENT } from '../ipc/filesystem-path-containment'
 import { runtimeFileRouteForTarget, type RuntimeFileRoute } from './runtime-file-command-target'
 
+// Inlined from the culled runtime-mobile-file-path-search module: the lazy TTL/LRU cache
+// for autocomplete inventories and the composer ranking used by files.searchPath.
+type MobileFilePathInventory = { paths: string[]; totalCount: number; truncated: boolean }
+
+class MobileFilePathSearchCache {
+  private readonly entries = new Map<string, MobileFilePathInventory & { expiresAt: number }>()
+  private readonly inFlight = new Map<string, Promise<MobileFilePathInventory>>()
+
+  constructor(
+    private readonly maxEntries: number,
+    private readonly ttlMs: number
+  ) {}
+
+  async get(
+    key: string,
+    load: () => Promise<MobileFilePathInventory>,
+    now?: number
+  ): Promise<MobileFilePathInventory> {
+    const requestedAt = now ?? Date.now()
+    const cached = this.entries.get(key)
+    if (cached && cached.expiresAt > requestedAt) {
+      this.entries.delete(key)
+      this.entries.set(key, cached)
+      return cached
+    }
+    this.entries.delete(key)
+    const pending = this.inFlight.get(key)
+    if (pending) {
+      return pending
+    }
+    const next = load()
+      .then((loaded) => {
+        // Why: a slow scan should receive a full TTL after it becomes usable,
+        // not arrive already expired because the clock started before its I/O.
+        this.entries.set(key, { ...loaded, expiresAt: (now ?? Date.now()) + this.ttlMs })
+        while (this.entries.size > this.maxEntries) {
+          const oldest = this.entries.keys().next().value as string | undefined
+          if (!oldest) {
+            break
+          }
+          this.entries.delete(oldest)
+        }
+        return loaded
+      })
+      .finally(() => {
+        if (this.inFlight.get(key) === next) {
+          this.inFlight.delete(key)
+        }
+      })
+    // Why: debounced clients can overlap on a cold key; sharing this promise
+    // prevents duplicate local rg inventory scans.
+    this.inFlight.set(key, next)
+    return next
+  }
+}
+
+/** Preserves composer ranking: full-path/basename prefixes first, then substring
+ *  matches, while returning only the requested bounded candidate slice. */
+function rankMobileFilePaths(
+  paths: readonly string[],
+  query: string,
+  limit: number
+): { paths: string[]; totalCount: number } {
+  const normalizedQuery = query.trim().toLowerCase()
+  if (!normalizedQuery) {
+    return { paths: paths.slice(0, limit), totalCount: paths.length }
+  }
+  const prefix: string[] = []
+  const substring: string[] = []
+  let totalCount = 0
+  for (const path of paths) {
+    const lower = path.toLowerCase()
+    const basename = lower.slice(lower.lastIndexOf('/') + 1)
+    if (lower.startsWith(normalizedQuery) || basename.startsWith(normalizedQuery)) {
+      totalCount++
+      if (prefix.length < limit) {
+        prefix.push(path)
+      }
+    } else if (lower.includes(normalizedQuery)) {
+      totalCount++
+      if (substring.length < limit) {
+        substring.push(path)
+      }
+    }
+  }
+  return { paths: [...prefix, ...substring].slice(0, limit), totalCount }
+}
+
 export class RuntimeFileCommandsWithConstructor extends RuntimeFileCommandsWithActiveRuntimeTextSearches {
+  private readonly mobileFilePathSearchCache = new MobileFilePathSearchCache(
+    MOBILE_FILE_PATH_SEARCH_CACHE_ENTRIES,
+    MOBILE_FILE_PATH_SEARCH_CACHE_TTL_MS
+  )
+
   constructor(private readonly host: RuntimeFileCommandHost) {
     super()
   }
@@ -98,7 +192,7 @@ export class RuntimeFileCommandsWithConstructor extends RuntimeFileCommandsWithA
         truncated: safePaths.length > MOBILE_FILE_PATH_SEARCH_CACHE_LIMIT
       }
     })
-    const matches = rankRuntimeMobileFilePaths(inventory.paths, query, limit)
+    const matches = rankMobileFilePaths(inventory.paths, query, limit)
     return {
       worktree: worktree.id,
       rootPath: worktree.path,
@@ -186,9 +280,7 @@ export class RuntimeFileCommandsWithConstructor extends RuntimeFileCommandsWithA
     route: RuntimeFileRoute
   ): Promise<void> {
     try {
-      await (route.kind === 'ssh'
-        ? this.statRemoteTerminalPath(filePath, route.connectionId)
-        : stat(await resolveAuthorizedPath(filePath, this.host.requireStore())))
+      await stat(await resolveAuthorizedPath(filePath, this.host.requireStore()))
     } catch (error) {
       if (
         isENOENT(error) ||

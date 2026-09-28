@@ -2,26 +2,19 @@ import type {
   TerminalPaneLayoutNode,
   TerminalPaneSplitDirection
 } from '../../../../shared/terminal-tab-types'
-import { isRemoteRuntimePtyId } from '@/runtime/runtime-terminal-inspection'
 import { collectLeafIds } from './terminal-pane-layout-tree'
 
 /**
- * Whether a tab's split layout is owned by a host (web/mobile clients, or a
- * desktop client viewing a remote "Orca server" worktree) rather than built
- * locally. Such layouts arrive via the host snapshot, so the live-layout
- * reconciler must materialize their panes. A desktop client only needs this for
- * remote-runtime tabs — local tabs split their panes directly.
+ * Whether a tab's split layout is owned by a host rather than built locally.
+ * The host-owned surfaces (web/mobile clients, remote "Orca server" worktrees,
+ * remote-runtime panes) are gone, so every layout this build reconciles was
+ * built locally and no host snapshot may materialize or retire its panes.
  */
-export function isHostAuthoritativeLayout(args: {
+export function isHostAuthoritativeLayout(_args: {
   isWebClient: boolean
   ptyIdsByLeafId: Record<string, string> | undefined
 }): boolean {
-  if (args.isWebClient) {
-    return true
-  }
-  return Object.values(args.ptyIdsByLeafId ?? {}).some(
-    (ptyId) => typeof ptyId === 'string' && isRemoteRuntimePtyId(ptyId)
-  )
+  return false
 }
 
 export type TerminalLiveLayoutInsertion = {

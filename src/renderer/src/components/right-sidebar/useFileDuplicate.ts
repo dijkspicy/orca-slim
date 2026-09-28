@@ -2,7 +2,6 @@ import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { basename, dirname, joinPath } from '@/lib/path'
 import type { TreeNode } from './file-explorer-types'
-import { copyRuntimePath, runtimePathExists } from '@/runtime/runtime-file-client'
 import { captureFileExplorerOperationGuard } from './file-explorer-operation-owner'
 
 /**
@@ -48,21 +47,13 @@ export function useFileDuplicate({
           toast.error(extractIpcErrorMessage(err, `Failed to duplicate '${name}'.`))
           return
         }
-        const context = {
-          settings: operationGuard.route.settings,
-          worktreeId: activeWorktreeId,
-          worktreePath,
-          connectionId: operationGuard.route.connectionId,
-          expectedExecutionHostId: operationGuard.route.expectedExecutionHostId,
-          expectedSshTargetId: operationGuard.route.expectedSshTargetId,
-          expectedSshConnectionGeneration: operationGuard.route.expectedSshConnectionGeneration
-        }
+        const connectionId = operationGuard.route.connectionId
         // Why: generate a unique "stem copy.ext", "stem copy 2.ext", … name
         // so we never collide with an existing file. pathExists checks are
         // sequential to avoid TOCTOU races with COPYFILE_EXCL on the backend.
         let candidate = joinPath(dir, `${stem} copy${ext}`)
         let n = 2
-        while (await runtimePathExists(context, candidate)) {
+        while (await window.api.fs.pathExists({ filePath: candidate, connectionId })) {
           candidate = joinPath(dir, `${stem} copy ${n}${ext}`)
           n += 1
         }
@@ -79,7 +70,11 @@ export function useFileDuplicate({
         while (true) {
           try {
             operationGuard.assertCurrent()
-            await copyRuntimePath(context, node.path, candidate)
+            await window.api.fs.copy({
+              sourcePath: node.path,
+              destinationPath: candidate,
+              connectionId
+            })
             break
           } catch (err) {
             const isEexist =

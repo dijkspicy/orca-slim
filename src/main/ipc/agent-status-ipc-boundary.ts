@@ -1,9 +1,4 @@
 import type { AgentStatusIpcPayload } from '../../shared/agent-status-ipc-payload'
-import {
-  mintFleetAgentStatusEvidence,
-  type FleetAgentStatusEvidence,
-  type FleetEvidenceBinding
-} from '../../shared/orchestration-fleet-agent-status-evidence'
 import { isValidTerminalTabId } from '../../shared/terminal-tab-id'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 
@@ -13,6 +8,18 @@ export type AgentStatusRuntimeEnrichment = Pick<
   | 'getAgentStatusOrchestrationContextForPaneKey'
   | 'getTerminalProcessIncarnation'
 >
+
+/** The one pane-identity shape both the pull path and the observed-identity capture share. */
+export type AgentStatusPaneBinding =
+  | { kind: 'unresolved'; reason: 'pane_not_bound' | 'incarnation_unbound' | 'stale_incarnation' }
+  | {
+      kind: 'worker'
+      dispatchId: string
+      terminalHandle: string
+      paneKey: string
+      processIncarnation: string
+    }
+  | { kind: 'pane'; terminalHandle: string; paneKey: string; processIncarnation: string }
 
 const MAX_AGENT_STATUS_DROP_TAB_ID_LENGTH = 160
 
@@ -30,12 +37,11 @@ export type ObservedAgentStatusPaneIdentity =
    *  reconciled from it. Those carry `restoredUnconfirmed` and never project `live`. */
   | { kind: 'unobserved' }
 
-/** The one place a pane key becomes terminal identity. Both the IPC payload the renderer
- *  decodes and the fleet evidence the orchestration path reads are derived from this. */
+/** The one place a pane key becomes terminal identity. */
 export function resolveAgentStatusBinding(
   paneKey: string,
   runtime: AgentStatusRuntimeEnrichment | undefined
-): FleetEvidenceBinding {
+): AgentStatusPaneBinding {
   const terminalHandle = runtime?.getAgentStatusTerminalHandleForPaneKey(paneKey)
   if (!terminalHandle) {
     return { kind: 'unresolved', reason: 'pane_not_bound' }
@@ -53,16 +59,14 @@ export function resolveAgentStatusBinding(
 /**
  * The identity the row was observed under, fenced against the pane's identity now.
  *
- * The fleet path reads cached rows, so resolving identity here would describe whatever process
- * and dispatch the pane owns at read time rather than the one the agent reported from. A row
- * this runtime never observed keeps the current resolution: it is a hydrated replay, already
+ * A row this runtime never observed keeps the current resolution: it is a hydrated replay, already
  * held off `live` by `restoredUnconfirmed`, and inventing an observation for it would be worse.
  */
 export function resolveObservedAgentStatusBinding(
   paneKey: string,
   runtime: AgentStatusRuntimeEnrichment | undefined,
   observed: ObservedAgentStatusPaneIdentity
-): FleetEvidenceBinding {
+): AgentStatusPaneBinding {
   const current = resolveAgentStatusBinding(paneKey, runtime)
   if (observed.kind === 'unobserved' || current.kind === 'unresolved') {
     return current
@@ -81,17 +85,6 @@ export function resolveObservedAgentStatusBinding(
   return observed.dispatchId
     ? { kind: 'worker', dispatchId: observed.dispatchId, ...terminal }
     : { kind: 'pane', ...terminal }
-}
-
-export function mintAgentStatusFleetEvidence(
-  data: AgentStatusIpcPayload,
-  runtime: AgentStatusRuntimeEnrichment | undefined,
-  observed: ObservedAgentStatusPaneIdentity
-): FleetAgentStatusEvidence {
-  return mintFleetAgentStatusEvidence(
-    data,
-    resolveObservedAgentStatusBinding(data.paneKey, runtime, observed)
-  )
 }
 
 /** Unchanged wire shape: `agentStatus:set` and `agentStatus:getSnapshot` still publish the

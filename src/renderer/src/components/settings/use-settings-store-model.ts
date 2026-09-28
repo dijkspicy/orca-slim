@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react'
-import type { OrcaHooks } from '../../../../shared/orca-yaml-hook-types'
 import type { ProjectHostSetup } from '../../../../shared/project-types'
 import { DEFAULT_APP_FONT_FAMILY } from '../../../../shared/constants'
 import { useAppStore } from '../../store'
@@ -74,9 +73,6 @@ export function useSettingsStoreModel() {
     [removeProject]
   )
 
-  const [repoHooksMap, setRepoHooksMap] = useState<
-    Record<string, { hasHooks: boolean; hooks: OrcaHooks | null; mayNeedUpdate: boolean }>
-  >({})
   const systemPrefersDark = useSystemPrefersDark()
   const isWindows = isWindowsUserAgent()
   const isMac = isMacUserAgent()
@@ -157,8 +153,6 @@ export function useSettingsStoreModel() {
     repoIdToRepresentative,
     repoIdToHostSelection,
     removeProjectAllHosts,
-    repoHooksMap,
-    setRepoHooksMap,
     systemPrefersDark,
     isWindows,
     isMac,

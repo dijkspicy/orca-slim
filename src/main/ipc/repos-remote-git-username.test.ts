@@ -30,14 +30,12 @@ vi.mock('../ssh/ssh-target-registry', () => moduleMocks.sshModuleMock(reposMocks
 
 import { registerRepoHandlers } from './repos'
 import { clearGitCapabilityStateForTests } from '../git/git-capability-state'
-import { resetSshProviderAuthorities } from '../ssh/ssh-provider-authority'
 import { createRepoHandlerHarness } from './repos-remote-test-harness'
 
 const { handleMock, mockStore, mockGitProvider, prepareLocalWorktreeRootForRepoMock } = reposMocks
 
 beforeEach(() => {
   clearGitCapabilityStateForTests()
-  resetSshProviderAuthorities()
 })
 
 describe('repos:getGitUsername', () => {

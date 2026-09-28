@@ -15,9 +15,7 @@ import type { AppState } from '@/store'
 import { useAppStore } from '@/store'
 import { getWorktreeMapFromState } from '@/store/selectors'
 import { singlePaneLayoutSnapshot } from '@/store/slices/terminal-helpers'
-import { hasRegisteredRuntimeTerminalTab } from '@/runtime/sync-runtime-graph'
 import { CODEX_ACCOUNT_RESTART_STARTUP } from '@/lib/codex-session-restart'
-import { isForeignMachineCodexPtyId } from '@/lib/codex-pane-selection-lane'
 import { getLocalProjectExecutionRuntimeContext } from '@/lib/local-preflight-context'
 import {
   getCachedWindowsTerminalCapabilities,
@@ -43,11 +41,6 @@ async function sweepUnclaimedCodexPaneRestart(ptyId: string): Promise<void> {
   let located: LocatedCodexPane | null = null
   let claimed = false
   try {
-    // Why: remote-runtime spawns need that machine's transport assembly, which
-    // only the mounted pane path carries today; leave those queued for mount.
-    if (isForeignMachineCodexPtyId(ptyId)) {
-      return
-    }
     // Why: a live primary handler means a mounted pane owns this PTY, and its
     // restart effect re-runs on both the queue write and the transport bind —
     // it is guaranteed to claim, and only it can reconnect the xterm in place.
@@ -65,12 +58,6 @@ async function sweepUnclaimedCodexPaneRestart(ptyId: string): Promise<void> {
           state.clearCodexRestartNotice(ptyId)
         }
       }
-      return
-    }
-    // Why the registry check too: a revealed tab reads its layout into a ref at
-    // mount, before its transports bind (and register a primary handler). A
-    // takeover in that window would kill the PTY the pane is attaching to.
-    if (hasRegisteredRuntimeTerminalTab(located.tab.id, located.worktreeId)) {
       return
     }
     if (!useAppStore.getState().consumePendingCodexPaneRestart(ptyId)) {
@@ -201,7 +188,7 @@ async function executeDetachedCodexPaneRestart(
     reopenCurrentCodexRestartPrompt(located, ptyId)
     return
   }
-  if (hasRegisteredRuntimeTerminalTab(tab.id, worktreeId) || ptyDataHandlers.has(ptyId)) {
+  if (ptyDataHandlers.has(ptyId)) {
     currentState.queueCodexPaneRestarts([ptyId])
     return
   }

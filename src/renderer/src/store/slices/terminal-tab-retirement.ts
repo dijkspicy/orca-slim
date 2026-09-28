@@ -4,7 +4,6 @@ import {
   getRuntimeEnvironmentIdForWorktree,
   type WorktreeRuntimeOwnerState
 } from '@/lib/worktree-runtime-owner'
-import { parseRemoteRuntimePtyId } from '@/runtime/runtime-terminal-stream'
 import { resolveTerminalHostOwnership } from '@/lib/terminal-worktree-route'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { isEphemeralSetupTerminalWorktreeId } from '../../../../shared/ephemeral-setup-terminal-worktree-id'
@@ -12,6 +11,33 @@ import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
 import { locateTerminalTab } from '../terminals/terminal-tab-location'
 
 export type TerminalTabCloseReason = 'user' | 'cleanup' | 'pty-exit'
+
+type RemoteRuntimePtyIdParts = {
+  environmentId: string | null
+  handle: string
+}
+
+const REMOTE_PTY_ID_PREFIX = 'remote:'
+const REMOTE_PTY_OWNER_SEPARATOR = '@@'
+
+function parseRemoteRuntimePtyId(ptyId: string): RemoteRuntimePtyIdParts | null {
+  if (!ptyId.startsWith(REMOTE_PTY_ID_PREFIX)) {
+    return null
+  }
+  const rest = ptyId.slice(REMOTE_PTY_ID_PREFIX.length)
+  const separatorIndex = rest.indexOf(REMOTE_PTY_OWNER_SEPARATOR)
+  if (separatorIndex === -1) {
+    return { environmentId: null, handle: rest }
+  }
+  try {
+    return {
+      environmentId: decodeURIComponent(rest.slice(0, separatorIndex)),
+      handle: decodeURIComponent(rest.slice(separatorIndex + REMOTE_PTY_OWNER_SEPARATOR.length))
+    }
+  } catch {
+    return null
+  }
+}
 
 export type TerminalTabRetirementState = WorktreeRuntimeOwnerState &
   Pick<

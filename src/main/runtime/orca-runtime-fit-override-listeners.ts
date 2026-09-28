@@ -1,7 +1,6 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
 import { OrcaRuntimeWithStopRequestedPtyIds } from './orca-runtime-stop-requested-pty-ids'
 import { RuntimeSubscriptionRegistry } from './runtime-subscription-registry'
-import { RuntimeMobileNotificationController } from './runtime-mobile-notification-controller'
 import type {
   ProviderBufferAcquisition,
   RuntimeHeadlessTerminal,
@@ -14,7 +13,6 @@ import type { PtyProviderBufferSnapshot } from '../providers/types'
 import type { WaitBlockedCheckState } from './wait-blocked-check-state'
 import type { createAgentStatusOscProcessor } from '../../shared/agent-status-osc'
 import { RuntimeTerminalViewSubscribers } from './runtime-terminal-view-subscribers'
-import { parseAppSshPtyId } from '../../shared/ssh-pty-id'
 
 export class OrcaRuntimeWithFitOverrideListeners extends OrcaRuntimeWithStopRequestedPtyIds {
   // Why: mobile clients need to know when the desktop restores a terminal
@@ -32,8 +30,6 @@ export class OrcaRuntimeWithFitOverrideListeners extends OrcaRuntimeWithStopRequ
   >()
 
   protected readonly subscriptions = new RuntimeSubscriptionRegistry()
-
-  protected readonly mobileNotifications = new RuntimeMobileNotificationController()
 
   protected ptysById = new Map<string, RuntimePtyWorktreeRecord>()
 
@@ -195,8 +191,7 @@ export class OrcaRuntimeWithFitOverrideListeners extends OrcaRuntimeWithStopRequ
       if (
         this.headlessTerminals.has(ptyId) ||
         this.providerSnapshotPreferredPtys.has(ptyId) ||
-        this.pendingPtyRegistrationIncarnations.has(ptyId) ||
-        parseAppSshPtyId(ptyId)
+        this.pendingPtyRegistrationIncarnations.has(ptyId)
       ) {
         return false
       }

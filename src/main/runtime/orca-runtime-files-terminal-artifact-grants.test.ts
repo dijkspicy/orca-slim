@@ -3,7 +3,6 @@ import { link, mkdtemp, readFile, realpath, symlink, writeFile } from 'node:fs/p
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { enoent, resolveAuthorizedPathMock, statMock } from './orca-runtime-files-mock-registry'
-import { getSshFilesystemProvider } from '../providers/ssh-filesystem-dispatch'
 import {
   createRuntimeFileCommands,
   useRuntimeFileCommandsLifecycle
@@ -295,24 +294,6 @@ describe('RuntimeFileCommands', () => {
       expect(result.openTarget).toBeUndefined()
     })
 
-    it('does not mint a local artifact grant from an SSH terminal handle', async () => {
-      const artifactPath = await tempFile('result.json', '{}')
-      const { commands } = createRuntimeFileCommands({
-        path: '/repo',
-        resolveTerminalContext: vi.fn(() => ({ worktreeId: 'wt-1', connectionId: 'ssh-1' }))
-      })
-
-      const result = await resolveTerminalArtifactPath(commands, artifactPath)
-
-      expect(result).toMatchObject({
-        worktree: 'wt-1',
-        relativePath: null,
-        exists: false,
-        isDirectory: false
-      })
-      expect(result.openTarget).toBeUndefined()
-    })
-
     it('uses the canonical local temp artifact path for the exact grant', async () => {
       const dir = await mkdtemp(join(tmpdir(), 'orca-terminal-artifact-'))
       tempDirs.push(dir)
@@ -374,95 +355,6 @@ describe('RuntimeFileCommands', () => {
       })
       expect(resolveAuthorizedPathMock).not.toHaveBeenCalled()
       expect(statMock).not.toHaveBeenCalled()
-    })
-
-    it('uses the canonical remote temp artifact path for the exact grant', async () => {
-      const { commands, store } = createRuntimeFileCommands({ path: '/repo' })
-      store.getRepo.mockReturnValue({ connectionId: 'ssh-1' })
-      const stat = vi.fn().mockResolvedValue({ type: 'file', size: 2, mtime: 3 })
-      const realpath = vi.fn(async (p: string) =>
-        p === '/tmp/link-result.json' ? '/tmp/result.json' : p
-      )
-      vi.mocked(getSshFilesystemProvider).mockReturnValue({ stat, realpath } as never)
-
-      const result = await resolveTerminalArtifactPath(commands, '/tmp/link-result.json')
-
-      expect(stat).toHaveBeenCalledWith('/tmp/result.json')
-      expect(result).toMatchObject({
-        relativePath: null,
-        absolutePath: '/tmp/result.json',
-        exists: true,
-        openTarget: {
-          kind: 'absolute-file',
-          provider: 'ssh',
-          absolutePath: '/tmp/result.json'
-        }
-      })
-    })
-
-    it('does not grant hard-linked remote temp artifacts', async () => {
-      const { commands, store } = createRuntimeFileCommands({ path: '/repo' })
-      store.getRepo.mockReturnValue({ connectionId: 'ssh-1' })
-      const stat = vi.fn().mockResolvedValue({ type: 'file', size: 2, mtime: 3, nlink: 2 })
-      const realpath = vi.fn(async (p: string) => p)
-      vi.mocked(getSshFilesystemProvider).mockReturnValue({ stat, realpath } as never)
-
-      const result = await resolveTerminalArtifactPath(commands, '/tmp/result.json')
-
-      expect(result).toMatchObject({
-        relativePath: null,
-        absolutePath: '/tmp/result.json',
-        exists: false
-      })
-      expect(result.openTarget).toBeUndefined()
-    })
-
-    it('allows canonical remote macOS private temp artifacts', async () => {
-      const { commands, store } = createRuntimeFileCommands({ path: '/repo' })
-      store.getRepo.mockReturnValue({ connectionId: 'ssh-1' })
-      const stat = vi.fn().mockResolvedValue({ type: 'file', size: 2, mtime: 3 })
-      const realpath = vi.fn(async (p: string) => p)
-      vi.mocked(getSshFilesystemProvider).mockReturnValue({ stat, realpath } as never)
-
-      const result = await resolveTerminalArtifactPath(commands, '/private/tmp/result.json')
-
-      expect(stat).toHaveBeenCalledWith('/private/tmp/result.json')
-      expect(result).toMatchObject({
-        relativePath: null,
-        absolutePath: '/private/tmp/result.json',
-        exists: true,
-        openTarget: {
-          kind: 'absolute-file',
-          provider: 'ssh',
-          absolutePath: '/private/tmp/result.json'
-        }
-      })
-    })
-
-    it('does not grant remote temp artifacts that resolve outside allowed temp roots', async () => {
-      const { commands, store } = createRuntimeFileCommands({ path: '/repo' })
-      store.getRepo.mockReturnValue({ connectionId: 'ssh-1' })
-      const stat = vi.fn()
-      const realpath = vi.fn(async (p: string) =>
-        p === '/tmp/link-result.json' ? '/home/me/.ssh/config' : p
-      )
-      vi.mocked(getSshFilesystemProvider).mockReturnValue({ stat, realpath } as never)
-
-      const result = await commands.resolveTerminalPath(
-        'id:wt-1',
-        '/tmp/link-result.json',
-        null,
-        'client-a'
-      )
-
-      expect(result).toEqual({
-        worktree: 'wt-1',
-        relativePath: null,
-        absolutePath: '/tmp/link-result.json',
-        exists: false,
-        isDirectory: false
-      })
-      expect(stat).not.toHaveBeenCalled()
     })
   })
 })

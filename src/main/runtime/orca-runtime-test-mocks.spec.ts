@@ -30,7 +30,6 @@ export const RUNTIME_GRAPH_RELOAD_TIMEOUT_MS =
   importedValues.exportedRUNTIME_GRAPH_RELOAD_TIMEOUT_MS
 export const RecentPtyOutputBuffer = importedValues.exportedRecentPtyOutputBuffer
 export const RpcDispatcher = importedValues.exportedRpcDispatcher
-export const RuntimeBrowserCommands = importedValues.exportedRuntimeBrowserCommands
 export const SETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV =
   importedValues.exportedSETUP_AGENT_SEQUENCE_STARTUP_COMMAND_ENV
 export const SETUP_AGENT_SEQUENCE_STARTUP_SCRIPT_ENV =
@@ -266,7 +265,6 @@ export type {
   AgentSessionExecutionClaim,
   AgentSessionSurfaceBinding
 } from '../../shared/agent-session-host-authority'
-export type { BrowserClientHostCommandEvent } from '../../shared/browser-client-host-protocol'
 export type { FolderWorkspace } from '../../shared/folder-workspace-types'
 export type { GitUsernameModule }
 export type { IPtyProvider } from '../providers/types'

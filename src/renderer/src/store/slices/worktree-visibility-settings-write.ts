@@ -1,4 +1,4 @@
-import { callRuntimeRpc, getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
+import { callRuntimeEnvironmentRpc, getActiveRuntimeTarget } from './runtime-environment-rpc-call'
 import {
   LOCAL_EXECUTION_HOST_ID,
   toRuntimeExecutionHostId
@@ -42,15 +42,13 @@ export async function persistVisibilityAwareSettings(args: {
         : currentSettings
     let nextSettings = localSettings
     if (target.environmentId === supportedRuntimeEnvironmentId) {
-      let result: { settings: Partial<GlobalSettings> }
-      try {
-        result = await callRuntimeRpc<{ settings: Partial<GlobalSettings> }>(
-          target,
-          'settings.update',
-          { worktreeVisibilityDefaults },
-          { timeoutMs: 15_000 }
-        )
-      } catch (error) {
+      const response = await callRuntimeEnvironmentRpc<{ settings: Partial<GlobalSettings> }>(
+        target.environmentId,
+        'settings.update',
+        { worktreeVisibilityDefaults },
+        { timeoutMs: 15_000 }
+      )
+      if (!response.ok) {
         if (localSettings && shouldPublish()) {
           set((state) => {
             const currentTarget = getActiveRuntimeTarget(state.settings)
@@ -69,11 +67,11 @@ export async function persistVisibilityAwareSettings(args: {
             }
           })
         }
-        throw error
+        throw new Error(response.errorMessage)
       }
       nextSettings = {
         ...localSettings,
-        worktreeVisibilityDefaults: result.settings.worktreeVisibilityDefaults
+        worktreeVisibilityDefaults: response.result.settings.worktreeVisibilityDefaults
       } as GlobalSettings
     }
     if (!shouldPublish()) {

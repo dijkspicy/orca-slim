@@ -1,11 +1,18 @@
-import { RELAY_BUILD_PLATFORMS, type RelayBuildPlatform } from './relay-artifacts'
+// Verbatim platform list formerly supplied by `relay-artifacts.ts` (culled with the relay).
+export const BUNDLED_RIPGREP_PLATFORMS = [
+  'linux-x64',
+  'linux-arm64',
+  'darwin-x64',
+  'darwin-arm64',
+  'win32-x64',
+  'win32-arm64'
+] as const
+export type BundledRipgrepPlatform = (typeof BUNDLED_RIPGREP_PLATFORMS)[number]
 
 /**
- * Orca ships its own ripgrep for every relay platform (from @vscode/ripgrep-universal), so local,
- * WSL, and SSH searches never depend on the user having installed `rg`.
+ * Orca ships its own ripgrep for every supported platform (from @vscode/ripgrep-universal), so
+ * local, WSL, and SSH searches never depend on the user having installed `rg`.
  */
-export const BUNDLED_RIPGREP_PLATFORMS: readonly RelayBuildPlatform[] = RELAY_BUILD_PLATFORMS
-export type BundledRipgrepPlatform = RelayBuildPlatform
 /** Directory under the packaged resources root holding `<platform>/rg[.exe]`. */
 export const BUNDLED_RIPGREP_RESOURCE_DIR = 'ripgrep'
 /** Package directory holding the same layout in development checkouts. */

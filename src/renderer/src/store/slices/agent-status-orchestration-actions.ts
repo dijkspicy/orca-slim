@@ -4,10 +4,7 @@ import type {
 } from '../../../../shared/agent-status-types'
 import type { AgentStatusSlice } from './agent-status-slice-contract'
 import type { AgentStatusRuntime } from './agent-status-runtime'
-import {
-  getAgentRowGeneratedTitleText,
-  orchestrationLabelsMatchLiveDispatch
-} from '@/lib/agent-row-primary-text'
+import { getAgentRowGeneratedTitleText } from '@/lib/agent-row-primary-text'
 import {
   mergeCurrentOrchestrationContext,
   orchestrationMapsEqual
@@ -46,14 +43,9 @@ export function createAgentStatusOrchestrationActions(
               }
               const nextEntry = { ...liveEntry, orchestration: merged }
               nextLive[paneKey] = nextEntry
-              // Why: only replace titles when labels match the live dispatch taskId; sticky completed context must not rename a later turn.
-              if (
-                (merged.displayName?.trim() || merged.taskTitle?.trim()) &&
-                orchestrationLabelsMatchLiveDispatch({
-                  prompt: nextEntry.prompt,
-                  orchestration: merged
-                })
-              ) {
+              // Why: dispatch prompts were culled, so any label arrival names the
+              // live work and may replace the generated title.
+              if (merged.displayName?.trim() || merged.taskTitle?.trim()) {
                 generatedTitleUpdates.push(nextEntry)
               }
             }

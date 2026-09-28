@@ -1,5 +1,4 @@
 import {
-  createFloatingWorkspaceBrowserTab,
   createFloatingWorkspaceMarkdownTab,
   isFloatingWorkspacePanelFocused
 } from '@/lib/floating-workspace-terminal-actions'
@@ -11,12 +10,6 @@ export function registerContentCreationIpcBridge(unsubs: (() => void)[]): void {
   unsubs.push(
     window.api.ui.onNewBrowserTab(() => {
       const store = useAppStore.getState()
-      if (isFloatingWorkspacePanelFocused()) {
-        void createFloatingWorkspaceBrowserTab(store).catch((error) => {
-          toast.error(error instanceof Error ? error.message : String(error))
-        })
-        return
-      }
       const worktreeId = store.activeWorktreeId
       if (!worktreeId) {
         return

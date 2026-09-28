@@ -1,17 +1,14 @@
 import type {
+  AgentSessionFastModeSupport,
   AgentSessionModelOption,
   AgentSessionOptionChoice,
   AgentSessionOptionsResult
 } from '../../shared/agent-session-wire'
 import type { CodexAppServerConnection } from './codex-app-server-connection'
-import { codexFastModeSupport, readCodexFastModeTier } from './codex-structured-fast-mode'
 import {
   applyCodexConfiguredLaunchDefaults,
   readCodexConfiguredLaunchDefaults
 } from './codex-configured-launch-defaults'
-
-const MODEL_PAGE_LIMIT = 100
-const MAX_MODEL_PAGES = 20
 
 function record(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null
@@ -20,6 +17,48 @@ function record(value: unknown): Record<string, unknown> | null {
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value : null
 }
+
+function tierRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function fastModeTier(row: Record<string, unknown>): { id?: string; supportKnown: boolean } {
+  const modern = Array.isArray(row.serviceTiers) ? row.serviceTiers : null
+  const advertised = modern?.flatMap((value) => {
+    const tier = tierRecord(value)
+    const id = text(tier?.id)
+    const name = text(tier?.name)
+    return id && name ? [{ id, name }] : []
+  })
+  const exactModern = advertised?.find(
+    (tier) => tier.name.toLowerCase() === 'fast' || tier.id.toLowerCase() === 'fast'
+  )
+  if (exactModern) {
+    return { id: exactModern.id, supportKnown: true }
+  }
+  const legacy = Array.isArray(row.additionalSpeedTiers) ? row.additionalSpeedTiers : null
+  const exactLegacy = legacy?.map(text).find((tier) => tier?.toLowerCase() === 'fast')
+  return {
+    ...(exactLegacy ? { id: exactLegacy } : {}),
+    supportKnown: modern !== null || legacy !== null
+  }
+}
+
+function fastModeSupport(
+  models: readonly AgentSessionModelOption[]
+): AgentSessionFastModeSupport | undefined {
+  if (models.some((model) => model.supportsFastMode === true)) {
+    return { supported: true }
+  }
+  return models.length > 0 && models.every((model) => model.supportsFastMode === false)
+    ? { supported: false, reason: 'model-not-supported' }
+    : undefined
+}
+
+const MODEL_PAGE_LIMIT = 100
+const MAX_MODEL_PAGES = 20
 
 function effortLabel(value: string): string {
   return value === 'xhigh'
@@ -65,7 +104,7 @@ function modelOption(value: unknown): ParsedCodexModelOption | null {
         .map(effortChoice)
         .filter((choice): choice is AgentSessionOptionChoice => choice !== null)
     : []
-  const fastMode = readCodexFastModeTier(row)
+  const fastMode = fastModeTier(row)
   return {
     option: {
       id,
@@ -163,7 +202,7 @@ export function composeCodexSessionOptionCatalog(
         : undefined
     : undefined
   const fastMode = input.current.fastMode ?? reportedFastMode
-  const support = codexFastModeSupport(models)
+  const support = fastModeSupport(models)
   return {
     result: {
       models,

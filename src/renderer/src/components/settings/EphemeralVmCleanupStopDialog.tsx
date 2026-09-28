@@ -1,5 +1,4 @@
 import { Loader2 } from 'lucide-react'
-import type { EphemeralVmRuntimeRecord } from '../../../../shared/ephemeral-vm-runtimes'
 import { translate } from '@/i18n/i18n'
 import { Button } from '../ui/button'
 import {
@@ -10,6 +9,10 @@ import {
   DialogHeader,
   DialogTitle
 } from '../ui/dialog'
+
+type EphemeralVmRuntimeRecord = Awaited<
+  ReturnType<typeof window.api.ephemeralVm.listRuntimes>
+>[number]
 
 type EphemeralVmCleanupStopDialogProps = {
   runtime: EphemeralVmRuntimeRecord | null

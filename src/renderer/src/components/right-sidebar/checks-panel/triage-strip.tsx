@@ -9,7 +9,7 @@ import {
   Sparkles
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { PRCheckDetail } from '../../../../../shared/github/check-types'
+import type { ChecksPanelCheck } from './check-details-model'
 import type { ConflictReview } from './conflict-summary'
 import { summarizeProviderChecks } from '../../../../../shared/provider-check-summary'
 import { translate } from '@/i18n/i18n'
@@ -31,7 +31,7 @@ export function PRTriageStrip({
   review?: ConflictReview
   pr?: ConflictReview
   reviewKind?: 'PR' | 'MR'
-  checks: PRCheckDetail[]
+  checks: ChecksPanelCheck[]
   isResolvingConflictsWithAI: boolean
   onResolveConflictsWithAI: () => void
   resolveConflictsDisabled?: boolean

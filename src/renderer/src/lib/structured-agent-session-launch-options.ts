@@ -3,17 +3,18 @@ import type {
   AgentSessionMutationResult,
   AgentSessionOptionResult
 } from '../../../shared/agent-session-wire'
-import { STRUCTURED_LAUNCH_SEED_OPTION_IDS } from '../../../shared/native-chat-session-option-defaults'
-import {
-  createStructuredAgentSessionOperationId,
-  structuredAgentSessionPayloadFingerprint
-} from '../../../shared/structured-agent-session-mutation'
-import { callStructuredAgentSession } from '@/runtime/structured-agent-session-client'
+// Why: the shared option-defaults module was culled; these are the canonical seedable option ids.
+const STRUCTURED_LAUNCH_SEED_OPTION_IDS = ['model', 'effort', 'fastMode'] as const
 import { createBrowserUuid } from '@/lib/browser-uuid'
 import {
+  callLocalStructuredAgentSession,
   StructuredAgentSessionLaunchCancelledError,
   type StructuredAgentLaunchReceipt
 } from './structured-agent-session-launch-recovery'
+import {
+  createStructuredAgentSessionOperationId,
+  structuredAgentSessionPayloadFingerprint
+} from './structured-agent-session-launch-prompt'
 import {
   getStructuredLaunchStateBySessionId,
   notifyStructuredLaunchListeners,
@@ -83,9 +84,9 @@ async function setLaunchOption(
 ): Promise<StructuredLaunchOptionOutcome> {
   const fields = { key, value }
   try {
-    const result = await callStructuredAgentSession<
+    const result = await callLocalStructuredAgentSession<
       AgentSessionMutationResult<AgentSessionOptionResult>
-    >({ kind: 'local' }, 'agentSession.setOption', {
+    >('agentSession.setOption', {
       envelope: {
         sessionId,
         clientOperationId: createStructuredAgentSessionOperationId(createBrowserUuid),

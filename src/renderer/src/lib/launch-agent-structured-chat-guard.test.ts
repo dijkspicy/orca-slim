@@ -244,8 +244,7 @@ describe('structured chat adoption guard on the launch path', () => {
   })
 
   it('takes the structured path when the chat-default view is selected', async () => {
-    const { launchAgentInNewTab, shouldQueueTerminalFocusAfterMenuClose } =
-      await import('./launch-agent-in-new-tab')
+    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
 
     const result = launchAgentInNewTab({ agent: 'codex', worktreeId: 'wt-1' })
 
@@ -257,7 +256,6 @@ describe('structured chat adoption guard on the launch path', () => {
       },
       pasteDraftAfterLaunch: false
     })
-    expect(shouldQueueTerminalFocusAfterMenuClose(result!)).toBe(false)
     await expect(result?.structuredSettlement).resolves.toEqual({
       kind: 'structured',
       sessionId: 'codex-session-1'

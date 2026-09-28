@@ -2,7 +2,6 @@ import { expect, it, vi } from 'vitest'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { AppState } from '../types'
 import { createGlobalSettingsFixture } from '../../../../shared/global-settings-test-fixture'
-import { markRuntimeEnvironmentCompatible } from '@/runtime/runtime-rpc-client'
 import { createTestStore } from './store-test-helpers'
 import { persistVisibilityAwareSettings } from './worktree-visibility-settings-write'
 
@@ -56,7 +55,6 @@ it('reclassifies worktrees after changing the host visibility default', async ()
 })
 
 it('does not restore a stale owner after its visibility write resolves', async () => {
-  markRuntimeEnvironmentCompatible('env-a')
   let resolveUpdate!: (value: unknown) => void
   const update = new Promise((resolve) => (resolveUpdate = resolve))
   vi.stubGlobal('window', {
@@ -139,7 +137,6 @@ it('rejects base visibility writes before contacting an unsupported runtime host
 })
 
 it('does not publish a visibility write after a newer hydration starts', async () => {
-  markRuntimeEnvironmentCompatible('env-a')
   const currentSettings = {
     activeRuntimeEnvironmentId: 'env-a',
     worktreeVisibilityDefaults: { external: 'hide' }
@@ -175,7 +172,6 @@ it('does not publish a visibility write after a newer hydration starts', async (
 })
 
 it('publishes successful local fields when the paired runtime write fails', async () => {
-  markRuntimeEnvironmentCompatible('env-a')
   const currentSettings = createGlobalSettingsFixture({
     activeRuntimeEnvironmentId: 'env-a',
     experimentalNativeChat: false,

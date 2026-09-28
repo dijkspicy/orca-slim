@@ -1,16 +1,10 @@
 import React, { useCallback, useRef, useState } from 'react'
 import { Check, Copy, Files } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type {
-  PRConflictSummary,
-  PRMergeableState
-} from '../../../../../shared/github/pull-request-types'
+import type { ChecksPanelReview } from '../checks-panel-review'
 import { translate } from '@/i18n/i18n'
 
-export type ConflictReview = {
-  mergeable: PRMergeableState
-  conflictSummary?: PRConflictSummary
-}
+export type ConflictReview = Pick<ChecksPanelReview, 'mergeable' | 'conflictSummary'>
 
 export function buildMergeabilityRecalculationCommands(): string {
   return [

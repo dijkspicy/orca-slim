@@ -1,9 +1,7 @@
 import type { FolderWorkspace } from './folder-workspace-types'
 import type { ProjectGroup } from './project-group-types'
 import { isTuiAgent } from './tui-agent-config'
-import { normalizeStoredTaskSourceContext } from './task-source-context'
 import { normalizeWorkspaceLinkedItem } from './workspace-linked-item'
-import { isWorkspaceLinkedItemSourceContextMatch } from './workspace-linked-item-source-context'
 import { normalizeWorkspaceCreatorProvenance } from './workspace-creator-provenance'
 
 export function normalizeFolderWorkspaceName(
@@ -54,7 +52,6 @@ export function normalizeFolderWorkspaces(
     }
     const now = Date.now()
     const linkedTask = normalizeWorkspaceLinkedItem(raw.linkedTask)
-    const linkedTaskSourceContext = normalizeStoredTaskSourceContext(raw.linkedTaskSourceContext)
     const creatorProvenance = normalizeWorkspaceCreatorProvenance(raw.creatorProvenance)
     seen.add(raw.id)
     // Why: `executionHostId` is deliberately NOT persisted. It is a fetch-time renderer
@@ -73,12 +70,6 @@ export function normalizeFolderWorkspaces(
             : (group?.connectionId ?? null),
       ...(creatorProvenance ? { creatorProvenance } : {}),
       linkedTask,
-      linkedTaskSourceContext: isWorkspaceLinkedItemSourceContextMatch(
-        linkedTask,
-        linkedTaskSourceContext
-      )
-        ? linkedTaskSourceContext
-        : null,
       comment: typeof raw.comment === 'string' ? raw.comment : '',
       isArchived: raw.isArchived === true,
       isUnread: raw.isUnread === true,

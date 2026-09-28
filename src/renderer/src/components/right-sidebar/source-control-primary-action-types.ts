@@ -1,6 +1,8 @@
-import type { HostedReviewCreationEligibility } from '../../../../shared/hosted-review'
+import type {
+  HostedReviewCreationEligibility,
+  HostedReviewState
+} from '../../../../shared/hosted-review'
 import type { GitUpstreamStatus } from '../../../../shared/git-status-types'
-import type { PRState } from '../../../../shared/github/pull-request-types'
 import type {
   SourceControlPrimaryActionKind,
   SourceControlRemoteOpKind
@@ -40,7 +42,7 @@ export type PrimaryActionInputs = {
   isCommitting: boolean
   isRemoteOperationActive: boolean
   upstreamStatus: GitUpstreamStatus | undefined
-  prState?: PRState | null
+  prState?: HostedReviewState | null
   isPRStateLoading?: boolean
   // Why: which remote op is currently running, when one is. null when no
   // remote op is in flight. Used by the in-flight branch below to mirror

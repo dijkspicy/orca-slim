@@ -12,7 +12,6 @@ import {
   getFirstIncompleteFeatureWallSetupStepId,
   type FeatureWallSetupStepId
 } from '../../../../shared/feature-wall-setup-steps'
-import type { FeatureWallSetupProgress } from '../feature-wall/feature-wall-setup-progress'
 import { SetupGuideProgressRing } from '../setup-guide/SetupGuideProgressRing'
 import { useSetupGuideProgress } from '../setup-guide/use-setup-guide-progress'
 import { translate } from '@/i18n/i18n'
@@ -34,7 +33,10 @@ export function getSetupGuideSidebarEntryReady(
   return persistedUIReady && setupProgressReady
 }
 
-function isSetupGuideSidebarComplete(progress: FeatureWallSetupProgress): boolean {
+// Shape comes from useSetupGuideProgress; kept local so the sidebar doesn't import the feature-wall module.
+type SetupGuideProgress = ReturnType<typeof useSetupGuideProgress>
+
+function isSetupGuideSidebarComplete(progress: SetupGuideProgress): boolean {
   return progress.coreDoneCount >= progress.coreTotal
 }
 
@@ -54,7 +56,7 @@ export function SetupGuideSidebarEntry(): React.JSX.Element | null {
     setupComplete,
     dismissed: setupGuideSidebarDismissed
   })
-  const lastVisibleProgressRef = React.useRef<FeatureWallSetupProgress | null>(null)
+  const lastVisibleProgressRef = React.useRef<SetupGuideProgress | null>(null)
   if (showSetupGuideEntry) {
     lastVisibleProgressRef.current = setupProgress
   }

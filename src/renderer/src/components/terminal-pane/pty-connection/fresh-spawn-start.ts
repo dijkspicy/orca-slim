@@ -139,14 +139,6 @@ export function bindStartFreshSpawn(session: ConnectPanePtySession): void {
             : typeof spawnedPtyId === 'string'
               ? spawnedPtyId
               : session.transport.getPtyId()
-        if (resolvedPtyId && !session.claimCapturedDirectSshRetryPty(resolvedPtyId)) {
-          releaseDeferredCwdFence()
-          session.finishReattachLiveDataDeferral(false, outputCallbacks.generation)
-          // Why: an outstanding declare keeps main's cooperation gate suppressing
-          // this paneKey's daemon-snapshot seed until something releases it.
-          clearPreSignaledSerializer()
-          return null
-        }
         const connectResult =
           spawnedPtyId && typeof spawnedPtyId === 'object' && 'id' in spawnedPtyId
             ? spawnedPtyId
@@ -278,7 +270,6 @@ export function bindStartFreshSpawn(session: ConnectPanePtySession): void {
           pendingSpawnGenerationByPaneKey.delete(session.pendingSpawnKey)
         }
       })
-    session.armDirectSshPaneRetryTimeout(trackedPromise, session.directSshRetryAttempt)
     void trackedPromise.then((spawnedPtyId) => {
       if (spawnedPtyId) {
         // The dual of settleSpawnThatLeftPaneUnbound below, and the only place a

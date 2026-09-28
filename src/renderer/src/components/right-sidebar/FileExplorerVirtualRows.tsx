@@ -8,7 +8,6 @@ import { InlineInputRow, type InlineInput } from './file-explorer-inline-input-r
 import { shouldShowIgnoredDecoration, STATUS_COLORS } from './status-display'
 import type { DirCache, FileExplorerOperationOwner, TreeNode } from './file-explorer-types'
 import type { FileExplorerRowProjection } from './file-explorer-row-projection'
-import type { RuntimeFileOperationArgs } from '@/runtime/runtime-file-client'
 import { getFileExplorerOperationExecutionHostId } from './file-explorer-operation-owner'
 import type { ExecutionHostId } from '../../../../shared/execution-host'
 
@@ -34,7 +33,6 @@ type FileExplorerVirtualRowsProps = {
   /** Listings behind the projection, so a drag can name the owner of a selected
    *  path whose row is currently hidden. */
   dirCache?: Record<string, DirCache>
-  runtimeDownloadContext?: RuntimeFileOperationArgs | null
   supportsFolderDownload?: boolean
   canOpenInOrcaBrowser?: (filePath: string) => boolean
   onClick: (node: TreeNode, event: React.MouseEvent<HTMLButtonElement>) => void
@@ -121,7 +119,6 @@ export function FileExplorerVirtualRows(props: FileExplorerVirtualRowsProps): Re
     connectionId,
     sourceWorkspaceId,
     dirCache,
-    runtimeDownloadContext,
     supportsFolderDownload = false,
     canOpenInOrcaBrowser = () => false,
     onClick,
@@ -233,7 +230,6 @@ export function FileExplorerVirtualRows(props: FileExplorerVirtualRowsProps): Re
               connectionId={connectionId}
               sourceWorkspaceId={sourceWorkspaceId}
               resolveDragSourceHostId={resolveDragSourceHostId}
-              runtimeDownloadContext={runtimeDownloadContext}
               supportsFolderDownload={supportsFolderDownload}
               canOpenInOrcaBrowser={canOpenInOrcaBrowser(n.path)}
               canCollapseFolderSubtree={canCollapseFolderSubtree}

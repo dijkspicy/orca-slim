@@ -2,16 +2,8 @@ import type { StateCreator } from 'zustand'
 import type { AppState } from '../types'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { toast } from 'sonner'
-import {
-  clearRuntimeCompatibilityCache,
-  markRuntimeEnvironmentCompatible,
-  unwrapRuntimeRpcResult
-} from '@/runtime/runtime-rpc-client'
-import { assertRuntimeStatusCompatible } from '@/runtime/runtime-protocol-compat'
-import type { RuntimeStatus } from '../../../../shared/runtime-types'
 import { normalizeTerminalQuickCommands } from '../../../../shared/terminal-quick-commands'
 import { normalizeTerminalCustomThemes } from '../../../../shared/terminal-custom-themes'
-import { normalizeTaskProviderSettings } from '../../../../shared/task-providers'
 import { normalizeOpenInApplications } from '../../../../shared/open-in-applications'
 import { createSettingsSearchState, type SettingsSearchState } from './settings-search-state'
 import { isRuntimeCatalogListingStale } from './runtime-status-hydration'
@@ -24,10 +16,6 @@ import { bumpProviderRuntimeSessionGeneration } from '@/lib/provider-runtime-con
 import { normalizeUiLanguage } from '../../../../shared/ui-language'
 import { normalizeDesktopTerminalScrollbackRows } from '../../../../shared/terminal-scrollback-policy'
 import { translate } from '@/i18n/i18n'
-import {
-  normalizeMobilePairingCustomAddress,
-  normalizeMobilePairingCustomAddresses
-} from '../../../../shared/mobile-pairing-custom-address'
 import {
   hydrateOwnerWorktreeVisibilityDefaults,
   type WorktreeVisibilityDefaultsByHost
@@ -58,10 +46,7 @@ function normalizeRuntimeEnvironmentId(value: string | null | undefined): string
   return trimmed ? trimmed : null
 }
 
-function normalizeSettingsUpdates(
-  updates: Partial<GlobalSettings>,
-  currentSettings: GlobalSettings | null
-): Partial<GlobalSettings> {
+function normalizeSettingsUpdates(updates: Partial<GlobalSettings>): Partial<GlobalSettings> {
   const { terminalScrollbackBytes: _legacyScrollbackBytes, ...sanitizedUpdates } =
     updates as LegacyTerminalScrollbackSettingsUpdate
   void _legacyScrollbackBytes
@@ -74,20 +59,6 @@ function normalizeSettingsUpdates(
     sanitizedUpdates.terminalCustomThemes = normalizeTerminalCustomThemes(
       updates.terminalCustomThemes
     )
-  }
-  if ('visibleTaskProviders' in updates || 'defaultTaskSource' in updates) {
-    const taskProviderSettings = normalizeTaskProviderSettings({
-      visibleTaskProviders:
-        'visibleTaskProviders' in updates
-          ? updates.visibleTaskProviders
-          : currentSettings?.visibleTaskProviders,
-      defaultTaskSource:
-        'defaultTaskSource' in updates
-          ? updates.defaultTaskSource
-          : currentSettings?.defaultTaskSource
-    })
-    sanitizedUpdates.defaultTaskSource = taskProviderSettings.defaultTaskSource
-    sanitizedUpdates.visibleTaskProviders = taskProviderSettings.visibleTaskProviders
   }
   if ('openInApplications' in updates) {
     sanitizedUpdates.openInApplications = normalizeOpenInApplications(updates.openInApplications, {
@@ -113,16 +84,6 @@ function normalizeSettingsUpdates(
       updates.terminalScrollbackRows
     )
   }
-  if ('mobilePairingCustomAddress' in updates) {
-    sanitizedUpdates.mobilePairingCustomAddress = normalizeMobilePairingCustomAddress(
-      updates.mobilePairingCustomAddress
-    )
-  }
-  if ('mobilePairingCustomAddresses' in updates) {
-    sanitizedUpdates.mobilePairingCustomAddresses = normalizeMobilePairingCustomAddresses(
-      updates.mobilePairingCustomAddresses
-    )
-  }
   return sanitizedUpdates
 }
 
@@ -134,7 +95,7 @@ async function persistSettingsUpdates(
   sourceDefaultsSupportedRuntimeEnvironmentId: string | null,
   shouldPublish: () => boolean
 ): Promise<void> {
-  const normalizedUpdates = normalizeSettingsUpdates(updates, currentSettings)
+  const normalizedUpdates = normalizeSettingsUpdates(updates)
   await persistVisibilityAwareSettings({
     normalizedUpdates,
     currentSettings,
@@ -164,11 +125,9 @@ async function verifyRuntimeEnvironmentReachable(environmentId: string | null): 
     selector: environmentId,
     timeoutMs: 15_000
   })
-  const status = unwrapRuntimeRpcResult<RuntimeStatus>(response)
-  assertRuntimeStatusCompatible(status)
-  // Why: the switch probe already proved compatibility; avoid immediately
-  // re-probing through the heavier generic runtime RPC path during hydration.
-  markRuntimeEnvironmentCompatible(environmentId)
+  if (response.ok === false) {
+    throw new Error(response.error.message)
+  }
 }
 
 export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> = (set, get) => ({
@@ -245,7 +204,6 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
     }
     const shouldPublish = ownerHydration.createSettingsPublicationFence(true)
     try {
-      clearRuntimeCompatibilityCache(nextId)
       await verifyRuntimeEnvironmentReachable(nextId)
       if (!shouldPublish()) {
         return true

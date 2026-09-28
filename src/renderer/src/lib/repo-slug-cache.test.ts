@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Repo } from '../../../shared/repo-types'
-import { githubRepoIdentityKey } from '../../../shared/github/repository-identity-key'
 import {
   REPO_SLUG_FAILURE_TTL_MS,
+  githubRepoIdentityKey,
   clearRepoSlugCacheValues,
   nextRepoSlugFailureRetryDelay,
   readRepoSlugCache,

@@ -23,12 +23,7 @@ import {
   getTabIdFromPaneKey,
   isRecentlyClosedAgentStatusTab
 } from './agent-status-pane-key-tab-binding'
-import {
-  getAgentRowGeneratedTitleText,
-  getOrcaDispatchTaskId,
-  isOrcaDispatchPrompt,
-  orchestrationLabelsMatchLiveDispatch
-} from '@/lib/agent-row-primary-text'
+import { getAgentRowGeneratedTitleText } from '@/lib/agent-row-primary-text'
 
 export function createAgentStatusLiveActions(
   runtime: AgentStatusRuntime
@@ -142,37 +137,26 @@ export function createAgentStatusLiveActions(
       return
     }
     const { entry } = builtResult
-    // Sticky orchestration titles are replaced only when they still describe this dispatch.
-    const hasMatchingOrchestrationLabels = Boolean(
-      (entry.orchestration?.displayName?.trim() || entry.orchestration?.taskTitle?.trim()) &&
-      orchestrationLabelsMatchLiveDispatch(entry)
+    // Orca dispatch prompts were culled with orchestration, so every live prompt
+    // is ordinary work: replace sticky labels only when fresh labels arrive.
+    const hasOrchestrationLabels = Boolean(
+      entry.orchestration?.displayName?.trim() || entry.orchestration?.taskTitle?.trim()
     )
-    const liveIsDispatchPrompt = isOrcaDispatchPrompt(entry.prompt)
-    const liveDispatchTaskId = liveIsDispatchPrompt ? getOrcaDispatchTaskId(entry.prompt) : null
-    const stickyOrchestrationTaskId = entry.orchestration?.taskId?.trim() || null
-    const isNewDispatchAgainstStickyOrchestration = Boolean(
-      liveDispatchTaskId &&
-      stickyOrchestrationTaskId &&
-      liveDispatchTaskId !== stickyOrchestrationTaskId
-    )
-    const shouldReplaceGeneratedTitle =
-      hasMatchingOrchestrationLabels || isNewDispatchAgainstStickyOrchestration
     const mayWriteGeneratedTitle =
       get().settings?.tabAutoGenerateTitle === true &&
-      (shouldReplaceGeneratedTitle ||
+      (hasOrchestrationLabels ||
         !agentStatusTabAlreadyHasProtectedOrGeneratedTitle(
           get(),
           entry.tabId ?? getTabIdFromPaneKey(paneKey),
           entry.worktreeId
         ))
-    const generatedTitlePrompt =
-      liveIsDispatchPrompt && mayWriteGeneratedTitle
-        ? getAgentRowGeneratedTitleText(entry)
-        : entry.prompt
+    const generatedTitlePrompt = mayWriteGeneratedTitle
+      ? getAgentRowGeneratedTitleText(entry)
+      : entry.prompt
     applyGeneratedTabTitleUpdate({
       paneKey,
       prompt: generatedTitlePrompt,
-      ...(shouldReplaceGeneratedTitle ? { options: { replaceExistingGeneratedTitle: true } } : {})
+      ...(hasOrchestrationLabels ? { options: { replaceExistingGeneratedTitle: true } } : {})
     })
     requestFreshness(true)
     if (builtResult.completionRefreshWorktreeId) {

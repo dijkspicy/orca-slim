@@ -1,6 +1,15 @@
 import { resolveHookCommandSourcePolicy } from '../../../shared/hook-command-source-policy'
 import type { Repo } from '../../../shared/repo-types'
-import type { HookCheckResult } from '@/runtime/runtime-hooks-client'
+
+// Why: the runtime hooks client was culled; the check result is a plain serializable shape.
+export type HookCheckResult = {
+  status?: 'ok' | 'error'
+  hasHooks: boolean
+  hooks: {
+    scripts?: { setup?: string }
+  } | null
+  mayNeedUpdate: boolean
+}
 
 export function hasEffectiveSetupCommand(repo: Repo, hooksResult: HookCheckResult): boolean {
   const localSetup = repo.hookSettings?.scripts?.setup?.trim()

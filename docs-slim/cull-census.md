@@ -117,6 +117,138 @@
 
 D5 与 D6b 会改变要构建的内容，因此在对应切片开工前必须由用户裁定；其余四项不影响切片结构，可在对应阶段决定。
 
+### 3.8 脊柱判定表（`design.md` D-2 的 8 个脊柱，实测复核）
+
+D-2 的策略基于「修正分类器后的保留引用数」。下表是裁剪中段的实测复核：把引用者按
+**是否本身属于删除域**拆开，得到真正的「保留引用」。模式串 `/src/shared/<name>.ts` 的
+静态 `from` 与动态 `import()` 都计入。
+
+| 脊柱 | D-2 保留引用 | 实测保留引用 | 其中在删除域内 | 保留侧测试 | 策略（D-2） | 当前状态 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `browser-client-host-protocol.ts` | 3 | 10 | 35 | 2 | 整删 | 文件仍在 |
+| `structured-agent-session-create.ts` | 6 | 9 | 0 | 1 | 整删 | 文件仍在 |
+| `structured-agent-session-projection.ts` | 8 | 28 | 20 | 16 | 整删 | 文件仍在 |
+| `native-chat-session-options.ts` | 16 | 16 | 26 | 1 | 收窄 + 改名 `agent-session-options` | 文件仍在，未改名 |
+| `native-chat-types.ts` | 23 | 39 | 90 | 8 | 就地收窄 | 文件仍在 |
+| `browser-workspace-types.ts` | 46 | 82 | 73 | 31 | 就地收窄 | 文件仍在 |
+| `ssh-types.ts` | 106 | 172 | 69 | 63 | 先域清扫再定 | 文件仍在 |
+| `telemetry-events.ts` | 61 | 64 | 18 | 8 | stub（不删调用点） | 文件仍在，仍可传输（4.10 已置 `TELEMETRY_ENABLED=false`） |
+
+**复核结论**：
+
+1. **「整删」的三个脊柱，删除成本比 D-2 估计的高**——`structured-agent-session-projection` 的
+   保留引用是 28（D-2 记 8），且有 16 个保留侧测试文件引用它。整删意味着这 16 个测试要一起处理，
+   所以它必须落在 8.3 的同一片内，不能单独删。
+2. **`structured-agent-session-create` 的保留引用几乎全在删除域外**（9 保留 / 0 删除域）：它的
+   引用者本身就是应删未删的散件，说明 T2 的 DELETE 清单漏了这些引用者。删脊柱前先补分类器。
+3. **`telemetry-events` 的 stub 策略得到验证**：64 个保留引用跨 daemon / agent-hooks / ipc-pty。
+   4.10 已用「运行时禁用」而不是「删调用点」处理，契约上达到同一效果且只改 1 处。
+4. **`ssh-types` 的 172 个保留引用**与 D-2 的 106 同量级，确认「先域清扫再定」是必要的——
+   其中 69 个引用者本身在删除域内，清扫会显著降低该数字。
+5. 文件名 `structured-agent-session-options.ts` **已存在**（与 `native-chat-session-options.ts` 并存），
+   所以 3.6 的「改名」实为**合并**两个文件，需要一并核对两者的导出符号集合。
+
+#### D-3 `execution-host` 收窄：待执行，现状已实测
+
+`ExecutionHostKind` 目前仍是 `'local' | 'ssh' | 'runtime'`（`src/shared/execution-host.ts:8`），
+`ExecutionHostId` 仍是 `LOCAL_EXECUTION_HOST_ID | \`ssh:${string}\` | \`runtime:${string}\``（同文件 L9），
+`ParsedExecutionHost` 仍有 `kind: 'ssh'` / `kind: 'runtime'` 分支。即 **3.1 未执行**。
+
+`src/shared/execution-host-registry.ts` 仍依赖全部 6 个模块，即 **3.2 未执行**：
+
+| 行 | 依赖 |
+| --- | --- |
+| L1 | `RuntimeEnvironmentStatus` ← `./runtime-host-status` |
+| L13 | `evaluateRuntimeCompat` / `RuntimeCompatVerdict` ← `./protocol-compat` |
+| L14 | `MIN_COMPATIBLE_RUNTIME_SERVER_VERSION` / `RUNTIME_PROTOCOL_VERSION` ← `./protocol-version` |
+| L15 | `RuntimeStatus` ← `./runtime-types` |
+| L16 | `SshConnectionState` / `SshConnectionStatus` ← `./ssh-types` |
+| L17 | `RuntimeEnvironmentSource` ← `./runtime-environments` |
+
+**收窄结论（待 3.1/3.2 落地后回填）**：因为 `ExecutionHostKind` 要收窄到只留 `local`，
+`execution-host.ts` 的 `ParsedExecutionHost` 联合类型必须同时去掉 ssh/runtime 两个分支——
+只改 `ExecutionHostKind` 而留 `ExecutionHostId` 的模板串会让两个类型自相矛盾（`ssh:${string}`
+不再能被解析成合法 kind）。所以 3.1 的正确范围是**三个类型一起收窄**，并由 `pnpm tc` 反向找全
+调用点；`execution-host-registry` 的 6 个依赖则在 3.2 一次性摘除，这 6 个模块本身就是删除域成员，
+摘除后它们的可达性会一并下降。
+
+### 5.5 无主孤儿名册（F-18 的实测产物，即任务 5.x 的工作单）
+
+分片法（F-16）按「生成工作单时是否 import 删除域」分配文件，因此**任何 lane 的 `git rm` 都会新造出一批
+无主孤儿**：被删文件的 import 者，当时不在任何工作单里，事后也没有 lane 拥有它。lane 自己撞见时会
+按边界纪律停手（lane-07、lane-13 均如此），把它们留给收尾。
+
+**不要预测这批文件——让编译器列出来**：排空后跑 `pnpm tc`，`TS2307`（找不到模块）的集合就是这份名册。
+
+下列条目是两条 lane 排空后的实测上报，作为该名册的首批输入（**已核实为存在**）：
+
+| 来源 | 文件 | 裁定 |
+| --- | --- | --- |
+| lane-13 | `claude-background-task-tracker.ts` | 随 agent-stack 清扫 `git rm` |
+| lane-13 | `claude-overflow-terminal-rows.ts` | 同上 |
+| lane-13 | `claude-child-work-decoder.ts` | 同上 |
+| lane-13 | `claude-child-work-evidence.ts` | 同上 |
+| lane-13 | `claude-structured-control-actions.ts` | 同上 |
+| lane-13 | `claude-structured-session-acquisition-options.ts` | 同上 |
+| lane-13 | `claude-context-usage.ts` | 同上 |
+| lane-13 | `claude-structured-dispatch-test-support.ts` | 同上（测试支持件） |
+| lane-13 | `claude-structured-child-work-producer.test.ts` | 同上 |
+| lane-07 | `task-page/*`、`use-task-page-*`、`github-item-dialog/*` 集群 | 整删（唯一用途是被删域） |
+| lane-07 | `github/pr-check-presentation.ts` | 整删 |
+| lane-07 | `pull-request-page/checks/layouts.tsx` | 整删 |
+| lane-07 | `linear-issue-attribute-filter-coverage-notice.tsx`(+一致性测试) | 整删 |
+| lane-07 | `linear-item-drawer-edit-*` 布局、`linear-issue-text-{draft-state,save-plan}.test.ts` | 整删 |
+| lane-07 | `task-page-github-work-item-{authority-refresh,mutation-keys}.ts` | 整删 |
+| lane-07 | `settings/TaskSourceLinearSetup.tsx`、`settings/task-tracker-integration-cards.tsx` | 整删 |
+| lane-07 | `onboarding/IntegrationsStep.tsx` | 整删 |
+
+**保留侧传导链（lane-07 报，须收尾解）**：`TasksPane.tsx`（lane-16 拥有）、`IntegrationsPane.tsx`、
+`OnboardingFlow.tsx`、`FeatureWallBody.tsx`、`ConnectIntegrationsList.tsx` 仍 import 上表的设置面板。
+lane-07 正确地没有越界改 lane-16/17/30 的文件——这条链属于 6.1「装配总线收尾」。
+
+**跨 lane 的类型切割待收口**（lane-13 主动上报，读点归各自 lane）：
+`project-types.ts` / `repo-types.ts` 去掉了 `hookSettings` / `upstream` / `ghAccount`；
+`runtime-session-contracts.ts` 去掉了 `remoteUpdateSupport` / `remoteControl`；
+`runtime-client-events.ts` 去掉了 `sshStateChanged` / `sshStates`；
+`runtime-upload-staging-contract.ts` 去掉 `& SshMutationExpectation`；
+`runtime-rpc-envelope.ts` 去掉 `orchestrationCompatibilityEvidence`；
+`ui-chrome-types.ts` 去掉 `linearContext`；`source-control-primary-action-decision-types.ts` 去掉 `prState`。
+**这些字段的读取点会在其他 lane 的文件里变成悬空读**，属于同一次 `tc` 清扫。
+
+#### 追加名册（lane-02 / lane-03 排空后上报）
+
+lane-03 把 `runtime-linear-command-dependencies.ts` **收窄到保留导出**，从而暴露出一类 F-18 之外的新空缺：
+**barrel 收窄的传导**。`src/main/runtime/runtime-linear-*` 家族（18 个文件）**不直接 import 任何删除域模块**，
+所以它们从未进入任何 lane 的工作单；但它们消费的是被收窄 barrel 的**导出符号**，因此 barrel 一窄就全断。
+这与 F-10（删 barrel 成员前先收窄）是同一机制的反方向，**同样只能由 `tc` 暴露**。
+
+| 类别 | 文件 | 裁定 |
+| --- | --- | --- |
+| barrel 收窄传导 | `src/main/runtime/runtime-linear-*`（18 个，全家族未被任何 lane 覆盖） | 整删（本身即 forge-task 域） |
+| 未被任何 lane 覆盖 | `runtime/rpc/methods/` 的 github / gitlab / linear / jira / session-tab-markdown / mobile-markdown-tab 方法 | 整删 |
+| lane-01 越界残留 | `orca-runtime-file-commands.ts` 仍 import 已删 gitlab/github 命令类 | lane-01 收尾 |
+| lane-01 越界残留 | `orca-runtime-get-status.ts` 仍 import 已删 `browser-identity-mode-store`、`mobile-web-bundle-capability` | lane-01 收尾（该文件的边不在任何工作单内） |
+| lane-24 依赖 | `main-window-core-services.ts` 仍传已删的 `prepareClaudeAuth` 参数 | 6.1 收尾 |
+| lane-30 依赖 | `ipc/pty/host-env/types.ts` 仍 import 已删 claude-accounts 类型 | 6.1 收尾 |
+| 删除字段的读取点 | lane-02 `orca-runtime-pty-foreground-process-reads.ts`、lane-30 `worktree-removal-ownership.ts` 读已删的 `structuredStopped` | 各自 lane / 6.1 |
+
+lane-03 另报两条**故意保留**（非疏漏）：`provider-check-summary.ts`（lane-12 的 `pr-check-status.ts` 仍消费）、
+`setup-script-telemetry.ts`（lane-17 的 exposure-telemetry 仍消费）——均按「收窄而非删除」处理。
+
+#### 追加名册（lane-02 排空后上报）
+
+| 类别 | 文件 | 裁定 |
+| --- | --- | --- |
+| 无 lane 覆盖 | `rpc/methods/structured-agent-session.ts` 仍调用已删的 `runtime.replaceStructuredAgentSessionTab` | 整删（该 RPC 面全属 agent-stack） |
+| 跨 lane 空壳调用 | `rpc/methods/accounts.ts`、`startup/main-process-runtime-service.ts`（lane-24）仍引用 `RuntimeAccountController` 已被掏空的方法；`runtime-service-command-surface.ts`（lane-03）同 | 6.1 收尾 |
+| 跨 lane 空壳调用 | `orca-runtime-has-exact-persisted-terminal-surface-identity.ts`（lane-01）调用已删的 `automation.setService` | lane-01 / 6.1 |
+| 消费者尽失（可删） | `browser-dialog-settlement.ts`、`browser-screencast-ghost-subscriber-eviction.ts` | 随 browser 波整删 |
+
+lane-02 同时删掉 **8 个不在其工作单内**的孤儿（`runtime-browser-commands-{browser-clear,browser-network-log,
+browser-set-headers,state}`、`orchestration/worker-attention-context` 等）——即 F-18 所说「删除自造孤儿」
+的又一实例，方向与 lane-07/13 一致。**四个已排空的 lane（02/03/07/13）无一例外都撞上此缺口**，
+故这不是偶发，而是分片法的常态，收尾必须按 `tc` 的 `TS2307` 集合系统处理。
+
 ## T1 src/shared/rpc-contract (89 文件)
 
 ### KEEP (1)

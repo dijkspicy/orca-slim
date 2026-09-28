@@ -6,7 +6,6 @@ import {
   getExecutionHostIdForWorktree,
   getRuntimeEnvironmentIdForWorktree
 } from '@/lib/worktree-runtime-owner'
-import { getRemoteRuntimePtyEnvironmentId } from '@/runtime/runtime-terminal-stream'
 import type { AppState } from '@/store/types'
 import type { PtyTransport } from './pty-transport-types'
 import { isWslShellOverride } from './terminal-paste-runtime'
@@ -60,9 +59,7 @@ export function resolveTerminalInputHostPlatform(args: {
   // Why: a running pane keeps its spawn-time runtime even if the worktree's
   // selected host changes later, so the live PTY identity is authoritative.
   const ptyId = args.transport?.getPtyId?.() ?? null
-  const runtimeEnvironmentId =
-    args.transport?.getRuntimeEnvironmentId?.() ??
-    (ptyId ? getRemoteRuntimePtyEnvironmentId(ptyId) : null)
+  const runtimeEnvironmentId = args.transport?.getRuntimeEnvironmentId?.() ?? null
   const transportExecutionHost = parseExecutionHostId(args.transport?.getExecutionHostId?.())
   if (runtimeEnvironmentId && transportExecutionHost?.kind === 'ssh') {
     return (

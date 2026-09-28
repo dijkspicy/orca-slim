@@ -75,7 +75,7 @@ export function runDeferredSessionAttach(session: ConnectPanePtySession): void {
           console.warn('[pty-connection] needsPassphrasePrompt probe failed:', err)
           // Why: on probe failure fall through to auto-connect rather than stranding the tab — a stuck tab is worse than a surprising prompt.
         }
-        if (!isCurrentPaneTransport() || !session.capturedDirectSshRetryLeaseMatches()) {
+        if (!isCurrentPaneTransport()) {
           return
         }
         if (needsPrompt) {
@@ -86,7 +86,7 @@ export function runDeferredSessionAttach(session: ConnectPanePtySession): void {
             // Wait for the user-driven connect (sidebar card control or terminal reconnect overlay → passphrase → ssh.connect) to complete.
             // Why: resolve on terminal-failure statuses too ('auth-failed'/'error'/'reconnection-failed') so it can't hang forever if the user cancels or the connect fails.
             const outcome = await waitForUserInitiatedSshConnect(session)
-            if (!isCurrentPaneTransport() || !session.capturedDirectSshRetryLeaseMatches()) {
+            if (!isCurrentPaneTransport()) {
               return
             }
             if (outcome === 'cancelled') {
@@ -101,7 +101,7 @@ export function runDeferredSessionAttach(session: ConnectPanePtySession): void {
 
         // Why: wait for the shared SSH connection (multiple panes/tabs may need it) before PTY reattach, rather than returning early when it's in-flight.
         const connectResult = await waitForSshConnection(session.connectionId)
-        if (!isCurrentPaneTransport() || !session.capturedDirectSshRetryLeaseMatches()) {
+        if (!isCurrentPaneTransport()) {
           return
         }
         if (!connectResult.connected) {
@@ -180,9 +180,6 @@ export function runDeferredSessionAttach(session: ConnectPanePtySession): void {
               : {}),
             ...(coldRestoreStartup?.agent ? { launchAgent: coldRestoreStartup.agent } : {}),
             ...(session.shouldDeclareHiddenAtSpawn() ? { initiallyHidden: true } : {}),
-            ...(session.directSshRetryAttempt
-              ? { admitPtyId: session.claimCapturedDirectSshRetryPty }
-              : {}),
             callbacks: outputCallbacks.callbacks
           })
           void Promise.resolve(reattachPromise)
@@ -190,7 +187,7 @@ export function runDeferredSessionAttach(session: ConnectPanePtySession): void {
             .finally(() => {
               session.transportConnectInFlightSince = null
             })
-          const trackedReattachPromise = Promise.resolve(reattachPromise)
+          const _trackedReattachPromise = Promise.resolve(reattachPromise)
             .then(async (result) => {
               if (!isCurrentReattach()) {
                 session.finishReattachLiveDataDeferral(false, outputCallbacks.generation)
@@ -287,10 +284,6 @@ export function runDeferredSessionAttach(session: ConnectPanePtySession): void {
               session.reportError(err instanceof Error ? err.message : String(err))
               recoverUnverifiableDirectSshReattach(session, pendingSessionId)
             })
-          session.armDirectSshPaneRetryTimeout(
-            trackedReattachPromise,
-            session.directSshRetryAttempt
-          )
         } else {
           session.startFreshColdRestoreAgentResume()
         }

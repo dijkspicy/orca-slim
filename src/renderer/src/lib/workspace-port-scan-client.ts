@@ -1,9 +1,7 @@
-import {
-  callRuntimeRpc,
-  RuntimeRpcCallError,
-  type RuntimeClientTarget
-} from '@/runtime/runtime-rpc-client'
 import type { WorkspacePort, WorkspacePortScanResult } from '../../../shared/workspace-ports'
+
+/** Mirror of the removed runtime-client target union, kept structural for call-site compatibility. */
+export type RuntimeClientTarget = { kind: 'local' } | { kind: 'environment'; environmentId: string }
 
 const WORKSPACE_PORT_PLATFORMS = new Set<NodeJS.Platform | 'unknown'>([
   'aix',
@@ -91,25 +89,11 @@ export async function runWorkspacePortScanForTarget(
   if (target.kind === 'local') {
     return requireWorkspacePortScanResult(await window.api.workspacePorts.scan(params))
   }
-  try {
-    const result = await callRuntimeRpc<WorkspacePortScanResult>(
-      target,
-      'workspacePorts.scan',
-      params,
-      {
-        timeoutMs: 15_000
-      }
-    )
-    return requireWorkspacePortScanResult(result)
-  } catch (error) {
-    if (error instanceof RuntimeRpcCallError && error.code === 'method_not_found') {
-      return {
-        platform: 'unknown',
-        scannedAt: Date.now(),
-        ports: [],
-        unavailableReason: 'The connected runtime does not support workspace port management yet.'
-      }
-    }
-    throw error
+  // Remote runtime hosts went with the cull; there is no scan transport for them anymore.
+  return {
+    platform: 'unknown',
+    scannedAt: Date.now(),
+    ports: [],
+    unavailableReason: 'Workspace ports are unavailable for this execution host.'
   }
 }

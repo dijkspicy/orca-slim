@@ -6,7 +6,7 @@ import {
   processResult,
   useAgentCompletionCoordinatorLifecycle
 } from './agent-completion-coordinator-test-harness'
-import type { RuntimeTerminalProcessInspection } from '@/runtime/runtime-terminal-inspection'
+import type { TerminalProcessInspection } from '../../../../shared/terminal-process-inspection'
 
 describe('agent completion coordinator', () => {
   useAgentCompletionCoordinatorLifecycle()
@@ -303,7 +303,7 @@ describe('agent completion coordinator', () => {
         hasChildProcesses: false,
         verdict: 'unverifiable',
         reason: 'transport_loss'
-      } satisfies RuntimeTerminalProcessInspection
+      } satisfies TerminalProcessInspection
     },
     {
       label: 'host child-process uncertainty',
@@ -311,10 +311,10 @@ describe('agent completion coordinator', () => {
         foregroundProcess: '/bin/zsh',
         hasChildProcesses: false,
         childProcessEvidence: 'unverifiable'
-      } satisfies RuntimeTerminalProcessInspection
+      } satisfies TerminalProcessInspection
     }
   ])('resets exit confirmation across $label', async ({ result: unavailableResult }) => {
-    let result: RuntimeTerminalProcessInspection = processResult('codex')
+    let result: TerminalProcessInspection = processResult('codex')
     const dispatchCompletion = vi.fn()
     const coordinator = createAgentCompletionCoordinator({
       paneKey: 'tab-1:leaf-1',

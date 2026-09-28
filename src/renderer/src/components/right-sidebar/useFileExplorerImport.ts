@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { extractIpcErrorMessage } from '@/lib/ipc-error'
-import { importExternalPathsToRuntime } from '@/runtime/runtime-file-client'
 import { translate } from '@/i18n/i18n'
 import type { FileExplorerOperationOwner } from './file-explorer-types'
 import { captureFileExplorerOperationGuard } from './file-explorer-operation-owner'
@@ -68,20 +67,11 @@ export function useFileExplorerImport({
         try {
           const operationGuard = captureFileExplorerOperationGuard(wtId, operationOwnerRef.current)
           operationGuard.assertCurrent()
-          const { results } = await importExternalPathsToRuntime(
-            {
-              settings: operationGuard.route.settings,
-              worktreeId: wtId,
-              worktreePath: worktreePathRef.current,
-              connectionId: operationGuard.route.connectionId,
-              expectedExecutionHostId: operationGuard.route.expectedExecutionHostId,
-              expectedSshTargetId: operationGuard.route.expectedSshTargetId,
-              expectedSshConnectionGeneration: operationGuard.route.expectedSshConnectionGeneration
-            },
-            paths,
-            destinationDir,
-            { assertCurrent: operationGuard.assertCurrent }
-          )
+          const { results } = await window.api.fs.importExternalPaths({
+            sourcePaths: paths,
+            destDir: destinationDir,
+            connectionId: operationGuard.route.connectionId
+          })
 
           // Refresh the destination directory once per gesture
           await refreshDirRef.current(destinationDir)

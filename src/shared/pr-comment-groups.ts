@@ -1,4 +1,4 @@
-import type { PRComment } from './github/comment-types'
+import type { PRComment } from './pr-review-data-types'
 
 export type PRCommentGroup =
   | { kind: 'standalone'; comment: PRComment }

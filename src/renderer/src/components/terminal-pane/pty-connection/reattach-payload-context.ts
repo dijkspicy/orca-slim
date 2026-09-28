@@ -10,7 +10,6 @@ export type ReattachPayloadContext = {
   prefetchedParkModelSnapshot: PtyBufferSnapshot | null
   revealFollowsTerminalPark: boolean
   /** SSH reconnect remount that may paint from main's model under sshReconnectPaintsFromModel. */
-  reconnectMayUseModel: boolean
   fetchSshMainModelReattachSnapshot: () => Promise<PtyBufferSnapshot | null>
   shouldApplyStructuralPayload: boolean
   coldRestoreStartup: ColdRestoreAgentResumeStartup | null | undefined

@@ -9,8 +9,12 @@ import { isWindowsAbsolutePathLike } from '../../../../shared/cross-platform-pat
 import type { ProjectGroup } from '../../../../shared/project-group-types'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import type { AgentStartupShell } from '../../../../shared/tui-agent-startup-shell'
-import type { SessionOptionValue } from '../../../../shared/native-chat-session-options'
 import { isWslUncPath } from '../../../../shared/wsl-paths'
+
+// Why: reuses the kept startup-plan contract instead of the removed chat-session-options module.
+type FolderWorkspaceSessionOptions = NonNullable<
+  Parameters<typeof buildAgentStartupPlan>[0]['sessionOptions']
+>
 
 export function getFolderWorkspaceAgentLaunchPlatform(
   projectGroup: Pick<ProjectGroup, 'connectionId' | 'parentPath'>
@@ -38,7 +42,7 @@ export function buildFolderWorkspaceLinkedStartupPlan(args: {
   agentCmdOverrides: Record<string, string> | undefined
   agentArgs?: string | null
   agentEnv?: Record<string, string>
-  sessionOptions?: Record<string, SessionOptionValue>
+  sessionOptions?: FolderWorkspaceSessionOptions
   platform: NodeJS.Platform
   shell?: AgentStartupShell
   isRemote: boolean

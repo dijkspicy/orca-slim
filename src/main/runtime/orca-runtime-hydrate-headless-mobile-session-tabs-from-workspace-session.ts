@@ -116,10 +116,7 @@ export class OrcaRuntimeWithHydrateHeadlessMobileSessionTabsFromWorkspaceSession
         persistedTabs,
         session
       ).filter(
-        (tab) =>
-          options.onlyRuntimeOwnedTerminals !== true ||
-          this.hasServeOrSshOwnedBinding(tab) ||
-          this.hasRecentExpiredSshLeasePane(entryWorktreeId, tab)
+        (tab) => options.onlyRuntimeOwnedTerminals !== true || this.hasServeOrSshOwnedBinding(tab)
       )
       // Why: offscreen browser panes are live-only (no persisted session entry),
       // so include them on every hydrate regardless of the onlyRuntimeOwnedTerminals

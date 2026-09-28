@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import type { PRComment } from '../../../shared/github/comment-types'
 import { groupPRComments, type PRCommentGroup } from '../../../shared/pr-comment-groups'
 import {
   getPRCommentGroupActionState,
@@ -8,7 +7,9 @@ import {
   sortPRCommentGroupsByRecency
 } from './pr-comment-action-state'
 
-function comment(overrides: Partial<PRComment> & { id: number }): PRComment {
+type CommentInput = Parameters<typeof groupPRComments>[0][number]
+
+function comment(overrides: Partial<CommentInput> & { id: number }): CommentInput {
   return {
     author: 'alice',
     authorAvatarUrl: '',

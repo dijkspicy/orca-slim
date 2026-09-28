@@ -31,12 +31,6 @@ vi.mock('../browser/browser-client-page-renderer-runtime', async () => {
 
 import { createMainWindow, loadMainWindow } from './createMainWindow'
 import { ipcMain } from 'electron'
-import { getBrowserClientHostId } from '../browser/browser-client-host-id'
-import {
-  formatBrowserClientHostIdArgument,
-  readBrowserClientHostIdArgument
-} from '../../shared/browser-client-host-id-argument'
-import { resetExpectedTeardownStateForTest } from '../crash-reporting/expected-teardown-state'
 import {
   attachGuestPoliciesMock,
   attachRouteGuestMock,
@@ -52,7 +46,6 @@ import {
 describe('createMainWindow', () => {
   beforeEach(() => {
     resetMainWindowMocks()
-    resetExpectedTeardownStateForTest()
     vi.useRealTimers()
   })
 
@@ -288,65 +281,6 @@ describe('createMainWindow', () => {
   // Why the renderer is told this at birth rather than asked for it: it needs to know whether a
   // client-placed page is its own guest before it interprets the first session snapshot, and
   // Electron never answers a sendSync that lands before its listener exists.
-  it('stamps the browser host id into the renderer that owns the guests, and strips it from a guest that carries one', () => {
-    const windowHandlers: Record<string, (...args: any[]) => void> = {}
-    const webContents = {
-      getURL: vi.fn(() => 'file:///opt/orca/renderer/index.html'),
-      isDestroyed: vi.fn(() => false),
-      mainFrame: {},
-      on: vi.fn((event, handler) => {
-        windowHandlers[event] = handler
-      }),
-      once: vi.fn((event, handler) => {
-        windowHandlers[event] = handler
-      }),
-      setZoomLevel: vi.fn(),
-      setBackgroundThrottling: vi.fn(),
-      invalidate: vi.fn(),
-      setWindowOpenHandler: vi.fn(),
-      send: vi.fn(),
-      isDevToolsOpened: vi.fn(),
-      openDevTools: vi.fn(),
-      closeDevTools: vi.fn()
-    }
-    browserWindowMock.mockImplementation(function () {
-      return {
-        webContents,
-        on: vi.fn(),
-        isDestroyed: vi.fn(() => false),
-        isMaximized: vi.fn(() => true),
-        isFullScreen: vi.fn(() => false),
-        getSize: vi.fn(() => [1200, 800]),
-        setSize: vi.fn(),
-        maximize: vi.fn(),
-        show: vi.fn(),
-        loadFile: vi.fn(() => Promise.resolve()),
-        loadURL: vi.fn(() => Promise.resolve())
-      }
-    })
-
-    createMainWindow(null)
-
-    const stamped = browserWindowMock.mock.calls[0]?.[0].webPreferences?.additionalArguments
-    expect(stamped).toEqual([formatBrowserClientHostIdArgument(getBrowserClientHostId())])
-    expect(readBrowserClientHostIdArgument(stamped ?? [])).toBe(getBrowserClientHostId())
-
-    // Electron 43 does not hand a guest the embedder's additionalArguments, so this stamp is one
-    // Electron would not have put there: what is pinned is that a guest cannot come out of the
-    // handler holding the id, not that it arrives holding it.
-    const guestPreferences = {
-      partition: 'persist:orca-browser',
-      additionalArguments: [...(stamped ?? [])]
-    }
-    windowHandlers['will-attach-webview'](
-      { preventDefault: vi.fn() } as never,
-      guestPreferences as never,
-      { src: 'data:text/html,' } as never
-    )
-
-    expect(guestPreferences.additionalArguments).toBeUndefined()
-  })
-
   it('sets platform-specific titlebar and frame options for every desktop platform', () => {
     for (const [platform, expected] of [
       ['darwin', { titleBarStyle: 'hiddenInset', frame: undefined }],

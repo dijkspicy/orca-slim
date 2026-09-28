@@ -2,7 +2,6 @@ import type { Tab } from '../../../../shared/tab-types'
 import { useAppStore } from '../../store'
 import { requestEditorFileClose } from '../editor/editor-autosave'
 import { closeTerminalTab } from '../terminal/terminal-tab-actions'
-import { closeWorkspaceBrowserTab } from '@/lib/workspace-browser-tab-close'
 
 export function createWorkspaceTabCloseCommands({
   worktreeId,
@@ -72,12 +71,8 @@ export function createWorkspaceTabCloseCommands({
       return
     }
     if (item.contentType === 'browser') {
-      const plan = closeWorkspaceBrowserTab(worktreeId, item.entityId, item.id)
-      // Why: the empty check below answers "the user emptied this worktree". Unwinding a create
-      // that never finished is not that — it must leave the selection as the click found it.
-      if (!plan.closesLocally || plan.localCloseReason === 'cleanup') {
-        return
-      }
+      // Browser tabs went with the browser cull; closing one just removes the row.
+      closeUnifiedTab(item.id)
     } else if (item.contentType === 'simulator') {
       closeUnifiedTab(item.id)
     } else {

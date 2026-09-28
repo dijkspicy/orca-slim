@@ -1,4 +1,5 @@
-import { ORCHESTRATION_MESSAGE_WAIT_DEFAULT_TIMEOUT_MS } from '../../shared/orchestration-message-wait-timeout'
+// The shared constant lived in the removed orchestration-message-wait-timeout module.
+const ORCHESTRATION_MESSAGE_WAIT_DEFAULT_TIMEOUT_MS = 2 * 60 * 1000
 
 export type MessageWaitResult = 'notified' | 'timed_out' | 'cancelled' | 'waiter_exists'
 

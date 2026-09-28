@@ -4,8 +4,12 @@ import { translate } from '@/i18n/i18n'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { PublicKnownRuntimeEnvironment } from '../../../../shared/runtime-environments'
 import type { RuntimeStatus } from '../../../../shared/runtime-types'
-import { isRuntimeEnvironmentRemovalBlocked } from './runtime-environment-host-details'
 import type { RuntimeHostAccessFailure } from './RuntimeHostAccessForm'
+// Moved from the deleted host-details module: the active server cannot remove itself.
+const isRuntimeEnvironmentRemovalBlocked = (
+  activeRuntimeEnvironmentId: string | null | undefined,
+  environmentId: string
+): boolean => activeRuntimeEnvironmentId === environmentId
 
 type RuntimeEnvironmentMutationActionParams = {
   environments: PublicKnownRuntimeEnvironment[]

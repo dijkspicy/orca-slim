@@ -1,8 +1,6 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
 import { OrchestrationStructuredMailboxPointerDelivery } from './orchestration/structured-mailbox-pointer-delivery'
 import { createStructuredMailboxPointerHost } from './orchestration/structured-mailbox-pointer-host'
-import { isStructuredWorkerHandle } from './structured-worker-identity'
-import { resolveStructuredWorkerAuthority } from './structured-worker-authority'
 import { OrcaRuntimeWithRuntimeId } from './orca-runtime-runtime-id'
 import { RuntimeTerminalAgentPresence } from './runtime-terminal-agent-presence'
 import type { RuntimeNotifier } from './runtime-notifier-contract'
@@ -14,8 +12,6 @@ import type {
   RuntimeWorktreeScanCache,
   RuntimeWorktreeScanInFlight
 } from './orca-runtime-core'
-import type { AgentBrowserBridge } from '../browser/agent-browser-bridge'
-import type { BrowserBackend } from '../browser/browser-backend'
 import { RuntimeResolvedWorktreeCache } from './runtime-resolved-worktree-cache'
 import { RuntimeWorktreeLineageController } from './runtime-worktree-lineage-controller'
 import { RuntimeAgentOrchestrationProjection } from './runtime-agent-orchestration-projection'
@@ -30,7 +26,6 @@ import { OrchestrationMailboxPointerDelivery } from './orchestration/mailbox-poi
 import { OrchestrationMailboxNotificationCoordinator } from './orchestration/mailbox-notification-coordinator'
 import type { RuntimeMessageWaiter } from './runtime-message-waiters'
 import { RuntimeMessageWaiters } from './runtime-message-waiters'
-import type { RuntimeSkillCommands } from './runtime-skill-command-surface'
 import { RuntimeTerminalStreamConsumers } from './runtime-terminal-stream-consumers'
 import type { RecentPtyOutputBuffer } from './recent-pty-output-buffer'
 
@@ -40,8 +35,6 @@ export class OrcaRuntimeWithStopRequestedPtyIds extends OrcaRuntimeWithRuntimeId
   protected readonly ptyExitListenersByPtyId = new Map<string, Set<() => void>>()
 
   protected readonly terminalAgentPresence = new RuntimeTerminalAgentPresence({
-    isLiveStructuredAgent: (handle) =>
-      Boolean(resolveStructuredWorkerAuthority(handle, this._orchestrationDb)),
     getLivePty: (handle) => this.getLivePtyForHandle(handle)?.pty ?? null,
     getLiveLeaf: (handle) => this.getLiveLeafForHandle(handle).leaf,
     getPrimaryLeaf: (ptyId) => this.getLeavesForPty(ptyId)[0] ?? null,
@@ -73,9 +66,12 @@ export class OrcaRuntimeWithStopRequestedPtyIds extends OrcaRuntimeWithRuntimeId
   protected readonly worktreeLifecycleEvents =
     new RuntimeWorktreeLifecycleEvents<RuntimeWorktreeLifecycleEvent>()
 
-  protected agentBrowserBridge: AgentBrowserBridge | null = null
+  // Vestiges of the culled browser domain: their only assigners (browser bridge
+  // wiring, offscreen backend) were deleted, so these stay null and every guard
+  // on them takes the no-offscreen path.
+  protected agentBrowserBridge: unknown = null
 
-  protected offscreenBrowserBackend: BrowserBackend | null = null
+  protected offscreenBrowserBackend: unknown = null
 
   protected readonly resolvedWorktrees = new RuntimeResolvedWorktreeCache()
 
@@ -107,8 +103,7 @@ export class OrcaRuntimeWithStopRequestedPtyIds extends OrcaRuntimeWithRuntimeId
     getWorktreeId: (handle) => this.getTerminalWorktreeIdForHandle(handle),
     getHandleForPaneKey: (paneKey) => this.getTerminalHandleForPaneKey(paneKey),
     getPaneKey: (handle) => this.getPaneKeyForTerminalHandle(handle),
-    getDispatchAuthority: (handle) => this.getOrchestrationDispatchAuthority(handle),
-    getAgentStatusSnapshot: () => this.getOrchestrationFleetAgentStatusSnapshot()
+    getDispatchAuthority: (handle) => this.getOrchestrationDispatchAuthority(handle)
   })
 
   protected readonly terminalList = new RuntimeTerminalList({
@@ -187,7 +182,6 @@ export class OrcaRuntimeWithStopRequestedPtyIds extends OrcaRuntimeWithRuntimeId
     getDb: () => this._orchestrationDb,
     getTerminalHandleForPaneKey: (paneKey) => this.getTerminalHandleForPaneKey(paneKey),
     hasTerminalHandle: (handle) => this.handles.has(handle),
-    isStructuredWorkerHandle: (handle) => isStructuredWorkerHandle(handle),
     canProbePtyLiveness: () => Boolean(this.ptyController?.probePtyLiveness),
     controllerKnowsPtyIsLive: (ptyId) => this.controllerKnowsPtyIsLive(ptyId),
     isLeafPtyProvenAbsent: (ptyId) => this.isLeafPtyProvenAbsent(ptyId)
@@ -241,8 +235,6 @@ export class OrcaRuntimeWithStopRequestedPtyIds extends OrcaRuntimeWithRuntimeId
     })
 
   protected readonly messageWaiters = new RuntimeMessageWaiters()
-
-  protected readonly skillCommands: RuntimeSkillCommands
 
   // Why: mobile clients subscribe to terminal output via terminal.subscribe.
   // These listeners fire on every onPtyData call, enabling real-time streaming

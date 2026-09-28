@@ -2,38 +2,24 @@ import type { PairingOffer } from '../../shared/pairing'
 import { resolveEnvironment } from '../../shared/runtime-environment-store'
 import { getPreferredPairingOffer } from '../../shared/runtime-environments'
 import type { RuntimeHostStatusOwner } from '../../shared/runtime-host-status-owner'
-import type { RuntimeStatus } from '../../shared/runtime-types'
-import { createRuntimeEnvironmentStatusOwner } from './runtime-environment-status-owner'
-import { ELECTRON_REMOTE_RUNTIME_CLIENT_CAPABILITIES } from '../../shared/protocol-version'
 import type {
   RuntimeOrchestrationEnvelope,
   RuntimeRpcResponse
 } from '../../shared/runtime-rpc-envelope'
-import { RemoteRuntimeRequestConnection } from '../../shared/remote-runtime-request-connection'
-import { RemoteRuntimeSharedControlConnection } from '../../shared/remote-runtime-shared-control-connection'
-import type {
-  RemoteRuntimeSharedConnectionDiagnostics,
-  RemoteRuntimeSharedSubscription
-} from '../../shared/remote-runtime-shared-control-types'
-import { isRuntimeEnvironmentCapabilityPaused } from './runtime-environment-capability-evidence'
+import { createRuntimeEnvironmentStatusOwner } from './runtime-environment-status-owner'
 import { isRuntimeEnvironmentManuallyDisconnected } from './runtime-environment-manual-disconnect'
-import { publishRuntimeEnvironmentDiagnostics } from './runtime-environment-diagnostics-broadcast'
-import {
-  advanceRuntimeEnvironmentTransportGeneration,
-  getRuntimeEnvironmentTransportGeneration
-} from './runtime-environment-transport-generation'
 
-type CachedRuntimeConnection = {
-  pairingKey: string
-  connection: RemoteRuntimeRequestConnection
+/** Local stand-in for the removed shared-control diagnostics record. */
+export type RuntimeEnvironmentConnectionDiagnostics = {
+  state: 'connecting' | 'ready' | 'reconnecting' | 'closed'
 }
+
+const TRANSPORT_UNAVAILABLE_MESSAGE = 'Runtime environment transport is unavailable'
 
 type CachedSharedControlConnection = {
   pairingKey: string
-  connection: RemoteRuntimeSharedControlConnection
 }
 
-const requestConnections = new Map<string, CachedRuntimeConnection>()
 const sharedControlConnections = new Map<string, CachedSharedControlConnection>()
 const statusOwners = new Map<string, { key: string; owner: RuntimeHostStatusOwner }>()
 
@@ -50,22 +36,12 @@ export function getRuntimeEnvironmentStatusOwner(
       closeRemoteRuntimeRequestConnection(environment.id)
     }
     const owner = createRuntimeEnvironmentStatusOwner(userDataPath, environment, {
-      isReady: () => getRemoteRuntimeSharedControlDiagnostics(environment.id)?.state === 'ready',
-      request: (signal) =>
-        sendRemoteRuntimeSharedControlRequest<RuntimeStatus>(
-          environment.id,
-          pairing,
-          'status.get',
-          undefined,
-          15_000,
-          undefined,
-          signal
-        ),
-      establish: () => {
-        ensureRemoteRuntimeSharedControlConnection(environment.id, pairing)
-        reconnectRemoteRuntimeSharedControlConnection(environment.id)
+      isReady: () => false,
+      request: () => {
+        throw new Error(TRANSPORT_UNAVAILABLE_MESSAGE)
       },
-      pause: () => pauseRemoteRuntimeSharedControlRetry(environment.id)
+      establish: () => {},
+      pause: () => {}
     })
     cached = { key, owner }
     statusOwners.set(environment.id, cached)
@@ -86,162 +62,68 @@ export function getRuntimeEnvironmentStatusSnapshots() {
   return [...statusOwners.values()].map(({ owner }) => owner.read())
 }
 
-export function sendRemoteRuntimeConnectionRequest<TResult>(
-  environmentId: string,
-  pairing: PairingOffer,
-  method: string,
-  params: unknown,
-  timeoutMs: number,
-  signal?: AbortSignal
-): Promise<RuntimeRpcResponse<TResult>> {
-  const pairingKey = getPairingKey(pairing)
-  let cached = requestConnections.get(environmentId)
-  if (!cached || cached.pairingKey !== pairingKey) {
-    cached?.connection.close()
-    cached = {
-      pairingKey,
-      connection: new RemoteRuntimeRequestConnection(
-        pairing,
-        ELECTRON_REMOTE_RUNTIME_CLIENT_CAPABILITIES
-      )
-    }
-    requestConnections.set(environmentId, cached)
-  }
-  return cached.connection.request(method, params, timeoutMs, signal)
-}
-
 export function closeRemoteRuntimeRequestConnection(environmentId: string): void {
   const status = statusOwners.get(environmentId)
   statusOwners.delete(environmentId)
   status?.owner.dispose()
-  const cached = requestConnections.get(environmentId)
-  requestConnections.delete(environmentId)
-  cached?.connection.close()
   closeRemoteRuntimeSharedControlConnection(environmentId)
 }
 
-export function sendRemoteRuntimeSharedControlRequest<TResult>(
-  environmentId: string,
-  pairing: PairingOffer,
-  method: string,
-  params: unknown,
-  timeoutMs: number,
-  envelope?: RuntimeOrchestrationEnvelope,
-  signal?: AbortSignal
+export function sendRemoteRuntimeConnectionRequest<TResult>(
+  _environmentId: string,
+  _pairing: PairingOffer,
+  _method: string,
+  _params: unknown,
+  _timeoutMs: number,
+  _signal?: AbortSignal
 ): Promise<RuntimeRpcResponse<TResult>> {
-  return getSharedControlConnection(environmentId, pairing).request(
-    method,
-    params,
-    timeoutMs,
-    envelope,
-    signal
-  )
+  throw new Error(TRANSPORT_UNAVAILABLE_MESSAGE)
 }
 
-export function subscribeRemoteRuntimeSharedControlRequest<TResult>(
-  environmentId: string,
-  pairing: PairingOffer,
-  method: string,
-  params: unknown,
-  timeoutMs: number,
-  callbacks: {
-    onResponse: (response: RuntimeRpcResponse<TResult>) => void
-    onBinary?: (bytes: Uint8Array<ArrayBufferLike>) => void
-    onError: (error: { code: string; message: string }) => void
-    onClose?: () => void
-  }
-): Promise<RemoteRuntimeSharedSubscription> {
-  return getSharedControlConnection(environmentId, pairing).subscribe(
-    method,
-    params,
-    timeoutMs,
-    callbacks
-  )
+export function sendRemoteRuntimeSharedControlRequest<TResult>(
+  _environmentId: string,
+  _pairing: PairingOffer,
+  _method: string,
+  _params: unknown,
+  _timeoutMs: number,
+  _envelope?: RuntimeOrchestrationEnvelope,
+  _signal?: AbortSignal
+): Promise<RuntimeRpcResponse<TResult>> {
+  throw new Error(TRANSPORT_UNAVAILABLE_MESSAGE)
+}
+
+export function subscribeRemoteRuntimeSharedControlRequest(
+  _environmentId: string,
+  _pairing: PairingOffer,
+  _method: string,
+  _params: unknown,
+  _timeoutMs: number,
+  _callbacks: unknown
+): Promise<never> {
+  throw new Error(TRANSPORT_UNAVAILABLE_MESSAGE)
 }
 
 export function closeRemoteRuntimeSharedControlConnection(environmentId: string): void {
-  const cached = sharedControlConnections.get(environmentId)
   sharedControlConnections.delete(environmentId)
-  cached?.connection.close()
 }
 
 export function getRemoteRuntimeSharedControlDiagnostics(
   environmentId: string
-): RemoteRuntimeSharedConnectionDiagnostics | null {
-  return sharedControlConnections.get(environmentId)?.connection.getDiagnostics() ?? null
+): RuntimeEnvironmentConnectionDiagnostics | null {
+  return sharedControlConnections.has(environmentId) ? { state: 'closed' } : null
 }
 
-export function reconnectRemoteRuntimeSharedControlConnection(environmentId: string): void {
-  sharedControlConnections.get(environmentId)?.connection.reconnectNow()
-}
+export function reconnectRemoteRuntimeSharedControlConnection(_environmentId: string): void {}
 
-export function retryRemoteRuntimeSharedControlConnectionNow(environmentId: string): void {
-  sharedControlConnections.get(environmentId)?.connection.retryNow()
-}
+export function retryRemoteRuntimeSharedControlConnectionNow(_environmentId: string): void {}
 
-export function pauseRemoteRuntimeSharedControlRetry(environmentId: string): void {
-  sharedControlConnections.get(environmentId)?.connection.pauseStandingRetry()
-}
+export function pauseRemoteRuntimeSharedControlRetry(_environmentId: string): void {}
 
 export function ensureRemoteRuntimeSharedControlConnection(
-  environmentId: string,
-  pairing: PairingOffer
-): void {
-  if (!isRuntimeEnvironmentManuallyDisconnected(environmentId)) {
-    getSharedControlConnection(environmentId, pairing)
-  }
-}
+  _environmentId: string,
+  _pairing: PairingOffer
+): void {}
 
 export function retryRemoteRuntimeSharedControlConnectionsNow(): void {
-  for (const { connection } of sharedControlConnections.values()) {
-    connection.retryNow()
-  }
-}
-
-function getSharedControlConnection(
-  environmentId: string,
-  pairing: PairingOffer
-): RemoteRuntimeSharedControlConnection {
-  const pairingKey = getPairingKey(pairing)
-  let cached = sharedControlConnections.get(environmentId)
-  if (!cached || cached.pairingKey !== pairingKey) {
-    advanceRuntimeEnvironmentTransportGeneration(environmentId)
-    cached?.connection.close()
-    const transportGeneration = getRuntimeEnvironmentTransportGeneration(environmentId)
-    cached = {
-      pairingKey,
-      connection: new RemoteRuntimeSharedControlConnection(pairing, {
-        environmentId,
-        clientCapabilities: ELECTRON_REMOTE_RUNTIME_CLIENT_CAPABILITIES,
-        isManuallyDisconnected: () => isRuntimeEnvironmentManuallyDisconnected(environmentId),
-        isCapabilityPaused: () => isRuntimeEnvironmentCapabilityPaused(environmentId),
-        onDiagnosticsChanged: (diagnostics) => {
-          if (getRuntimeEnvironmentTransportGeneration(environmentId) !== transportGeneration) {
-            return
-          }
-          publishRuntimeEnvironmentDiagnostics({
-            environmentId,
-            transportGeneration,
-            diagnostics
-          })
-          statusOwners
-            .get(environmentId)
-            ?.owner.connectionChanged(
-              diagnostics.state === 'ready'
-                ? 'ready'
-                : diagnostics.state === 'closed' || diagnostics.state === 'reconnecting'
-                  ? 'disconnected'
-                  : 'connecting',
-              diagnostics
-            )
-        }
-      })
-    }
-    sharedControlConnections.set(environmentId, cached)
-  }
-  return cached.connection
-}
-
-function getPairingKey(pairing: PairingOffer): string {
-  return [pairing.endpoint, pairing.deviceToken, pairing.publicKeyB64].join('\0')
+  // No shared-control connections can exist without the removed transport.
 }

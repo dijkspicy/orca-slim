@@ -19,7 +19,6 @@ import {
   shouldInstallStartupManagedAgentHook
 } from '../agent-hooks/managed-agent-hook-controls'
 import { shouldInstallManagedHooks } from './configure-process'
-import { recordManagedHookInstallFailure } from '../agent-hooks/install-telemetry'
 import { mainProcessState as state } from './main-process-state'
 import { initializeMainProcessObservers } from './main-process-observers'
 import { initializeMainProcessAccountServices } from './main-process-account-services'
@@ -27,7 +26,6 @@ import {
   initializeMainProcessRuntime,
   configureRuntimeServices
 } from './main-process-runtime-service'
-import { initializeMainProcessAutomations } from './main-process-automations'
 import { collectWorktreeTrashSweepRoots, sweepStaleWorktreeTrash } from '../worktree-trash'
 import { runAfterFirstWindowShown } from './first-window-deferral'
 import { logStartupMilestone } from './startup-diagnostics'
@@ -43,7 +41,6 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
   initializeMainProcessObservers()
   initializeMainProcessAccountServices()
   const runtime = initializeMainProcessRuntime()
-  initializeMainProcessAutomations()
   configureRuntimeServices(runtime)
   state.agentBrowserBridge = new AgentBrowserBridge(browserManager, {
     onTabsChanged: (worktreeId) => runtime.notifyMobileSessionTabsChanged(worktreeId)
@@ -106,7 +103,6 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
       .then(() =>
         installManagedAgentHooks(managedHookStore.getSettings(), {
           shouldHydrateShellPath: app.isPackaged,
-          onInstallError: recordManagedHookInstallFailure,
           shouldContinue: (agent) =>
             shouldContinueManagedHookStartup(
               state.isQuitting,

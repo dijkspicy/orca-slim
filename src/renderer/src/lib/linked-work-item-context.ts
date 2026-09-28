@@ -1,7 +1,6 @@
-import type { TaskProvider } from '../../../shared/task-providers'
-
 export type LinkedWorkItemContext = {
-  provider: TaskProvider
+  // Why: the shared task-providers module was culled; the provider is an opaque serializable label here.
+  provider: string
   version: 1
   renderedText: string
 }

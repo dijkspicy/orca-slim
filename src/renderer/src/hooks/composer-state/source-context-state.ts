@@ -25,7 +25,6 @@ type ComposerSourceContextStateInput = Pick<
 
 import { useCallback, useMemo, useState } from 'react'
 import { getLinkedWorkItemProvider, type LinkedWorkItemSummary } from '@/lib/new-workspace'
-import { getLinearLinkedWorkItemBranchName } from '@/lib/linear-linked-work-item'
 import {
   type TaskSourceContext,
   buildTaskSourceContextFromRepo,
@@ -127,7 +126,8 @@ export function useComposerSourceContextState(input: ComposerSourceContextStateI
     () => linkedWorkItemSeed
   )
 
-  const initialLinearBranchName = getLinearLinkedWorkItemBranchName(linkedWorkItemSeed)
+  // Why: Linear branch seeding is gone with the Linear workspace cull.
+  const initialLinearBranchName = undefined
 
   const [linkedTaskSourceContext, setLinkedTaskSourceContext] = useState<TaskSourceContext | null>(
     () => draftLinkedTaskSourceContext ?? initialLinkedTaskSourceContext

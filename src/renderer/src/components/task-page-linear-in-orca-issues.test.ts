@@ -7,7 +7,9 @@ import {
   linkedLinearIssueRefsSignature,
   readLinkedLinearIssuesWithLimit
 } from './task-page-linear-in-orca-issues'
-import type { LinearIssue } from '../../../shared/linear/issue-types'
+import type { TaskPageLinearIssue } from './task-page-linear-cache-selectors'
+
+type LinearIssue = TaskPageLinearIssue & { labelIds?: string[] }
 
 function issue(
   partial: Partial<LinearIssue> & Pick<LinearIssue, 'id' | 'identifier'>
@@ -43,21 +45,6 @@ describe('collectLinkedLinearIssueRefsFromWorktrees', () => {
     ])
   })
 
-  it('normalizes URL-valued and lower-cased links to bare upper-case identifiers', () => {
-    expect(
-      collectLinkedLinearIssueRefsFromWorktrees([
-        {
-          linkedLinearIssue: 'https://linear.app/acme/issue/eng-7/fix-it',
-          linkedLinearIssueWorkspaceId: null
-        },
-        { linkedLinearIssue: 'eng-8', linkedLinearIssueWorkspaceId: null }
-      ])
-    ).toEqual([
-      { identifier: 'ENG-7', workspaceId: null, organizationUrlKey: 'acme' },
-      { identifier: 'ENG-8', workspaceId: null }
-    ])
-  })
-
   it('prefers a concrete workspace id when later worktrees provide one', () => {
     expect(
       collectLinkedLinearIssueRefsFromWorktrees([
@@ -79,21 +66,13 @@ describe('collectLinkedLinearIssueRefsFromWorktrees', () => {
     ])
   })
 
-  it('resolves URL organization scope and excludes archived worktrees', () => {
+  it('excludes archived worktrees', () => {
     expect(
-      collectLinkedLinearIssueRefsFromWorktrees(
-        [
-          {
-            linkedLinearIssue: 'https://linear.app/acme/issue/eng-1/title',
-            linkedLinearIssueWorkspaceId: null
-          },
-          { linkedLinearIssue: 'ENG-2', isArchived: true }
-        ],
-        {
-          workspaces: [{ id: 'ws-a', organizationUrlKey: 'acme' }]
-        }
-      )
-    ).toEqual([{ identifier: 'ENG-1', workspaceId: 'ws-a', organizationUrlKey: 'acme' }])
+      collectLinkedLinearIssueRefsFromWorktrees([
+        { linkedLinearIssue: 'ENG-1', linkedLinearIssueWorkspaceId: null },
+        { linkedLinearIssue: 'ENG-2', isArchived: true }
+      ])
+    ).toEqual([{ identifier: 'ENG-1', workspaceId: null }])
   })
 
   it('filters by selected workspace when worktrees carry workspace ids', () => {

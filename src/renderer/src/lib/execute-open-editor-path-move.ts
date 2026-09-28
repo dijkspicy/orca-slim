@@ -1,5 +1,5 @@
 import { useAppStore } from '@/store'
-import { renameRuntimePath, type RuntimeFileOperationArgs } from '@/runtime/runtime-file-client'
+import type { RuntimeFileOperationArgs } from '@/runtime/runtime-file-client-types'
 import { requestEditorSaveQuiesce } from '@/components/editor/editor-autosave'
 import {
   beginEditorPathMove,
@@ -10,7 +10,6 @@ import {
   remapOpenEditorTabsForPathChange
 } from '@/lib/remap-open-editor-tabs-for-path-change'
 import { verifyLatchedMoveDestinations } from '@/hooks/useEditorExternalWatch'
-import { notifyHostOfMirroredEditorClose } from '@/runtime/close-mirrored-editor-tab'
 import {
   getExecutionHostIdForWorktree,
   getRuntimeEnvironmentIdForWorktree
@@ -73,7 +72,11 @@ export async function executeOpenEditorPathMove(args: {
   await Promise.all(affected.map((f) => requestEditorSaveQuiesce({ fileId: f.id })))
 
   try {
-    await renameRuntimePath(context, fromPath, toPath)
+    await window.api.fs.rename({
+      oldPath: fromPath,
+      newPath: toPath,
+      connectionId: context.connectionId
+    })
   } catch (err) {
     // Rename never landed — release the source suppression immediately.
     for (const subOperationId of ownerSubOps) {
@@ -86,12 +89,6 @@ export async function executeOpenEditorPathMove(args: {
   // released on every exit path, but only AFTER any rollback rename runs so a
   // late forward-rename delete event stays suppressed during rollback.
   try {
-    // Capture host-close resolution from the PRE-rekey store (mirrored tab ids
-    // change on rekey), but don't send it yet — only a committed rekey should
-    // close the host's authoritative tab.
-    const mirrorState = useAppStore.getState()
-    const mirroredAffected = affected.filter((f) => f.mirroredFromRuntimeSession)
-
     // Commit: retarget the live sessions in place (the rekey installs the gate +
     // provenance on dirty destinations).
     const rekeyResult = remapOpenEditorTabsForPathChange({
@@ -107,7 +104,11 @@ export async function executeOpenEditorPathMove(args: {
       // still-open source session isn't stranded pointing at a vanished path.
       let rollbackError: unknown
       try {
-        await renameRuntimePath(context, toPath, fromPath)
+        await window.api.fs.rename({
+          oldPath: toPath,
+          newPath: fromPath,
+          connectionId: context.connectionId
+        })
       } catch (err) {
         rollbackError = err
       }
@@ -119,12 +120,6 @@ export async function executeOpenEditorPathMove(args: {
             }`
           : base
       )
-    }
-
-    // Rekey detached mirrored tabs to local; close the host's old-path tab so its
-    // snapshot can't resurrect the old path (the close intent suppresses re-mirroring).
-    for (const file of mirroredAffected) {
-      notifyHostOfMirroredEditorClose(mirrorState, file.worktreeId, file.id)
     }
   } finally {
     for (const subOperationId of ownerSubOps) {

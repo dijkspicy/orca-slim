@@ -1,12 +1,9 @@
-import type { OrcaRuntimeService } from '../orca-runtime'
-
+// Client-hosted browser RPC routing was culled with the paired browser host; every
+// dispatch now answers "not handled" so the normal RPC method table takes over.
 export function routeDispatcherClientHostedBrowserRpc(
-  runtime: OrcaRuntimeService,
-  method: string,
-  params: unknown
+  _runtime: unknown,
+  _method: string,
+  _params: unknown
 ) {
-  const candidate = runtime as OrcaRuntimeService & {
-    routeClientHostedBrowserRpc?: OrcaRuntimeService['routeClientHostedBrowserRpc']
-  }
-  return candidate.routeClientHostedBrowserRpc?.(method, params) ?? { handled: false as const }
+  return { handled: false as const }
 }

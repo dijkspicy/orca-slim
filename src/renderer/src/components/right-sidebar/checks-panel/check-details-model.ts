@@ -1,15 +1,56 @@
-import type { PRCheckDetail, PRCheckRunDetails } from '../../../../../shared/github/check-types'
+/** Provider-neutral check row the panel renders; carries only the identity/status fields the panel reads. */
+export type ChecksPanelCheck = {
+  name: string
+  status: string
+  conclusion: string | null
+  url: string | null
+  checkRunId?: number
+  workflowRunId?: number
+  gitlabJobId?: number
+}
+
+/** Structural subset of a fetched check-run payload used by the inline details UI. */
+export type ChecksPanelCheckRunDetails = {
+  name: string
+  status: string | null
+  conclusion: string | null
+  url: string | null
+  startedAt: string | null
+  completedAt: string | null
+  title: string | null
+  summary: string | null
+  text: string | null
+  annotations: {
+    path: string | null
+    startLine: number | null
+    annotationLevel: string | null
+    title: string | null
+    message: string
+    rawDetails: string | null
+  }[]
+  jobs: {
+    name: string
+    status: string | null
+    conclusion: string | null
+    steps: { name: string; status: string | null; conclusion: string | null }[]
+    logTail: string | null
+  }[]
+}
+
+export type ChecksPanelGitLabProjectRef = { host: string; path: string }
+
+export type ChecksPanelGitHubRepositoryIdentity = { owner: string; repo: string; host?: string }
 
 export type CheckDetailsLoadState = {
   requestId?: number
   loading: boolean
-  details: PRCheckRunDetails | null
+  details: ChecksPanelCheckRunDetails | null
   error: string | null
   /** Check state when the load failed or returned nothing, so a later state change can retry it. */
-  errorAt?: { status: PRCheckDetail['status']; conclusion: PRCheckDetail['conclusion'] }
+  errorAt?: { status: ChecksPanelCheck['status']; conclusion: ChecksPanelCheck['conclusion'] }
 }
 
-function getCheckIdentityKey(check: PRCheckDetail, index: number): string {
+function getCheckIdentityKey(check: ChecksPanelCheck, index: number): string {
   if (check.checkRunId) {
     return `check-run:${check.checkRunId}`
   }
@@ -29,17 +70,19 @@ function getCheckIdentityKey(check: PRCheckDetail, index: number): string {
 
 export function getCheckDetailsKey(
   contextKey: string,
-  check: PRCheckDetail,
+  check: ChecksPanelCheck,
   index: number
 ): string {
   return `${contextKey}::${getCheckIdentityKey(check, index)}`
 }
 
-export function getCheckConclusion(check: PRCheckDetail): NonNullable<PRCheckDetail['conclusion']> {
+export function getCheckConclusion(
+  check: ChecksPanelCheck
+): NonNullable<ChecksPanelCheck['conclusion']> {
   return check.conclusion ?? 'pending'
 }
 
-export function isFailedCheck(check: PRCheckDetail): boolean {
+export function isFailedCheck(check: ChecksPanelCheck): boolean {
   // Why: action_required blocks merge just like a failure, so it must count as
   // not-passing — otherwise the summary reads "all checks passing" while
   // auto-merge stays blocked.
@@ -52,7 +95,7 @@ export function isFailureState(state: string | null | undefined): boolean {
   return state === 'failure' || state === 'failed' || state === 'cancelled' || state === 'timed_out'
 }
 
-export function getCheckStatusLabel(check: PRCheckDetail): string {
+export function getCheckStatusLabel(check: ChecksPanelCheck): string {
   const conclusion = getCheckConclusion(check)
   if (conclusion === 'success') {
     return 'Successful'
@@ -100,7 +143,7 @@ export function formatCheckTimestamp(input: string | null | undefined): string |
   })
 }
 
-export function getFailedChecksForDetails(checks: PRCheckDetail[]): PRCheckDetail[] {
+export function getFailedChecksForDetails(checks: ChecksPanelCheck[]): ChecksPanelCheck[] {
   return checks.filter(isFailedCheck)
 }
 

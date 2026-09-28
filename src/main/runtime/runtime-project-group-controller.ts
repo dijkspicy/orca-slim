@@ -10,9 +10,12 @@ import {
   getFolderWorkspacePathStatus,
   getFolderWorkspacePathStatusForPath
 } from '../project-groups/folder-workspace-path-status'
-import { getSshFilesystemProvider } from '../providers/ssh-filesystem-dispatch'
 import type { RuntimeStore } from './runtime-store-contract'
 import { folderWorkspaceKey } from '../../shared/workspace-scope'
+
+// SSH filesystem providers went with the remote-host cull; ssh-routed folder paths now answer
+// 'unavailable' instead of consulting the removed provider table.
+const noSshFilesystemProvider = (): undefined => undefined
 
 type RuntimeProjectGroupDependencies = {
   getStore: () => RuntimeStore | null
@@ -29,7 +32,6 @@ type FolderWorkspaceUpdates = Partial<
     | 'name'
     | 'folderPath'
     | 'linkedTask'
-    | 'linkedTaskSourceContext'
     | 'comment'
     | 'isArchived'
     | 'isUnread'
@@ -151,7 +153,7 @@ export class RuntimeProjectGroupController {
         projectGroups,
         repos: store.getRepos()
       },
-      { getSshFilesystemProvider }
+      { getSshFilesystemProvider: noSshFilesystemProvider }
     )
     assertFolderWorkspacePathUsable(status)
     const workspace = store.createFolderWorkspace({
@@ -169,7 +171,9 @@ export class RuntimeProjectGroupController {
     if (!store) {
       throw new Error('runtime_unavailable')
     }
-    return getFolderWorkspacePathStatus(store, request, { getSshFilesystemProvider })
+    return getFolderWorkspacePathStatus(store, request, {
+      getSshFilesystemProvider: noSshFilesystemProvider
+    })
   }
 
   async updateFolderWorkspace(
@@ -199,7 +203,7 @@ export class RuntimeProjectGroupController {
           projectGroups,
           repos: store.getRepos()
         },
-        { getSshFilesystemProvider }
+        { getSshFilesystemProvider: noSshFilesystemProvider }
       )
       assertFolderWorkspacePathUsable(status)
     }

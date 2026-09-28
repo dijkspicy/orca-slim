@@ -3,8 +3,7 @@ import { scheduleRuntimeGraphSync } from '@/runtime/sync-runtime-graph'
 import { useAppStore } from '@/store'
 import {
   consumeCommittedPtyShutdownExit,
-  deferPtyShutdownExit,
-  isHostPtySleepPending
+  deferPtyShutdownExit
 } from '../pty-shutdown-exit-deferral'
 import { replayIntoTerminal } from '../replay-guard'
 import { POST_REPLAY_MODE_RESET } from '../../../../../shared/terminal-mode-reset-profiles'
@@ -173,10 +172,7 @@ export function installPtyExitHibernate(session: ConnectPanePtySession): void {
     if (session.handledExitPtyId === ptyId) {
       return
     }
-    if (
-      session.deps.isPtyShutdownPending(ptyId) ||
-      isHostPtySleepPending(ptyId, session.runtimeEnvironmentId)
-    ) {
+    if (session.deps.isPtyShutdownPending(ptyId)) {
       // Why: the transport emits exit once; replay it only after a verified commit so rollback keeps renderer state retryable.
       deferPtyShutdownExit(ptyId, (settlement) => {
         if (settlement === 'committed') {

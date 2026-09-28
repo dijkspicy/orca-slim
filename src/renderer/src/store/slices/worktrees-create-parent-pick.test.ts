@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppState } from '../types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { toast } from 'sonner'
-import type { RuntimeEnvironmentCallRequest } from '../../runtime/runtime-compatibility-test-fixture'
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 import { worktreeWorkspaceKey, folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import { makeLineage, makeWorktree } from './worktrees-slice-test-fixtures'
 import {

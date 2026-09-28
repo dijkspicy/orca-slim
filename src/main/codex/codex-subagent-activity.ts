@@ -11,7 +11,7 @@
 //   * `thread/tokenUsage/updated` reports a per-thread RUNNING TOTAL, so the
 //     latest frame replaces the previous one — it is never accumulated.
 
-import type { CodexThreadItem } from './codex-structured-item-translation'
+import type { CodexThreadItem } from './codex-thread-item-identity'
 
 export const CODEX_SUBAGENT_ITEM_TYPE = 'subAgentActivity'
 export const CODEX_TOKEN_USAGE_METHOD = 'thread/tokenUsage/updated'

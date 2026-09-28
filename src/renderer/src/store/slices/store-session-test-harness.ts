@@ -1,5 +1,23 @@
 import { vi, type Mock } from 'vitest'
-import type { BrowserTab } from '../../../../shared/browser-workspace-types'
+
+/** Fixture shape of one browser workspace row, mirroring the deleted shared BrowserTab. */
+export type BrowserTabFixture = {
+  id: string
+  worktreeId: string
+  label?: string
+  sessionProfileId?: string | null
+  sessionPartition?: string | null
+  activePageId?: string | null
+  pageIds?: string[]
+  url: string
+  title: string
+  loading: boolean
+  faviconUrl: string | null
+  canGoBack: boolean
+  canGoForward: boolean
+  loadError: { code: number; description: string; validatedUrl: string } | null
+  createdAt: number
+}
 
 /** Shape shared by the Claude/Codex/OpenCode usage-scanner namespaces. */
 type UsageScannerMocks = {
@@ -22,7 +40,6 @@ export type StoreSessionMockApi = {
   claudeUsage: UsageScannerMocks
   codexUsage: UsageScannerMocks
   openCodeUsage: UsageScannerMocks
-  runtimeEnvironments: { prepareBrowserClientHostPlacement: Mock }
 }
 
 /** window.api double shared by the store session suites; installs itself on globalThis. */
@@ -103,9 +120,6 @@ export function createStoreSessionMockApi(): StoreSessionMockApi {
       getDaily: vi.fn().mockResolvedValue([]),
       getBreakdown: vi.fn().mockResolvedValue([]),
       getRecentSessions: vi.fn().mockResolvedValue([])
-    },
-    runtimeEnvironments: {
-      prepareBrowserClientHostPlacement: vi.fn().mockResolvedValue({ kind: 'server' })
     }
   }
 
@@ -115,8 +129,8 @@ export function createStoreSessionMockApi(): StoreSessionMockApi {
 }
 
 export function makeBrowserTab(
-  overrides: Partial<BrowserTab> & { id: string; worktreeId: string; url: string }
-): BrowserTab {
+  overrides: Partial<BrowserTabFixture> & { id: string; worktreeId: string; url: string }
+): BrowserTabFixture {
   return {
     title: overrides.url,
     loading: false,

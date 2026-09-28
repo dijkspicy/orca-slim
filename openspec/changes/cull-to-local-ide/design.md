@@ -366,6 +366,223 @@ Type '(...) => any' is not assignable to type 'string'      // 消费方要的�
 
 **结论**：剩余 3,618 个可达文件**必须逐个裁定**（保留原文件，或把符号按正确 kind 迁移到 keep 侧），不能靠生成 shim。这一步是人工/长任务的活，规模为 787 个模块 × 2,466 个符号 × 4,582 条 import 语句。
 
+### F-16 剩余工作是可枚举的有限边集：4,459 条直接 import 边（决定性重述）
+
+F-15 把剩余工作描述成「787 模块 × 2,466 符号」并判定为不可枚举。实测**这个结论过悲观**，正确的度量是**边**，不是符号：
+
+**判据的精确化**。可达性从**非删除域文件**出发。因此：
+
+> 删除集整体不可达 ⇔ 不存在任何「非删除域文件 → 删除域文件」的直接边。
+
+即：**不需要逐个裁定符号，只需要切断 4,459 条直接 import 边**。切完这些边，整棵删除域子树一次性失去可达性，剥离算法一次性释放全部剩余文件。上一轮 ai-vault 就是这样收口的（切 15 个文件 → 剥离释放 43 个叶子 → 再切 → 全部释放）。
+
+**当前实测**（`/tmp/opencode/edge-inventory.mjs`，工作单见 `/tmp/opencode/work/`）：
+
+| 指标 | 值 |
+| --- | --- |
+| 删除集（当前树） | 3,532 |
+| 可剥离 | 0 |
+| 阻挡剥离的非删除域文件 | 2,669 |
+| 需要切断的直接边 | **4,459** |
+
+各域直接边数：`shared` 2,079、`renderer-mirror` 1,049、`agent-stack` 582、`remote-host` 319、`telemetry-stack` 143、`forge-task` 122、`browser` 98、`already-done` 41、`automations` 26。
+
+**分布决定了可并行性**：1,700 个文件只有 1 条边，604 个有 2 条，只有 54 个文件有 6 条以上（最重的 `register-core-handlers.ts` 有 21 条）。即绝大多数是**单点小编辑**，不是架构手术。
+
+**分工方法（避免写冲突）**：按**文件**分片，不按域分片——每个阻挡文件恰有一个所有者，所有者切断该文件内**所有**域的全部边。这样 34 条 lane 互不重叠，可完全并行；域只有在全部阻挡文件的边都断掉后才释放，因此不需要增量剥离，**整波结束后跑一次 peel 即可一次性释放**。
+
+**删除优于掏空**：`main-process-automations.ts`、`runtime-automation-controller.ts`、`ipc/skills.ts`、`renderer/src/store/github/*` 这类文件**本身就是被删域**，只是正则没覆盖到。对它们应当 `git rm` 整删并摘掉其 import/注册行，而不是把功能掏空留壳。实测这类「孤儿特征文件」（import 了删除域、且无非删除域 import 者）有 882 个，其中 813 个是测试（测试天然无 import 者，故不可仅凭此判据删除）。
+
+### F-17 工作单是有保质期的快照，必须在每轮排空后重算（重要）
+
+F-16 把 2,669 个阻挡文件切成 34 条 lane 工作单（`/tmp/opencode/work/lanes/lane-NN.md`），每条列出「文件 → 要切断的边 → 目标」。**但这批工作单在生成的那一刻就开始过期**：别的 lane 在删目标文件，于是后面 lane 的工作单里出现大量已不存在的目标。
+
+实测（20 条 lane 在飞、471 个文件已删时复核 lane 21–34）：
+
+| lane | 指令要切的目标边 | 其中目标已被删除 |
+| --- | --- | --- |
+| lane-24 | 230 | **128** |
+| lane-28 | 153 | 56 |
+| lane-26 | 158 | 55 |
+| lane-27 | 140 | 51 |
+| lane-25 | 142 | 43 |
+| lane-23 | 125 | 36 |
+| lane-21 | 118 | 35 |
+| lane-34 | 66 | 30 |
+| 其余 6 条 | — | 20–31 |
+
+**14 条全部过期**（没有一条干净）。后果有两层：轻则 fixer 花时间找不存在的 import；重则它按指令「切断」而顺手删掉别的东西。
+
+**规则**：工作单**不可预生成后长期积压**。每轮必须：
+
+1. 等当前在飞的 lane **全部**终止（这也是 F-8 的提交前提）；
+2. 重跑 `edge-inventory.mjs` + `make-lanes.mjs`，从**当前树**重算剩余边与分片；
+3. 只派发重算后的前 N 条；重复。
+
+**为什么不能在旧分片上「减去已删项」**：`make-lanes.mjs` 按目录亲和度装箱，剩余文件集一变，装箱结果（以及哪些文件落在同一 lane）就变。手工剔除只会得到一份既不完整、又可能把同一文件同时放进两条 lane 的清单——后者正是写冲突的来源。
+
+**修复成本的量级**：重算是纯静态分析，秒级；派发一份过期工作单的代价是一整条 lane 的时延与上下文。所以宁可在每轮开头多花一次重算。
+
+**并发饱和点**：15 → 20 条 lane 时，实测边切割速率从 ~20.7 边/分回落到 ~7.1 边/分（本机负载仅 5.7/22 核，故瓶颈在 agent 侧的并发配额，不在 CPU）。**20 条以上不再提升吞吐**，应停在 15–20 并靠「排空 → 提交 → 重算」循环推进。
+
+### F-18 删除会跨 lane 制造「无主孤儿」，这是分片法的固有缺口
+
+F-16 的分片依据是「**生成工作单那一刻**该文件是否 import 了删除域」。但 lane 执行的 `git rm` 会**新造出**一批悬空引用：某个文件当时没进任何工作单（它当时不 import 任何删除域），却被**别的 lane 删掉了它 import 的东西**。这类文件此刻编译不过，而**没有任何 lane 拥有它**——于是它既不会被切边，也不会被删除。
+
+实测（lane-07 排空后的自我报告，共 107 处删除）：它撞到并明确留下的无主孤儿约 20 个，集中在
+`components/task-page/*`、`use-task-page-*`、`github-item-dialog/*`、`github/pr-check-presentation.ts`、
+`pull-request-page/checks/layouts.tsx`、`settings/TaskSourceLinearSetup.tsx`、
+`settings/task-tracker-integration-cards.tsx`、`onboarding/IntegrationsStep.tsx`。
+
+更值得注意的是**一条保留侧的传导链**：`TasksPane.tsx`（lane-16 拥有）、`IntegrationsPane.tsx`、
+`OnboardingFlow.tsx`、`FeatureWallBody.tsx`、`ConnectIntegrationsList.tsx` 仍 import 上述设置面板；
+lane-07 出于「不越界改 lane-16/17/30 的文件」而停手——这是**正确的边界纪律**，但意味着
+这条链必须由排空后的收尾来解。
+
+**规则**：不要试图**预测**这批孤儿（预测需要模拟全部 lane 的删除顺序，成本远高于收益）。改为
+**让编译器列出它们**：
+
+1. 每轮排空后先跑 `pnpm tc`（清 `config/*.tsbuildinfo`，见 F-7）；
+2. `TS2307`（找不到模块）的那批就是无主孤儿清单——**这就是任务 5.x「域清扫」的真正工作单**；
+3. 逐个裁定：整删（它的唯一用途就是被删域）或改指向保留侧实现；
+4. `TS2307` 清零后再跑 peel，此时释放量才反映真实进展。
+
+**与 F-17 的关系**：F-17 说工作单会过期（目标已被删），F-18 说反方向也会发生（新引用变成悬空）。
+两者都指向同一个操作纪律——**一切以「排空后重算 + tc」为准，不以预生成的清单为准**。
+
+**例外规则：保留侧无主消费者存在时，收窄优于删除（lane-11 实测的自我修正）**。
+
+F-16 的「删除优于掏空」有一个必须让位的条件：**当某个文件的唯一用途虽是被删域，但它的导出仍被
+保留侧无主文件消费时，整删会制造一个没有所有者能修的悬空引用**。此时正确动作是**保留文件、只删掉
+内部指向被删域的代码路径**，让保留的通道返回结构化失败。
+
+实测：lane-11 一开始整删了 `runtime-environment*` 配对运行时簇，随后**恢复 12 个非测试文件并改为收窄**，
+理由是多个保留且无主的消费者（`callRuntimeEnvironment` 的调用方、lane-24 的 startup 接线）依赖其导出，
+删了没人能修。改法：`runtime-environment-{abortable-requests,connectivity-handlers,diagnostics-broadcast,
+pairing-verification,request-connections,shared-control-support,status-owner,support-routing,
+tailscale-response,transport-routing}.ts` + `runtime-environments.ts` 去掉被删门面的代码路径，
+通道保留契约并返回结构化失败；它们**只测被删传输**的 7 个测试文件删除。
+
+**判据顺序**（多轮实测后固定）：
+
+1. 文件唯一用途是被删域 **且** 无保留侧消费者 → 整删（F-16 默认）。
+2. 文件唯一用途是被删域 **但** 有保留侧无主消费者 → 收窄，通道返回结构化失败（本例外）。
+3. 文件是保留件 → 只切列出的边（F-16 分片法）。
+
+**派生发现**：`preload/diagnostics-bridge.ts` 属边界情形——被保留、主进程侧 handler 已删、
+**且没有任何保留侧 renderer 调用它**，既无消费者也非域成员。这类「双向悬空」的保留件交给
+`knip` / `check:dead-classes` 判死，不要凭手感删。
+
+### F-20 跨 lane 并发写会**静默覆盖**，覆盖后的残留 `tc` 不一定报错（须显式扫描）
+
+F-16 假设「按文件分片 + 允许少数越界编辑」是安全的，因为越界冲突会被 `tc` 抓到。**这个假设只对了一半。**
+
+实测（lane-01 主动上报）：它删除了 `rpc/methods/index.ts` 里的 `NOTIFICATION_METHODS` 注册，
+**被并发的另一条 lane 覆盖回去，它只好重做一遍**。
+
+**为什么 `tc` 抓不到**：若被覆盖回来的是「**少删了一处**」——即 keep 侧仍注册着一个已删域的 handler——
+代码依然自洽、**可以编译**。`tc` 只看类型是否成立，不看「是否还有已删域的痕迹」。于是这类覆盖的产物是
+**残留逻辑**，恰好命中目标里最难验的一条：「无残留删除域逻辑」。
+
+**实测复核（决策中途抽查 keep 侧）**：`orchestrationMailbox` 命中 6 个文件、`RelayRevokeOutbox` 4 个、
+`relayBinding` 2 个——其中数处位于 `src/main/runtime/runtime-rpc/` 与 `runtime/relay/`（remote-host 域内，
+属正常待删），但**该计数无法区分「域内待删」与「keep 侧残留」**，这正是必须逐项裁定的原因。
+
+**规则**：不能把「lane 报告完成」当作完成，也不能把「`tc` 绿」当作无残留。排空后必须**独立跑一次残留扫描**，
+判据是可执行计数而非肉眼：
+
+1. 每个删除域取一组特征标识符（模块路径前缀 + 关键导出名 + 关键常量名）；
+2. 在 **keep 侧文件**里 `rg`，要求计数为 0，或每一项都有书面裁定（含「留在域内待删」的分类）；
+3. 这就是任务 5.4 / 6.1 验证要求的**字面执行**——它的存在不是形式，而是因为本缺陷已被实测。
+
+**特征标识符起始清单**（由各 lane 的残留上报汇总，可直接作为扫描输入）：
+
+| 标识符 | 来源 / 含义 |
+| --- | --- |
+| `NOTIFICATION_METHODS` | lane-01：被覆盖回的 `rpc/methods/index.ts` 注册 |
+| `relayBinding` / `RelayRevokeOutbox` | lane-01：pairing/relay 面残留 |
+| `orchestrationMailbox` | lane-01/02：结构化编排邮槽字段 |
+| `structuredStopped` | lane-03 删除的 worktree-teardown 结果字段 |
+| `remoteUpdateSupport` / `remoteControl` | lane-13 从 `RuntimeStatus` 删掉的字段 |
+| `sshStateChanged` / `sshStates` | lane-13 从 `runtime-client-events` 删掉的快照 |
+| `orchestrationCompatibilityEvidence` | lane-13 从 `runtime-rpc-envelope` 删掉的字段 |
+| `linearContext` / `prState` | lane-13 从 `ui-chrome-types` / source-control 决策类型删掉的字段 |
+| `hookSettings` / `upstream` / `ghAccount` | lane-13 从 `project-types` / `repo-types` 删掉的字段 |
+| `launchSource` | lane-05：为 ~50 个调用点保留的惰性可选字段（待本轮排空后判死） |
+| `SshMutationExpectation` | lane-13 从 `runtime-upload-staging-contract` 去掉的交叉类型 |
+| `setAutomationService` | lane-01/02：已删的 automation 注入点 |
+
+**注意**：命中**不等于**残留——域内文件（如 `runtime/relay/`、`runtime/runtime-rpc/`）命中是正常的（它们本身待删）。
+判据是「命中该项的**保留侧**文件数为 0」，这才是任务 5.4 要求的「计数归零」。
+
+**附带教训**：越界编辑越少越好。lane-01 的越界清单（`rpc/methods/index.ts`、`main-process-*.ts`、
+`orca-runtime-core.ts` 等 20 余处）本身就是覆盖风险的来源。下一轮应把**装配总线文件**
+（`rpc/methods/index.ts`、`register-core-handlers.ts`、`startup/main-process-*`）**整体收进单独一条 lane**
+独占，而不是让多条 lane 各自越界改同一批文件。
+
+### F-19 同一符号被多条 lane 各自迁移 ⇒ 产生并行副本，必须有一次合并
+
+F-15 规定「被保留代码消费的删除域符号要按正确 kind 迁到 keep 侧，不能 stub」。这条在并行执行下有个副作用：
+**若两条 lane 都要迁同一个符号，它们会各自造一份副本**——彼此看不见，且都通过各自的 lint / import 扫描。
+
+实测（lane-10 主动上报）：
+
+- lane-10 新建 `src/renderer/src/store/slices/ssh-host-state-contracts.ts`（迁移 `SshConnectionState` 等）、
+  `runtime-environment-rpc-call.ts`（迁移 `RuntimeClientTarget` + `getActiveRuntimeTarget`）、
+  `runtime-host-connection-state.ts`、`runtime-status-response-fixture.ts`；
+- 而 `ssh-types` / `runtime-client-target` / `runtime-host-connection-state` 这三个被删文件**同样被别的 lane 迁过**，
+  于是 keep 侧可能存在 2–4 份语义相同的副本。
+
+**为什么必须收口**：这不是「暂时重复」的小瑕疵——目标要求「**无残留删除域逻辑**」，同一契约的多份副本
+既是逻辑重复，也是后续分叉的种子（改一份漏一份就是行为 bug）。它同时会被 `knip` /
+`check:dead-classes` 之类的一致性门禁盯上（未被引用的副本算死代码）。
+
+**规则**：
+
+1. 排空后对「新增的 keep 侧模块」做一次归并扫描：按导出符号名聚类，找出语义重复的多份实现；
+2. 每组合并成一份，放在**语义所属目录**（不是「谁先建谁留」），其余 lane 的引用改指向它；
+3. 合并与新模块的落点一并计入 6.1（装配总线收尾），因为它们跨 lane；
+4. lane 上报里凡出现「我新建了迁移模块 X」，都必须进这份待归并清单——**lane 自己无法发现别人的副本**。
+
+**首选做法（lane-17 实测）**：迁移之前先找**已存在的保留侧定义**，能改指向就改指向，不要新建副本。
+lane-17 把 `getActiveRuntimeTarget` 改指回存活的 `@/runtime/runtime-client-target`、把
+`getRuntimeGitStatus` 改指回存活的 `@/runtime/runtime-git-status-client`、把
+`CheckStatus` 改指 `HostedReviewInfo['status']`——**零新增模块**，因此不产生 F-19 的合并债。
+lane-10 的情况不同：它要的符号（`SshConnectionState` 等）确实只存在于被删文件里，新建才是对的。
+**判据**：先在保留侧按导出符号名搜一遍；搜到就改指向，搜不到才迁。这条顺序能显著缩小第 4 步的清单。
+
+**待归并清单（持续追加，`tc` 看不见这些）**：
+
+| lane | 新建的迁移模块 |
+| --- | --- |
+| 10 | `store/slices/ssh-host-state-contracts.ts`、`store/slices/runtime-environment-rpc-call.ts`、`store/slices/runtime-host-connection-state.ts`、`store/slices/runtime-status-response-fixture.ts` |
+| 15 | `codex/codex-atomic-file-writes.ts`、`codex/codex-journal-payload-bounds.ts`、`codex/codex-probe-termination.ts` |
+| 3 | `window/renderer-recovery-loop-guard.ts`（非迁移，是拆分出来的保留件——注明以免误合） |
+| 14 | `main/hook-relay/{ssh-channel-multiplexer,ssh-multiplexer-transport-writer,ssh-multiplexer-writer-lane-scheduler,relay-protocol}.ts`（F-2 的落地：把 SSH 传输原语从被删 `ssh/` 抽出，供 WSL hook relay 复用）、`shared/agent-tool-summary.ts`（原 `native-chat/native-chat-tool-summary.ts`）、`shared/agent-subagent-summary.ts` |
+| 8 | `right-sidebar/checks-panel/task-source-summary-types.ts`（结构性替代类型，为免 max-lines 而拆；另把 `PanelComment` 定义为 `Extract<PRCommentGroup,{kind:'thread'}>['root']` 骑在 lane-12 的模块上——须与 lane-12 的 re-type 合并核对） |
+| 16 | `main/codex/wsl-codex-command.ts`、`settings/runtime-host-access-link.ts`（均从被删设置/命令构建器移出）。**正向信号**：它没有复制 lane-15 的 `codex-atomic-file-writes.ts`，而是**从该模块导出既有的 `renameFileWithWindowsRetry` 复用**——即 F-19 的「先找既有定义再迁」判据在跨 lane 场景下被正确执行，这类项**不进待归并清单** |
+| 12 | `shared/{native-chat-blocks,agent-session-option-descriptors,repo-hook-settings,pr-review-data-types}.ts`（逐字形状迁移，带出处注释）。**附带待裁定项**：`persisted-state-types.ts` 保留了遗留的 `githubCache` 字段（forge 域遗留），载荷降级为 `data: unknown`，理由是保留侧无人读其字段、持久化只当不透明 sidecar。**裁定**：它属「残留删除域逻辑」的边界情形——若收尾时判定要整删该字段，须同时确认旧状态的向前兼容（忽略未知字段而非拒绝载入，见 `specs/multi-project-workspaces` 的「旧版本状态仍可载入」）|
+
+lane-17 未新建任何模块（全部改指向），lane-02/03/07/13/20 亦然 —— 即 8 条已排空的 lane 里只有 2 条产生
+了迁移副本，规模可控。
+
+**不要抄各 lane 的「悬空引用」清单进文档**：`tc` 的 `TS2307` 会给出**权威并集**（F-18 的规则）。
+文档只需记 `tc` 看不见的东西——迁移副本（上表）、以及下面这类**故意收窄**：
+lane-13 的 `provider-check-summary.ts` / `setup-script-telemetry.ts`、lane-17 的 6 处改指向
+（`runtime-client-target`、`runtime-git-status-client`、`HostedReviewInfo`、`tui-agent-startup`、`window.api.gh`）、
+lane-01 保留的 `requireRuntimeGitProvider` null-is-local 契约、lane-03 的 renderer-recovery 崩溃循环守卫。
+
+**其中一条要特别判过再收口（lane-04）**：`store/slices/ui/ui-slice-agent-actions.ts` 的
+`sendPromptToSidebarAgentTarget` 被改成**失败关闭**（返回 `false`），因为它原本经被删的 mirror 投递提示。
+
+这条**不是回归，而是与 spec 对齐**：`specs/agent-launch-status/spec.md` 明确要求
+「系统 SHALL NOT 向 agent 会话投递提示、审批、回答或附件」。因此「保留的 UI 动作改为失败关闭」
+是契约要求的正确行为，**不得**在收尾时被误判为「保留功能行为改变」而回退。
+
+**收尾判据补充**：对每个「故意收窄」项，都要回答一个问题——**它是否让某条 spec 的 SHALL NOT 变得更真？**
+是 → 保留并记为合规；否 → 记为待修的行为差异。
+这些都必须进 6.1，因为编译器不会提醒它们「还欠一次判断」。
+
 ## Migration Plan
 
 - 分支 `cull/local-ide`，WAVE 0 打 tag `pre-cull`

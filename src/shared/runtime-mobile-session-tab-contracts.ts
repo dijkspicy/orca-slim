@@ -1,5 +1,4 @@
 import type { AgentStatusEntry } from './agent-status-types'
-import type { BrowserCertificateFailure, BrowserLoadError } from './browser-workspace-types'
 import type { RuntimeBrowserPlacement } from './runtime-browser-placement'
 import type { TerminalColorOverrides } from './terminal-color-overrides'
 import type { TerminalLayoutSnapshot } from './terminal-tab-types'
@@ -84,8 +83,6 @@ export type RuntimeMobileSessionBrowserTab = {
   loading: boolean
   canGoBack: boolean
   canGoForward: boolean
-  loadError?: BrowserLoadError | null
-  certificateFailure?: BrowserCertificateFailure | null
   color?: string | null
   isPinned?: boolean
   isActive: boolean

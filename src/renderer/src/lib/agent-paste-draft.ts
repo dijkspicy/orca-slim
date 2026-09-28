@@ -4,10 +4,6 @@ import { TUI_AGENT_CONFIG } from '../../../shared/tui-agent-config'
 import { resolveDraftPasteReadyTimeoutMs } from '../../../shared/draft-paste-ready-timeout'
 import { useAppStore } from '@/store'
 import {
-  inspectRuntimeTerminalProcess,
-  sendRuntimePtyInputVerified
-} from '@/runtime/runtime-terminal-inspection'
-import {
   BRACKETED_PASTE_END,
   BRACKETED_PASTE_START
 } from '@/components/terminal-pane/terminal-bracketed-paste'
@@ -98,14 +94,12 @@ export async function pasteDraftWhenAgentReady(args: {
   }
 
   const readySignal = agentConfig?.draftPasteReadySignal ?? 'render-quiet-after-bracketed-paste'
-  const settings = getSettingsForAgentTabRuntimeOwner(tabId)
   const readinessTimeoutMs = resolveDraftPasteReadyTimeoutMs(agent, timeoutMs)
   const readiness = await waitForAgentDraftInputReadyOnTab({
     tabId,
     spawnTimeoutMs: PTY_SPAWN_TIMEOUT_MS,
     readinessTimeoutMs,
-    readySignal,
-    settings
+    readySignal
   })
   if (!readiness) {
     onTimeout?.()
@@ -132,7 +126,6 @@ export async function pasteDraftWhenAgentReady(args: {
   }
 
   return await sendBracketedPasteToAgent({
-    settings,
     ptyId,
     content,
     submit: submit === true,
@@ -151,30 +144,20 @@ export async function pasteDraftToAgentPtyWhenReady(args: {
   onTimeout?: () => void
   onUnconfirmedDelivery?: () => void
 }): Promise<boolean> {
-  const {
-    tabId,
-    ptyId,
-    content,
-    agent,
-    submit,
-    forcePaste,
-    timeoutMs,
-    onTimeout,
-    onUnconfirmedDelivery
-  } = args
+  const { ptyId, content, agent, submit, forcePaste, timeoutMs, onTimeout, onUnconfirmedDelivery } =
+    args
   const agentConfig = agent ? TUI_AGENT_CONFIG[agent] : null
 
   if (agentDeliversDraftViaNativePrefill(agent, forcePaste)) {
     return false
   }
 
-  const settings = getSettingsForAgentTabRuntimeOwner(tabId)
   const readySignal = agentConfig?.draftPasteReadySignal ?? 'render-quiet-after-bracketed-paste'
   const budget = resolveDraftPasteReadyTimeoutMs(agent, timeoutMs)
-  const ready = await waitForAgentDraftInputReady(ptyId, budget, readySignal, settings)
+  const ready = await waitForAgentDraftInputReady(ptyId, budget, readySignal)
   if (!ready) {
     const fallbackReady = agentConfig
-      ? await waitForExpectedAgentOnPty(ptyId, agentConfig.expectedProcess, 1000, settings)
+      ? await waitForExpectedAgentOnPty(ptyId, agentConfig.expectedProcess, 1000)
       : false
     if (!fallbackReady) {
       onTimeout?.()
@@ -184,7 +167,6 @@ export async function pasteDraftToAgentPtyWhenReady(args: {
   }
 
   return await sendBracketedPasteToAgent({
-    settings,
     ptyId,
     content,
     submit: submit === true,
@@ -198,7 +180,6 @@ export async function submitPromptToAgentPty(args: {
   content: string
 }): Promise<boolean> {
   return await sendBracketedPasteToAgent({
-    settings: getSettingsForAgentTabRuntimeOwner(args.tabId),
     ptyId: args.ptyId,
     content: args.content,
     submit: true
@@ -213,19 +194,18 @@ export async function sendBracketedPasteToRunningAgent(args: {
 }
 
 async function sendBracketedPasteToAgent(args: {
-  settings?: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null
   ptyId: string
   content: string
   submit: boolean
   agent?: TuiAgent
 }): Promise<boolean> {
-  const { settings = useAppStore.getState().settings, ptyId, content, submit, agent } = args
+  const { ptyId, content, submit, agent } = args
   const submitRetryDelayMs = agent ? TUI_AGENT_CONFIG[agent]?.submitRetryDelayMs : undefined
   try {
     // Why: paste + Enter (+ retry Enter) must be one transaction, or a concurrent
     // paste on this PTY can slip between them and submit a half-written prompt.
     return await runTerminalPtyInputTransaction(ptyId, async () => {
-      const pasted = await sendAgentDraftPasteContentNow(settings, ptyId, content)
+      const pasted = await sendAgentDraftPasteContentNow(ptyId, content)
       if (!pasted || !submit) {
         return pasted
       }
@@ -234,14 +214,14 @@ async function sendBracketedPasteToAgent(args: {
       // Enter arrive in the same PTY write. Split the submit into the next turn so
       // the TUI processes bracketed-paste termination before handling Enter.
       await new Promise<void>((resolve) => window.setTimeout(resolve, POST_PASTE_SUBMIT_DELAY_MS))
-      const submitted = await sendRuntimePtyInputVerified(settings, ptyId, '\r')
+      const submitted = await sendPtyInputVerified(ptyId, '\r')
 
       if (submitRetryDelayMs !== undefined) {
         // Why: agents that render their composer before Enter is live silently eat
         // the first Enter; the retry is best-effort and never downgrades `submitted`.
         await new Promise<void>((resolve) => window.setTimeout(resolve, submitRetryDelayMs))
         try {
-          await sendRuntimePtyInputVerified(settings, ptyId, '\r')
+          await sendPtyInputVerified(ptyId, '\r')
         } catch {
           // Why: a rejected retry leaves the first Enter's verdict untouched.
         }
@@ -259,7 +239,6 @@ function waitForAgentDraftInputReadyOnTab(args: {
   spawnTimeoutMs: number
   readinessTimeoutMs: number
   readySignal: Parameters<typeof waitForAgentDraftInputReady>[2]
-  settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined
 }): Promise<{ ptyId: string; ready: boolean } | null> {
   return new Promise((resolve) => {
     let selectedPtyId: string | null = null
@@ -289,12 +268,9 @@ function waitForAgentDraftInputReadyOnTab(args: {
       unsubscribeStore?.()
       // Why: Zustand subscribers run inside updateTabPtyId. Registering the
       // sidecar here precedes the transport's immediate pre-handler drain.
-      void waitForAgentDraftInputReady(
-        ptyId,
-        args.readinessTimeoutMs,
-        args.readySignal,
-        args.settings
-      ).then((ready) => finish({ ptyId, ready }))
+      void waitForAgentDraftInputReady(ptyId, args.readinessTimeoutMs, args.readySignal).then(
+        (ready) => finish({ ptyId, ready })
+      )
     }
     const bindFromState = (state: ReturnType<typeof useAppStore.getState>): void => {
       const ptyId = state.ptyIdsByTabId[args.tabId]?.[0]
@@ -312,14 +288,13 @@ function waitForAgentDraftInputReadyOnTab(args: {
 async function waitForExpectedAgentOnPty(
   ptyId: string,
   expectedProcess: string,
-  timeoutMs: number,
-  settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined
+  timeoutMs: number
 ): Promise<boolean> {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
     try {
       const process = await withDeadline(
-        inspectRuntimeTerminalProcess(settings, ptyId),
+        window.api.pty.inspectProcess(ptyId),
         Math.max(0, deadline - Date.now())
       )
       if (!process) {
@@ -338,6 +313,16 @@ async function waitForExpectedAgentOnPty(
     }
   }
   return false
+}
+
+// Verified local PTY write: prefer the acked bridge write, fall back to the
+// fire-and-forget one so submit flow never blocks on an unacked transport.
+async function sendPtyInputVerified(ptyId: string, data: string): Promise<boolean> {
+  const accepted = await window.api.pty.writeAccepted(ptyId, data)
+  if (!accepted) {
+    window.api.pty.write(ptyId, data)
+  }
+  return true
 }
 
 function withDeadline<T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> {

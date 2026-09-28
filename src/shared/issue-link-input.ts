@@ -1,6 +1,113 @@
-import { parseGitHubIssueOrPRLink } from './github/links'
-import { parseLinearIssueInput } from './linear/links'
 import type { WorkspaceSourceProvider } from './new-workspace/workspace-source'
+
+// ─── Inlined link parsers ───────────────────────────────────────────────────
+// Verbatim logic formerly supplied by `github/links.ts` and `linear/links.ts`
+// (culled with the forge integrations); this module is the sole remaining
+// consumer, so the parsers live beside the contract they serve.
+
+type RepoSlug = { owner: string; repo: string; host?: string }
+
+type GitHubIssueOrPRLink = {
+  slug: RepoSlug
+  number: number
+  type: 'issue' | 'pr'
+}
+
+const GH_ITEM_PATH_RE = /^\/([^/]+)\/([^/]+)\/(issues|pull)\/(\d+)(?:\/.*)?$/i
+
+function parseGitHubItemNumber(value: string): number | null {
+  const parsed = Number.parseInt(value, 10)
+  return parsed > 0 ? parsed : null
+}
+
+/**
+ * Parses an owner/repo slug plus issue/PR number from a GitHub URL. Returns
+ * null for anything that isn't a recognizable GitHub-shaped issue or pull URL.
+ */
+function parseGitHubIssueOrPRLink(input: string): GitHubIssueOrPRLink | null {
+  const trimmed = input.trim()
+  if (!trimmed) {
+    return null
+  }
+
+  let url: URL
+  try {
+    url = new URL(trimmed)
+  } catch {
+    return null
+  }
+
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    return null
+  }
+
+  const match = GH_ITEM_PATH_RE.exec(url.pathname.replace(/\/+$/, ''))
+  if (!match) {
+    return null
+  }
+  const number = parseGitHubItemNumber(match[4])
+  if (number === null) {
+    return null
+  }
+
+  return {
+    // Why: the URL proves the host — GHES links must keep their server identity
+    // instead of being treated as github.com slugs.
+    // Why: GHES installations on non-default ports require the full URL host;
+    // `hostname` would silently redirect later API calls to port 443.
+    slug: { owner: match[1], repo: match[2], host: url.host },
+    type: match[3].toLowerCase() === 'pull' ? 'pr' : 'issue',
+    number
+  }
+}
+
+type ParsedLinearIssueInput = {
+  identifier: string
+  organizationUrlKey?: string
+}
+
+const LINEAR_IDENTIFIER_PATTERN = /^[A-Za-z][A-Za-z0-9_]*-\d+$/
+
+function parseLinearIssueInput(input: string): ParsedLinearIssueInput | null {
+  const trimmed = input.trim()
+  if (!trimmed) {
+    return null
+  }
+
+  if (LINEAR_IDENTIFIER_PATTERN.test(trimmed)) {
+    return { identifier: trimmed.toUpperCase() }
+  }
+
+  try {
+    const parsed = new URL(trimmed)
+    // Why: hostname alone accepts file://linear.app/..., which then passes
+    // validation and persists as a link. The GitHub parser already gates on
+    // protocol; this keeps the two in step.
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return null
+    }
+    if (parsed.hostname !== 'linear.app') {
+      return null
+    }
+    const parts = parsed.pathname.split('/').filter(Boolean)
+    const issueIndex = parts.indexOf('issue')
+    const organizationUrlKey = parts[0]
+    const rawIdentifier = issueIndex !== -1 ? parts[issueIndex + 1] : undefined
+    if (!organizationUrlKey || !rawIdentifier) {
+      return null
+    }
+    const identifier = decodeURIComponent(rawIdentifier).split(/[/?#]/)[0]
+    if (!LINEAR_IDENTIFIER_PATTERN.test(identifier)) {
+      return null
+    }
+    return {
+      identifier: identifier.toUpperCase(),
+      organizationUrlKey: decodeURIComponent(organizationUrlKey)
+    }
+  } catch {
+    return null
+  }
+}
 
 // Why: narrows the canonical provider union instead of minting a parallel one,
 // so adding Jira here is a one-entry change rather than a new axis.

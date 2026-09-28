@@ -17,7 +17,10 @@ import {
 import { wireWslRelayLink } from './wsl-hook-relay-link'
 import { WslRelayRecovery } from './wsl-hook-relay-recovery'
 import { wslHookRelayStateKey } from './wsl-hook-relay-state-key'
-import { SshChannelMultiplexer, type MultiplexerTransport } from '../ssh/ssh-channel-multiplexer'
+import {
+  SshChannelMultiplexer,
+  type MultiplexerTransport
+} from '../hook-relay/ssh-channel-multiplexer'
 import { AGENT_HOOK_REQUEST_REPLAY_METHOD } from '../../shared/agent-hook-relay'
 import {
   sanitizeWslHookInstanceKey,

@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { useAppStore } from '@/store'
 import type { SleepingAgentSessionRecord } from '../../../shared/agent-session-resume'
 import { makePaneKey } from '../../../shared/stable-pane-id'
-import { structuredAgentSessionTabId } from '../../../shared/structured-agent-session-projection'
 import { resumeSleepingAgentSessionsForWorktree } from './resume-sleeping-agent-session'
 
 const initialAppStoreState = useAppStore.getState()
@@ -16,7 +15,8 @@ afterEach(() => {
 
 describe('stale structured sleeping session', () => {
   it('clears the synthetic terminal projection without spawning', () => {
-    const tabId = structuredAgentSessionTabId(SESSION_ID)
+    // Why: the projection helper was culled; the id convention is the stable literal prefix.
+    const tabId = `structured-agent-session-${SESSION_ID}`
     const paneKey = makePaneKey(tabId, LEAF_ID)
     const record: SleepingAgentSessionRecord = {
       paneKey,

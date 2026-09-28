@@ -1,14 +1,10 @@
-import type { JiraIssue, JiraProjectStatusOrder } from '../../../shared/jira-types'
-import { jiraGetProjectStatusOrder, type RuntimeJiraSettings } from '@/runtime/runtime-jira-client'
-import { createMetadataRequestStore, loadMetadata } from '@/hooks/metadata-request-cache'
+type JiraIssueRef = { project: { key: string; siteId?: string }; siteId?: string }
 
 export type TaskPageJiraProjectScope = {
   key: string
   projectKey: string
   siteId: string
 }
-
-const jiraProjectStatusOrderStore = createMetadataRequestStore<JiraProjectStatusOrder>()
 
 export function getTaskPageJiraStatusOrderScopeKey(
   runtimeScopeKey: string,
@@ -17,7 +13,7 @@ export function getTaskPageJiraStatusOrderScopeKey(
   return `${encodeURIComponent(runtimeScopeKey)}:${projectScope.key}`
 }
 
-function issueProjectScope(issue: JiraIssue): TaskPageJiraProjectScope | null {
+function issueProjectScope(issue: JiraIssueRef): TaskPageJiraProjectScope | null {
   const projectKey = issue.project.key.trim()
   const siteId = issue.siteId?.trim() || issue.project.siteId?.trim()
   if (!projectKey || !siteId) {
@@ -31,7 +27,7 @@ function issueProjectScope(issue: JiraIssue): TaskPageJiraProjectScope | null {
 }
 
 export function getSingleJiraProjectScope(
-  issues: readonly JiraIssue[]
+  issues: readonly JiraIssueRef[]
 ): TaskPageJiraProjectScope | null {
   let onlyScope: TaskPageJiraProjectScope | null = null
   for (const issue of issues) {
@@ -42,22 +38,4 @@ export function getSingleJiraProjectScope(
     onlyScope = scope
   }
   return onlyScope
-}
-
-export function loadTaskPageJiraProjectStatusOrder(
-  settings: RuntimeJiraSettings,
-  runtimeScopeKey: string,
-  projectScope: TaskPageJiraProjectScope
-): Promise<JiraProjectStatusOrder> {
-  // Why: a project key can exist on multiple Jira sites and runtimes; all three
-  // identities must participate in caching to preserve SSH and multi-site parity.
-  const cacheKey = getTaskPageJiraStatusOrderScopeKey(runtimeScopeKey, projectScope)
-  return loadMetadata(jiraProjectStatusOrderStore, cacheKey, () =>
-    jiraGetProjectStatusOrder(settings, projectScope.projectKey, projectScope.siteId)
-  ).catch((error: unknown) => {
-    // Why: older remote runtimes do not expose this optional metadata method;
-    // an empty order preserves the deterministic alphabetical fallback.
-    console.warn('[jira] Failed to load project status order:', error)
-    return { statusIdsByColumn: [] }
-  })
 }

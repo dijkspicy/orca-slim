@@ -2,13 +2,19 @@ import { Loader2, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import type { EphemeralVmRuntimeRecord } from '../../../../shared/ephemeral-vm-runtimes'
-import { EPHEMERAL_VM_CLEANUP_STOPPED_ERROR } from '../../../../shared/ephemeral-vm-recipe-destroy-result'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
 import { Button } from '../ui/button'
 import { EphemeralVmCleanupStopDialog } from './EphemeralVmCleanupStopDialog'
 import { EphemeralVmRuntimeRow } from './EphemeralVmRuntimeRow'
+
+type EphemeralVmRuntimeRecord = Awaited<
+  ReturnType<typeof window.api.ephemeralVm.listRuntimes>
+>[number]
+
+// Why literal: main writes this exact sentence into cleanupLastError when a
+// user stops a cleanup; the section reads it to label the row.
+const EPHEMERAL_VM_CLEANUP_STOPPED_ERROR = 'Cleanup stopped by user.'
 
 function hasCleanupFailed(runtime: EphemeralVmRuntimeRecord): boolean {
   return (

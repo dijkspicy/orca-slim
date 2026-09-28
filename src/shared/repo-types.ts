@@ -1,7 +1,4 @@
 import type { RepoIcon } from './repo-icon'
-import type { GhAccountBinding } from './github/account-binding'
-import type { GitHubRepositoryIdentity } from './github/pull-request-types'
-import type { RepoHookSettings } from './orca-yaml-hook-types'
 import type { ForkSyncMode } from './git-fork-sync'
 import type { GitRemoteIdentity } from './git-remote-identity'
 import type { RepoSourceControlAiOverrides } from './source-control-ai-types'
@@ -46,11 +43,6 @@ export type Repo = {
   displayName: string
   badgeColor: string
   repoIcon?: RepoIcon | null
-  /** Set when the repo is a fork: the upstream/parent owner/repo. Drives the
-   *  fork indicator and the default avatar of same-name forks (renamed forks
-   *  keep their own owner). Absent = not a fork, or fork status not yet
-   *  resolved. */
-  upstream?: GitHubRepositoryIdentity | null
   addedAt: number
   kind?: RepoKind
   /** Git root proven during folder upgrade; keeps the original checkout locator stable. */
@@ -59,7 +51,6 @@ export type Repo = {
   worktreeBaseRef?: string
   /** Optional repo-scoped workspace root override. Relative paths resolve from `path`. */
   worktreeBasePath?: string
-  hookSettings?: RepoHookSettings
   /** SSH target ID for remote repos. null/undefined = local. */
   connectionId?: string | null
   /**
@@ -71,12 +62,6 @@ export type Repo = {
    *  identically to `'auto'`; writers leave it undefined on creation so
    *  existing persisted records stay forward-compatible. */
   issueSourcePreference?: IssueSourcePreference
-  /**
-   * Per-project gh account binding (host + login only — never a token).
-   * At spawn, Orca resolves a short-lived token via `gh auth token --user`
-   * and injects it into that child env only.
-   */
-  ghAccount?: GhAccountBinding
   /** Controls Orca's fork-default-branch sync offer for repos with upstream metadata. */
   forkSyncMode?: ForkSyncMode
   /** Canonical identity for the repo remote Orca should use for provider-level grouping. */

@@ -21,10 +21,13 @@ import { cn } from '@/lib/utils'
 import { isBotPRComment } from '../../../../../shared/pr-comment-audience'
 import { setPRBotAuthorOverride } from '@/lib/pr-bot-author-overrides'
 import { normalizePRCommentAuthorLogin } from '../../../../../shared/pr-bot-author-overrides'
-import type { PRComment } from '../../../../../shared/github/comment-types'
+import type { PRCommentGroup } from '../../../../../shared/pr-comment-groups'
 import type { PRCommentGroupActionState } from '@/lib/pr-comment-action-state'
 import type { PRCommentPresentationClasses } from '../pr-comment-presentation'
 import { translate } from '@/i18n/i18n'
+
+/** Comment shape the panel renders — tracks the surviving shared comment-group model. */
+export type PanelComment = Extract<PRCommentGroup, { kind: 'thread' }>['root']
 
 export function CopyButton({
   text,
@@ -146,7 +149,7 @@ export function ResolveButton({
 }
 
 /** Format a line range string like "L12" or "L5-L12". */
-export function formatLineRange(comment: PRComment): string | null {
+export function formatLineRange(comment: PanelComment): string | null {
   if (!comment.line) {
     return null
   }
@@ -157,7 +160,7 @@ export function formatLineRange(comment: PRComment): string | null {
 }
 
 /** True for top-level PR conversation comments the viewer can edit or delete. */
-export function isMutablePRConversationComment(comment: PRComment): boolean {
+export function isMutablePRConversationComment(comment: PanelComment): boolean {
   if (comment.threadId || comment.path) {
     return false
   }
@@ -174,7 +177,7 @@ export function CommentMoreMenu({
   onDelete,
   onQueueForAgent
 }: {
-  comment: PRComment
+  comment: PanelComment
   botAuthorOverrides: ReadonlySet<string>
   onStartEdit?: () => void
   onDelete?: () => void | Promise<void>
@@ -272,7 +275,7 @@ export function CommentMoreMenu({
 }
 
 /** Build copy text that includes file location context for review comments. */
-export function buildCopyText(comment: PRComment): string {
+export function buildCopyText(comment: PanelComment): string {
   if (!comment.path) {
     return comment.body
   }

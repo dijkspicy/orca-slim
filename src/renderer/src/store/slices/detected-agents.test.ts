@@ -12,7 +12,6 @@ import {
   MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION,
   RUNTIME_PROTOCOL_VERSION
 } from '../../../../shared/protocol-version'
-import { clearRuntimeCompatibilityCacheForTests } from '@/runtime/runtime-rpc-client'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 
 const detectAgents = vi.fn()
@@ -89,7 +88,6 @@ function makeWorktree(
 
 describe('createDetectedAgentsSlice WSL context', () => {
   beforeEach(() => {
-    clearRuntimeCompatibilityCacheForTests()
     detectAgents.mockReset().mockResolvedValue(['claude'])
     refreshAgents.mockReset().mockResolvedValue({
       agents: ['codex'],
@@ -479,7 +477,6 @@ describe('createDetectedAgentsSlice WSL context', () => {
 
 describe('createDetectedAgentsSlice remote detection', () => {
   beforeEach(() => {
-    clearRuntimeCompatibilityCacheForTests()
     detectAgents.mockReset().mockResolvedValue(['claude'])
     refreshAgents.mockReset().mockResolvedValue({
       agents: ['codex'],

@@ -1,6 +1,5 @@
 import { SearchableSetting } from './SearchableSetting'
 import { SettingsSwitchRow } from './SettingsFormControls'
-import { MobilePane } from './MobilePane'
 import {
   getMobileOverviewSearchEntry,
   getMobileSidebarShortcutSearchEntry,
@@ -90,10 +89,6 @@ export function MobileSettingsPane(): React.JSX.Element {
           onChange={() => updateSettings({ showMobileButton: !showMobileButton })}
         />
       </SearchableSetting>
-
-      <div className="rounded-xl border border-border/60 bg-card/50 p-4">
-        <MobilePane />
-      </div>
     </div>
   )
 }

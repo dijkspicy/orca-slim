@@ -1,5 +1,9 @@
 import type { AgentSessionHandleProvider } from '../../../shared/agent-session-provider-handle'
-import type { StructuredAgentSessionResumeSource } from '../../../shared/structured-agent-session-create'
+// Why: the shared create module was culled; the resume source stays a provider session id.
+type StructuredAgentSessionResumeSource = {
+  /** claude: the session id. codex: the thread id. */
+  providerSessionId: string
+}
 
 export type StructuredAgentLaunchPersistedLifecycle = 'pending' | 'visibility-unknown' | 'failed'
 

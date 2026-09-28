@@ -10,7 +10,6 @@ import {
   MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION,
   RUNTIME_PROTOCOL_VERSION
 } from '../../../../shared/protocol-version'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import {
   RUNTIME_CATALOG_STALE_MS,
   resetRuntimeCatalogListingForTests
@@ -69,7 +68,6 @@ function deferred<T>() {
 
 beforeEach(() => {
   delete (globalThis as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__
-  clearRuntimeCompatibilityCacheForTests()
   resetRuntimeCatalogListingForTests()
   vi.clearAllMocks()
   runtimeEnvironmentGetStatus.mockResolvedValue({

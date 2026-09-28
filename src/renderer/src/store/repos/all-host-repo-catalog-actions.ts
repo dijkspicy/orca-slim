@@ -25,7 +25,6 @@ import {
   filterTrustedOrcaHooksToValidRepos,
   mergeFetchedRepoCatalog,
   projectCompatibilityForReconciledRepos,
-  reconcileReadoptedSshWorktreeState,
   reconcileSupersededSshRepos
 } from './repo-catalog-merge'
 import { getRuntimeTargetHostId } from '../runtime-target-host'
@@ -88,7 +87,6 @@ export function createAllHostRepoCatalogActions(
           return {
             repos: finalizedRepos,
             pendingSshRepoReadoptions: reconciliation.pendingReadoptions,
-            ...reconcileReadoptedSshWorktreeState(s, s.pendingSshRepoReadoptions),
             ...mergedProjectCompatibility,
             ...(arrayElementsUnchanged(finalizedRepos, s.repos)
               ? {}

@@ -1,6 +1,4 @@
-import { createPortal } from 'react-dom'
 import TerminalPane from './terminal-pane/TerminalPane'
-import { findActivityTerminalPortal } from './activity/activity-terminal-portal'
 import { shouldMountBackgroundWorktreeTab } from './terminal/background-terminal-worktree-mount'
 import type { TerminalController } from './use-terminal-controller'
 
@@ -13,7 +11,6 @@ export function TerminalLegacyTerminalPanes({
     activeTabId,
     activeTabType,
     activeView,
-    activityTerminalPortals,
     backgroundMountTabIdsByWorktreeRef,
     effectiveParkedTerminalWorktreeIds,
     evictionExemptTerminalTabIds,
@@ -67,42 +64,24 @@ export function TerminalLegacyTerminalPanes({
                   )
                 )
                 .map((tab) => {
-                  const activityTerminalPortal = findActivityTerminalPortal(
-                    activityTerminalPortals,
-                    { worktreeId: workspace.id, tabId: tab.id }
-                  )
-                  const isActivityPortalTab = activityTerminalPortal !== null
                   const isActiveTerminalTab =
                     isVisible && tab.id === activeTabId && activeTabType === 'terminal'
-                  if (
-                    shouldColdParkTerminalPanes &&
-                    !isActivityPortalTab &&
-                    !evictionExemptTerminalTabIds.has(tab.id)
-                  ) {
+                  if (shouldColdParkTerminalPanes && !evictionExemptTerminalTabIds.has(tab.id)) {
                     return null
                   }
-                  const terminalPane = (
+                  return (
                     <TerminalPane
                       key={`${tab.id}-${tab.generation ?? 0}`}
                       tabId={tab.id}
                       worktreeId={workspace.id}
                       cwd={tab.startupCwd ?? workspace.path}
-                      isActive={isActiveTerminalTab || activityTerminalPortal?.active === true}
-                      isVisible={isActiveTerminalTab || isActivityPortalTab}
-                      isWorktreeActive={isVisible || isActivityPortalTab}
-                      isolatedPaneKey={activityTerminalPortal?.paneKey ?? null}
+                      isActive={isActiveTerminalTab}
+                      isVisible={isActiveTerminalTab}
+                      isWorktreeActive={isVisible}
                       onPtyExit={(ptyId, exitCode) => handlePtyExit(tab.id, ptyId, exitCode)}
                       onCloseTab={() => handleCloseTab(tab.id)}
                     />
                   )
-                  if (activityTerminalPortal) {
-                    return createPortal(
-                      terminalPane,
-                      activityTerminalPortal.target,
-                      `activity-terminal-${tab.id}`
-                    )
-                  }
-                  return terminalPane
                 })}
             </div>
           )

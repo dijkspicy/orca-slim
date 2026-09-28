@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Copy, Loader2, RefreshCw, Terminal } from 'lucide-react'
 import { toast } from 'sonner'
 import { IntegrationStatusPill } from '../integration-status-pill'
-import { SkillFreshnessStatusPill } from '../skills/SkillFreshnessStatusPill'
 import { OnboardingInlineCommandTerminal } from '../onboarding/OnboardingInlineCommandTerminal'
 import { AgentSkillSetupFailureNotice } from './AgentSkillSetupFailureNotice'
 import { createTerminalSnapshot, type SkillTerminalSnapshot } from './agent-skill-terminal-snapshot'
@@ -273,15 +272,7 @@ export function AgentSkillSetupPanel({
         className={variant === 'card' ? cn('px-5 pt-5', terminalOpen ? 'pb-2' : 'pb-5') : 'pt-1.5'}
       >
         {hideHeader ? (
-          <>
-            {error ? <p className="text-[12px] text-destructive">{error}</p> : null}
-            {/* hideHeader drops the title row; keep freshness so guided hubs still surface updates. */}
-            {installed && freshnessSkillName && setupCommandFailedCode === null ? (
-              <div className="mb-2">
-                <SkillFreshnessStatusPill skillName={freshnessSkillName} />
-              </div>
-            ) : null}
-          </>
+          <>{error ? <p className="text-[12px] text-destructive">{error}</p> : null}</>
         ) : (
           <div className="flex items-center gap-4">
             {leading}
@@ -308,16 +299,12 @@ export function AgentSkillSetupPanel({
                     )}
                   </IntegrationStatusPill>
                 ) : installed ? (
-                  freshnessSkillName ? (
-                    <SkillFreshnessStatusPill skillName={freshnessSkillName} />
-                  ) : (
-                    <IntegrationStatusPill tone="connected">
-                      {translate(
-                        'auto.components.settings.AgentSkillSetupPanel.9fcebceb2a',
-                        'Installed'
-                      )}
-                    </IntegrationStatusPill>
-                  )
+                  <IntegrationStatusPill tone="connected">
+                    {translate(
+                      'auto.components.settings.AgentSkillSetupPanel.9fcebceb2a',
+                      'Installed'
+                    )}
+                  </IntegrationStatusPill>
                 ) : (
                   <IntegrationStatusPill tone="attention">
                     {translate(

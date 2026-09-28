@@ -4,8 +4,32 @@ import {
   StructuredAgentSessionCreateRefusalError,
   type StructuredAgentSessionLaunchIntent
 } from '@/lib/launch-structured-agent-session'
-import { callStructuredAgentSession } from '@/runtime/structured-agent-session-client'
-import { refreshLocalStructuredSessionTabs } from '@/runtime/local-structured-session-tabs-sync'
+import type { RuntimeMobileSessionTabsResult } from '../../../shared/runtime-types'
+
+/** Why: the runtime RPC client was culled with the mirror stack; structured sessions still ride
+ *  the local runtime bridge directly. */
+export async function callLocalStructuredAgentSession<TResult>(
+  method: string,
+  params?: unknown
+): Promise<TResult> {
+  const response = await window.api.runtime.call({ method, params })
+  if (response.ok === false) {
+    throw new Error(response.error.message)
+  }
+  return response.result
+}
+
+function isStructuredSessionInventoryResponse(
+  value: unknown
+): value is { snapshots?: RuntimeMobileSessionTabsResult[]; authoritative?: boolean } {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  if (!('snapshots' in value)) {
+    return true
+  }
+  return value.snapshots === undefined || Array.isArray(value.snapshots)
+}
 
 export type StructuredAgentLaunchReceipt = { sessionId: string; fence: number }
 
@@ -31,7 +55,16 @@ function throwIfLaunchCancelled(state: StructuredLaunchRecoveryState): void {
 }
 
 async function verifyPublishedSession(state: StructuredLaunchRecoveryState): Promise<void> {
-  const snapshots = await refreshLocalStructuredSessionTabs(undefined, { authoritative: true })
+  const response = await window.api.runtime.call({
+    method: 'session.tabs.listAll',
+    params: {}
+  })
+  if (!response.ok) {
+    throw new Error('structured session inventory unavailable')
+  }
+  const snapshots = isStructuredSessionInventoryResponse(response.result)
+    ? (response.result.snapshots ?? [])
+    : []
   throwIfLaunchCancelled(state)
   const published = snapshots.some(
     (snapshot) =>
@@ -49,8 +82,7 @@ async function recoverPublishedSessionReceipt(
   state: StructuredLaunchRecoveryState
 ): Promise<StructuredAgentLaunchReceipt> {
   await verifyPublishedSession(state)
-  const history = await callStructuredAgentSession<AgentSessionHistoryResult>(
-    { kind: 'local' },
+  const history = await callLocalStructuredAgentSession<AgentSessionHistoryResult>(
     'agentSession.history',
     { sessionId: state.intent.sessionId, direction: 'tail', limit: 1 }
   )

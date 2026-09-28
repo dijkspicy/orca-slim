@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { isShellProcess } from '../../../shared/agent-detection'
 import { worktreeUsesRemoteConnection } from '@/store/terminals/terminal-workspace-routing'
-import { hasRemoteRuntimePtyForTab } from './tab-agent-remote-pty-selector'
 import { isTerminalLeafId, makePaneKey } from '../../../shared/stable-pane-id'
 import {
   resolveFocusedCompletedTabAgent,
@@ -254,14 +253,8 @@ export function useTabAgent(tab: TerminalTab): TuiAgent | null {
     }
     return (s.ptyIdsByTabId[tab.id] ?? []).length <= 1
   })
-  const hasRemoteRuntimePty = useAppStore((s) =>
-    hasRemoteRuntimePtyForTab(
-      s.ptyIdsByTabId[tab.id],
-      s.terminalLayoutsByTabId[tab.id]?.ptyIdsByLeafId
-    )
-  )
   const isRemoteWorktree = useAppStore((s) => worktreeUsesRemoteConnection(s, tab.worktreeId))
-  const isRemoteLike = isRemoteWorktree || hasRemoteRuntimePty
+  const isRemoteLike = isRemoteWorktree
 
   const [hasObservedAgentSignal, setHasObservedAgentSignal] = useState(false)
   const hasObservedAgentSignalRef = useRef(false)

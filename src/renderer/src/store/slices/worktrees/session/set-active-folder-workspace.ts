@@ -2,7 +2,6 @@ import type { WorktreeSlice } from '../../worktree-helpers'
 import type { WorktreeSliceGet, WorktreeSliceSet } from '../listing/worktree-slice-types'
 import { folderWorkspaceKey } from '../../../../../../shared/workspace-scope'
 import { markInputQuietSchedulerInput } from '@/lib/input-quiet-scheduler'
-import { moveFocusToRendererBeforeFocusedWebviewHidden } from '../../browser-webview-cleanup'
 import {
   findKnownWorktreeById,
   folderWorkspaceMatchesHost
@@ -23,9 +22,6 @@ export function createSetActiveFolderWorkspace(
     }
     if (shouldDeferActivationTerminalPrep()) {
       markInputQuietSchedulerInput()
-    }
-    if (get().activeWorktreeId !== workspaceKey) {
-      moveFocusToRendererBeforeFocusedWebviewHidden()
     }
     const reconciledActiveTabId =
       get().reconcileWorktreeTabModel(workspaceKey).activeRenderableTabId

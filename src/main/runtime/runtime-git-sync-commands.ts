@@ -5,10 +5,7 @@ import { gitSyncForkDefaultBranch } from '../git/fork-sync'
 import { gitFastForward, gitFetch, gitPull, gitPullRebaseFromBase, gitPush } from '../git/remote'
 import { abortMerge, abortRebase, commitChanges } from '../git/status'
 import { getUpstreamStatus } from '../git/upstream'
-import {
-  materializeWorktreePushTargetRemote,
-  materializeWorktreePushTargetRemoteSsh
-} from '../ipc/worktree-remote'
+import { materializeWorktreePushTargetRemote } from '../ipc/worktree-remote'
 import {
   localGitOptionsForTarget,
   requireRuntimeGitProvider,
@@ -79,11 +76,7 @@ export class RuntimeGitSyncCommands {
     const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
     const provider = requireRuntimeGitProvider(target)
     if (provider) {
-      const materializedPushTarget = pushTarget
-        ? await materializeWorktreePushTargetRemoteSsh(provider, target.worktree.path, pushTarget)
-        : undefined
-      this.persistMaterializedPushTargetIfCreated(target, materializedPushTarget)
-      await provider.fetchRemote(target.worktree.path, materializedPushTarget)
+      await provider.fetchRemote(target.worktree.path, pushTarget)
       return { ok: true }
     }
     const materializedPushTarget = pushTarget
@@ -125,11 +118,7 @@ export class RuntimeGitSyncCommands {
     const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
     const provider = requireRuntimeGitProvider(target)
     if (provider) {
-      const materializedPushTarget = pushTarget
-        ? await materializeWorktreePushTargetRemoteSsh(provider, target.worktree.path, pushTarget)
-        : undefined
-      this.persistMaterializedPushTargetIfCreated(target, materializedPushTarget)
-      await provider.pullBranch(target.worktree.path, materializedPushTarget)
+      await provider.pullBranch(target.worktree.path, pushTarget)
       return { ok: true }
     }
     const materializedPushTarget = pushTarget
@@ -156,11 +145,7 @@ export class RuntimeGitSyncCommands {
     const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
     const provider = requireRuntimeGitProvider(target)
     if (provider) {
-      const materializedPushTarget = pushTarget
-        ? await materializeWorktreePushTargetRemoteSsh(provider, target.worktree.path, pushTarget)
-        : undefined
-      this.persistMaterializedPushTargetIfCreated(target, materializedPushTarget)
-      await provider.fastForwardBranch(target.worktree.path, materializedPushTarget)
+      await provider.fastForwardBranch(target.worktree.path, pushTarget)
       return { ok: true }
     }
     const materializedPushTarget = pushTarget
@@ -203,11 +188,7 @@ export class RuntimeGitSyncCommands {
     const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
     const provider = requireRuntimeGitProvider(target)
     if (provider) {
-      const materializedPushTarget = pushTarget
-        ? await materializeWorktreePushTargetRemoteSsh(provider, target.worktree.path, pushTarget)
-        : undefined
-      this.persistMaterializedPushTargetIfCreated(target, materializedPushTarget)
-      await provider.pushBranch(target.worktree.path, publish === true, materializedPushTarget, {
+      await provider.pushBranch(target.worktree.path, publish === true, pushTarget, {
         forceWithLease: forceWithLease === true
       })
       return { ok: true }

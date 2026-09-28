@@ -1,9 +1,16 @@
-import type { EventProps } from './telemetry-events'
+import type { z } from 'zod'
+import type {
+  setupScriptPromptActionSchema,
+  setupScriptPromptShownSchema
+} from './telemetry-repository-event-schemas'
 import type { SetupScriptImportCandidate } from './setup-script-imports'
 
-type SetupScriptPromptTelemetry = Omit<EventProps<'setup_script_prompt_shown'>, 'nth_repo_added'>
+type SetupScriptPromptTelemetry = Omit<
+  z.infer<typeof setupScriptPromptShownSchema>,
+  'nth_repo_added'
+>
 type SetupScriptPromptActionTelemetry = Omit<
-  EventProps<'setup_script_prompt_action'>,
+  z.infer<typeof setupScriptPromptActionSchema>,
   'nth_repo_added'
 >
 

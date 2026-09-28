@@ -16,15 +16,8 @@ import type { AppState } from '@/store/types'
 import { useRuntimeFileListForWorktree, type RuntimeFileListState } from '../quick-open-file-list'
 import { getTabEntryOptions } from './tab-create-entry-classifier'
 
-const listRuntimeFilesMock = vi.hoisted(() => vi.fn())
-const cancelRuntimeFileListMock = vi.hoisted(() => vi.fn())
-const searchRuntimeFilePathsMock = vi.hoisted(() => vi.fn())
-
-vi.mock('@/runtime/runtime-file-client', () => ({
-  listRuntimeFiles: listRuntimeFilesMock,
-  cancelRuntimeFileList: cancelRuntimeFileListMock,
-  searchRuntimeFilePaths: searchRuntimeFilePathsMock
-}))
+const listFilesMock = vi.hoisted(() => vi.fn())
+const cancelListFilesMock = vi.hoisted(() => vi.fn())
 
 const initialAppState = useAppStore.getInitialState()
 const WORKSPACE_KEY = folderWorkspaceKey('local-workspace')
@@ -115,10 +108,13 @@ function latestState(states: RuntimeFileListState[]): RuntimeFileListState {
 }
 
 beforeEach(() => {
+  Object.defineProperty(window, 'api', {
+    value: { fs: { listFiles: listFilesMock, cancelListFiles: cancelListFilesMock } },
+    configurable: true
+  })
   useAppStore.setState(initialAppState, true)
-  listRuntimeFilesMock.mockReset().mockResolvedValue(['packages/app/package.json', 'src/main.ts'])
-  cancelRuntimeFileListMock.mockReset()
-  searchRuntimeFilePathsMock.mockReset().mockResolvedValue({ files: [], truncated: false })
+  listFilesMock.mockReset().mockResolvedValue(['packages/app/package.json', 'src/main.ts'])
+  cancelListFilesMock.mockReset().mockResolvedValue(undefined)
   seedLocalWorkspace()
 })
 
@@ -136,7 +132,7 @@ describe('tab entry options over the real runtime listing', () => {
   // A listing the hook fetched but hid would leave the entry stuck on its loading placeholder.
   it('does not report the settled listing as still loading', async () => {
     let resolveListing: (files: string[]) => void = () => {}
-    listRuntimeFilesMock.mockImplementationOnce(
+    listFilesMock.mockImplementationOnce(
       () =>
         new Promise<string[]>((resolve) => {
           resolveListing = resolve

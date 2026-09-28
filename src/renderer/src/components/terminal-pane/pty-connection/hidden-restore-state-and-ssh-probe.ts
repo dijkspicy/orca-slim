@@ -137,18 +137,8 @@ export function bindHiddenRestoreStateAndSshProbe(session: ConnectPanePtySession
   }
 
   bindReattachLiveDataDeferral(session)
-  session.isCapturedDirectSshReattachCurrent = (ptyId: string): boolean =>
-    !session.directSshRetryAttempt || session.capturedDirectSshRetryStateMatches(ptyId)
-  session.rejectObsoleteDirectSshReattach = (ptyId: string | null | undefined): boolean => {
-    if (
-      !session.directSshRetryAttempt ||
-      (ptyId && session.claimCapturedDirectSshRetryPty(ptyId))
-    ) {
-      return false
-    }
-    session.transport.detach?.({ preserveExitObserver: false })
-    return true
-  }
+  session.isCapturedDirectSshReattachCurrent = (_ptyId: string): boolean => true
+  session.rejectObsoleteDirectSshReattach = (_ptyId: string | null | undefined): boolean => false
 
   let parkedSshSnapshotPrefetch: {
     ptyId: string

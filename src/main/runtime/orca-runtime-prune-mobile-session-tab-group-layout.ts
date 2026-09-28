@@ -1,5 +1,4 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
-import { selectFreshAgentRowForMobileTab } from './runtime-hook-agent-row-selection'
 import { OrcaRuntimeWithScheduleMobileSessionTabsChanged } from './orca-runtime-schedule-mobile-session-tabs-changed'
 import type { TabGroupLayoutNode } from '../../shared/tab-types'
 import type {
@@ -11,22 +10,11 @@ import type {
 } from '../../shared/runtime-types'
 import { mergeMobileSessionTabGroups } from './mobile-session-tab-merge'
 import { buildHeadlessMobileSessionTabGroups } from './mobile-session-layout-projection'
-import { projectRuntimeMobileSessionTabs } from './runtime-mobile-session-projection'
-import type { RuntimeMobileSessionProjectionHost } from './runtime-mobile-session-projection-contract'
+import { finalizeRuntimeMobileSessionTabsResult } from './runtime-mobile-session-result-finalization'
 import type { RuntimePtyWorktreeRecord } from './runtime-terminal-state-records'
-import type { RuntimeAgentRowSnapshot } from './runtime-worktree-agent-rows'
-import type {
-  AgentStatusEntry,
-  AgentStatusIpcPayload,
-  AgentStatusOrchestrationContext
-} from '../../shared/agent-status-types'
-import { buildRuntimeMobileAgentStatus } from './runtime-mobile-agent-status-builder'
+import type { AgentStatusOrchestrationContext } from '../../shared/agent-status-types'
 import { FIRST_PANE_ID } from '../../shared/pane-key'
 import { isTerminalLeafId, makePaneKey, parsePaneKey } from '../../shared/stable-pane-id'
-import { getStructuredAgentSessionHost } from '../native-chat/agent-session-wire/structured-agent-session-registry'
-import { replaceConversationInSnapshot } from './structured-conversation-tab-replacement'
-import { resolveStructuredWorkerAuthority } from './structured-worker-authority'
-import { structuredWorkerAgentStatus } from './orchestration/structured-worker-group-addressing'
 
 export class OrcaRuntimeWithPruneMobileSessionTabGroupLayout extends OrcaRuntimeWithScheduleMobileSessionTabsChanged {
   protected pruneMobileSessionTabGroupLayout(
@@ -74,84 +62,22 @@ export class OrcaRuntimeWithPruneMobileSessionTabGroupLayout extends OrcaRuntime
     )
   }
 
-  /** Transforms an internal mobile session tab snapshot into a sanitized client payload, resolving launch-agent ownership and normalizing titles. */
+  /** Transforms an internal mobile session tab snapshot into a sanitized client payload. */
   protected toMobileSessionTabsResult(
     snapshot: RuntimeMobileSessionTabsSnapshot
   ): RuntimeMobileSessionTabsResult {
-    for (const replacement of getStructuredAgentSessionHost()?.conversationReplacements?.() ?? []) {
-      snapshot = replaceConversationInSnapshot(snapshot, replacement)
-    }
-    return projectRuntimeMobileSessionTabs(snapshot, this.getMobileSessionProjectionHost())
-  }
-
-  protected getMobileSessionProjectionHost(): RuntimeMobileSessionProjectionHost {
-    return {
-      tabs: this.tabs,
-      leaves: this.leaves,
-      ptysById: this.ptysById,
-      getLiveBrowserTabs: (worktreeId) => this.getLiveBrowserTabsByPageId(worktreeId),
-      getProviderSessionRows: (paneKey) => this.getAgentProviderSessionRowsForPaneFn?.(paneKey),
-      getProviderSessionSnapshot: () => this.getAgentProviderSessionSnapshotFn?.() ?? [],
-      getStatusSnapshot: () => this.getAgentStatusSnapshotFn?.() ?? [],
-      getLeafKey: (tabId, leafId) => this.getLeafKey(tabId, leafId),
-      findPty: (worktreeId, tab, options) =>
-        this.findPtyForMobileTerminalTab(worktreeId, tab, options),
-      getRetainedStatus: (paneKey, pty, tab, getRows) =>
-        this.getFreshRetainedAgentStatusForMobileTab(paneKey, pty, tab, getRows),
-      getTrackedTitle: (ptyId) => this.getUnpersistedTrackedTitleForPty(ptyId),
-      issuePtyHandle: (pty) => this.issuePtyHandle(pty),
-      recordPty: (ptyId, worktreeId, state) => this.recordPtyWorktree(ptyId, worktreeId, state),
-      buildPtyStatus: (pty, tab, terminalHandle, retained, getRows) =>
-        this.buildPtyMobileAgentStatus(pty, tab, terminalHandle, retained, getRows),
-      sanitizeGroups: (groups, tabs) => this.sanitizeMobileSessionTabGroups(groups, tabs),
-      pruneGroupLayout: (layout, validGroupIds) =>
-        this.pruneMobileSessionTabGroupLayout(layout, validGroupIds),
-      collectTabIds: (tabs) => this.collectReturnedSessionTabIds(tabs)
-    }
-  }
-
-  protected buildPtyMobileAgentStatus(
-    pty: RuntimePtyWorktreeRecord | null,
-    tab: RuntimeMobileSessionTerminalTab,
-    terminalHandle: string | null,
-    retained: RuntimeAgentRowSnapshot | null,
-    getHookRowsForPane: (paneKey: string) => AgentStatusIpcPayload[]
-  ): { agentStatus: AgentStatusEntry } | Record<string, never> {
-    return buildRuntimeMobileAgentStatus(pty, tab, terminalHandle, retained, getHookRowsForPane, {
-      getPaneKey: (candidate) => this.getMobileTerminalPaneKey(candidate),
-      getLeaf: (candidate) =>
-        this.leaves.get(this.getLeafKey(candidate.parentTabId, candidate.leafId)) ?? null,
-      getTrackedTitle: (ptyId) => this.getUnpersistedTrackedTitleForPty(ptyId)
-    })
-  }
-
-  protected getFreshRetainedAgentStatusForMobileTab(
-    paneKey: string,
-    pty: RuntimePtyWorktreeRecord | null,
-    _tab: RuntimeMobileSessionTerminalTab,
-    getRows: (paneKey: string, terminalHandle: string | null) => AgentStatusIpcPayload[]
-  ): RuntimeAgentRowSnapshot | null {
-    const paneMatch = selectFreshAgentRowForMobileTab({
-      paneKey,
-      terminalHandle: null,
-      hookRows: getRows(paneKey, null)
-    })
-    if (paneMatch || !pty) {
-      return paneMatch
-    }
-    // Why: the OSC producer can stamp a leaf or incarnation handle; use the same non-minting
-    // inventory as worktree.ps so a tab-id remint can rejoin the still-live central row.
-    for (const terminalHandle of this.getExistingTerminalHandlesForPtyId(pty.ptyId)) {
-      const handleMatch = selectFreshAgentRowForMobileTab({
-        paneKey,
-        terminalHandle,
-        hookRows: getRows(paneKey, terminalHandle)
-      })
-      if (handleMatch) {
-        return handleMatch
+    // The live terminal/browser projection engine (runtime-mobile-session-projection) was
+    // culled; tabs publish as stored and the surviving finalization still normalizes
+    // active-tab/group/layout/retirement state.
+    return finalizeRuntimeMobileSessionTabsResult(
+      { snapshot, tabs: [...snapshot.tabs] },
+      {
+        sanitizeGroups: (groups, tabs) => this.sanitizeMobileSessionTabGroups(groups, tabs),
+        pruneGroupLayout: (layout, validGroupIds) =>
+          this.pruneMobileSessionTabGroupLayout(layout, validGroupIds),
+        collectTabIds: (tabs) => this.collectReturnedSessionTabIds(tabs)
       }
-    }
-    return null
+    )
   }
 
   protected findPtyForMobileTerminalTab(
@@ -217,12 +143,6 @@ export class OrcaRuntimeWithPruneMobileSessionTabGroupLayout extends OrcaRuntime
 
   // Why: group address resolution (Section 4.5) queries per-handle status and must not throw on stale handles; return null on any error.
   getAgentStatusForHandle(handle: string): string | null {
-    // A structured worker has no pane and no title, so every PTY probe below answers null and
-    // `@idle` would enumerate it and then silently drop it. Its status is the journal's.
-    const structured = resolveStructuredWorkerAuthority(handle, this._orchestrationDb)
-    if (structured) {
-      return structuredWorkerAgentStatus(structured.identity.sessionId)
-    }
     try {
       const ptyId = this.getTerminalAgentStatusPtyId(handle)
       return this.getTerminalAgentStatusSnapshot(handle, ptyId).titleStatus

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toAppSshPtyId } from '../../../../shared/ssh-pty-id'
+import { toAppSshPtyId } from './ssh-host-state-contracts'
 import type { AppState } from '../types'
 import { buildRemovedSshTargetCleanupPatch } from './ssh-target-cleanup'
 import { createTestStore, makeTab } from './store-test-helpers'

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppState } from '../types'
-import type { RuntimeEnvironmentCallRequest } from '../../runtime/runtime-compatibility-test-fixture'
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 import { WORKTREE_REFRESH_CONCURRENCY } from './worktrees'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
@@ -578,7 +578,7 @@ describe('fetchAllWorktrees hydration-time purge (design §4.4)', () => {
       executionHostId: 'runtime:env-offline'
     }))
 
-    runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
+    runtimeEnvironmentTransportCall.mockImplementation((args: { method: string }) => {
       if (args.method === 'status.get') {
         return Promise.resolve({
           id: 'status',

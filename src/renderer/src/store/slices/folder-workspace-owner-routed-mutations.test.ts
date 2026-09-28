@@ -1,13 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { ProjectGroup } from '../../../../shared/project-group-types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import { createTestStore } from './store-test-helpers'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
+
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 
 const folderWorkspacesUpdate = vi.fn()
 const folderWorkspacesDelete = vi.fn()
@@ -48,14 +45,13 @@ function makeFolderWorkspace(overrides: Partial<FolderWorkspace> = {}): FolderWo
 }
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   folderWorkspacesUpdate.mockReset()
   folderWorkspacesDelete.mockReset()
   folderWorkspacesList.mockReset()
   runtimeEnvironmentCall.mockReset()
   runtimeEnvironmentTransportCall.mockReset()
   runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-    return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+    return runtimeEnvironmentCall(args)
   })
   vi.stubGlobal('window', {
     api: {

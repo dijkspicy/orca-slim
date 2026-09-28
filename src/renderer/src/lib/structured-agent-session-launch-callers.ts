@@ -1,7 +1,12 @@
 import { settleStructuredAgentLaunchPrompt } from '@/lib/structured-agent-session-launch-prompt'
 import type { StructuredPromptDeliveryResult } from '@/lib/structured-agent-session-launch-prompt'
-import type { StructuredAgentSessionOutboxEntry } from '../../../shared/structured-agent-session-outbox'
-import type { StructuredAgentSessionResumeSource } from '../../../shared/structured-agent-session-create'
+import type { StructuredAgentSessionOutboxEntry } from './structured-agent-session-launch-prompt'
+
+// Why: the shared create module was culled; the resume source stays a provider session id.
+export type StructuredAgentSessionResumeSource = {
+  /** claude: the session id. codex: the thread id. */
+  providerSessionId: string
+}
 
 export type StructuredAgentLaunchOptions = {
   prompt?: string

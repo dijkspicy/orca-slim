@@ -8,12 +8,8 @@ import { parseExecutionHostId, type ExecutionHostId } from '../../shared/executi
 import { isFolderRepo } from '../../shared/repo-kind'
 import { forceDeleteLocalBranch } from '../git/worktree'
 import { gitExecFileAsync } from '../git/runner'
-import {
-  cleanupUnusedWorktreePushTargetRemote,
-  cleanupUnusedWorktreePushTargetRemoteSsh
-} from '../ipc/worktree-remote'
+import { cleanupUnusedWorktreePushTargetRemote } from '../ipc/worktree-remote'
 import { getLocalProjectWorktreeGitOptions } from '../project-runtime-git-options'
-import { requireSshGitProvider } from '../providers/ssh-git-dispatch'
 import type { Store } from '../persistence'
 import { resolveWorktreeRemovalRepoOwner } from '../worktree-removal-repo-owner'
 import { parseExactWorktreeIdSelector } from './runtime-worktree-selection'
@@ -123,31 +119,19 @@ export class RuntimePreservedBranchCleanup {
       throw new Error('Folder workspaces do not have local Git branches.')
     }
 
-    if (repo.connectionId) {
-      const provider = requireSshGitProvider(repo.connectionId)
-      await provider.forceDeletePreservedBranch(repo.path, target.branchName, target.head)
-      await cleanupUnusedWorktreePushTargetRemoteSsh(
-        provider,
-        repo.path,
-        removalTarget.id,
-        target.pushTarget,
-        store
-      )
-    } else {
-      const options = getLocalProjectWorktreeGitOptions(store, repo)
-      await (Object.keys(options).length > 0
-        ? forceDeleteLocalBranch(repo.path, target.branchName, target.head, (argv, cwd) =>
-            gitExecFileAsync(argv, { cwd, ...options })
-          )
-        : forceDeleteLocalBranch(repo.path, target.branchName, target.head))
-      await cleanupUnusedWorktreePushTargetRemote(
-        repo.path,
-        removalTarget.id,
-        target.pushTarget,
-        store,
-        options
-      )
-    }
+    const options = getLocalProjectWorktreeGitOptions(store, repo)
+    await (Object.keys(options).length > 0
+      ? forceDeleteLocalBranch(repo.path, target.branchName, target.head, (argv, cwd) =>
+          gitExecFileAsync(argv, { cwd, ...options })
+        )
+      : forceDeleteLocalBranch(repo.path, target.branchName, target.head))
+    await cleanupUnusedWorktreePushTargetRemote(
+      repo.path,
+      removalTarget.id,
+      target.pushTarget,
+      store,
+      options
+    )
     this.delete(removalTarget.id, target.hostId)
     return { deleted: true }
   }

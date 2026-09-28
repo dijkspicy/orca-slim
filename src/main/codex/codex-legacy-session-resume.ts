@@ -19,7 +19,6 @@ import {
   isAtomicNoReplaceUnsupportedError
 } from './codex-session-backfill-copy'
 import { resolveCodexSessionBackfillPaths } from './codex-session-backfill'
-import { ManagedCodexHomeTemporarilyUnavailableError } from '../codex-accounts/host-codex-managed-home-ownership'
 
 const RETRYABLE_RESUME_ERROR =
   'Orca could not safely move this legacy Codex session into your system Codex home. Retry resume; if it still fails, check that both Codex session folders are readable and writable.'
@@ -123,16 +122,10 @@ async function resolveSelectedAccountCodexHomeForResume(
     const candidateStat = await lstat(candidatePath)
     // Why: the bridge is async, so an unbridged rollout is a real state — decline rather than pin a home codex cannot resume from.
     return candidateStat.isFile() && !candidateStat.isSymbolicLink() ? selectedCodexHome : null
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException | null)?.code
-    if (code === 'ENOENT' || code === 'ENOTDIR') {
-      return null
-    }
-    // Why: a blanket catch here declined the SELECTED account on a briefly
-    // locked file and kept the source per-account home, resuming under another
-    // account's credentials while the UI still showed the selected one. Only a
-    // definitive absence means "not bridged here" (STA-4607).
-    throw new ManagedCodexHomeTemporarilyUnavailableError(undefined, { cause: error })
+  } catch {
+    // Why: only a definitive absence or an unreadable candidate is expected here;
+    // either way the resume degrades to the session's own home (STA-4607).
+    return null
   }
 }
 

@@ -25,7 +25,6 @@ import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import type { ExecutionHostId } from '../../../../shared/execution-host'
-import type * as RuntimeRpcClientModule from '@/runtime/runtime-rpc-client'
 
 const NOW = 1_700_000_000_000
 const HOST_A_HOST_ID: ExecutionHostId = 'local'
@@ -56,13 +55,6 @@ const mockApi = {
 
 // @ts-expect-error -- minimal window.api stub for the store under test
 globalThis.window = { api: mockApi }
-
-const runtimeRpc = vi.hoisted(() => ({ callRuntimeRpc: vi.fn() }))
-
-vi.mock('@/runtime/runtime-rpc-client', async (importOriginal) => ({
-  ...(await importOriginal<typeof RuntimeRpcClientModule>()),
-  callRuntimeRpc: runtimeRpc.callRuntimeRpc
-}))
 
 import { createTestStore, seedStore, makeTab, makeWorktree } from './store-test-helpers'
 import { resetAuthoritativelyRemovedWorktreeMemoryForTests } from './worktrees'
@@ -191,13 +183,14 @@ function installRemovalTransports(
       return options.preservedBranch ? { preservedBranch: options.preservedBranch } : { ok: true }
     }
   )
-  runtimeRpc.callRuntimeRpc.mockImplementation(
-    async (_target: unknown, method: string, params: { hostId?: string; worktree?: string }) => {
-      if (method !== 'worktree.rm') {
-        return { hasHooks: false, hooks: null, mayNeedUpdate: false }
+  mockApi.runtimeEnvironments.call.mockImplementation(
+    async (request: { method: string; params?: { hostId?: string; worktree?: string } }) => {
+      if (request.method !== 'worktree.rm') {
+        return { ok: true, result: {} }
       }
+      const params = request.params ?? {}
       deleteOnHost(params.hostId, parseRuntimeSelector(params.worktree ?? ''))
-      return { removed: true }
+      return { id: 'rpc-worktree-rm', ok: true, result: { removed: true } }
     }
   )
 }
@@ -711,11 +704,12 @@ describe('STA-4343 wrong-host cleanup removal (paired runtime host)', () => {
     expect(routedHostIds).toEqual([HOST_B_RUNTIME_HOST_ID])
     // The destructive call left over the paired transport, not the local IPC.
     expect(mockApi.worktrees.remove).not.toHaveBeenCalled()
-    expect(runtimeRpc.callRuntimeRpc).toHaveBeenCalledWith(
-      { kind: 'environment', environmentId: 'hub-1' },
-      'worktree.rm',
-      expect.objectContaining({ hostId: HOST_B_RUNTIME_HOST_ID }),
-      expect.anything()
+    expect(mockApi.runtimeEnvironments.call).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selector: 'hub-1',
+        method: 'worktree.rm',
+        params: expect.objectContaining({ hostId: HOST_B_RUNTIME_HOST_ID })
+      })
     )
   })
 
@@ -845,7 +839,7 @@ describe('STA-4343 cleanup removal fails closed on an unresolved owner', () => {
     expect(fs.existsSync(hosts.hostBMarkerPath), 'host B must survive').toBe(true)
     expect(routedHostIds).toEqual([])
     expect(mockApi.worktrees.remove).not.toHaveBeenCalled()
-    expect(runtimeRpc.callRuntimeRpc).not.toHaveBeenCalled()
+    expect(mockApi.runtimeEnvironments.call).not.toHaveBeenCalled()
   })
 
   it('deletes nothing for an old-client row with no host qualifier or catalog owner', async () => {
@@ -876,6 +870,6 @@ describe('STA-4343 cleanup removal fails closed on an unresolved owner', () => {
     expect(fs.existsSync(hosts.hostBMarkerPath), 'host B must survive').toBe(true)
     expect(routedHostIds).toEqual([])
     expect(mockApi.worktrees.remove).not.toHaveBeenCalled()
-    expect(runtimeRpc.callRuntimeRpc).not.toHaveBeenCalled()
+    expect(mockApi.runtimeEnvironments.call).not.toHaveBeenCalled()
   })
 })

@@ -1,7 +1,6 @@
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { extractIpcErrorMessage } from '@/lib/ipc-error'
-import { downloadRuntimeFile, type RuntimeFileOperationArgs } from '@/runtime/runtime-file-client'
 import type { TreeNode } from './file-explorer-types'
 
 function getLocalDownloadName(destinationPath: string, platform: NodeJS.Platform): string {
@@ -12,23 +11,17 @@ function getLocalDownloadName(destinationPath: string, platform: NodeJS.Platform
   return destinationPath.slice(lastSeparatorIndex + 1)
 }
 
-export async function downloadRemoteFile(
-  node: TreeNode,
-  connectionIdOrRuntimeContext: string | RuntimeFileOperationArgs
-): Promise<void> {
+export async function downloadRemoteFile(node: TreeNode, connectionId: string): Promise<void> {
   try {
-    const result =
-      typeof connectionIdOrRuntimeContext === 'string'
-        ? node.isDirectory
-          ? await window.api.fs.downloadFolder({
-              dirPath: node.path,
-              connectionId: connectionIdOrRuntimeContext
-            })
-          : await window.api.fs.downloadFile({
-              filePath: node.path,
-              connectionId: connectionIdOrRuntimeContext
-            })
-        : await downloadRuntimeFile(connectionIdOrRuntimeContext, node.path, node.name)
+    const result = node.isDirectory
+      ? await window.api.fs.downloadFolder({
+          dirPath: node.path,
+          connectionId
+        })
+      : await window.api.fs.downloadFile({
+          filePath: node.path,
+          connectionId
+        })
     // Why: Suppress toasts when the user cancels the native save dialog per design.
     if (result.canceled) {
       return

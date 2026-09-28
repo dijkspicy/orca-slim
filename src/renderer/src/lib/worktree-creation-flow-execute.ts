@@ -3,11 +3,6 @@ import { useAppStore } from '@/store'
 import { preflightAgentTrust } from '@/lib/agent-trust-preflight'
 import { activateAndRevealWorktree, type ActivateAndRevealResult } from '@/lib/worktree-activation'
 import { ensureWorktreeHasInitialTerminal } from '@/lib/worktree-initial-terminal-seeding'
-import {
-  attachEphemeralVmRuntimeToWorkspace,
-  cleanupEphemeralVmRuntimeForFailedCreate,
-  prepareRequestForCreate
-} from '@/lib/ephemeral-vm-worktree-creation'
 import { getProvisionedRootCreateOptions } from '@/lib/provisioned-root-create-options'
 import {
   formatWorkspaceCreateError,
@@ -24,7 +19,6 @@ import {
   type WorktreeCreationStructuredSessionResult
 } from '@/lib/worktree-creation-structured-session'
 import { completeWorktreeCreation } from '@/lib/worktree-creation-completion'
-import { ensureWebRuntimeWorktreeTerminalAfterWake } from '@/lib/web-runtime-worktree-terminal-after-wake'
 
 // Why: activePendingCreationId can outlive the terminal route when the user
 // switches app views; only the terminal route renders the creation panel.
@@ -37,10 +31,9 @@ export async function executeWorktreeCreation(
   creationId: string,
   request: WorktreeCreationRequest
 ): Promise<void> {
-  const preparedRequest = await prepareRequestForCreate(creationId, request)
-  if (!preparedRequest) {
-    return
-  }
+  // Ephemeral-VM workspace provisioning was culled with remote hosts; creation
+  // requests run straight through.
+  const preparedRequest = request
 
   let result: CreateWorktreeResult
   try {
@@ -106,16 +99,12 @@ export async function executeWorktreeCreation(
     if (!useAppStore.getState().pendingWorktreeCreations[creationId]) {
       return
     }
-    if (preparedRequest.ephemeralVmRuntimeId) {
-      await cleanupEphemeralVmRuntimeForFailedCreate(preparedRequest)
-    }
     const message = getWorkspaceCreateErrorToastMessage(formatWorkspaceCreateError(error))
     // Why: an error must stay on the same creation surface that owns the faux
     // tab strip, rather than falling back to stale previous-workspace tabs.
     useAppStore.getState().updatePendingWorktreeCreation(creationId, {
       status: 'error',
-      error: message,
-      ...(preparedRequest.ephemeralVmRecipe ? { request } : {})
+      error: message
     })
     // Why: only toast when the panel isn't already showing this error (the user
     // navigated away), so a visible failure isn't announced twice.
@@ -127,14 +116,9 @@ export async function executeWorktreeCreation(
 
   const worktree = result.worktree
   const structuredLaunch = preparedRequest.agentLaunchRoute === 'structured-native-chat'
-  // Why: cancellation can race a successful backend adoption; clean up again after it settles so an adopted workspace cannot outlive its destroyed VM.
   if (!useAppStore.getState().pendingWorktreeCreations[creationId]) {
-    if (preparedRequest.ephemeralVmRuntimeId) {
-      await cleanupEphemeralVmRuntimeForFailedCreate(preparedRequest)
-    }
     return
   }
-  await attachEphemeralVmRuntimeToWorkspace(preparedRequest, worktree.id)
 
   const backendSpawned = result.startupTerminal?.spawned === true
   if (preparedRequest.startupPlan && !backendSpawned && !preparedRequest.startupPlan.launchToken) {
@@ -219,20 +203,6 @@ export async function executeWorktreeCreation(
           )
         }
       }
-      if (!backendSpawned) {
-        try {
-          ensureWebRuntimeWorktreeTerminalAfterWake(worktree.id, {
-            startup: startupOpt,
-            agent: preparedRequest.agent
-          })
-        } catch (recoveryError) {
-          console.error(
-            'worktree create: activation recovery after-wake seeding failed',
-            worktree.id,
-            recoveryError
-          )
-        }
-      }
     }
   } else {
     // Why: backgrounded creates still need explicit setup/issue terminals, but must not activate them.
@@ -256,17 +226,6 @@ export async function executeWorktreeCreation(
         )
       } catch (error) {
         console.error('worktree create: initial terminal seeding failed', worktree.id, error)
-      }
-    }
-    if (!structuredLaunch && !backendSpawned) {
-      try {
-        ensureWebRuntimeWorktreeTerminalAfterWake(worktree.id, {
-          startup: startupOpt,
-          agent: preparedRequest.agent,
-          activate: false
-        })
-      } catch (error) {
-        console.error('worktree create: after-wake terminal seeding failed', worktree.id, error)
       }
     }
   }

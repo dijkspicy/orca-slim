@@ -1,16 +1,11 @@
 import type { StateCreator } from 'zustand'
 import type { AppState } from '../types'
 import type { DiffComment } from '../../../../shared/diff-comment-types'
-import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { getRepoIdFromWorktreeId } from './worktree-helpers'
-import { callRuntimeRpc, getActiveRuntimeTarget } from '../../runtime/runtime-rpc-client'
-import { toRuntimeWorktreeSelector } from '../../runtime/runtime-worktree-selector'
-import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
 import {
   findFolderWorkspaceOwner,
-  getExecutionHostIdForFolderWorkspace,
-  getRuntimeEnvironmentIdForFolderWorkspace
+  getExecutionHostIdForFolderWorkspace
 } from '@/lib/folder-workspace-runtime-owner'
 import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
 
@@ -49,63 +44,22 @@ export function normalizeDiffComment(comment: DiffComment): DiffComment {
   }
 }
 
-async function persist(
-  state: AppState,
-  settings: AppState['settings'],
-  worktreeId: string,
-  diffComments: DiffComment[],
-  folderExecutionHostId?: ReturnType<typeof getExecutionHostIdForFolderWorkspace>
-): Promise<void> {
+async function persist(worktreeId: string, diffComments: DiffComment[]): Promise<void> {
   const scope = parseWorkspaceKey(worktreeId)
   if (scope?.type === 'folder') {
-    const executionHostId =
-      folderExecutionHostId ?? getExecutionHostIdForFolderWorkspace(state, scope.folderWorkspaceId)
-    const runtimeEnvironmentId = getRuntimeEnvironmentIdForFolderWorkspace(
-      state,
-      scope.folderWorkspaceId,
-      executionHostId
-    )
-    const target = getActiveRuntimeTarget({ activeRuntimeEnvironmentId: runtimeEnvironmentId })
-    const updated =
-      target.kind === 'local'
-        ? await window.api.folderWorkspaces.update({
-            folderWorkspaceId: scope.folderWorkspaceId,
-            updates: { diffComments }
-          })
-        : (
-            await callRuntimeRpc<{ folderWorkspace: FolderWorkspace | null }>(
-              target,
-              'folderWorkspace.update',
-              { folderWorkspaceId: scope.folderWorkspaceId, updates: { diffComments } },
-              { timeoutMs: 15_000 }
-            )
-          ).folderWorkspace
+    const updated = await window.api.folderWorkspaces.update({
+      folderWorkspaceId: scope.folderWorkspaceId,
+      updates: { diffComments }
+    })
     if (!updated?.diffComments) {
       throw new Error('Failed to persist folder workspace review notes')
     }
     return
   }
-  const target = getActiveRuntimeTarget(settings)
-  if (target.kind === 'local') {
-    await window.api.worktrees.updateMeta({
-      worktreeId,
-      updates: { diffComments }
-    })
-    return
-  }
-  await callRuntimeRpc(
-    target,
-    'worktree.set',
-    { worktree: toRuntimeWorktreeSelector(worktreeId), diffComments },
-    { timeoutMs: 15_000 }
-  )
-}
-
-function settingsForWorktreeOwner(state: AppState, worktreeId: string): AppState['settings'] {
-  const runtimeEnvironmentId = getRuntimeEnvironmentIdForWorktree(state, worktreeId)
-  return state.settings
-    ? { ...state.settings, activeRuntimeEnvironmentId: runtimeEnvironmentId }
-    : ({ activeRuntimeEnvironmentId: runtimeEnvironmentId } as AppState['settings'])
+  await window.api.worktrees.updateMeta({
+    worktreeId,
+    updates: { diffComments }
+  })
 }
 
 // Why: IPC writes aren't ordered, so serialize per worktree to stop an older snapshot from overwriting a newer one on disk.
@@ -173,24 +127,12 @@ export function enqueueDiffCommentPersist(
           folderExecutionHostId
         )
         stateList = folderWorkspace?.diffComments
-        await persist(
-          state,
-          state.settings,
-          worktreeId,
-          (stateList ?? []).map(normalizeDiffComment),
-          folderExecutionHostId
-        )
+        await persist(worktreeId, (stateList ?? []).map(normalizeDiffComment))
       } else {
         const repoId = getRepoIdFromWorktreeId(worktreeId)
         const target = get().worktreesByRepo[repoId]?.find((w) => w.id === worktreeId)
         stateList = target?.diffComments
-        const state = get()
-        await persist(
-          state,
-          settingsForWorktreeOwner(state, worktreeId),
-          worktreeId,
-          (stateList ?? []).map(normalizeDiffComment)
-        )
+        await persist(worktreeId, (stateList ?? []).map(normalizeDiffComment))
       }
     } catch (err) {
       // Why: converge to what actually landed; rollback's identity guard no-ops when a later mutation owns the array.

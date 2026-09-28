@@ -4,7 +4,6 @@
 // the identity under test is derived there — mocking it out would assert only the mock's shape.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { StructuredAgentSessionCreateParams } from '../../../shared/structured-agent-session-create'
 
 const mocks = vi.hoisted(() => ({
   call: vi.fn(),
@@ -52,11 +51,18 @@ async function flushLaunchDispatch(): Promise<void> {
   }
 }
 
+type StructuredAgentSessionCreateParams = {
+  resumeFrom?: { providerSessionId: string }
+}
+
 /** Every create is left in flight, so each launch is still pending when the next one arrives. */
 function createParams(): StructuredAgentSessionCreateParams[] {
-  return mocks.call.mock.calls
-    .filter(([, method]) => method === 'agentSession.create')
-    .map(([, , params]) => params as StructuredAgentSessionCreateParams)
+  return (
+    mocks.call.mock.calls
+      .filter(([, method]) => method === 'agentSession.create')
+      // SAFETY: the real intent builder passes its create params straight through as the third RPC arg.
+      .map(([, , params]) => params as StructuredAgentSessionCreateParams)
+  )
 }
 
 describe('a launch that adopts a conversation is its own identity', () => {

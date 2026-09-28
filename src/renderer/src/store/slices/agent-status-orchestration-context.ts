@@ -1,5 +1,4 @@
 import type { AgentStatusOrchestrationContext } from '../../../../shared/agent-status-types'
-import { orchestrationFleetAttentionEqual } from '../../../../shared/orchestration-fleet-attention'
 
 export function orchestrationContextsEqual(
   a: AgentStatusOrchestrationContext,
@@ -14,8 +13,7 @@ export function orchestrationContextsEqual(
     a.parentTerminalHandle === b.parentTerminalHandle &&
     a.parentPaneKey === b.parentPaneKey &&
     a.coordinatorHandle === b.coordinatorHandle &&
-    a.orchestrationRunId === b.orchestrationRunId &&
-    orchestrationFleetAttentionEqual(a.attention, b.attention)
+    a.orchestrationRunId === b.orchestrationRunId
   )
 }
 

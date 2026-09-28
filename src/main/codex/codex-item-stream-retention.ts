@@ -1,9 +1,14 @@
 import { codexCommandOutlivesTurn } from './codex-command-lifecycle'
-import {
-  MAX_CODEX_ITEM_STREAM_ITEM_BYTES,
-  MAX_CODEX_ITEM_STREAM_STATES
-} from './codex-structured-item-stream-bounds'
-import type { CodexItemStreamState } from './codex-structured-item-stream-contracts'
+import type { AgentJournalItemIdentity } from '../../shared/agent-session-journal-types'
+import type { CodexThreadItem } from './codex-thread-item-identity'
+
+const MAX_CODEX_ITEM_STREAM_STATES = 256
+const MAX_CODEX_ITEM_STREAM_ITEM_BYTES = 64 * 1024
+
+export type CodexItemStreamState = {
+  identity: AgentJournalItemIdentity
+  item: CodexThreadItem
+}
 
 // Preserve the previous metadata ceiling while letting small live commands share it.
 export const MAX_CODEX_ITEM_STREAM_METADATA_BYTES =

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   isNativeChatSupportedAgent,
   NATIVE_CHAT_SUPPORTED_AGENT_LIST
-} from '../../../../shared/native-chat-agent-support'
+} from '@/lib/native-chat-supported-agent'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import en from '@/i18n/locales/en.json'
 import { i18n } from '@/i18n/i18n'

@@ -4,17 +4,43 @@ import {
   createFileSearchResultOwner,
   type FileSearchResultOwner
 } from '@/lib/file-search-result-owner'
-import {
-  createEmptyRuntimeFileSearchResult,
-  getRuntimeFileSearchRejectedField
-} from '@/runtime/runtime-file-search-bounds'
-import { searchRuntimeFiles } from '@/runtime/runtime-file-client'
+import { isUtf8ByteLengthWithinLimit } from '../../../../shared/utf8-byte-limits'
 import { useAppStore } from '@/store'
 import type { SearchResult } from '../../../../shared/code-search-types'
 import { getRightSidebarWorktreeRuntimeSettings } from './file-explorer-runtime-owner'
 
 const SEARCH_DEBOUNCE_MS = 300
 const SEARCH_MAX_RESULTS = 2000
+const FILE_SEARCH_TEXT_MAX_BYTES = 8 * 1024
+
+type FileSearchRejectedField = 'query' | 'includePattern' | 'excludePattern'
+
+function fileSearchRejectedField(options: {
+  query: string
+  includePattern?: string
+  excludePattern?: string
+}): FileSearchRejectedField | null {
+  if (!isUtf8ByteLengthWithinLimit(options.query, FILE_SEARCH_TEXT_MAX_BYTES)) {
+    return 'query'
+  }
+  if (
+    options.includePattern !== undefined &&
+    !isUtf8ByteLengthWithinLimit(options.includePattern, FILE_SEARCH_TEXT_MAX_BYTES)
+  ) {
+    return 'includePattern'
+  }
+  if (
+    options.excludePattern !== undefined &&
+    !isUtf8ByteLengthWithinLimit(options.excludePattern, FILE_SEARCH_TEXT_MAX_BYTES)
+  ) {
+    return 'excludePattern'
+  }
+  return null
+}
+
+function createEmptyFileSearchResult(): SearchResult {
+  return { files: [], totalMatches: 0, truncated: false }
+}
 
 type UpdateSearchState = (updates: {
   loading?: boolean
@@ -37,7 +63,7 @@ export function useFileSearchRunner({
   cancelPendingSearch: () => void
 } {
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Why: runtime searches can finish out of order; ids keep stale results
+  // Why: searches can finish out of order; ids keep stale results
   // from overwriting the newest query state.
   const latestSearchIdRef = useRef(0)
 
@@ -67,7 +93,7 @@ export function useFileSearchRunner({
 
       const currentSearchState = useAppStore.getState().fileSearchStateByWorktree[activeWorktreeId]
       if (
-        getRuntimeFileSearchRejectedField({
+        fileSearchRejectedField({
           query,
           includePattern: currentSearchState?.includePattern || undefined,
           excludePattern: currentSearchState?.excludePattern || undefined
@@ -75,7 +101,7 @@ export function useFileSearchRunner({
       ) {
         const runtimeSettings = getRightSidebarWorktreeRuntimeSettings(activeWorktreeId)
         updateActiveSearchState({
-          results: createEmptyRuntimeFileSearchResult(),
+          results: createEmptyFileSearchResult(),
           resultOwner: createFileSearchResultOwner(activeWorktreeId, runtimeSettings),
           loading: false
         })
@@ -98,7 +124,7 @@ export function useFileSearchRunner({
           const connectionId = getConnectionId(activeWorktreeId) ?? undefined
           const activeSearchState = state.fileSearchStateByWorktree[activeWorktreeId]
           if (
-            getRuntimeFileSearchRejectedField({
+            fileSearchRejectedField({
               query,
               includePattern: activeSearchState?.includePattern || undefined,
               excludePattern: activeSearchState?.excludePattern || undefined
@@ -106,31 +132,24 @@ export function useFileSearchRunner({
           ) {
             if (latestSearchIdRef.current === searchId) {
               updateActiveSearchState({
-                results: createEmptyRuntimeFileSearchResult(),
+                results: createEmptyFileSearchResult(),
                 resultOwner,
                 loading: false
               })
             }
             return
           }
-          const results = await searchRuntimeFiles(
-            {
-              settings: runtimeSettings,
-              worktreeId: activeWorktreeId,
-              worktreePath,
-              connectionId
-            },
-            {
-              query: query.trim(),
-              rootPath: worktreePath,
-              caseSensitive: activeSearchState?.caseSensitive ?? false,
-              wholeWord: activeSearchState?.wholeWord ?? false,
-              useRegex: activeSearchState?.useRegex ?? false,
-              includePattern: activeSearchState?.includePattern || undefined,
-              excludePattern: activeSearchState?.excludePattern || undefined,
-              maxResults: SEARCH_MAX_RESULTS
-            }
-          )
+          const results = await window.api.fs.search({
+            query: query.trim(),
+            rootPath: worktreePath,
+            caseSensitive: activeSearchState?.caseSensitive ?? false,
+            wholeWord: activeSearchState?.wholeWord ?? false,
+            useRegex: activeSearchState?.useRegex ?? false,
+            includePattern: activeSearchState?.includePattern || undefined,
+            excludePattern: activeSearchState?.excludePattern || undefined,
+            maxResults: SEARCH_MAX_RESULTS,
+            connectionId
+          })
           if (latestSearchIdRef.current === searchId) {
             updateActiveSearchState({ results, resultOwner })
           }

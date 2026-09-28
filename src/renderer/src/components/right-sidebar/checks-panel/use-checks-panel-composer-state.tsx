@@ -10,7 +10,6 @@ import {
 import type { ChecksPanelContextState } from './use-checks-panel-context-state'
 import type { ChecksPanelReviewState } from './use-checks-panel-review-state'
 import type { ChecksPanelControllerState } from './use-checks-panel-controller-state'
-import type { ChecksPanelGenerationState } from './use-checks-panel-generation'
 import {
   checksPanelReviewStableKey,
   clearPendingPRCommentAiAck
@@ -48,12 +47,6 @@ type ChecksPanelComposerStateInput = Pick<
     | 'claimedCommentResolutionRef'
     | 'commentResolutionLaunchAcceptedRef'
     | 'updatePullRequestGenerationRecord'
-  > &
-  Pick<
-    ChecksPanelGenerationState,
-    | 'handleCancelGeneratePullRequestFieldsForActive'
-    | 'handleGeneratePullRequestFieldsForActive'
-    | 'handlePullRequestGenerationSeedRestored'
   >
 
 export function useChecksPanelComposerState(model: ChecksPanelComposerStateInput) {
@@ -61,7 +54,6 @@ export function useChecksPanelComposerState(model: ChecksPanelComposerStateInput
     activeGitLabReview,
     activePullRequestGenerationKey,
     activePullRequestGenerationRecord,
-    activePullRequestGenerationSeedRestoreKey,
     activeWorktreeId,
     activeWorktreePath,
     agentComposerState,
@@ -69,9 +61,6 @@ export function useChecksPanelComposerState(model: ChecksPanelComposerStateInput
     branch,
     createComposerOpen,
     fetchHostedReviewForBranch,
-    handleCancelGeneratePullRequestFieldsForActive,
-    handleGeneratePullRequestFieldsForActive,
-    handlePullRequestGenerationSeedRestored,
     hostedReviewCacheKey,
     hostedReviewCreateProvider,
     hostedReviewCreation,
@@ -129,19 +118,7 @@ export function useChecksPanelComposerState(model: ChecksPanelComposerStateInput
     prCreationDefaults,
     sourceControlAiActionsVisible,
     // Preserve the draft when a hard refresh error hides the composer so title/body/base survive recovery for the same context.
-    retainDraftWhenClosed: true,
-    generation: {
-      generating: activePullRequestGenerationRecord?.status === 'running',
-      generateError: activePullRequestGenerationRecord?.error ?? null,
-      seedRestoreKey: activePullRequestGenerationSeedRestoreKey,
-      seed: activePullRequestGenerationRecord?.seed ?? null,
-      seedFieldRevisions: activePullRequestGenerationRecord?.seedFieldRevisions ?? null,
-      onSeedRestored: handlePullRequestGenerationSeedRestored,
-      onGenerate: (fields, fieldRevisions, overrides) => {
-        void handleGeneratePullRequestFieldsForActive(fields, fieldRevisions, overrides)
-      },
-      onCancelGenerate: handleCancelGeneratePullRequestFieldsForActive
-    }
+    retainDraftWhenClosed: true
   })
   const stackParentReview = useHostedReviewStackParent({
     enabled: hostedReviewCreateProvider === 'github' && prStackedCreationSupported,

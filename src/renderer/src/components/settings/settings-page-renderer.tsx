@@ -8,7 +8,6 @@ import {
   renderAccountsSettingsSection,
   renderAgentsSettingsSection,
   renderDesktopCapabilitySettingsSections,
-  renderLinearSettingsSection,
   renderOrchestrationSettingsSection
 } from './settings-capability-section-renderers'
 import {
@@ -19,13 +18,9 @@ import {
   renderIntegrationsSettingsSection,
   renderMobileSettingsSection,
   renderOrcaAccountSettingsSection,
-  renderSetupGuideSettingsSection,
   renderShareSkillsSettingsSection
 } from './settings-setup-workflow-section-renderers'
-import {
-  renderGitSettingsSection,
-  renderTasksSettingsSection
-} from './settings-git-task-section-renderers'
+import { renderGitSettingsSection } from './settings-git-task-section-renderers'
 import {
   renderBrowserSettingsSection,
   renderFloatingWorkspaceSettingsSection,
@@ -36,14 +31,12 @@ import {
   renderAppearanceSettingsSection,
   renderInputSettingsSection,
   renderNotificationsSettingsSection,
-  renderShortcutsSettingsSection,
-  renderStatsSettingsSection
+  renderShortcutsSettingsSection
 } from './settings-interface-secondary-section-renderers'
 import {
   renderDeveloperPermissionsSettingsSection,
   renderPrivacySettingsSection,
-  renderServersSettingsSection,
-  renderSshSettingsSection
+  renderServersSettingsSection
 } from './settings-remote-security-section-renderers'
 import {
   renderAdvancedSettingsSection,
@@ -116,10 +109,8 @@ export function renderSettingsPage(context: SettingsRenderContext): React.JSX.El
                 {renderAgentsSettingsSection(context)}
                 {renderAccountsSettingsSection(context)}
                 {renderOrchestrationSettingsSection(context)}
-                {renderLinearSettingsSection(context)}
                 {renderDesktopCapabilitySettingsSections(context)}
                 {renderOrcaAccountSettingsSection(context)}
-                {renderSetupGuideSettingsSection(context)}
                 {renderGeneralSettingsSection(context)}
                 {renderIntegrationsSettingsSection(context)}
                 {renderMobileSettingsSection(context)}
@@ -128,7 +119,6 @@ export function renderSettingsPage(context: SettingsRenderContext): React.JSX.El
                 {renderShareSkillsSettingsSection(context)}
                 {renderSessionHistorySettingsSection(context)}
                 {renderGitSettingsSection(context)}
-                {renderTasksSettingsSection(context)}
                 {renderTerminalSettingsSection(context)}
                 {renderQuickCommandsSettingsSection(context)}
                 {renderBrowserSettingsSection(context)}
@@ -137,9 +127,7 @@ export function renderSettingsPage(context: SettingsRenderContext): React.JSX.El
                 {renderInputSettingsSection(context)}
                 {renderNotificationsSettingsSection(context)}
                 {renderShortcutsSettingsSection(context)}
-                {renderStatsSettingsSection(context)}
                 {renderServersSettingsSection(context)}
-                {renderSshSettingsSection(context)}
                 {renderDeveloperPermissionsSettingsSection(context)}
                 {renderPrivacySettingsSection(context)}
                 {renderAdvancedSettingsSection(context)}

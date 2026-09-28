@@ -5,8 +5,9 @@ type OrchestrationMailboxDeliveryTargetDependencies = {
   getDb: () => OrchestrationDb | null
   getTerminalHandleForPaneKey: (paneKey: string) => string | null
   hasTerminalHandle: (handle: string) => boolean
-  /** A structured worker has no PTY handle; its own lane delivers, so this must not claim it. */
-  isStructuredWorkerHandle: (handle: string) => boolean
+  /** A structured worker has no PTY handle; its own lane delivers, so this must not claim it.
+   *  Optional: the structured worker lane was culled, so no runtime supplies it any more. */
+  isStructuredWorkerHandle?: (handle: string) => boolean
   canProbePtyLiveness: () => boolean
   controllerKnowsPtyIsLive: (ptyId: string) => boolean
   isLeafPtyProvenAbsent: (ptyId: string) => Promise<boolean>
@@ -21,7 +22,7 @@ export class OrchestrationMailboxDeliveryTarget {
     if (this.deps.hasTerminalHandle(handle)) {
       return handle
     }
-    if (this.deps.isStructuredWorkerHandle(handle)) {
+    if (this.deps.isStructuredWorkerHandle?.(handle)) {
       return null
     }
     const db = this.deps.getDb()
@@ -39,7 +40,7 @@ export class OrchestrationMailboxDeliveryTarget {
     if (!ownerHandle) {
       return null
     }
-    if (this.deps.isStructuredWorkerHandle(ownerHandle)) {
+    if (this.deps.isStructuredWorkerHandle?.(ownerHandle)) {
       // The structured lane owns this mailbox; nothing here can type into it.
       return null
     }

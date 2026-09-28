@@ -12,10 +12,7 @@ import {
   removeLocalWorktreePath,
   toLocalWorktreeRuntimePath
 } from '../local-worktree-filesystem'
-import {
-  cleanupUnusedWorktreePushTargetRemote,
-  cleanupUnusedWorktreePushTargetRemoteSsh
-} from '../ipc/worktree-remote'
+import { cleanupUnusedWorktreePushTargetRemote } from '../ipc/worktree-remote'
 import {
   assertWorktreeDoesNotContainRegisteredWorktree,
   canCleanupUnregisteredOrcaLeftoverDirectory,
@@ -156,19 +153,15 @@ async function deleteUnregisteredDirectory(
 async function cleanupPushTarget(
   args: Parameters<typeof removeRuntimeUnregisteredWorktree>[0]
 ): Promise<void> {
-  await (args.route.kind === 'ssh'
-    ? cleanupUnusedWorktreePushTargetRemoteSsh(
-        args.route.provider,
-        args.repo.path,
-        args.target.id,
-        args.removedPushTarget,
-        args.store
-      )
-    : cleanupUnusedWorktreePushTargetRemote(
-        args.repo.path,
-        args.target.id,
-        args.removedPushTarget,
-        args.store,
-        args.localOptions
-      ))
+  if (args.route.kind !== 'local') {
+    // Why: a non-local host owns its remotes; this client cannot run git there.
+    return
+  }
+  await cleanupUnusedWorktreePushTargetRemote(
+    args.repo.path,
+    args.target.id,
+    args.removedPushTarget,
+    args.store,
+    args.localOptions
+  )
 }

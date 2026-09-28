@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from 'react'
 import type { AgentSessionHandleProvider } from '../../../shared/agent-session-provider-handle'
-import type { StructuredAgentSessionResumeSource } from '../../../shared/structured-agent-session-create'
 import type { StructuredLaunchRecoveryState } from './structured-agent-session-launch-recovery'
 import type { StructuredLaunchSelection } from './structured-agent-session-launch-options'
 import type {
@@ -69,7 +68,7 @@ export function subscribeStructuredAgentLaunchStatus(listener: () => void): () =
 export function structuredLaunchIdentity(
   worktreeId: string,
   agent: AgentSessionHandleProvider,
-  resumeFrom?: StructuredAgentSessionResumeSource
+  resumeFrom?: { providerSessionId: string }
 ): string {
   return resumeFrom
     ? `${agent}:${worktreeId}:resume:${resumeFrom.providerSessionId}`

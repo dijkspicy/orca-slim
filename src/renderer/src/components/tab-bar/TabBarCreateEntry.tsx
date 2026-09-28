@@ -16,8 +16,6 @@ import {
   resultOptionDomId
 } from './TabBarCreateEntryRow'
 import { dropFileEntriesCoveredByTabResults } from './open-tab-entry-dedupe'
-import { insertHistoryRowsBelowFileMatches } from './tab-create-entry-history-placement'
-import { useOmniboxBrowserHistory } from './use-omnibox-browser-history'
 import { useTabEntryMenuReturnFocus } from './use-tab-entry-menu-return-focus'
 import { activateOpenTabSearchResult } from './open-tab-selection-routing'
 import { useTabCreateEntrySearchResults } from './use-tab-create-entry-search-results'
@@ -150,11 +148,6 @@ function TabBarCreateEntrySession({
     tabResults,
     worktreePath
   ])
-  const historyRows = useOmniboxBrowserHistory({
-    enabled: menuOpen && !terminalQueryMode,
-    query,
-    tabResults
-  })
   const matchingAgentOptions = useMemo(
     () =>
       terminalQueryMode
@@ -178,7 +171,7 @@ function TabBarCreateEntrySession({
       kind: 'agent' as const,
       option
     })),
-    ...insertHistoryRowsBelowFileMatches(options, historyRows)
+    ...options
   ]
   const { activeSelectedIndex, selectedActiveOption } = useNetworkSafeTabEntrySelection({
     activeOptions,

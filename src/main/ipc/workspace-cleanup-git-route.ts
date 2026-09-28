@@ -27,12 +27,8 @@ import {
   ExecutionHostNotDispatchableError,
   resolveGitRouteForHost
 } from '../providers/execution-host-provider-dispatch'
-import type { SshGitProvider } from '../providers/ssh-git-provider'
 
-export type WorkspaceCleanupGitRoute =
-  | { kind: 'local'; hostId: typeof LOCAL_EXECUTION_HOST_ID }
-  /** `provider: null` is "remote and currently unreachable" — never "read it here". */
-  | { kind: 'ssh'; hostId: `ssh:${string}`; connectionId: string; provider: SshGitProvider | null }
+export type WorkspaceCleanupGitRoute = { kind: 'local'; hostId: typeof LOCAL_EXECUTION_HOST_ID }
 
 /**
  * The workspace's own host is the authority, and it can disagree with the row that produced the
@@ -44,24 +40,15 @@ export type WorkspaceCleanupWorktreeGitRoute =
   | WorkspaceCleanupGitRoute
   | { kind: 'host-mismatch'; hostId: ExecutionHostId; listedHostId: ExecutionHostId }
 
-/** Throws on a `runtime:` row; callers scan per repo and report the throw as a repo scan error. */
+/** Throws on any non-local host; callers scan per repo and report the throw as a repo scan error. */
 export function resolveWorkspaceCleanupRepoGitRoute(
   repo: Pick<Repo, 'connectionId' | 'executionHostId'>
 ): WorkspaceCleanupGitRoute {
   const route = resolveGitRouteForHost(getRepoExecutionHostId(repo))
-  switch (route.kind) {
-    case 'local':
-      return { kind: 'local', hostId: route.hostId }
-    case 'ssh':
-      return {
-        kind: 'ssh',
-        hostId: route.hostId,
-        connectionId: route.connectionId,
-        provider: route.provider
-      }
-    case 'runtime':
-      throw new ExecutionHostNotDispatchableError(route.hostId)
+  if (route.kind === 'local') {
+    return { kind: 'local', hostId: route.hostId }
   }
+  throw new ExecutionHostNotDispatchableError(route.hostId)
 }
 
 export function resolveWorkspaceCleanupWorktreeGitRoute(

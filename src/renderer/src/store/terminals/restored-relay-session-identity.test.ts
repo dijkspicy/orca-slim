@@ -104,7 +104,7 @@ describe('restored relay session identity (#17743)', () => {
 
     // A relay drop clears the row binding. Loss of contact is not evidence the remote PTY exited,
     // so the handle must survive into the next write.
-    store.getState().clearDirectSshTargetPtyBindings(TARGET_ID)
+    store.getState().clearTabPtyId(TAB_ID)
 
     expect(store.getState().tabsByWorktree[WORKTREE_ID][0].ptyId).toBeNull()
     expect(store.getState().ptyIdsByTabId[TAB_ID]).toEqual([])
@@ -117,7 +117,7 @@ describe('restored relay session identity (#17743)', () => {
     const store = seedStore('disconnected')
     store.getState().hydrateWorkspaceSession(persistedSession())
     await store.getState().reconnectPersistedTerminals()
-    store.getState().clearDirectSshTargetPtyBindings(TARGET_ID)
+    store.getState().clearTabPtyId(TAB_ID)
 
     // No live PTY, no row binding, host unreachable — `unverifiable`, never `exited`.
     expect([...getOrphanTerminalIds(store.getState(), WORKTREE_ID)]).toEqual([])

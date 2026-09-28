@@ -16,7 +16,6 @@ const mocks = vi.hoisted(() => ({
   createEmptySplitGroup: vi.fn(),
   createTab: vi.fn(),
   createWebRuntimeSessionTerminal: vi.fn(),
-  destroyWorkspaceWebviews: vi.fn(),
   dispatchEvent: vi.fn(),
   dropUnifiedTab: vi.fn(),
   focusGroup: vi.fn(),
@@ -90,10 +89,6 @@ vi.mock('@/runtime/runtime-rpc-client', () => ({
       ? { kind: 'environment', environmentId: activeRuntimeEnvironmentId }
       : { kind: 'local' },
   runtimeEnvironmentSupportsCapability: mocks.runtimeEnvironmentSupportsCapability
-}))
-
-vi.mock('../../store/slices/browser-webview-cleanup', () => ({
-  destroyWorkspaceWebviews: mocks.destroyWorkspaceWebviews
 }))
 
 vi.mock('../../lib/create-untitled-markdown', () => ({
@@ -507,10 +502,6 @@ describe('useTabGroupWorkspaceModel terminal activation focus', () => {
     model.commands.closeItem('browser-unified-1')
 
     expect(mocks.closeWebRuntimeSessionTab).not.toHaveBeenCalled()
-    expect(mocks.destroyWorkspaceWebviews).toHaveBeenCalledWith(
-      storeBox.state.browserPagesByWorkspace,
-      'browser-workspace-1'
-    )
     expect(mocks.closeBrowserTab).toHaveBeenCalledWith('browser-workspace-1', undefined)
   })
 
@@ -582,7 +573,6 @@ describe('useTabGroupWorkspaceModel terminal activation focus', () => {
       environmentId: 'remote-runtime',
       reason: 'user'
     })
-    expect(mocks.destroyWorkspaceWebviews).not.toHaveBeenCalled()
     expect(mocks.closeBrowserTab).not.toHaveBeenCalled()
     expect(mocks.closeUnifiedTab).not.toHaveBeenCalled()
 
@@ -627,7 +617,6 @@ describe('useTabGroupWorkspaceModel terminal activation focus', () => {
         .map((call) => (call[0] as { environmentId: string }).environmentId)
         .sort()
     ).toEqual(['other-runtime', 'remote-runtime'])
-    expect(mocks.destroyWorkspaceWebviews).not.toHaveBeenCalled()
     expect(mocks.closeBrowserTab).not.toHaveBeenCalled()
     expect(mocks.closeUnifiedTab).not.toHaveBeenCalled()
   })

@@ -2,10 +2,6 @@ import { useEffect, useMemo } from 'react'
 import { useAppStore } from '../store'
 import { installWindowVisibilityInterval } from '@/lib/window-visibility-interval'
 import {
-  isConnectedRuntimeHostState,
-  runtimeHostConnectionStateForEntry
-} from '@/runtime/runtime-host-connection-state'
-import {
   getLandingPreflightIssues,
   hasGitHubBackedProject,
   type PreflightIssue
@@ -15,23 +11,6 @@ export function useLandingPreflightRuntime(): { preflightIssues: PreflightIssue[
   const repos = useAppStore((s) => s.repos)
   const preflightStatus = useAppStore((s) => s.preflightStatus)
   const refreshPreflightStatus = useAppStore((s) => s.refreshPreflightStatus)
-  const invalidatePreflightStatus = useAppStore((s) => s.invalidatePreflightStatus)
-  const activeRuntimeState = useAppStore((s) => {
-    const environmentId = s.settings?.activeRuntimeEnvironmentId?.trim()
-    if (!environmentId) {
-      return 'local'
-    }
-    const runtimeStatus = s.runtimeStatusByEnvironmentId.get(environmentId)
-    // Why the shared verdict and not `entry.status`: an unverifiable probe nulls it while the
-    // transport is still up, and reading that as unreachable discarded the whole preflight
-    // result for a host that never went away (docs/reference/ssh-execution-boundary.md).
-    const reachability = runtimeStatus
-      ? isConnectedRuntimeHostState(runtimeHostConnectionStateForEntry(runtimeStatus))
-        ? 'reachable'
-        : 'unreachable'
-      : 'unknown'
-    return `${environmentId}:${runtimeStatus?.connectionGeneration ?? 0}:${reachability}`
-  })
 
   const hasGitHubProject = useMemo(() => hasGitHubBackedProject(repos), [repos])
   const preflightIssues = useMemo(
@@ -45,11 +24,6 @@ export function useLandingPreflightRuntime(): { preflightIssues: PreflightIssue[
   )
 
   useEffect(() => {
-    if (activeRuntimeState !== 'local' && !activeRuntimeState.endsWith(':reachable')) {
-      invalidatePreflightStatus()
-      return
-    }
-
     void refreshPreflightStatus()
     const handleWindowActive = (): void => {
       if (document.visibilityState === 'visible') {
@@ -62,7 +36,7 @@ export function useLandingPreflightRuntime(): { preflightIssues: PreflightIssue[
       document.removeEventListener('visibilitychange', handleWindowActive)
       window.removeEventListener('focus', handleWindowActive)
     }
-  }, [activeRuntimeState, invalidatePreflightStatus, refreshPreflightStatus])
+  }, [refreshPreflightStatus])
 
   useEffect(() => {
     if (preflightIssues.length === 0) {

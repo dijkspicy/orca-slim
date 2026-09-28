@@ -98,8 +98,7 @@ export function createRemoveWorktree(
             get(),
             getRepoIdFromWorktreeId(worktreeId),
             'archive',
-            hostId,
-            removalRoute?.runtimeEnvironmentId
+            hostId
           )) === 'skip'
 
       const worktreeBeforeRemoval = findWorktreeOnConfirmedHost(

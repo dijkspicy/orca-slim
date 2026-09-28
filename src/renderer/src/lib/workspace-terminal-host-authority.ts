@@ -1,19 +1,16 @@
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
 import { parseExecutionHostId } from '../../../shared/execution-host'
 import { parseWorkspaceKey } from '../../../shared/workspace-scope'
-import type { HostLiveTerminalProbeVerdict } from '@/runtime/host-live-terminal-probe'
 import type { RemoteWorkspaceSyncStatus } from '@/store/slices/ssh'
-import { isWebRuntimeSessionActive } from '@/runtime/web-runtime-session'
 import {
   getExecutionHostIdForWorktree,
-  getRuntimeEnvironmentIdForWorktree,
   type WorktreeRuntimeOwnerState
 } from '@/lib/worktree-runtime-owner'
 
 /**
- * Who holds a workspace's terminals right now, in the same three-verdict vocabulary the renderer
- * already uses for host terminal inventory ({@link HostLiveTerminalProbeVerdict}) — aliased rather
- * than restated so the two cannot drift:
+ * Who holds a workspace's terminals right now, in the three-verdict vocabulary the renderer uses
+ * for host terminal inventory (`live` / `unverifiable` / `none`), restated locally because the
+ * probe module that coined it is gone:
  *
  * - `live` — a remote execution host owns terminal creation here. It supplies the surface itself.
  * - `unverifiable` — the workspace has a remote execution host with a sync still in flight or not
@@ -30,10 +27,8 @@ import {
  *   merge rightly keeps the tab it was never told about, and the union uploads as the new host truth;
  * - resuming a sleeping agent forks a second `claude --resume` onto a transcript the host is still
  *   writing (STA-3500, STA-3498, STA-3374), which no later evidence can undo.
- *
- * See docs/reference/ssh-execution-boundary.md.
  */
-export type WorkspaceTerminalHostAuthority = HostLiveTerminalProbeVerdict
+export type WorkspaceTerminalHostAuthority = 'live' | 'unverifiable' | 'none'
 
 export type WorkspaceTerminalHostAuthorityState = WorktreeRuntimeOwnerState & {
   remoteWorkspaceHydratedTargetIds?: ReadonlySet<string>
@@ -91,9 +86,6 @@ export function resolveWorkspaceTerminalHostAuthority(
 ): WorkspaceTerminalHostAuthority {
   if (!worktreeId || worktreeId === FLOATING_TERMINAL_WORKTREE_ID) {
     return 'none'
-  }
-  if (isWebRuntimeSessionActive(getRuntimeEnvironmentIdForWorktree(state, worktreeId))) {
-    return 'live'
   }
   const host = parseExecutionHostId(getExecutionHostIdForWorktree(state, worktreeId))
   if (host?.kind === 'runtime') {

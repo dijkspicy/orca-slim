@@ -9,7 +9,6 @@ import {
 } from '../../shared/agent-prompt-injection'
 import { getDefaultWorkspaceSession } from '../../shared/constants'
 import { makePaneKey } from '../../shared/stable-pane-id'
-import { toComparableRelaySshPtyId } from '../../shared/ssh-pty-id'
 import {
   computeWorktreePathMock,
   ensurePathWithinWorkspaceMock
@@ -437,33 +436,6 @@ const store = {
   getProjects: () => []
 }
 
-// Callers pass the pane's APP-form pty id; the lease stores RELAY form, exactly as
-// upsertSshRemotePtyLease does through toStoredPtyId. Non-SSH ids pass through untouched.
-function createRuntimeWithSshLease(
-  ptyId: string,
-  tabId: string,
-  state: 'expired' | 'terminated' = 'expired',
-  marks: { supersededBy?: string; relayIdRecycled?: true } = {}
-): RuntimeService {
-  const now = Date.now()
-  return new OrcaRuntimeService({
-    ...store,
-    getSshRemotePtyLeases: () => [
-      {
-        targetId: 'ssh-target',
-        ptyId: toComparableRelaySshPtyId('ssh-target', ptyId),
-        worktreeId: TEST_WORKTREE_ID,
-        tabId,
-        leafId: HEADLESS_LEAF_ID,
-        state,
-        createdAt: now,
-        updatedAt: now,
-        ...marks
-      }
-    ]
-  })
-}
-
 async function createExplicitAgentStatusHarness(options: {
   getForegroundProcess: (ptyId: string) => Promise<string | null>
   inspectProcess?: (ptyId: string) => Promise<PtyProcessInspection>
@@ -669,7 +641,7 @@ export { TEST_FOLDER_WORKSPACE_KEY, TEST_FOLDER_WORKSPACE_PATH, TEST_REPO_ID, TE
 export { TEST_WINDOW_ID, TEST_WORKTREE_ID, TEST_WORKTREE_PATH, UUID_RE }
 export { antigravityPromptBeforeModelReadyScreen, antigravityReadyScreen, bindSinglePtyRun }
 export { createExplicitAgentStatusHarness, createFolderWorkspaceRuntimeStore, createRuntime }
-export { createRuntimeWithSshLease, createStaleRuntimeWorktreeStore, cursorBusyScreen }
+export { createStaleRuntimeWorktreeStore, cursorBusyScreen }
 export { cursorReadyScreen, deferred, expectStablePaneKeyEnv, isOriginMainBaseRefProbe }
 export { makeDeferred, makeFolderProjectGroup, makeFolderWorkspace, makeHeadlessTerminalLayout }
 export { makeRpcRequest, makeRuntimeStoreWithWorkspaceSession, makeStatusFrame }

@@ -1,9 +1,7 @@
-import { isHostAnsweredSnapshotRetryCause } from '@/runtime/remote-runtime-terminal-multiplexer'
 import { onTerminalScrollIntentFollowOutput } from '@/lib/pane-manager/terminal-scroll-intent'
 
 import { shouldWritePtyOutputForeground } from './foreground-output-scan'
 import { readE2eHiddenSnapshotOverride } from './e2e-terminal-pty-harness'
-import { isRemoteRuntimePtyId } from './paired-parked-terminal-restore'
 
 import type { PtyBufferSnapshot } from '../pty-transport'
 import type { ConnectPanePtySession } from './connect-pane-pty-session'
@@ -15,16 +13,12 @@ export type HiddenOutputSnapshotResult =
   | { kind: 'unknown-legacy-host' }
   | { kind: 'unavailable' }
 
-/** Why 'host': on a modern remote transport the only reject is the request timeout — the frame went out and the host stayed silent. Elsewhere local main answered nothing. */
+/** Why: the host-outcome serializer belonged to the remote transport; local main answers nothing, so the reject is plain 'unavailable'. */
 export function classifyHiddenOutputSnapshotReject(
-  session: ConnectPanePtySession,
-  ptyId: string
+  _session: ConnectPanePtySession,
+  _ptyId: string
 ): HiddenOutputSnapshotResult {
-  return !isRemoteRuntimePtyId(ptyId) ||
-    session.hiddenOutputRestoreLegacyPtyId === ptyId ||
-    typeof session.transport.serializeBufferOutcome !== 'function'
-    ? { kind: 'unavailable' }
-    : { kind: 'retry-worthy', source: 'host' }
+  return { kind: 'unavailable' }
 }
 
 export function bindSerializeHiddenOutputSnapshot(session: ConnectPanePtySession): void {
@@ -47,35 +41,8 @@ export function bindSerializeHiddenOutputSnapshot(session: ConnectPanePtySession
     ) {
       return { kind: 'unavailable' }
     }
-    if (
-      session.hiddenOutputRestoreLegacyPtyId === ptyId ||
-      typeof session.transport.serializeBufferOutcome !== 'function'
-    ) {
-      const snapshot = await session.transport.serializeBuffer(opts)
-      return snapshot ? { kind: 'snapshot', snapshot } : { kind: 'unknown-legacy-host' }
-    }
-    try {
-      const outcome = await session.transport.serializeBufferOutcome(opts)
-      if (outcome.availability.kind === 'snapshot') {
-        // A success frame with no image is still the host's own answer to a request it received.
-        return outcome.snapshot
-          ? { kind: 'snapshot', snapshot: outcome.snapshot }
-          : { kind: 'retry-worthy', source: 'host' }
-      }
-      if (outcome.availability.kind === 'retry-worthy') {
-        return {
-          kind: 'retry-worthy',
-          source: isHostAnsweredSnapshotRetryCause(outcome.availability.cause) ? 'host' : 'local'
-        }
-      }
-      if (outcome.availability.kind === 'permanently-unavailable') {
-        return { kind: 'permanently-unavailable' }
-      }
-      return { kind: 'unknown-legacy-host' }
-    } catch {
-      // Why 'host': the reject path is the request timeout — the frame went out and the host stayed silent.
-      return { kind: 'retry-worthy', source: 'host' }
-    }
+    const snapshot = await session.transport.serializeBuffer(opts)
+    return snapshot ? { kind: 'snapshot', snapshot } : { kind: 'unknown-legacy-host' }
   }
 
   // Why: hidden/parked panes used to mark hidden only at the first

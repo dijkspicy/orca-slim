@@ -1,6 +1,5 @@
 import { is } from '@electron-toolkit/utils'
 import type { BrowserWindow } from 'electron'
-import { isSystemSessionEnding } from '../crash-reporting/expected-teardown-state'
 import type { CreateMainWindowOptions, MainWindowLoadObserver } from './main-window-contracts'
 import { mainWindowLoadErrorCode } from './main-window-load-error-code'
 
@@ -220,12 +219,7 @@ export function createRendererRecoveryReloadWatchdog(args: {
       return
     }
     // Suppress shutdown verdicts; resume may re-arm the retained attempt.
-    if (
-      isWindowClosing() ||
-      opts?.getIsQuitting?.() ||
-      mainWindow.isDestroyed() ||
-      isSystemSessionEnding()
-    ) {
+    if (isWindowClosing() || opts?.getIsQuitting?.() || mainWindow.isDestroyed()) {
       return
     }
     inFlight = null

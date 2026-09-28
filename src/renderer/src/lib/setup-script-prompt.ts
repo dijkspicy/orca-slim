@@ -1,11 +1,21 @@
 import { getDefaultRepoHookSettings } from '../../../shared/constants'
 import { resolveHookCommandSourcePolicy } from '../../../shared/hook-command-source-policy'
 import type { SetupScriptImportCandidate } from '../../../shared/setup-script-imports'
-import type { RepoHookSettings } from '../../../shared/orca-yaml-hook-types'
 import type { Repo } from '../../../shared/repo-types'
-import type { HookCheckResult } from '@/runtime/runtime-hooks-client'
-import { isRuntimeScopeForbiddenError } from '@/runtime/runtime-rpc-client'
-import { hasEffectiveSetupCommand } from './setup-script-status'
+import { hasEffectiveSetupCommand, type HookCheckResult } from './setup-script-status'
+
+// Why: the shared orca-yaml hook types module was culled; imported hook settings keep the
+// same persisted shape locally.
+export type RepoHookSettings = {
+  mode: 'auto' | 'override'
+  setupRunPolicy?: 'ask' | 'run-by-default' | 'skip-by-default'
+  setupAgentStartupPolicy?: 'start-immediately' | 'wait-for-setup'
+  commandSourcePolicy?: 'shared-only' | 'local-only' | 'run-both'
+  scripts: {
+    setup: string
+    archive: string
+  }
+}
 
 const SETUP_SCRIPT_PROMPT_DISMISSAL_PREFIX = 'generation-v1:'
 
@@ -19,13 +29,6 @@ export type SetupScriptPromptInspection =
     }
   | {
       status: 'error'
-      repoId: string
-    }
-  // Why: a forbidden (mobile-scope) failure is permanent, not transient — the
-  // card must not offer a retry that re-fires repo.hooksCheck on every focus.
-  // The global scope-mismatch banner already explains the cause.
-  | {
-      status: 'forbidden'
       repoId: string
     }
 
@@ -63,9 +66,6 @@ export async function inspectSetupScriptPromptState({
       candidate: candidates[0] ?? null
     }
   } catch (error) {
-    if (isRuntimeScopeForbiddenError(error)) {
-      return { status: 'forbidden', repoId: repo.id }
-    }
     console.warn('[setup-script-prompt] Failed to inspect setup scripts:', error)
     return { status: 'error', repoId: repo.id }
   }

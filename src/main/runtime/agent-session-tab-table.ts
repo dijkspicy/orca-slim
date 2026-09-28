@@ -1,7 +1,10 @@
 import { isAgentSessionId, type AgentSessionRecord } from '../../shared/agent-session-record'
 import { isAgentSessionSurfaceTabId } from '../../shared/agent-session-surface-tab-id'
-import { structuredAgentSessionTabId } from '../../shared/structured-agent-session-projection'
 import type { AgentSessionStoreState } from './agent-session-record-store-file'
+
+// Why: persisted tab ids were derived by the removed shared projection; the format is a store contract.
+const structuredAgentSessionTabId = (sessionId: string): string =>
+  `structured-agent-session-${sessionId}`
 
 /**
  * Which conversation each structured chat tab shows, keyed by the host tab id.

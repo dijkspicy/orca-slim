@@ -2,7 +2,6 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import { describe, expect, it } from 'vitest'
 import { createEditorSlice } from './editor'
 import type { AppState } from '../types'
-import type { BrowserTab } from '../../../../shared/browser-workspace-types'
 import type { Tab, TabContentType, TabGroup } from '../../../../shared/tab-types'
 
 function createEditorStore(overrides?: Partial<AppState>): StoreApi<AppState> {
@@ -19,7 +18,20 @@ function createEditorStore(overrides?: Partial<AppState>): StoreApi<AppState> {
   })) as unknown as StoreApi<AppState>
 }
 
-function makeBrowserTab(id: string): BrowserTab {
+// Structural browser-tab fixture: the browser pane is culled, the editor only
+// reads id/title/ordering fields off these rows.
+function makeBrowserTab(id: string): {
+  id: string
+  worktreeId: string
+  url: string
+  title: string
+  loading: boolean
+  faviconUrl: string | null
+  canGoBack: boolean
+  canGoForward: boolean
+  loadError: string | null
+  createdAt: number
+} {
   return {
     id,
     worktreeId: 'wt-1',

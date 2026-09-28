@@ -1,10 +1,5 @@
 import type { AppState } from '@/store'
 import { useAppStore } from '@/store'
-import {
-  confirmRuntimeTerminalForegroundProcess,
-  inspectRuntimeTerminalProcess,
-  type RuntimeTerminalProcessInspection
-} from '@/runtime/runtime-terminal-inspection'
 import { translate } from '@/i18n/i18n'
 import {
   getCodexAccountDisplayLabel,
@@ -15,10 +10,12 @@ import {
   isCodexForegroundProcess,
   isCodexRestartEligiblePane
 } from './codex-pane-restart-eligibility'
-import { isClientOnlyUnverifiableInspection } from '../../../shared/terminal-process-inspection'
+import {
+  isClientOnlyUnverifiableInspection,
+  type TerminalProcessInspection
+} from '../../../shared/terminal-process-inspection'
 import {
   getCodexAccountSwitchLaneMatcher,
-  isForeignMachineCodexPtyId,
   isLocalCodexSelectionLaneKey,
   resolveCodexPaneSelectionLane
 } from './codex-pane-selection-lane'
@@ -63,9 +60,8 @@ export type CodexPaneScanResult = {
 async function readRecordedCodexPaneLanes(
   ptyIds: readonly string[]
 ): Promise<Record<string, string>> {
-  // Why filtered: main only records daemon host spawns, so asking about a
-  // remote or SSH pane is a guaranteed miss.
-  const localPtyIds = ptyIds.filter((ptyId) => !isForeignMachineCodexPtyId(ptyId))
+  // All panes are local now; main only records daemon host spawns.
+  const localPtyIds = [...ptyIds]
   if (localPtyIds.length === 0) {
     return {}
   }
@@ -90,11 +86,17 @@ async function readRecordedCodexPaneLanes(
  * codex answer flips the decision: a confirmed shell (user exited Codex) and a
  * null (scan failed or unsupported) both keep today's ineligible outcome.
  */
+/**
+ * Local fresh foreground scan for a pane whose cached inspection is suspect
+ * (#11064). Mirrors the culled runtime wrapper's local path: only an
+ * affirmative codex answer flips the decision, and a missing preload handler
+ * reads as "no new evidence", never as a shell confirmation.
+ */
 async function isConfirmedCodexForegroundDespiteShellReading(
   state: AppState,
   ptyId: string,
   launchAgent: TuiAgent | undefined,
-  inspection: RuntimeTerminalProcessInspection
+  inspection: TerminalProcessInspection
 ): Promise<boolean> {
   if (
     launchAgent !== 'codex' ||
@@ -104,7 +106,12 @@ async function isConfirmedCodexForegroundDespiteShellReading(
   ) {
     return false
   }
-  const confirmed = await confirmRuntimeTerminalForegroundProcess(state.settings, ptyId)
+  const confirmForegroundProcess = window.api.pty.confirmForegroundProcess
+  // Why the shape check: a preload older than this handler has no such method.
+  if (typeof confirmForegroundProcess !== 'function') {
+    return false
+  }
+  const confirmed = await confirmForegroundProcess(ptyId).catch(() => null)
   return isCodexForegroundProcess(confirmed)
 }
 
@@ -158,9 +165,9 @@ async function scanCodexPanes(
           laneSource: lane.source
         }
       }
-      const inspection = await inspectRuntimeTerminalProcess(state.settings, ptyId).then(
+      const inspection = await window.api.pty.inspectProcess(ptyId).then(
         (result) => result,
-        // Why: one stale remote pane must not hide restart notices for other confirmed Codex panes.
+        // Why: one stale pane must not hide restart notices for other confirmed Codex panes.
         () => null
       )
       const eligible =

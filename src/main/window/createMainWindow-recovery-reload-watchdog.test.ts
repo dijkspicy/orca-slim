@@ -1,13 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type * as DurableCrashBreadcrumbModule from '../crash-reporting/durable-crash-breadcrumb'
-
-const { recordDurableCrashBreadcrumbMock } = vi.hoisted(() => ({
-  recordDurableCrashBreadcrumbMock: vi.fn()
-}))
-vi.mock('../crash-reporting/durable-crash-breadcrumb', async (importOriginal) => ({
-  ...(await importOriginal<typeof DurableCrashBreadcrumbModule>()),
-  recordDurableCrashBreadcrumb: recordDurableCrashBreadcrumbMock
-}))
 
 vi.mock('electron', async () =>
   (await import('./createMainWindow-test-harness')).electronModuleMock()
@@ -55,7 +46,6 @@ const CRASH = { reason: 'crashed', exitCode: 5 } as Electron.RenderProcessGoneDe
 describe('renderer recovery reload watchdog', () => {
   beforeEach(() => {
     resetMainWindowMocks()
-    recordDurableCrashBreadcrumbMock.mockClear()
     vi.useFakeTimers()
   })
 
@@ -463,21 +453,6 @@ describe('renderer recovery reload watchdog', () => {
     consoleError.mockRestore()
   })
 
-  it('records a durable breadcrumb for a rejected load, since console output never reaches the bundle', async () => {
-    const { consoleError, settleLoad } = createHarness()
-
-    createMainWindow(null, {})
-    settleLoad[0]?.reject(new Error(INSTALL_PATH_LOAD_ERROR))
-    await vi.advanceTimersByTimeAsync(0)
-
-    // Catching the rejection retired the main_unhandled_rejection crumb this used to produce.
-    expect(recordDurableCrashBreadcrumbMock).toHaveBeenCalledWith('main_window_load_failed', {
-      errorCode: 'ERR_FILE_NOT_FOUND'
-    })
-
-    consoleError.mockRestore()
-  })
-
   it('escalates to the prompt when both attempts are rejected outright', async () => {
     const onRecoveryReloadOutcome = vi.fn()
     const onRendererRecoveryExhausted = vi.fn()
@@ -649,22 +624,6 @@ describe('renderer recovery reload watchdog', () => {
       'automatic',
       'manual-retry'
     ])
-
-    consoleError.mockRestore()
-  })
-
-  it('keeps a shutdown-aborted load out of the crash breadcrumb stream', async () => {
-    const { consoleError, settleLoad } = createHarness()
-
-    createMainWindow(null, {})
-    settleLoad[0]?.reject(new Error(`ERR_ABORTED (-3) loading '${DOCUMENT_URL}'`))
-    await vi.advanceTimersByTimeAsync(0)
-
-    // A quit or close aborts the in-flight startup load; a healthy shutdown must not look like a launch failure.
-    expect(recordDurableCrashBreadcrumbMock).not.toHaveBeenCalledWith(
-      'main_window_load_failed',
-      expect.anything()
-    )
 
     consoleError.mockRestore()
   })

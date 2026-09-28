@@ -1,7 +1,6 @@
 import { DeveloperPermissionsPane } from './DeveloperPermissionsPane'
 import { PrivacyPane } from './PrivacyPane'
 import { RuntimeEnvironmentsPane } from './RuntimeEnvironmentsPane'
-import { SshPane } from './SshPane'
 import { SettingsSection } from './SettingsSection'
 import { translate } from '@/i18n/i18n'
 import type { SettingsRenderContext } from './settings-render-context'
@@ -37,25 +36,6 @@ export function renderServersSettingsSection(context: SettingsRenderContext): Re
       ) : null}
     </SettingsSection>
   )
-}
-
-export function renderSshSettingsSection(context: SettingsRenderContext): React.JSX.Element | null {
-  const { model, navigation, view } = context
-  return model.showDesktopOnlySettings ? (
-    <SettingsSection
-      id="ssh"
-      title={translate('auto.components.settings.Settings.9b02492d1f', 'SSH Hosts')}
-      description={translate(
-        'auto.components.settings.Settings.c2ee313198',
-        'Use existing machines over SSH for files, terminals, Git, and workspaces.'
-      )}
-      searchEntries={navigation.getSectionSearchEntries('ssh')}
-    >
-      {view.isSectionMounted('ssh') ? (
-        <SshPane addTargetIntentSignal={model.sshHostAddIntentSignal} />
-      ) : null}
-    </SettingsSection>
-  ) : null
 }
 
 export function renderDeveloperPermissionsSettingsSection(

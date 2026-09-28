@@ -9,7 +9,10 @@ import {
 } from '../../../../shared/terminal-quick-commands'
 import { parseExecutionHostId, type ExecutionHostId } from '../../../../shared/execution-host'
 import { TERMINAL_QUICK_COMMANDS_RUNTIME_CAPABILITY } from '../../../../shared/protocol-version'
-import { callRuntimeRpc, runtimeEnvironmentSupportsCapability } from '@/runtime/runtime-rpc-client'
+import {
+  callRuntimeEnvironmentRpc,
+  runtimeEnvironmentSupportsCapability
+} from './runtime-environment-rpc-call'
 import { translate } from '@/i18n/i18n'
 import { getRuntimeEnvironmentConnectionGeneration } from './runtime-status'
 
@@ -94,13 +97,16 @@ async function mutateRemoteCommands(
   const request = previous.then(async () => {
     const connectionGeneration = getRuntimeEnvironmentConnectionGeneration(environmentId)
     try {
-      const result = await callRuntimeRpc<{ terminalQuickCommands: unknown }>(
-        { kind: 'environment', environmentId },
+      const response = await callRuntimeEnvironmentRpc<{ terminalQuickCommands: unknown }>(
+        environmentId,
         'settings.updateTerminalQuickCommands',
         { mutation },
         { timeoutMs: 15_000 }
       )
-      const commands = readCommands(result)
+      if (!response.ok) {
+        throw new Error(response.errorMessage)
+      }
+      const commands = readCommands(response.result)
       if (getRuntimeEnvironmentConnectionGeneration(environmentId) !== connectionGeneration) {
         return
       }
@@ -204,8 +210,8 @@ export const createTerminalQuickCommandHostsSlice: StateCreator<
         }
         await (mutationChains.get(trimmed) ?? Promise.resolve())
         const mutationRevision = mutationRevisions.get(trimmed) ?? 0
-        const result = await callRuntimeRpc<{ terminalQuickCommands: unknown }>(
-          { kind: 'environment', environmentId: trimmed },
+        const response = await callRuntimeEnvironmentRpc<{ terminalQuickCommands: unknown }>(
+          trimmed,
           'settings.getTerminalQuickCommands',
           undefined,
           { timeoutMs: 15_000 }
@@ -216,8 +222,11 @@ export const createTerminalQuickCommandHostsSlice: StateCreator<
         ) {
           return
         }
+        if (!response.ok) {
+          throw new Error(response.errorMessage)
+        }
         updateEntry(set, trimmed, () => ({
-          commands: readCommands(result),
+          commands: readCommands(response.result),
           connectionGeneration,
           error: null,
           loading: false,

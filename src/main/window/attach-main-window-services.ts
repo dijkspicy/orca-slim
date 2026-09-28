@@ -19,17 +19,11 @@ import {
   type PrepareCodexSessionResume
 } from '../ipc/pty'
 import { registerDaemonManagementHandlers } from '../ipc/pty-management'
-import { registerSshHandlers } from '../ipc/ssh'
-import { registerRemoteWorkspaceHandlers } from '../ipc/remote-workspace'
-import { browserManager } from '../browser/browser-manager'
-import { hasSystemMediaAccess, requestSystemMediaAccess } from '../browser/browser-media-access'
 import type { OrcaRuntimeService, RuntimeWorktreeLifecycleEvent } from '../runtime/orca-runtime'
 import { scheduleHistoryGc } from '../terminal-history-gc'
 import { hydrateLocalPtyRegistryAtBoot } from '../memory/hydrate-local-pty-registry'
-import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth-service'
 import { getKnownWorktreeIdsForHistoryGc } from './history-gc-worktree-ids'
 import { isNativeFileDropPayload, type NativeFileDropPayload } from '../../shared/native-file-drop'
-import type { ClaudeAccountSelectionTarget } from '../claude-accounts/runtime-selection'
 import {
   scheduleWorktreeBaseDirectoryWatcherSync,
   setWorktreeBaseDirectoryWatcherSyncContext
@@ -47,9 +41,6 @@ export function attachMainWindowServices(
   store: Store,
   runtime: OrcaRuntimeService,
   getSelectedCodexHomePath?: GetSelectedCodexHomePath,
-  prepareClaudeAuth?: (
-    target?: ClaudeAccountSelectionTarget
-  ) => Promise<ClaudeRuntimeAuthPreparation>,
   options?: {
     prepareCodexSessionResume?: PrepareCodexSessionResume
     awaitLocalPtyStartup?: () => Promise<void>
@@ -82,7 +73,6 @@ export function attachMainWindowServices(
     runtime,
     getSelectedCodexHomePath,
     () => store.getSettings(),
-    prepareClaudeAuth,
     store,
     {
       prepareCodexSessionResume: options?.prepareCodexSessionResume,
@@ -112,38 +102,19 @@ export function attachMainWindowServices(
   } else {
     void hydrateLocalPtyRegistryAtBoot(store)
   }
-  registerSshHandlers(store, () => mainWindow, runtime)
-  registerRemoteWorkspaceHandlers(store, () => mainWindow, runtime)
   registerFileDropRelay(mainWindow)
   registerTccPromptNoticeHandlers(mainWindow)
   registerRuntimeWindowLifecycle(mainWindow, runtime)
 
-  const allowedPermissions = new Set(['media', 'fullscreen', 'pointerLock'])
+  const allowedPermissions = new Set(['fullscreen', 'pointerLock'])
   mainWindow.webContents.session.setPermissionRequestHandler(
-    (_webContents, permission, callback, details) => {
-      if (permission === 'media') {
-        void requestSystemMediaAccess(details).then(callback, (error: unknown) => {
-          console.error('[permissions] Failed to request media access:', error)
-          callback(false)
-        })
-        return
-      }
+    (_webContents, permission, callback) => {
       callback(allowedPermissions.has(permission))
     }
   )
-  mainWindow.webContents.session.setPermissionCheckHandler(
-    (_webContents, permission, _origin, details) => {
-      if (permission !== 'media') {
-        return allowedPermissions.has(permission)
-      }
-      return hasSystemMediaAccess(details?.mediaType)
-    }
+  mainWindow.webContents.session.setPermissionCheckHandler((_webContents, permission) =>
+    allowedPermissions.has(permission)
   )
-
-  mainWindow.on('closed', () => {
-    // Why: clear main-owned guest registrations on close so stale tab→webContents ids don't leak across relaunch/hot-reload.
-    browserManager.unregisterAll()
-  })
 }
 
 function registerTccPromptNoticeHandlers(mainWindow: BrowserWindow): void {

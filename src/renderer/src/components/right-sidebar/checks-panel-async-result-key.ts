@@ -1,15 +1,25 @@
-import type { GitHubOwnerRepo } from '../../../../shared/github/pull-request-types'
-import { githubRepoIdentityKey } from '../../../../shared/github/repository-identity-key'
+// Structural stand-in for the deleted shared/github identity types: callers only
+// ever pass the owner/repo(/host) triple, and the key format must stay stable.
+type PrRepoIdentity = {
+  owner: string
+  repo: string
+  host?: string
+}
 
-function normalizedPRRepoIdentity(prRepo?: GitHubOwnerRepo | null): string {
-  return prRepo ? githubRepoIdentityKey(prRepo) : 'none'
+function normalizedPRRepoIdentity(prRepo?: PrRepoIdentity | null): string {
+  if (!prRepo) {
+    return 'none'
+  }
+  const slug = `${prRepo.owner.toLowerCase()}/${prRepo.repo.toLowerCase()}`
+  const host = prRepo.host?.trim().toLowerCase()
+  return host && host !== 'github.com' ? `${host}/${slug}` : slug
 }
 
 export function checksPanelAsyncResultKey(
   repoId: string,
   branch: string,
   prNumber: number | null,
-  prRepo?: GitHubOwnerRepo | null,
+  prRepo?: PrRepoIdentity | null,
   headSha?: string | null
 ): string {
   return `${repoId}::${branch}::${normalizedPRRepoIdentity(prRepo)}::${prNumber ?? 'none'}::${

@@ -2,30 +2,21 @@ import { useCallback } from 'react'
 import { useAppStore } from '@/store'
 import { buildGitHubPRRefreshStateClearToken } from '@/store/github/pr-refresh-state'
 import { refreshHostedReviewCard } from '@/store/slices/hosted-review-card-refresh'
-import { getRuntimeGitStatus, getRuntimeGitUpstreamStatus } from '@/runtime/runtime-git-client'
-import {
-  hasChecksPanelGitStatusBranchChanged,
-  readChecksPanelRefreshGitIdentitySnapshot,
-  shouldCommitChecksPanelGitStatusSnapshot
-} from '../checks-panel-git-status-snapshot'
+import { readChecksPanelRefreshGitIdentitySnapshot } from '../checks-panel-git-status-snapshot'
 
 import { checksPanelAsyncResultKey } from '../checks-panel-async-result-key'
 import { recordChecksPanelPRRefreshBreadcrumb } from '../checks-panel-pr-refresh-breadcrumb'
-import type { PRInfo } from '../../../../../shared/github/pull-request-types'
 import type { ChecksPanelManualRefreshInput } from './manual-refresh-dependencies'
 
 export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput) {
   const {
-    activeConnectionId,
     activeGitLabReview,
     activeWorktreeId,
     activeWorktreePath,
-    activeWorktreePushTarget,
     asyncResultKeyRef,
     branch,
     expireGitHubPRRefreshState,
     fallbackGitHubPRNumber,
-    fetchGitLabDetails,
     fetchHostedReviewForBranch,
     fetchPRChecks,
     fetchPRComments,
@@ -39,9 +30,7 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
     linkedGiteaPR,
     linkedGitLabMR,
     linkedPR,
-    ownerSettings,
     panelContextKey,
-    panelContextKeyRef,
     pollIntervalRef,
     pr,
     prCacheKey,
@@ -55,7 +44,6 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
     setComments,
     setCommentsLoading,
     setEligibilityRefreshNonce,
-    setGitStatusSnapshot,
     setIsRefreshing,
     updateWorktreeGitIdentity
   } = model
@@ -110,64 +98,6 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
           refreshOutcome = 'branch-changed'
           return
         }
-        try {
-          const statusContext = {
-            settings: ownerSettings,
-            worktreeId: activeWorktreeId,
-            worktreePath: activeWorktreePath,
-            connectionId: activeConnectionId ?? undefined
-          }
-          const status = await getRuntimeGitStatus(statusContext, {
-            admissionTier: 'interactive'
-          })
-          const observedBranch = status.branch ?? (status.head ? null : undefined)
-          updateWorktreeGitIdentity(activeWorktreeId, {
-            head: status.head,
-            branch: observedBranch
-          })
-          if (
-            observedBranch !== undefined &&
-            hasChecksPanelGitStatusBranchChanged({
-              observedBranch,
-              currentBranch: branch
-            })
-          ) {
-            // Why: this click discovered a terminal branch switch; let branch-keyed render/effects restart instead of refreshing old PR data.
-            refreshOutcome = 'branch-changed'
-            return
-          }
-          let freshRemoteStatus = status.upstreamStatus
-          if (activeWorktreePushTarget) {
-            freshRemoteStatus = await getRuntimeGitUpstreamStatus(
-              statusContext,
-              activeWorktreePushTarget
-            )
-          } else if (
-            !freshRemoteStatus ||
-            (freshRemoteStatus.ahead > 0 &&
-              freshRemoteStatus.behind > 0 &&
-              freshRemoteStatus.behindCommitsArePatchEquivalent === undefined)
-          ) {
-            freshRemoteStatus = await getRuntimeGitUpstreamStatus(statusContext)
-          }
-          if (
-            isCurrentRequest() &&
-            shouldCommitChecksPanelGitStatusSnapshot(panelContextKeyRef.current, panelContextKey)
-          ) {
-            // Why: the Refresh click already paid for this status read; commit it so empty-state Publish/Create eligibility is fresh.
-            setGitStatusSnapshot({
-              contextKey: panelContextKey,
-              hasUncommittedChanges: status.entries.length > 0,
-              remoteStatus: freshRemoteStatus,
-              gitIdentity: {
-                head: status.head,
-                branch: observedBranch
-              }
-            })
-          }
-        } catch (error) {
-          console.warn('[ChecksPanel] pre-refresh git identity refresh failed', error)
-        }
       }
       if (isGitLabReviewContext) {
         const refreshedReview = await refreshHostedReviewCard(fetchHostedReviewForBranch, {
@@ -185,14 +115,7 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
         if (!isCurrentRequest()) {
           return
         }
-        const refreshedGitLabReview =
-          refreshedReview?.provider === 'gitlab' ? refreshedReview : activeGitLabReview
-        if (refreshedGitLabReview) {
-          await fetchGitLabDetails({
-            mrNumberOverride: refreshedGitLabReview.number,
-            headShaOverride: refreshedGitLabReview.headSha,
-            commitAsCurrent: true
-          })
+        if (refreshedReview?.provider === 'gitlab') {
           refreshOutcome = 'review'
         } else {
           setChecks([])
@@ -208,7 +131,7 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
         refreshStoreState.prRefreshSequences,
         prCacheKey
       )
-      let refreshedPR: PRInfo | null = null
+      let refreshedPR = null
       try {
         refreshedPR = await fetchPRForBranch(repo.path, branch, {
           force: true,
@@ -352,10 +275,8 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
   }, [
     repo,
     branch,
-    activeConnectionId,
     activeWorktreeId,
     activeWorktreePath,
-    activeWorktreePushTarget,
     activeGitLabReview,
     prNumber,
     pr?.checksStatus,
@@ -365,7 +286,6 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
     prCacheKey,
     linkedPR,
     fallbackGitHubPRNumber,
-    fetchGitLabDetails,
     linkedAzureDevOpsPR,
     linkedBitbucketPR,
     linkedGiteaPR,
@@ -380,9 +300,7 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
     fetchHostedReviewForBranch,
     expireGitHubPRRefreshState,
     isCurrentAsyncResult,
-    ownerSettings,
     updateWorktreeGitIdentity,
-    panelContextKeyRef,
     asyncResultKeyRef,
     setCommentsLoading,
     setEligibilityRefreshNonce,
@@ -392,7 +310,6 @@ export function useChecksPanelManualRefresh(model: ChecksPanelManualRefreshInput
     refreshRequestKeyRef,
     setChecks,
     setComments,
-    setGitStatusSnapshot,
     pollIntervalRef,
     refreshInFlightRef
   ])

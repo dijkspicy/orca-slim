@@ -17,7 +17,12 @@
  */
 
 import type { AutomationWorkspaceSshPin } from './automation-workspace-pin'
-import { sanitizeSshTargetGeneration } from './ssh-target-generation'
+
+// Verbatim helper formerly supplied by `ssh-target-generation.ts` (culled with
+// the SSH target registry); legacy persisted rows still carry generation fences.
+function sanitizeSshTargetGeneration(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 ? value : undefined
+}
 
 /** The registration a generation was allocated to, if one still carries it. */
 export type SshTargetIdForGeneration = (generation: number) => string | undefined

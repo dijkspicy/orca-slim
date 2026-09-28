@@ -44,10 +44,6 @@ vi.mock('../../store', () => ({
   })
 }))
 
-vi.mock('../../store/slices/browser-webview-cleanup', () => ({
-  destroyWorkspaceWebviews: vi.fn()
-}))
-
 vi.mock('../editor/editor-autosave', () => ({
   requestEditorFileClose: vi.fn()
 }))

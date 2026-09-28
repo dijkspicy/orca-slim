@@ -1,9 +1,10 @@
 import { useAppStore } from '@/store'
 import { getAgentStatusEpochNow } from '@/lib/agent-status-epoch-clock'
 import { getWorktreeIdsWithLiveAgent, isInactiveWorkspace } from '@/lib/worktree-activity-state'
-import { getWorktreeIdsWithStructuredChat } from './visible-worktree-activity-inputs'
 import type { AgentStatusEntry } from '../../../../shared/agent-status-types'
 import type { Tab } from '../../../../shared/tab-types'
+
+const EMPTY_STRUCTURED_CHAT_WORKTREE_IDS: ReadonlySet<string> = new Set()
 
 type TabLike = { id: string }
 
@@ -75,7 +76,7 @@ export function useIsSleepingWorktree(worktreeId: string): boolean {
       state.ptyIdsByTabId,
       state.browserTabsByWorktree,
       selectWorktreeIdsWithLiveAgent(state),
-      getWorktreeIdsWithStructuredChat(state.unifiedTabsByWorktree)
+      EMPTY_STRUCTURED_CHAT_WORKTREE_IDS
     )
   )
 }

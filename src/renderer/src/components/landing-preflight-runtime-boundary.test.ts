@@ -7,7 +7,6 @@ import { useAppStore } from '../store'
 import { useLandingPreflightRuntime } from './landing-preflight-runtime'
 
 const refresh = vi.fn().mockResolvedValue(undefined)
-const invalidate = vi.fn()
 
 const status = (overrides: Partial<PreflightStatus> = {}): PreflightStatus => ({
   git: { installed: true },
@@ -34,9 +33,8 @@ beforeEach(() => {
   vi.useFakeTimers()
   setDocumentVisibility('visible')
   refresh.mockClear()
-  invalidate.mockClear()
   useAppStore.setState(useAppStore.getInitialState(), true)
-  useAppStore.setState({ refreshPreflightStatus: refresh, invalidatePreflightStatus: invalidate })
+  useAppStore.setState({ refreshPreflightStatus: refresh })
 })
 
 afterEach(() => {
@@ -46,75 +44,7 @@ afterEach(() => {
   useAppStore.setState(useAppStore.getInitialState(), true)
 })
 
-describe('landing preflight runtime boundary', () => {
-  it('refreshes after an active runtime A to B switch without manual action', () => {
-    const view = renderHook(() => useLandingPreflightRuntime())
-    expect(refresh).toHaveBeenCalledTimes(1)
-
-    act(() => {
-      useAppStore.setState({
-        settings: { activeRuntimeEnvironmentId: 'runtime-a' },
-        runtimeStatusByEnvironmentId: new Map([
-          ['runtime-a', { status: { runtimeId: 'a' }, connectionGeneration: 1 }]
-        ])
-      } as never)
-    })
-    act(() => {
-      useAppStore.setState({
-        settings: { activeRuntimeEnvironmentId: 'runtime-b' },
-        runtimeStatusByEnvironmentId: new Map([
-          ['runtime-b', { status: { runtimeId: 'b' }, connectionGeneration: 1 }]
-        ])
-      } as never)
-    })
-
-    expect(refresh).toHaveBeenCalledTimes(3)
-    view.unmount()
-  })
-
-  it('invalidates on disconnect and refreshes exactly once on reconnect', () => {
-    const view = renderHook(() => useLandingPreflightRuntime())
-    act(() => {
-      useAppStore.setState({
-        settings: { activeRuntimeEnvironmentId: 'runtime-a' },
-        runtimeStatusByEnvironmentId: new Map([
-          ['runtime-a', { status: { runtimeId: 'a' }, connectionGeneration: 1 }]
-        ])
-      } as never)
-    })
-    refresh.mockClear()
-
-    act(() => {
-      useAppStore.setState({
-        runtimeStatusByEnvironmentId: new Map([
-          ['runtime-a', { status: null, connectionGeneration: 2 }]
-        ])
-      } as never)
-    })
-    expect(invalidate).toHaveBeenCalledTimes(1)
-    expect(refresh).not.toHaveBeenCalled()
-
-    act(() => {
-      useAppStore.setState({
-        runtimeStatusByEnvironmentId: new Map([
-          ['runtime-a', { status: { runtimeId: 'a-reconnected' }, connectionGeneration: 3 }]
-        ])
-      } as never)
-    })
-    expect(refresh).toHaveBeenCalledTimes(1)
-    view.unmount()
-  })
-
-  it('keeps the banner empty while the active remote runtime is still unknown', () => {
-    useAppStore.setState({ settings: { activeRuntimeEnvironmentId: 'runtime-a' } } as never)
-
-    const view = renderHook(() => useLandingPreflightRuntime())
-
-    expect(invalidate).toHaveBeenCalledTimes(1)
-    expect(refresh).not.toHaveBeenCalled()
-    view.unmount()
-  })
-
+describe('landing preflight runtime', () => {
   it('stops the 30s preflight poll while hidden and lets the reveal refresh instead', () => {
     useAppStore.setState({ repos: [githubRepo], preflightStatus: status() })
     const view = renderHook(() => useLandingPreflightRuntime())

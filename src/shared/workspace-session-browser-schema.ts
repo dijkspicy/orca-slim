@@ -3,7 +3,7 @@
  * schemas themselves are unchanged apart from the per-entry tolerance the
  * session schema now declares everywhere. */
 import { z } from 'zod'
-import type { BrowserWorkspace } from './browser-workspace-types'
+import type { PersistedBrowserWorkspace } from './workspace-session-state-types'
 import { normalizeBrowserHistoryEntries } from './workspace-session-browser-history'
 import { normalizeWorkspaceDocHistoryEntries } from './workspace-doc-history'
 import { isDocPreviewUrl } from './doc-preview-scheme'
@@ -36,11 +36,11 @@ const browserViewportPresetIdSchema = z.enum([
   'desktop'
 ])
 
-// Why: the z.ZodType<BrowserWorkspace> cast only aligns the static type — it
+// Why: the z.ZodType<PersistedBrowserWorkspace> cast only aligns the static type — it
 // does NOT let new fields survive parsing. z.object strips unknown keys, so
 // every additive field must be listed below (optional+nullable) or it is
 // dropped on restore.
-export const browserWorkspaceSchema: z.ZodType<BrowserWorkspace> = z.object({
+export const browserWorkspaceSchema: z.ZodType<PersistedBrowserWorkspace> = z.object({
   id: z.string(),
   worktreeId: z.string(),
   label: z.string().optional(),

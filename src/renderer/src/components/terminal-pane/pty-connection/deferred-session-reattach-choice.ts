@@ -154,7 +154,6 @@ export function runDeferredSessionReattachChoice(session: ConnectPanePtySession)
         return
       }
       recordPtyConnectDiagnostic(`pane=${session.pane.id} -> PENDING SPAWN`)
-      session.armDirectSshPaneRetryTimeout(pendingSpawn, session.directSshRetryAttempt)
       void pendingSpawn
         .then((spawnedPtyId) => {
           if (session.disposed) {
@@ -176,9 +175,6 @@ export function runDeferredSessionReattachChoice(session: ConnectPanePtySession)
             } else {
               session.startFreshSpawn()
             }
-            return
-          }
-          if (!session.canAdoptCapturedDirectSshRetryPty(spawnedPtyId)) {
             return
           }
           session.clearPaneMode2031State()

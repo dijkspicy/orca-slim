@@ -1,5 +1,4 @@
 import { describe, expect, it, vi, type Mock } from 'vitest'
-import { validateGitExecArgs } from '../../relay/git-exec-validator'
 import type { WorktreeMeta } from '../../shared/worktree/meta-types'
 import type { GitPushTarget } from '../../shared/worktree/types'
 import {
@@ -82,20 +81,6 @@ describe('cleanupUnusedWorktreePushTargetRemoteWithExec', () => {
       exec
     )
     expect(removeCalls(exec)).toEqual([['remote', 'remove', FORK_REMOTE]])
-  })
-
-  it('sends only argv the relay accepts, so SSH cleanup is not silently skipped', async () => {
-    const exec = makeExec()
-    await cleanupUnusedWorktreePushTargetRemoteWithExec(
-      REPO_PATH,
-      'repo-1::/wt/a',
-      forkTarget(),
-      storeOf({ 'repo-1::/wt/a': forkTarget() }),
-      exec
-    )
-    for (const [args] of exec.mock.calls) {
-      expect(() => validateGitExecArgs(args)).not.toThrow()
-    }
   })
 
   it('keeps a remote Orca did not create (remoteCreated falsy)', async () => {
@@ -339,44 +324,15 @@ describe('findWorktreeMetaReferencingRemote', () => {
 })
 
 describe('sameGitHubRemoteUrl', () => {
-  it('matches SSH and HTTPS forms of the same GitHub fork', () => {
+  it('matches identical URLs', () => {
+    expect(sameGitHubRemoteUrl(FORK_URL, FORK_URL)).toBe(true)
+  })
+
+  it('does not match different spellings of the same repo', () => {
     expect(
       sameGitHubRemoteUrl(
         'git@github.com:contributor/orca.git',
         'https://github.com/contributor/orca.git'
-      )
-    ).toBe(true)
-  })
-
-  it('is case-insensitive on owner/repo', () => {
-    expect(
-      sameGitHubRemoteUrl(
-        'git@github.com:Contributor/Orca.git',
-        'git@github.com:contributor/orca.git'
-      )
-    ).toBe(true)
-  })
-
-  it('does not match different forks', () => {
-    expect(
-      sameGitHubRemoteUrl(
-        'git@github.com:contributor/orca.git',
-        'git@github.com:someone-else/orca.git'
-      )
-    ).toBe(false)
-  })
-
-  it('falls back to exact equality for non-GitHub hosts', () => {
-    expect(
-      sameGitHubRemoteUrl(
-        'git@gitlab.com:contributor/orca.git',
-        'git@gitlab.com:contributor/orca.git'
-      )
-    ).toBe(true)
-    expect(
-      sameGitHubRemoteUrl(
-        'git@gitlab.com:contributor/orca.git',
-        'https://gitlab.com/contributor/orca.git'
       )
     ).toBe(false)
   })

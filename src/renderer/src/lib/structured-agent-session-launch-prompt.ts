@@ -1,19 +1,138 @@
 import type {
   AgentSessionMutationResult,
-  AgentSessionSendResult
+  AgentSessionSendResult,
+  AgentSessionWireRefusalCode
 } from '../../../shared/agent-session-wire'
-import {
-  requeueStructuredAgentSessionSendRefusal,
-  structuredAgentSessionSendRequest,
-  type StructuredAgentSessionOutboxEntry
-} from '../../../shared/structured-agent-session-outbox'
-import { createStructuredAgentSessionOperationId } from '../../../shared/structured-agent-session-mutation'
-import {
-  mutateStructuredAgentSessionLaunchPrompt,
-  type StructuredAgentSessionLaunchPromptMutation
-} from '@/components/native-chat/structured-agent-session-outbox-storage'
-import { callStructuredAgentSession } from '@/runtime/structured-agent-session-client'
+import type { AgentJournalMessageItem } from '../../../shared/agent-session-journal-types'
+import { agentSessionRefusalOperationState } from '../../../shared/agent-session-refusal-retry'
+import { sha256 } from '../../../shared/sha256'
+import { callLocalStructuredAgentSession } from './structured-agent-session-launch-recovery'
 import { createBrowserUuid } from '@/lib/browser-uuid'
+
+// ─── Launch-scoped outbox (re-homed from the culled shared outbox/mutation/storage modules) ───
+
+export type StructuredAgentSessionOutboxState = 'queued' | 'dispatching' | 'unconfirmed'
+
+export type StructuredAgentSessionOutboxEntry = {
+  clientMessageId: string
+  sessionId: string
+  body: AgentJournalMessageItem
+  previewUris: string[]
+  state: StructuredAgentSessionOutboxState
+  queuedAt: number
+  lastAttemptAt: number | null
+  retryAfterUnknownSubmittedAt: number | null
+  source?: 'launch'
+}
+
+function canonicalize(value: unknown): string {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value ?? null)
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalize).join(',')}]`
+  }
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, entry]) => entry !== undefined)
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+  return `{${entries.map(([key, entry]) => `${JSON.stringify(key)}:${canonicalize(entry)}`).join(',')}}`
+}
+
+export function structuredAgentSessionPayloadFingerprint(input: {
+  method: string
+  sessionId: string
+  fields: Record<string, unknown>
+}): string {
+  const bytes = sha256(
+    new TextEncoder().encode(
+      canonicalize({ method: input.method, sessionId: input.sessionId, fields: input.fields })
+    )
+  )
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+export function createStructuredAgentSessionOperationId(
+  randomUuid: () => string,
+  now: number = Date.now()
+): string {
+  const timestamp = Math.trunc(now).toString()
+  const entropy = randomUuid().replaceAll('-', '').toLowerCase()
+  if (!/^\d{13}$/.test(timestamp) || !/^[0-9a-f]{32}$/.test(entropy)) {
+    throw new Error('Unable to create a durable operation id')
+  }
+  return `${timestamp}-${entropy}`
+}
+
+function structuredAgentSessionSendRequest(
+  entry: StructuredAgentSessionOutboxEntry,
+  expectedRuntimeFence: number
+): Record<string, unknown> {
+  const fields = { body: entry.body }
+  return {
+    envelope: {
+      sessionId: entry.sessionId,
+      clientOperationId: entry.clientMessageId,
+      expectedRuntimeFence,
+      payloadFingerprint: structuredAgentSessionPayloadFingerprint({
+        method: 'agentSession.send',
+        sessionId: entry.sessionId,
+        fields
+      })
+    },
+    ...fields
+  }
+}
+
+function requeueStructuredAgentSessionSendRefusal(
+  entry: StructuredAgentSessionOutboxEntry,
+  code: AgentSessionWireRefusalCode,
+  createOperationId: () => string,
+  retainOperationId = false
+): StructuredAgentSessionOutboxEntry {
+  const refusalState = agentSessionRefusalOperationState(code)
+  if (
+    refusalState !== 'settled-rejected' ||
+    retainOperationId ||
+    entry.state === 'unconfirmed' ||
+    entry.retryAfterUnknownSubmittedAt !== null
+  ) {
+    return { ...entry, state: 'queued' }
+  }
+  return {
+    ...entry,
+    clientMessageId: createOperationId(),
+    state: 'queued',
+    lastAttemptAt: null,
+    retryAfterUnknownSubmittedAt: null
+  }
+}
+
+// Why: the persisted outbox storage was culled with the mirror stack; the launch keeps its
+// staged entries in memory for the launch's lifetime instead.
+const stagedEntriesByDispatchKey = new Map<string, StructuredAgentSessionOutboxEntry>()
+
+export type StructuredAgentSessionLaunchPromptMutation = (
+  entry: StructuredAgentSessionOutboxEntry
+) => StructuredAgentSessionOutboxEntry | null
+
+function mutateStructuredAgentSessionLaunchPrompt(
+  sessionId: string,
+  clientMessageId: string,
+  update: StructuredAgentSessionLaunchPromptMutation
+): boolean {
+  const key = `${sessionId}:${clientMessageId}`
+  const current = stagedEntriesByDispatchKey.get(key)
+  if (!current) {
+    return false
+  }
+  const replacement = update(current)
+  if (replacement) {
+    stagedEntriesByDispatchKey.set(key, replacement)
+  } else {
+    stagedEntriesByDispatchKey.delete(key)
+  }
+  return true
+}
 
 export type StructuredPromptDeliveryResult = {
   delivered: boolean
@@ -84,6 +203,11 @@ function mutateEntry(
   entry: StructuredAgentSessionOutboxEntry,
   update: StructuredAgentSessionLaunchPromptMutation
 ): boolean {
+  const key = `${entry.sessionId}:${entry.clientMessageId}`
+  // Why seed-once: successive mutations must read the latest in-memory state, not the staged snapshot.
+  if (!stagedEntriesByDispatchKey.has(key)) {
+    stagedEntriesByDispatchKey.set(key, entry)
+  }
   return mutateStructuredAgentSessionLaunchPrompt(entry.sessionId, entry.clientMessageId, update)
 }
 
@@ -101,13 +225,9 @@ async function dispatchStructuredLaunchPrompt(
     return false
   }
   try {
-    const result = await callStructuredAgentSession<
+    const result = await callLocalStructuredAgentSession<
       AgentSessionMutationResult<AgentSessionSendResult>
-    >(
-      { kind: 'local' },
-      'agentSession.send',
-      structuredAgentSessionSendRequest(entry, receipt.fence)
-    )
+    >('agentSession.send', structuredAgentSessionSendRequest(entry, receipt.fence))
     if (!result.ok) {
       mutateEntry(entry, (current) =>
         requeueStructuredAgentSessionSendRefusal(

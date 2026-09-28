@@ -2,9 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import CommentMarkdown from '@/components/sidebar/CommentMarkdown'
-import { CommentReactions } from '@/components/github/CommentReactions'
 import { isBotPRComment } from '../../../../../shared/pr-comment-audience'
-import type { GitHubReactionContent, PRComment } from '../../../../../shared/github/comment-types'
 import type { PRCommentGroupActionState } from '@/lib/pr-comment-action-state'
 import type { PRCommentPresentationClasses } from '../pr-comment-presentation'
 import { formatPrCommentRelativeTime } from '../../../../../shared/pr-comment-time'
@@ -17,7 +15,8 @@ import {
   PRCommentActionBadge,
   QueueForAgentButton,
   ResolveButton,
-  formatLineRange
+  formatLineRange,
+  type PanelComment
 } from './comment-controls'
 
 /** A single comment row — used for both root and reply comments. */
@@ -38,10 +37,9 @@ export function CommentRow({
   onReply,
   onEditComment,
   onDeleteComment,
-  onSetReaction,
   onQueueForAgent
 }: {
-  comment: PRComment
+  comment: PanelComment
   botAuthorOverrides: ReadonlySet<string>
   isReply: boolean
   showResolve: boolean
@@ -54,14 +52,10 @@ export function CommentRow({
   presentation: PRCommentPresentationClasses
   now: number
   onResolve?: (threadId: string, resolve: boolean) => boolean | Promise<boolean>
-  onReply?: (comment: PRComment) => void
-  onEditComment?: (comment: PRComment, body: string) => Promise<boolean>
-  onDeleteComment?: (comment: PRComment) => void | Promise<void>
-  onSetReaction?: (
-    comment: PRComment,
-    content: GitHubReactionContent,
-    reacted: boolean
-  ) => Promise<boolean>
+  onReply?: (comment: PanelComment) => void
+  onEditComment?: (comment: PanelComment, body: string) => Promise<boolean>
+  onDeleteComment?: (comment: PanelComment) => void | Promise<void>
+  onSetReaction?: (comment: PanelComment, content: string, reacted: boolean) => Promise<boolean>
   onQueueForAgent?: () => void
 }): React.JSX.Element {
   const automated = isBotPRComment(comment, botAuthorOverrides)
@@ -322,14 +316,6 @@ export function CommentRow({
         ) : (
           <div className={isReply ? presentation.commentBodyReply : presentation.commentBody}>
             <CommentMarkdown content={comment.body} className={presentation.commentBodyMarkdown} />
-            <CommentReactions
-              reactions={comment.reactions}
-              onReactionChange={
-                comment.reactionSubjectId && onSetReaction
-                  ? (content, reacted) => onSetReaction(comment, content, reacted)
-                  : undefined
-              }
-            />
           </div>
         )}
       </div>

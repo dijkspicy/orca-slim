@@ -12,38 +12,21 @@
  * A caller therefore never asks for a mode, and must read `outcome.kind` rather than assume one:
  * the receipt always says which surface ran and why, so a downgrade is never silent.
  *
- * A launch is also the one call whose retry is most expensive to get wrong — a lost reply means the
- * caller cannot tell "never ran" from "ran, answer lost" — so a caller may name the operation with
- * `operationId` and get exactly one execution, a recorded answer on every replay, and a refusal
- * when the outcome is genuinely unknown. That guarantee is safety, not recovery: it makes a retry
- * harmless, and does nothing to reunite a caller with a surface a dead attempt left behind.
+ * A caller may still name the launch with `operationId`, but the durable admission ledger that
+ * made a retry harmless lived in the structured-session host and is gone with it; the method now
+ * runs the in-process path, whose only idempotency is the 60-second worktree-create dedupe.
  */
 
 import { AGENT_LAUNCH_RUNTIME_CAPABILITY } from '../../../../shared/protocol-version'
-import { computeAgentLaunchFingerprint } from '../../../../shared/agent-launch-operation'
 import type {
   AgentLaunchIntent,
   AgentLaunchResult,
   AgentLaunchTarget
 } from '../../../../shared/agent-launch-intent'
-import { agentSessionOperationKey } from '../../../../shared/agent-session-operation-ledger'
-import {
-  WorktreeCreateCollisionError,
-  WORKTREE_CREATE_COLLISION_CODE
-} from '../../../../shared/new-workspace/worktree-create-collision'
-import {
-  AgentLaunchPaneAlreadyLiveError,
-  AGENT_LAUNCH_PANE_ALREADY_LIVE_CODE
-} from '../../../../shared/agent-launch-pane-already-live'
-import {
-  AgentLaunchSessionAlreadyExistsError,
-  AGENT_LAUNCH_SESSION_ALREADY_EXISTS_CODE
-} from '../../../../shared/agent-launch-session-already-exists'
 import { executeAgentLaunch } from '../../../agent-launch/agent-launch-executor'
 import type { OrcaRuntimeService } from '../../orca-runtime'
 import { defineMethod, type RpcContext } from '../core'
-import { admitAgentLaunchOperation, agentLaunchOperationCallerKey } from './agent-launch-replay'
-import { AgentLaunch, AgentLaunchReplay, type AgentLaunchParams } from './agent-launch-schemas'
+import { AgentLaunch, type AgentLaunchParams } from './agent-launch-schemas'
 import { agentLaunchSurfaceFactory } from './agent-launch-surfaces'
 import { agentLaunchWorkspaceFactory } from './agent-launch-worktree-creation'
 
@@ -178,164 +161,7 @@ function runLegacyAgentLaunch(
   return execute()
 }
 
-function settleQuietly(settlement: Promise<void>): Promise<void> {
-  return settlement.catch((error: unknown) => {
-    console.warn('[agent-launch] the launch settled, its operation row did not', error)
-  })
-}
-
-/** Long enough for every code this path raises, with room for one a later guard adds. */
-const LAUNCH_FAILURE_CODE_MAX_LENGTH = 128
-
-/**
- * This path raises its refusals as the thrown code, the way the method's own guards do — and the
- * recorded code is what a replay answers with, so it is worth keeping.
- *
- * Bounded because a code is an identifier but `error.message` is free text: an errno sentence
- * carrying an absolute path arrives here as one, and it would be written into a ledger file that is
- * re-serialized whole on every subsequent operation. Bounded on the way IN only. A length check in
- * `isAgentSessionOperationRow` would reject rows this same build wrote, and one rejected row costs
- * the entire store.
- */
-function agentLaunchFailureCode(error: unknown): string {
-  const code = error instanceof Error ? error.message : ''
-  return code.length > 0 ? code.slice(0, LAUNCH_FAILURE_CODE_MAX_LENGTH) : 'agent_launch_failed'
-}
-
-/**
- * Only a typed refusal raised before anything was created proves the claimed launch had no effects.
- * A live reserved pane or an existing reserved session proves it only for an existing workspace; on
- * create-worktree the workspace already exists by the time the surface is refused.
- */
-function launchFailureWithoutEffectsCode(
-  error: unknown,
-  targetKind: AgentLaunchTarget['kind']
-): string | null {
-  if (error instanceof WorktreeCreateCollisionError) {
-    return WORKTREE_CREATE_COLLISION_CODE
-  }
-  if (error instanceof AgentLaunchPaneAlreadyLiveError && targetKind === 'existing') {
-    return AGENT_LAUNCH_PANE_ALREADY_LIVE_CODE
-  }
-  if (error instanceof AgentLaunchSessionAlreadyExistsError && targetKind === 'existing') {
-    return AGENT_LAUNCH_SESSION_ALREADY_EXISTS_CODE
-  }
-  return null
-}
-
-type ActiveAgentLaunch = {
-  fingerprint: string
-  promise: Promise<AgentLaunchResult>
-}
-
-class AgentLaunchExecutionError extends Error {
-  constructor(cause: unknown) {
-    super('agent_session_operation_unknown', { cause })
-  }
-}
-
-const activeAgentLaunchesByRuntime = new WeakMap<
-  OrcaRuntimeService,
-  Map<string, ActiveAgentLaunch>
->()
-
-function activeAgentLaunchesFor(runtime: OrcaRuntimeService): Map<string, ActiveAgentLaunch> {
-  const existing = activeAgentLaunchesByRuntime.get(runtime)
-  if (existing) {
-    return existing
-  }
-  const active = new Map<string, ActiveAgentLaunch>()
-  activeAgentLaunchesByRuntime.set(runtime, active)
-  return active
-}
-
-async function executeReplaySafeAgentLaunch(
-  params: AgentLaunchParams & { operationId: string },
-  context: RpcContext,
-  fingerprint: string
-): Promise<AgentLaunchResult> {
-  const admission = await admitAgentLaunchOperation(context, params, fingerprint)
-  if (admission.decision === 'refuse') {
-    throw new Error(admission.refusal.code)
-  }
-  if (admission.decision === 'replay') {
-    return admission.result
-  }
-  let intent: AgentLaunchIntent
-  try {
-    intent = await resolveUnlaunchedIntent(params, context.runtime)
-  } catch (error) {
-    await settleQuietly(admission.fail(agentLaunchFailureCode(error)))
-    throw error
-  }
-  let result: AgentLaunchResult
-  try {
-    result = await runAgentLaunch(intent, context, admission.attachOperationId, admission.callerKey)
-  } catch (error) {
-    const failedWithoutEffects = launchFailureWithoutEffectsCode(error, intent.target.kind)
-    if (failedWithoutEffects) {
-      await settleQuietly(admission.fail(failedWithoutEffects))
-    }
-    throw new AgentLaunchExecutionError(error)
-  }
-  // Settlement is bookkeeping; failure leaves the truthful `unknown` refusal for later retries.
-  await settleQuietly(admission.settle(result))
-  return result
-}
-
-function runReplaySafeAgentLaunch(
-  params: AgentLaunchParams & { operationId: string },
-  context: RpcContext
-): Promise<AgentLaunchResult> {
-  const callerKey = agentLaunchOperationCallerKey(context)
-  const key = agentSessionOperationKey(callerKey, params.operationId)
-  const fingerprint = computeAgentLaunchFingerprint(params)
-  const activeAgentLaunches = activeAgentLaunchesFor(context.runtime)
-  const active = activeAgentLaunches.get(key)
-  if (active) {
-    if (active.fingerprint !== fingerprint) {
-      return Promise.reject(new Error('agent_session_operation_conflict'))
-    }
-    return active.promise
-  }
-
-  let promise: Promise<AgentLaunchResult>
-  promise = executeReplaySafeAgentLaunch(params, context, fingerprint).finally(() => {
-    if (activeAgentLaunches.get(key)?.promise === promise) {
-      activeAgentLaunches.delete(key)
-    }
-  })
-  activeAgentLaunches.set(key, { fingerprint, promise })
-  return promise
-}
-
 export const AGENT_LAUNCH_METHODS = [
-  defineMethod({
-    name: 'agent.launchReplay',
-    params: AgentLaunchReplay,
-    handler: async (params, context): Promise<AgentLaunchResult> => {
-      if (!supportsAgentLaunch(context)) {
-        throw new Error('agent_launch_replay_unsupported')
-      }
-      try {
-        return await runReplaySafeAgentLaunch(params, context)
-      } catch (error) {
-        // Nested failures cannot authorize another workspace, regardless of their message or code.
-        if (error instanceof AgentLaunchExecutionError) {
-          if (error.cause instanceof WorktreeCreateCollisionError) {
-            throw Object.assign(new Error(error.cause.message, { cause: error.cause }), {
-              code: WORKTREE_CREATE_COLLISION_CODE
-            })
-          }
-          if (launchFailureWithoutEffectsCode(error.cause, params.target.kind)) {
-            throw error.cause
-          }
-          throw new Error('agent_session_operation_unknown', { cause: error.cause })
-        }
-        throw error
-      }
-    }
-  }),
   defineMethod({
     name: 'agent.launch',
     params: AgentLaunch,
@@ -343,19 +169,10 @@ export const AGENT_LAUNCH_METHODS = [
       if (!supportsAgentLaunch(context)) {
         throw new Error('agent_launch_unsupported')
       }
-      if (!params.operationId) {
-        return runLegacyAgentLaunch(params, context)
-      }
-      return runReplaySafeAgentLaunch(
-        {
-          ...params,
-          operationId: params.operationId
-        },
-        context
-      ).catch((error: unknown) => {
-        // Preserve the original error contract for callers of the optional-identity method.
-        throw error instanceof AgentLaunchExecutionError ? error.cause : error
-      })
+      // A named `operationId` used to enter the durable admission ledger owned by the
+      // structured-session host. That host is gone, so every launch now runs the
+      // in-process path: same-process retries still join the 60-second create dedupe.
+      return runLegacyAgentLaunch(params, context)
     }
   })
 ]

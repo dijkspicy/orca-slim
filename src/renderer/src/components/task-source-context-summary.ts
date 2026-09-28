@@ -2,9 +2,13 @@ import { translate } from '@/i18n/i18n'
 import { getExecutionHostLabel } from '../../../shared/execution-host'
 import type { ExecutionHostScope } from '../../../shared/execution-host'
 import type { ExecutionHostHealth } from '../../../shared/execution-host-registry'
-import type { SshConnectionStatus } from '../../../shared/ssh-types'
-import type { TaskProvider } from '../../../shared/task-providers'
-import type { TaskProviderIdentity, TaskSourceContext } from '../../../shared/task-source-context'
+import type {
+  SshConnectionStatus,
+  TaskProvider,
+  TaskProviderIdentity
+} from './task-source-summary-types'
+import type { TaskSourceContextRef } from './task-source-summary-types'
+export type { TaskSourceContextRef } from './task-source-summary-types'
 
 export type TaskSourceContextSummary = {
   label: string
@@ -38,7 +42,7 @@ function getHostLabel(hostId: ExecutionHostScope, hostLabelById: HostLabelLookup
 export function getTaskSourceContextSummary(args: {
   provider: TaskProvider
   providerLabel: string
-  repoContexts?: readonly TaskSourceContext[]
+  repoContexts?: readonly TaskSourceContextRef[]
   hostAvailability?: readonly TaskSourceHostAvailability[]
   hostLabelById?: HostLabelLookup
   accountHostId?: ExecutionHostScope | null
@@ -105,7 +109,7 @@ export function getTaskSourceAvailabilityNotice(args: {
 
 function getRepoBackedTaskSourceSummary(args: {
   providerLabel: string
-  repoContexts?: readonly TaskSourceContext[]
+  repoContexts?: readonly TaskSourceContextRef[]
   hostAvailability?: readonly TaskSourceHostAvailability[]
   hostLabelById?: HostLabelLookup
   selectedRepoCount?: number

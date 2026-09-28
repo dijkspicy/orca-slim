@@ -2,9 +2,7 @@ import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { buildResolvePullRequestConflictsPrompt } from '../SourceControl'
 import { buildPRCommentsResolutionPrompt } from '../../pr-comments-resolution-prompt'
-import { parseGitHubIssueOrPRLink } from '../../../../../shared/github/links'
 import { clearPendingPRCommentAiAck, setPendingPRCommentAiAck } from '../pr-comments-ai-launch-ack'
-import type { PendingPRCommentAiAckGithubTarget } from '../pr-comments-ai-launch-ack'
 import type { PRCommentGroup } from '../../../../../shared/pr-comment-groups'
 import { translate } from '@/i18n/i18n'
 
@@ -117,7 +115,7 @@ export function useChecksPanelAiQueue(model: ChecksPanelAiQueueInput) {
         )
         return
       }
-      // Why: pr.prRepo can be missing while comments are still visible; fall back to the PR URL.
+      // Why: pr.prRepo can be missing while comments are still visible.
       const githubTargetFromPr =
         activeReview.provider === 'github' && prNumber && pr?.prRepo
           ? {
@@ -127,26 +125,7 @@ export function useChecksPanelAiQueue(model: ChecksPanelAiQueueInput) {
               prRepo: pr.prRepo
             }
           : undefined
-      const githubTargetFromUrl = ((): PendingPRCommentAiAckGithubTarget | undefined => {
-        if (activeReview.provider !== 'github' || githubTargetFromPr) {
-          return undefined
-        }
-        const link = parseGitHubIssueOrPRLink(activeReview.url || pr?.url || '')
-        if (!link || link.type !== 'pr') {
-          return undefined
-        }
-        return {
-          repoPath: repo.path,
-          repoId: repo.id,
-          prNumber: link.number,
-          prRepo: {
-            owner: link.slug.owner,
-            repo: link.slug.repo,
-            host: link.slug.host
-          }
-        }
-      })()
-      const githubTarget = githubTargetFromPr ?? githubTargetFromUrl
+      const githubTarget = githubTargetFromPr
       // Why: resolving needs no prRepo, so a degraded PR entry that only yields a number must
       // still ack by resolving instead of failing every selected thread.
       const githubResolveTarget =
@@ -210,7 +189,6 @@ export function useChecksPanelAiQueue(model: ChecksPanelAiQueueInput) {
       activeWorktreeId,
       activeWorktreePath,
       pr?.prRepo,
-      pr?.url,
       prNumber,
       repo,
       resolveCommentsWithAIDisabledReason,

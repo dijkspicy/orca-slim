@@ -1,16 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createCompatibleRuntimeStatusResponse } from './runtime-status-response-fixture'
+
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 import { createTestStore } from './store-test-helpers'
 import type { Repo } from '../../../../shared/repo-types'
 import {
   FOLDER_WORKSPACE_PATH_STATUS_RUNTIME_CAPABILITY,
   RUNTIME_CAPABILITIES
 } from '../../../../shared/protocol-version'
-import {
-  createCompatibleRuntimeStatusResponse,
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 
 const toastError = vi.hoisted(() => vi.fn())
 const toastInfo = vi.hoisted(() => vi.fn())
@@ -36,14 +33,13 @@ const runtimeEnvironmentCall = vi.fn()
 const runtimeEnvironmentTransportCall = vi.fn()
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   runtimeEnvironmentCall.mockReset()
   runtimeEnvironmentTransportCall.mockReset()
   toastError.mockReset()
   toastInfo.mockReset()
   toastSuccess.mockReset()
-  runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-    return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+  runtimeEnvironmentTransportCall.mockImplementation((args: { method: string }) => {
+    return runtimeEnvironmentCall(args)
   })
   vi.stubGlobal('window', {
     api: {
@@ -149,7 +145,7 @@ describe('repo slice runtime folder fallback', () => {
   })
 
   it('reports an update error when the checked runtime lacks raw path status support', async () => {
-    runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
+    runtimeEnvironmentTransportCall.mockImplementation((args: { method: string }) => {
       if (args.method === 'status.get') {
         const response = createCompatibleRuntimeStatusResponse()
         if (!response.ok) {

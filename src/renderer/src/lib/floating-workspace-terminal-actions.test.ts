@@ -3,7 +3,6 @@ import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
 import type { Tab } from '../../../shared/tab-types'
 import type { TerminalTab } from '../../../shared/terminal-tab-types'
 import {
-  createFloatingWorkspaceBrowserTab,
   createFloatingWorkspaceMarkdownTab,
   createFloatingWorkspaceTerminalTab,
   handleEmptyFloatingWorkspacePanelCloseShortcut,
@@ -486,37 +485,6 @@ describe('createFloatingWorkspaceTerminalTab', () => {
     // Why: createTab itself activates the new tab within the floating group.
     expect(store.activateTab).not.toHaveBeenCalled()
     expect(focusTerminalTabSurfaceMock).toHaveBeenCalledWith('floating-tab-runtime')
-  })
-})
-
-describe('createFloatingWorkspaceBrowserTab', () => {
-  beforeEach(() => {
-    createWebRuntimeSessionBrowserTabMock.mockReset()
-  })
-
-  it('creates floating browser tabs in the active floating group', async () => {
-    const browserTab = { id: 'browser-1' }
-    const store = {
-      activeGroupIdByWorktree: { [FLOATING_TERMINAL_WORKTREE_ID]: 'floating-group' },
-      browserDefaultUrl: 'about:blank',
-      settings: { activeRuntimeEnvironmentId: null },
-      createBrowserTab: vi.fn().mockReturnValue(browserTab)
-    }
-    createWebRuntimeSessionBrowserTabMock.mockResolvedValue(false)
-
-    await expect(createFloatingWorkspaceBrowserTab(store as never)).resolves.toBe(browserTab)
-
-    expect(createWebRuntimeSessionBrowserTabMock).not.toHaveBeenCalled()
-    expect(store.createBrowserTab).toHaveBeenCalledWith(
-      FLOATING_TERMINAL_WORKTREE_ID,
-      'about:blank',
-      {
-        title: 'New Browser Tab',
-        focusAddressBar: true,
-        targetGroupId: 'floating-group',
-        browserRuntimeEnvironmentId: null
-      }
-    )
   })
 })
 

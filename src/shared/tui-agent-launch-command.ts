@@ -2,7 +2,9 @@ import {
   removeOverriddenAgentSessionArgs,
   resolveAgentSessionOptionLaunch
 } from './agent-session-option-launch'
-import type { SessionOptionValue } from './native-chat-session-options'
+// Same shape the session-option catalog applies; kept local so launch resolution
+// does not depend on the deleted shared options module.
+type SessionOptionValue = string | boolean
 import { getTuiAgentLaunchCommand, TUI_AGENT_CONFIG } from './tui-agent-config'
 import {
   planAgentCliArgsSuffix,

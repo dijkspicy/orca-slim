@@ -1,17 +1,39 @@
 import type { CacheEntry } from '@/store/github/cache-model'
-import type { LinearIssue } from '../../../shared/linear/issue-types'
-import type { LinearCollectionResult } from '../../../shared/linear/workspace-types'
 import { sortedStrings } from './task-page-work-item-signatures'
 
-type LinearIssueCache = Record<string, CacheEntry<LinearIssue>>
-type LinearSearchCache = Record<string, CacheEntry<LinearIssue[]>>
-type LinearListCache = Record<string, CacheEntry<LinearCollectionResult<LinearIssue>>>
+/** Structural Linear issue covering the fields the task-page surfaces read. */
+export type TaskPageLinearIssue = {
+  id: string
+  identifier: string
+  title: string
+  url: string
+  workspaceId?: string
+  state: { name: string; type: string; color: string }
+  team: { id: string; name: string; key: string }
+  labels?: readonly string[]
+  assignee?: { id: string; displayName: string } | null
+  priority?: number | null
+  updatedAt: string
+}
 
-function linearIssueKey(issue: LinearIssue): string {
+export type TaskPageLinearCollectionResult<T> = {
+  items: T[]
+  errors?: { message?: string }[]
+  hasMore?: boolean
+}
+
+type LinearIssueCache = Record<string, CacheEntry<TaskPageLinearIssue>>
+type LinearSearchCache = Record<string, CacheEntry<TaskPageLinearIssue[]>>
+type LinearListCache = Record<
+  string,
+  CacheEntry<TaskPageLinearCollectionResult<TaskPageLinearIssue>>
+>
+
+function linearIssueKey(issue: TaskPageLinearIssue): string {
   return issue.id
 }
 
-function linearIssueStatusSignature(issue: LinearIssue): string {
+function linearIssueStatusSignature(issue: TaskPageLinearIssue): string {
   return JSON.stringify([
     issue.identifier,
     issue.title,
@@ -31,8 +53,8 @@ function linearIssueStatusSignature(issue: LinearIssue): string {
 }
 
 export function shouldReplaceTaskPageLinearIssuesAfterRefresh(
-  currentIssues: readonly LinearIssue[],
-  refreshedIssues: readonly LinearIssue[]
+  currentIssues: readonly TaskPageLinearIssue[],
+  refreshedIssues: readonly TaskPageLinearIssue[]
 ): boolean {
   if (currentIssues.length !== refreshedIssues.length) {
     return true
@@ -42,9 +64,9 @@ export function shouldReplaceTaskPageLinearIssuesAfterRefresh(
 }
 
 export function reconcileTaskPageLinearIssuesAfterLandingRefresh(
-  currentIssues: readonly LinearIssue[],
-  refreshedIssues: readonly LinearIssue[]
-): LinearIssue[] {
+  currentIssues: readonly TaskPageLinearIssue[],
+  refreshedIssues: readonly TaskPageLinearIssue[]
+): TaskPageLinearIssue[] {
   if (shouldReplaceTaskPageLinearIssuesAfterRefresh(currentIssues, refreshedIssues)) {
     return [...refreshedIssues]
   }
@@ -58,7 +80,7 @@ export function reconcileTaskPageLinearIssuesAfterLandingRefresh(
     changed = true
     return refreshed
   })
-  return changed ? next : (currentIssues as LinearIssue[])
+  return changed ? next : (currentIssues as TaskPageLinearIssue[])
 }
 
 export function findTaskPageLinearIssue(
@@ -66,7 +88,7 @@ export function findTaskPageLinearIssue(
   linearSearchCache: LinearSearchCache,
   linearListCache: LinearListCache,
   linearIssueId: string | null
-): LinearIssue | null {
+): TaskPageLinearIssue | null {
   if (!linearIssueId) {
     return null
   }

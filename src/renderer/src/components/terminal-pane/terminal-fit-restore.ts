@@ -1,11 +1,6 @@
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { mapWithConcurrency } from '../../../../shared/map-with-concurrency'
 import { TERMINAL_FIT_RESTORE_DEADLINE_MS } from '../../../../shared/terminal-fit-restore-deadline'
-import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
-import {
-  getRemoteRuntimePtyEnvironmentId,
-  getRemoteRuntimeTerminalHandle
-} from '@/runtime/runtime-terminal-stream'
 
 type TerminalFitRestoreSettings = Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | undefined
 
@@ -41,25 +36,15 @@ const withRestoreFitTimeout = async (
 
 async function restoreTerminalFitToDesktopWithinDeadline(
   ptyId: string,
-  settings: TerminalFitRestoreSettings,
+  _settings: TerminalFitRestoreSettings,
   deadlineAt: number
 ): Promise<boolean> {
   const timeoutMs = Math.max(0, deadlineAt - Date.now())
   if (timeoutMs === 0) {
     return false
   }
-  const remoteHandle = getRemoteRuntimeTerminalHandle(ptyId)
-  const environmentId =
-    getRemoteRuntimePtyEnvironmentId(ptyId) ?? settings?.activeRuntimeEnvironmentId ?? null
-  const pending =
-    remoteHandle && environmentId
-      ? callRuntimeRpc<{ restored: boolean }>(
-          { kind: 'environment', environmentId },
-          'terminal.restoreFit',
-          { terminal: remoteHandle },
-          { timeoutMs }
-        ).catch(restoreFailedResult)
-      : window.api.runtime.restoreTerminalFit(ptyId).catch(restoreFailedResult)
+  // Remote fit reclaim went through the runtime RPC; local panes reclaim via IPC.
+  const pending = window.api.runtime.restoreTerminalFit(ptyId).catch(restoreFailedResult)
   const result = await withRestoreFitTimeout(pending, timeoutMs)
 
   return result.restored

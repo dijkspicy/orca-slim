@@ -2,7 +2,6 @@ import type {
   getPreferredPairingOffer,
   KnownRuntimeEnvironment
 } from '../../shared/runtime-environments'
-import { RemoteRuntimeClientError } from '../../shared/remote-runtime-client-error'
 import {
   getAcceptedRuntimeEnvironmentCapabilityOutcome,
   resetRuntimeEnvironmentCapabilityEvidence,
@@ -36,7 +35,7 @@ export async function supportsSharedControl(
     timeoutMs
   })
   if (!response.ok) {
-    throw new RemoteRuntimeClientError(response.error.code, response.error.message)
+    throw new Error(response.error.message)
   }
   return (
     getAcceptedRuntimeEnvironmentCapabilityOutcome(

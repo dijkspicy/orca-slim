@@ -1,6 +1,5 @@
 import React from 'react'
 import type { Components } from 'react-markdown'
-import { NATIVE_CHAT_FILE_HREF_PREFIX } from '../../../../shared/native-chat-href-routing'
 import { isMermaidFence, isMermaidPre, renderMermaidFence } from './comment-mermaid-fence'
 import {
   GitHubUserAttachmentImage,
@@ -47,10 +46,7 @@ function handleMarkdownAnchorClick(
   // images only claim the click when an image handler is wired below.
   event.stopPropagation()
   const trimmedHref = href?.trim()
-  if (
-    trimmedHref?.toLowerCase().startsWith('file:') ||
-    trimmedHref?.startsWith(NATIVE_CHAT_FILE_HREF_PREFIX)
-  ) {
+  if (trimmedHref?.toLowerCase().startsWith('file:')) {
     event.preventDefault()
   }
   onLinkClick?.(event, href)

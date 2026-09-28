@@ -9,7 +9,12 @@
 // row picks them up when they arrive.
 
 import type { AgentJournalProducerLinkage } from '../../shared/agent-session-journal-types'
-import type { CodexSubagentExecutions } from './codex-subagent-executions'
+
+/** The execution facts linkage reads off the session's child-turn tracker. */
+type SubagentExecutionFacts = {
+  spawnerOf: (threadId: string) => string | null
+  turnOrdinal: (threadId: string, turnId: string) => number | null
+}
 
 /** Linkage for a row one thread produced, within one of that thread's turns
  *  (null outside any). Every Codex write site resolves through this. */
@@ -22,7 +27,7 @@ export class CodexSubagentLinkage {
   constructor(
     private readonly deps: {
       primaryThreadId: () => string | null
-      executions: Pick<CodexSubagentExecutions, 'spawnerOf' | 'turnOrdinal'>
+      executions: SubagentExecutionFacts
     }
   ) {}
 

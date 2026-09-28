@@ -34,13 +34,9 @@ vi.mock('@/lib/structured-agent-session-launch-recovery', async () => {
   return { ...actual, launchAndReconcile: vi.fn(actual.launchAndReconcile) }
 })
 
-vi.mock('@/runtime/local-structured-session-tabs-sync', () => ({
-  refreshLocalStructuredSessionTabs: vi.fn()
-}))
-
-vi.mock('@/runtime/structured-agent-session-client', () => ({
-  callStructuredAgentSession: mocks.callStructuredAgentSession
-}))
+// Why: the tabs-sync and structured-session RPC clients were culled; the launch rides
+// window.api.runtime.call directly, stubbed through mocks.callStructuredAgentSession.
+vi.stubGlobal('window', { api: { runtime: { call: mocks.callStructuredAgentSession } } })
 
 vi.mock('@/store', () => ({
   useAppStore: {
@@ -68,12 +64,10 @@ vi.mock('@/lib/agent-catalog', () => ({
 }))
 
 import type { StructuredAgentSessionLaunchIntent } from '@/lib/launch-structured-agent-session'
-import { refreshLocalStructuredSessionTabs } from '@/runtime/local-structured-session-tabs-sync'
 import {
   startStructuredAgentLaunch,
   type StructuredAgentLaunchOptions
 } from './structured-agent-session-launch'
-import { readOutbox } from '@/components/native-chat/structured-agent-session-outbox-storage'
 
 function launchIntent(worktreeId: string, sessionId: string): StructuredAgentSessionLaunchIntent {
   return {
@@ -126,7 +120,12 @@ describe('coalesced launch delivery mode', () => {
     localStorage.clear()
     mocks.rendererTabs = {}
     mocks.listeners.clear()
-    mocks.callStructuredAgentSession.mockResolvedValue({ ok: true, page: { fence: 1 } })
+    mocks.callStructuredAgentSession.mockImplementation(({ method }) => {
+      if (method === 'session.tabs.listAll') {
+        return Promise.resolve({ ok: true, result: { snapshots: [] } })
+      }
+      return Promise.resolve({ ok: true, result: { ok: true, page: { fence: 1 } } })
+    })
   })
 
   async function coalesce(args: {
@@ -142,20 +141,26 @@ describe('coalesced launch delivery mode', () => {
       () =>
         new Promise<{ sessionId: string; fence: number }>((resolve) => (resolveLaunch = resolve))
     )
-    vi.mocked(refreshLocalStructuredSessionTabs).mockResolvedValue([
-      publishedSnapshot(args.worktreeId, intent.sessionId)
-    ])
+    mocks.callStructuredAgentSession.mockImplementation(({ method }) => {
+      if (method === 'session.tabs.listAll') {
+        return Promise.resolve({
+          ok: true,
+          result: { snapshots: [publishedSnapshot(args.worktreeId, intent.sessionId)] }
+        })
+      }
+      return Promise.resolve({ ok: true, result: { ok: true, page: { fence: 1 } } })
+    })
 
     startStructuredAgentLaunch(args.worktreeId, 'codex', args.established)
     const joiner = startStructuredAgentLaunch(args.worktreeId, 'codex', args.joining)
     resolveLaunch({ sessionId: intent.sessionId, fence: 1 })
     await flushLaunchSettlement()
-    return { intent, joiner }
+    return { joiner }
   }
 
   it('keeps a joiner as a draft when the launch it joined established no mode', async () => {
     // The onboarding folder launch establishes an identity carrying neither prompt nor mode.
-    const { intent, joiner } = await coalesce({
+    const { joiner } = await coalesce({
       worktreeId: 'wt-unset-delivery-mode',
       sessionId: 'unset-delivery-session',
       established: {},
@@ -163,10 +168,11 @@ describe('coalesced launch delivery mode', () => {
     })
 
     // Why: an unset established mode must not read as submit; the joiner never consented to send.
-    expect(readOutbox(intent.sessionId)).toEqual([])
     expect(joiner.promptDeliveryResult).toBeUndefined()
     expect(
-      mocks.callStructuredAgentSession.mock.calls.some((call) => call[1] === 'agentSession.send')
+      mocks.callStructuredAgentSession.mock.calls.some(
+        (call) => call[0]?.method === 'agentSession.send'
+      )
     ).toBe(false)
     expect(mocks.seedDraft).toHaveBeenLastCalledWith(
       expect.objectContaining({

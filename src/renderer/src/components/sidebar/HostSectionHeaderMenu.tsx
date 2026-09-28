@@ -1,15 +1,5 @@
 import React, { useCallback, useState } from 'react'
-import {
-  AlertTriangle,
-  Ellipsis,
-  Loader2,
-  Pencil,
-  Plug,
-  PlugZap,
-  RefreshCw,
-  Settings2,
-  Trash2
-} from 'lucide-react'
+import { AlertTriangle, Ellipsis, Loader2, Pencil, PlugZap, Settings2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,14 +14,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { useAppStore } from '@/store'
 import { translate } from '@/i18n/i18n'
-import { sshConnectVerb } from '@/ssh/ssh-connect-verb'
 import { parseExecutionHostId } from '../../../../shared/execution-host'
 import { describeRuntimeCompatBlock } from '../../../../shared/protocol-compat'
-import {
-  clearRuntimeCompatibilityCache,
-  unwrapRuntimeRpcResult
-} from '@/runtime/runtime-rpc-client'
-import type { RuntimeStatus } from '../../../../shared/runtime-types'
 import type { HostHeaderRow } from './host-section-rows'
 import { buildHostHeaderMenuModel } from './host-header-menu-items'
 import { HostRenameDialog } from './HostRenameDialog'
@@ -127,52 +111,6 @@ export function HostSectionHeaderMenu({ row }: { row: HostHeaderRow }): React.JS
     [mountedRef, row.hostId]
   )
 
-  const handleCheckConnection = useCallback(async () => {
-    const parsed = parseExecutionHostId(row.hostId)
-    if (parsed?.kind !== 'runtime') {
-      return
-    }
-    setBusy(true)
-    // Why: drop any cached "compatible" verdict so the re-probe re-evaluates
-    // version skew instead of trusting the prior pass.
-    clearRuntimeCompatibilityCache(parsed.environmentId)
-    try {
-      const response = await window.api.runtimeEnvironments.getStatus({
-        selector: parsed.environmentId,
-        timeoutMs: 10_000
-      })
-      unwrapRuntimeRpcResult<RuntimeStatus>(response)
-      // Why: feed the probe result into the shared store so the host header and
-      // other host pickers reflect this check without a separate fetch.
-      await useAppStore.getState().readRuntimeHostStatusSnapshots()
-      toast.success(
-        translate(
-          'auto.components.sidebar.HostSectionHeaderMenu.7f1a2b3c4d',
-          '{{value0}} is reachable',
-          {
-            value0: row.label
-          }
-        )
-      )
-    } catch (err) {
-      // Why: record the failed probe so the host registry can drop a previously
-      // healthy verdict instead of showing stale "compatible" state.
-      await useAppStore.getState().readRuntimeHostStatusSnapshots()
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : translate(
-              'auto.components.sidebar.HostSectionHeaderMenu.2c29e2de68',
-              'Connection failed'
-            )
-      )
-    } finally {
-      if (mountedRef.current) {
-        setBusy(false)
-      }
-    }
-  }, [mountedRef, row.hostId, row.label])
-
   return (
     <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
       <Tooltip>
@@ -234,25 +172,10 @@ export function HostSectionHeaderMenu({ row }: { row: HostHeaderRow }): React.JS
             {translate('auto.components.sidebar.HostSectionHeaderMenu.8d1e2f3a4b', 'Rename…')}
           </DropdownMenuItem>
         )}
-        {model.actions.includes('ssh-reconnect') && (
-          <DropdownMenuItem onSelect={() => void runSshAction('connect')}>
-            <Plug className="size-3.5" />
-            {sshConnectVerb(sshStatus)}
-          </DropdownMenuItem>
-        )}
         {model.actions.includes('ssh-disconnect') && (
           <DropdownMenuItem onSelect={() => void runSshAction('disconnect')}>
             <PlugZap className="size-3.5" />
             {translate('auto.components.sidebar.HostSectionHeaderMenu.59b553e2aa', 'Disconnect')}
-          </DropdownMenuItem>
-        )}
-        {model.actions.includes('runtime-check-connection') && (
-          <DropdownMenuItem onSelect={() => void handleCheckConnection()}>
-            <RefreshCw className="size-3.5" />
-            {translate(
-              'auto.components.sidebar.HostSectionHeaderMenu.2d3e4f5a6b',
-              'Check connection'
-            )}
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />

@@ -3,12 +3,15 @@
 import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { EphemeralVmRuntimeRecord } from '../../../../shared/ephemeral-vm-runtimes'
 import {
   EphemeralVmRuntimesSection,
   getEphemeralVmRuntimeStatusLabel,
   getVisibleEphemeralVmRuntimes
 } from './EphemeralVmRuntimesSection'
+
+type EphemeralVmRuntimeRecord = Awaited<
+  ReturnType<typeof window.api.ephemeralVm.listRuntimes>
+>[number]
 
 const toastMocks = vi.hoisted(() => ({
   success: vi.fn(),

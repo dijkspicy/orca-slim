@@ -1,4 +1,4 @@
-import { MAX_CODEX_ITEM_STREAM_PENDING_PATCH_BYTES } from './codex-structured-item-stream-bounds'
+const MAX_CODEX_ITEM_STREAM_PENDING_PATCH_BYTES = 8 * 1024 * 1024
 
 export const CODEX_ITEM_STREAM_TYPES = {
   'item/agentMessage/delta': 'agentMessage',

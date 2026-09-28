@@ -1,7 +1,6 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
 import { OrcaRuntimeWithRefreshRepoWorktreeScan } from './orca-runtime-refresh-repo-worktree-scan'
 import type { RuntimePtyWorktreeRecord } from './runtime-terminal-state-records'
-import { parseAppSshPtyId } from '../../shared/ssh-pty-id'
 import { splitWorktreeIdForFilesystem } from '../../shared/worktree/id'
 import { parseWslUncPath } from '../../shared/wsl-paths'
 import { cloneAgentSessionOwnerBinding } from '../../shared/claimed-agent-pty-owner-snapshot'
@@ -41,7 +40,7 @@ export class OrcaRuntimeWithRecordPtyWorktree extends OrcaRuntimeWithRefreshRepo
     let pty = this.ptysById.get(ptyId)
     if (!pty) {
       const titleObservedAt = state.title ? this.nextTitleObservationSequence() : null
-      const connectionId = state.connectionId ?? parseAppSshPtyId(ptyId)?.connectionId ?? null
+      const connectionId = state.connectionId ?? null
       const worktreePath = splitWorktreeIdForFilesystem(worktreeId)?.worktreePath
       const fallbackWslDistro =
         process.platform === 'win32' && connectionId === null && worktreePath

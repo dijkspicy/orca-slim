@@ -1,9 +1,7 @@
 import { memo, useLayoutEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useAppStore } from '../../store'
 import { isProvenProcessExit } from '../../../../shared/terminal-exit-cause'
 import { RetainedPaneHost } from '../tab-group/RetainedPaneHost'
-import type { ActivityTerminalPortalTarget } from '../activity/activity-terminal-portal'
 import TerminalPane from './TerminalPane'
 import { closeTerminalTab } from '../terminal/terminal-tab-actions'
 import { shouldDeferParkedPtyExitTabClose } from './terminal-parked-tab-watchers'
@@ -18,7 +16,6 @@ type TerminalOverlaySlotProps = {
   isWorktreeActive: boolean
   isVisible: boolean
   isActive: boolean
-  activityTerminalPortal: ActivityTerminalPortalTarget | null
   onFocusOwningGroup: ((groupId: string) => void) | undefined
   consumeSuppressedPtyExit: (ptyId: string) => boolean
   leaveWorktreeIfEmpty: () => void
@@ -34,7 +31,6 @@ export const TerminalOverlaySlot = memo(function TerminalOverlaySlot({
   isWorktreeActive,
   isVisible,
   isActive,
-  activityTerminalPortal,
   onFocusOwningGroup,
   consumeSuppressedPtyExit,
   leaveWorktreeIfEmpty
@@ -54,13 +50,13 @@ export const TerminalOverlaySlot = memo(function TerminalOverlaySlot({
       tabId={terminalTabId}
       worktreeId={worktreeId}
       cwd={startupCwd ?? worktreePath}
-      isActive={isActive || activityTerminalPortal?.active === true}
+      isActive={isActive}
       // Why: split-group changes reparent TabGroupPanel subtrees. Keeping the
       // TerminalPane mounted here preserves alt-screen TUI state while this
       // flag still lets hidden tabs throttle rendering.
-      isVisible={isVisible || activityTerminalPortal !== null}
-      isWorktreeActive={isWorktreeActive || activityTerminalPortal !== null}
-      isolatedPaneKey={activityTerminalPortal?.paneKey ?? null}
+      isVisible={isVisible}
+      isWorktreeActive={isWorktreeActive}
+      isolatedPaneKey={null}
       onPtyExit={(ptyId, exitCode) => {
         if (consumeSuppressedPtyExit(ptyId)) {
           return
@@ -90,14 +86,6 @@ export const TerminalOverlaySlot = memo(function TerminalOverlaySlot({
       }}
     />
   )
-
-  if (activityTerminalPortal) {
-    return createPortal(
-      terminalPane,
-      activityTerminalPortal.target,
-      `activity-terminal-${terminalTabId}`
-    )
-  }
 
   return (
     <RetainedPaneHost

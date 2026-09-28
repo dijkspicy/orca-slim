@@ -1,9 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { useActiveWorktree } from '@/store/selectors'
-import type { GitLabProjectRef } from '../../../../../shared/gitlab-types'
-import type { PRCheckDetail, PRCheckRunDetails } from '../../../../../shared/github/check-types'
-import type { GitHubRepositoryIdentity } from '../../../../../shared/github/pull-request-types'
 import { sortChecksBySeverity } from '../../../../../shared/pr-check-severity-order'
 import { summarizeProviderChecks } from '../../../../../shared/provider-check-summary'
 import { createCheckRunDetailsRequestId } from '@/components/editor/check-run-details-tab'
@@ -12,19 +9,23 @@ import { useCheckDetailsResize } from '../check-details-resize'
 import {
   type CheckDetailsLoadState,
   type CheckDetailsStickySurface,
+  type ChecksPanelCheck,
+  type ChecksPanelCheckRunDetails,
+  type ChecksPanelGitHubRepositoryIdentity,
+  type ChecksPanelGitLabProjectRef,
   getCheckDetailsKey,
   isFailedCheck
 } from './check-details-model'
 
 export type ChecksListProps = {
-  checks: PRCheckDetail[]
+  checks: ChecksPanelCheck[]
   checksLoading: boolean
   checkDetailsContextKey: string
-  onLoadCheckDetails?: (check: PRCheckDetail) => Promise<PRCheckRunDetails | null>
+  onLoadCheckDetails?: (check: ChecksPanelCheck) => Promise<ChecksPanelCheckRunDetails | null>
   worktreeId?: string
   detailsStickySurface?: CheckDetailsStickySurface
-  getGitLabProjectRef?: () => GitLabProjectRef | null
-  githubRepository?: GitHubRepositoryIdentity | null
+  getGitLabProjectRef?: () => ChecksPanelGitLabProjectRef | null
+  githubRepository?: ChecksPanelGitHubRepositoryIdentity | null
 }
 
 export function useChecksListState({
@@ -124,7 +125,7 @@ export function useChecksListState({
   }, [rows])
 
   const requestCheckDetails = useCallback(
-    (row: { check: PRCheckDetail; key: string }) => {
+    (row: { check: ChecksPanelCheck; key: string }) => {
       if (detailsByCheckKey[row.key]?.loading || detailsByCheckKey[row.key]?.details) {
         return
       }
@@ -312,7 +313,7 @@ export function useChecksListState({
   ])
 
   const toggleCheckExpanded = useCallback(
-    (row: { check: PRCheckDetail; key: string }) => {
+    (row: { check: ChecksPanelCheck; key: string }) => {
       const willExpand = !expandedCheckKeys.has(row.key)
       setExpandedCheckKeys((current) => {
         const next = new Set(current)

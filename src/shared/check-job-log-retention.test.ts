@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { PR_CHECK_LOG_TAIL_BYTES, sliceCheckLogTail } from './check-job-log-tail-slice'
-import { gitLabJobTraceToLogExcerpt } from './gitlab-job-log-excerpt'
 
 function heapAfterGc(): number {
   if (!('gc' in globalThis) || typeof globalThis.gc !== 'function') {
@@ -27,9 +26,9 @@ describe('retained CI log excerpts', () => {
       sliceCheckLogTail
     ],
     [
-      'GitLab raw trace',
-      (index: number) => `${index}:${'x'.repeat(PARENT_CHARS)}`,
-      gitLabJobTraceToLogExcerpt
+      'GitHub repeated lines',
+      (index: number) => `${'recent\n'.repeat(100)}${index}:${'x'.repeat(PARENT_CHARS)}`,
+      sliceCheckLogTail
     ]
   ] as const)('releases the parent of a %s', (_label, makeLog, excerpt) => {
     const before = heapAfterGc()

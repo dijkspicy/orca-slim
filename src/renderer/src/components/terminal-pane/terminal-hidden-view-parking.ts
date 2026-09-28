@@ -1,8 +1,4 @@
-import { isRemoteRuntimePtyId } from '@/runtime/runtime-terminal-inspection'
-import { isRemoteExecutionHostPtyId } from './remote-execution-host-pty'
-import { getRemoteRuntimePtyEnvironmentId } from '@/runtime/runtime-terminal-stream'
 import { PTY_SESSION_ID_SEPARATOR } from '../../../../shared/pty-session-id-format'
-import { parseAppSshPtyId } from '../../../../shared/ssh-pty-id'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
 
 // Why: cold-park hysteresis keeps a hidden pane mounted for 30s so quick tab
@@ -61,21 +57,13 @@ function getPendingActivationSpawnCount(value: boolean | number | undefined): nu
 }
 
 function hasPendingActivationSpawn(tab: ColdParkableTerminalTab): boolean {
-  return (
-    getPendingActivationSpawnCount(tab.pendingActivationSpawn) > 0 &&
-    (!tab.ptyId || !isRemoteRuntimePtyId(tab.ptyId))
-  )
+  return getPendingActivationSpawnCount(tab.pendingActivationSpawn) > 0
 }
 
 // Why: snapshot-backed = local daemon session owned by this worktree (foreign
-// ids reattach through a path parking cannot replay). SSH is restorable too,
-// via isParkRestorableTerminalPty + main's headless model; only remote-runtime
-// ptys, which never transit main, stay unrestorable.
+// ids reattach through a path parking cannot replay).
 export function isSnapshotBackedTerminalPty(ptyId: string | null, worktreeId: string): boolean {
   if (!ptyId) {
-    return false
-  }
-  if (isRemoteExecutionHostPtyId(ptyId)) {
     return false
   }
   // Why: separator-less ids come from the daemon-fail-open LocalPtyProvider;
@@ -98,24 +86,13 @@ export {
   selectPairedRuntimeParkingEnvironmentIdsFromState
 } from './paired-runtime-parking-capabilities'
 
-// Why: SSH uses local main's model; paired PTYs are eligible only when their
-// exact host advertises authoritative bounded restore.
+// SSH/remote ptys are gone, so restorability reduces to the local daemon snapshot.
 export function isParkRestorableTerminalPty(
   ptyId: string | null,
   worktreeId: string,
-  policy?: TerminalParkRestorePolicy
+  _policy?: TerminalParkRestorePolicy
 ): boolean {
-  if (isSnapshotBackedTerminalPty(ptyId, worktreeId)) {
-    return true
-  }
-  if (ptyId && isRemoteRuntimePtyId(ptyId)) {
-    const environmentId = getRemoteRuntimePtyEnvironmentId(ptyId)
-    return (
-      environmentId !== null &&
-      policy?.pairedRuntimeParkingEnvironmentIds?.has(environmentId) === true
-    )
-  }
-  return policy?.sshParkingEnabled === true && ptyId !== null && parseAppSshPtyId(ptyId) !== null
+  return isSnapshotBackedTerminalPty(ptyId, worktreeId)
 }
 
 export function canParkTerminalWorktreeRenderers(args: {

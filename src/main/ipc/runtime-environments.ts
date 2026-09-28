@@ -1,7 +1,6 @@
 import { app, ipcMain } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { listEnvironments, resolveEnvironment } from '../../shared/runtime-environment-store'
-import type { RemoteRuntimeSubscription } from '../../shared/remote-runtime-client'
 import type { Store } from '../persistence'
 import {
   isRuntimeEnvironmentManuallyDisconnected,
@@ -19,14 +18,13 @@ import {
 } from './runtime-environment-transport-generation'
 import {
   resetSharedControlSupport,
-  subscribeRuntimeEnvironment
+  subscribeRuntimeEnvironment,
+  type RuntimeEnvironmentSubscription
 } from './runtime-environment-transport-routing'
 import { RUNTIME_ENVIRONMENT_HANDLER_CHANNELS } from './runtime-environment-handler-channels'
-import { retirePairedRuntimeBrowserClientHostEnvironment } from '../browser/paired-runtime-browser-client-host-runtime'
-import { registerRuntimeEnvironmentBrowserClientHostHandler } from './runtime-environment-browser-client-host-handler'
 import { advanceRuntimeEnvironmentCapabilityIncarnation } from './runtime-environment-capability-evidence'
 
-type RetainedRemoteRuntimeSubscription = RemoteRuntimeSubscription & {
+type RetainedRemoteRuntimeSubscription = RuntimeEnvironmentSubscription & {
   environmentId: string
   ownerWebContentsId: number
   removeDestroyedListener: () => void
@@ -60,22 +58,14 @@ function closeSubscriptionsForEnvironment(environmentId: string): void {
     }
   }
 }
-/** Returns once the environment's client-hosted browser pages have been released. */
+/** Invalidates the environment's transport generation and tears down its subscriptions. */
 export function invalidateRuntimeEnvironmentTransport(environmentId: string): Promise<void> {
   // Why: a same-id re-pair must retire every transport that still authenticates as the old peer.
   advanceRuntimeEnvironmentCapabilityIncarnation(environmentId)
   advanceRuntimeEnvironmentTransportGeneration(environmentId)
   closeRemoteRuntimeRequestConnection(environmentId)
   closeSubscriptionsForEnvironment(environmentId)
-  return retirePairedRuntimeBrowserClientHostEnvironment(
-    environmentId,
-    new Error('Runtime environment transport was invalidated')
-  ).then(
-    () => undefined,
-    (error) => {
-      console.warn('[runtime-environments] browser client host retirement failed:', error)
-    }
-  )
+  return Promise.resolve()
 }
 
 export function registerRuntimeEnvironmentHandlers(store: Store): void {
@@ -91,10 +81,6 @@ export function registerRuntimeEnvironmentHandlers(store: Store): void {
     store,
     getUserDataPath,
     invalidateTransport: invalidateRuntimeEnvironmentTransport
-  })
-  registerRuntimeEnvironmentBrowserClientHostHandler({
-    getUserDataPath,
-    getSettings: () => store.getSettings()
   })
   registerRuntimeEnvironmentRecoveryHandler()
   registerRuntimeEnvironmentPassiveHandlers(getUserDataPath)

@@ -19,7 +19,6 @@ import type { FeatureInteractionId } from '../../shared/feature-interactions'
 import type { RuntimeClientSettingsUpdate } from './runtime-client-settings'
 import type { TerminalQuickCommand } from '../../shared/terminal-quick-command-types'
 import type { TerminalQuickCommandMutation } from '../../shared/terminal-quick-commands'
-import type { NativeChatSessionOptionSettingsMutation } from '../../shared/native-chat-session-options'
 import type { Automation } from '../../shared/automations-types'
 
 export class OrcaRuntimeWithPtyForegroundProcessReads extends OrcaRuntimeWithStateFields {
@@ -217,10 +216,6 @@ export class OrcaRuntimeWithPtyForegroundProcessReads extends OrcaRuntimeWithSta
 
   updateClientPRBotAuthorOverride(args: { author: string; isBot: boolean }) {
     return this.clientSettings.updatePRBotAuthorOverride(args)
-  }
-
-  updateClientNativeChatSessionOptions(mutation: NativeChatSessionOptionSettingsMutation): void {
-    this.clientSettings.updateNativeChatSessionOptions(mutation)
   }
 
   listAutomations(): Automation[] {

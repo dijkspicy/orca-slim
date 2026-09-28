@@ -1,6 +1,24 @@
 import { describe, expect, it } from 'vitest'
-import type { JiraIssue, JiraPriority } from '../../../shared/jira-types'
 import { getJiraPriorityWeight, sortJiraIssues } from './jira-issue-sorter'
+
+type JiraPriority = { id: string; name: string }
+
+type JiraIssue = {
+  id: string
+  key: string
+  siteId?: string
+  siteName?: string
+  title: string
+  url: string
+  status: { id: string; name: string; categoryKey: string; categoryName: string }
+  priority?: JiraPriority
+  assignee?: { accountId: string; displayName: string }
+  labels: string[]
+  createdAt: string
+  updatedAt: string
+  project: { id: string; key: string; name: string; siteId?: string }
+  issueType: { id: string; name: string }
+}
 
 describe('TaskPage Jira sorting functionality', () => {
   function jiraIssue(

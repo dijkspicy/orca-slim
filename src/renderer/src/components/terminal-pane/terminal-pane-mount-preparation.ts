@@ -20,7 +20,6 @@ import type { PtyConnectionDeps } from './pty-connection-types'
 import type { UseTerminalPaneLifecycleDeps } from './terminal-pane-lifecycle-types'
 import type { TerminalPaneLifecycleRefs } from './use-terminal-pane-lifecycle-refs'
 import { fitAndFocusPanes, fitPanes } from './pane-helpers'
-import { registerRuntimeTerminalTab } from '@/runtime/sync-runtime-graph'
 import { normalizeTerminalLayoutSnapshot } from './layout-serialization'
 import { applyTerminalAppearance } from './terminal-appearance'
 import { terminalLinkClickBehaviorFor } from './terminal-link-click-behavior'
@@ -47,7 +46,6 @@ export type TerminalPaneMountPreparation = {
   startupWithSetupSplitWait: PtyConnectionDeps['startup']
   ptyDeps: PtyConnectionDeps
   deferredSplitHandoffs: Map<number, DeferredSplitPaneHandoffHandle>
-  unregisterRuntimeTab: () => void
   fileOpenLinkHint: string
   getPaneLinkCwd: (paneId: number) => string
   getUrlOpenLinkHint: (paneId: number) => string
@@ -232,14 +230,6 @@ export function prepareTerminalPaneMount(
     restoredPtyIdByLeafId: deps.initialLayoutRef.current.ptyIdsByLeafId ?? {},
     deferredSplitHandoffs
   })
-  const unregisterRuntimeTab = registerRuntimeTerminalTab({
-    tabId: deps.tabId,
-    worktreeId: deps.worktreeId,
-    getManager: () => deps.managerRef.current,
-    getContainer: () => deps.containerRef.current,
-    getPtyIdForPane: (paneId) => paneTransports.get(paneId)?.getPtyId() ?? null,
-    getTabWideAgentHintLeafId: deps.getTabWideAgentHintLeafId
-  })
   const fileOpenLinkHint = getTerminalFileOpenHint()
   const getUrlOpenLinkHint = (paneId: number): string =>
     getTerminalUrlOpenHint({
@@ -263,7 +253,6 @@ export function prepareTerminalPaneMount(
     startupWithSetupSplitWait,
     ptyDeps,
     deferredSplitHandoffs,
-    unregisterRuntimeTab,
     fileOpenLinkHint,
     getPaneLinkCwd,
     getUrlOpenLinkHint,

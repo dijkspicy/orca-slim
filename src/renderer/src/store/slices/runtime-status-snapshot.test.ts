@@ -9,17 +9,9 @@ import {
 import type { RuntimeHostStatusSnapshot } from '../../../../shared/runtime-host-status'
 import type { RuntimeStatus } from '../../../../shared/runtime-types'
 import type { PublicKnownRuntimeEnvironment } from '../../../../shared/runtime-environments'
-import { runtimeHostConnectionStateForEntry } from '@/runtime/runtime-host-connection-state'
-import { ensureBrowserClientHostForRestartedRuntime } from '@/runtime/restored-client-hosted-browser-host-attach'
+import { runtimeHostConnectionStateForEntry } from './runtime-host-connection-state'
 
 vi.mock('sonner', () => ({ toast: { warning: vi.fn(), dismiss: vi.fn() } }))
-vi.mock('@/runtime/restored-client-hosted-browser-host-attach', () => ({
-  ensureBrowserClientHostsForRestoredPages: vi.fn(),
-  ensureBrowserClientHostForRestartedRuntime: vi.fn()
-}))
-vi.mock('@/runtime/client-hosted-browser-close-intent-replay', () => ({
-  replayClientHostedBrowserCloseIntents: vi.fn()
-}))
 
 beforeEach(() => {
   clearRuntimeEnvironmentConnectionGenerationsForTests()
@@ -92,7 +84,6 @@ it('represents failed verification honestly without manufacturing a session rest
   expect(viewer.getState().runtimeStatusByEnvironmentId.get('env-a')?.status?.runtimeId).toBe(
     'rt-1'
   )
-  expect(ensureBrowserClientHostForRestartedRuntime).not.toHaveBeenCalled()
   expect(toast.warning).not.toHaveBeenCalled()
   const reconnectedGeneration = viewer
     .getState()
@@ -104,7 +95,6 @@ it('represents failed verification honestly without manufacturing a session rest
   expect(viewer.getState().runtimeStatusByEnvironmentId.get('env-a')?.connectionGeneration).toBe(
     (reconnectedGeneration ?? 0) + 1
   )
-  expect(ensureBrowserClientHostForRestartedRuntime).toHaveBeenCalled()
 })
 
 it('retains disconnect ordering and rejects publications for removed or replaced pairings', () => {

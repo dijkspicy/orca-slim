@@ -1,19 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import type { PRComment } from '../../../shared/github/comment-types'
+import type { GitHubReaction } from './pr-comment-reactions'
 import {
   restoreCommentReaction,
   setCommentReaction,
   setReactionOnSubject
 } from './pr-comment-reactions'
 
-function comment(overrides: Partial<PRComment> = {}): PRComment {
+type TestComment = {
+  id: number
+  reactionSubjectId: string
+  reactions?: GitHubReaction[]
+}
+
+function comment(overrides: Partial<TestComment> = {}): TestComment {
   return {
     id: 1,
-    author: 'octocat',
-    authorAvatarUrl: '',
-    body: 'Looks good',
-    createdAt: '2026-08-09T12:00:00Z',
-    url: 'https://github.com/acme/orca/pull/1#issuecomment-1',
+    reactionSubjectId: 'IC_1',
     ...overrides
   }
 }

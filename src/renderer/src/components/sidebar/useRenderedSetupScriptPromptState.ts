@@ -34,7 +34,6 @@ export function useRenderedSetupScriptPromptState(input: {
     }
     if (
       promptTargetHidden ||
-      renderedPromptState?.status === 'forbidden' ||
       (renderedPromptState?.status === 'ok' && renderedPromptState.hasEffectiveSetup)
     ) {
       lastVisiblePromptRef.current = null

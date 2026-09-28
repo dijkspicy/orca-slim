@@ -1,15 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { sendFollowupPromptWhenAgentReady } from './agent-followup-delivery'
-import {
-  inspectRuntimeTerminalProcess,
-  sendRuntimePtyInputVerified
-} from '@/runtime/runtime-terminal-inspection'
 import { TUI_AGENT_CONFIG } from '../../../shared/tui-agent-config'
-
-vi.mock('@/runtime/runtime-terminal-inspection', () => ({
-  inspectRuntimeTerminalProcess: vi.fn(),
-  sendRuntimePtyInputVerified: vi.fn()
-}))
 
 // The interpreter-wrapped agents that deliver their prompt over stdin after the
 // process starts. These are pip console-scripts, so the PTY foreground comm is
@@ -24,7 +15,16 @@ describe('sendFollowupPromptWhenAgentReady — interpreter-wrapped agents', () =
     vi.clearAllMocks()
     vi.stubGlobal('globalThis', globalThis)
     // Deliver the prompt write eagerly so the test does not depend on retries.
-    vi.mocked(sendRuntimePtyInputVerified).mockResolvedValue(true)
+    vi.stubGlobal('window', {
+      setTimeout,
+      api: {
+        pty: {
+          inspectProcess: vi.fn(),
+          writeAccepted: vi.fn().mockResolvedValue(true),
+          write: vi.fn()
+        }
+      }
+    })
   })
 
   it('sanity: config keeps aider/vibe as stdin-after-start with python-style expected process', () => {
@@ -36,7 +36,7 @@ describe('sendFollowupPromptWhenAgentReady — interpreter-wrapped agents', () =
     it(`types the prompt once ${agent} is up behind a python3 wrapper with a live child`, async () => {
       // The console-script agent is running: foreground comm is python3 and the
       // PTY has a non-shell child. The exact agent name never appears.
-      vi.mocked(inspectRuntimeTerminalProcess).mockResolvedValue({
+      vi.mocked(window.api.pty.inspectProcess).mockResolvedValue({
         foregroundProcess: 'python3',
         hasChildProcesses: true
       })
@@ -44,18 +44,17 @@ describe('sendFollowupPromptWhenAgentReady — interpreter-wrapped agents', () =
       const delivered = await sendFollowupPromptWhenAgentReady({
         ptyId: 'pty-1',
         expectedProcess,
-        prompt: 'ship it',
-        settings: null
+        prompt: 'ship it'
       })
 
       expect(delivered).toBe(true)
-      expect(sendRuntimePtyInputVerified).toHaveBeenCalledWith(null, 'pty-1', 'ship it\r')
+      expect(window.api.pty.writeAccepted).toHaveBeenCalledWith('pty-1', 'ship it\r')
     })
 
     it(`still refuses to type into a bare ${agent} shell foreground`, async () => {
       // No agent yet: foreground is a plain shell with no non-shell child. The
       // guard must NOT write user text into an arbitrary shell.
-      vi.mocked(inspectRuntimeTerminalProcess).mockResolvedValue({
+      vi.mocked(window.api.pty.inspectProcess).mockResolvedValue({
         foregroundProcess: 'zsh',
         hasChildProcesses: false
       })
@@ -63,16 +62,15 @@ describe('sendFollowupPromptWhenAgentReady — interpreter-wrapped agents', () =
       const delivered = await sendFollowupPromptWhenAgentReady({
         ptyId: 'pty-1',
         expectedProcess,
-        prompt: 'ship it',
-        settings: null
+        prompt: 'ship it'
       })
 
       expect(delivered).toBe(false)
-      expect(sendRuntimePtyInputVerified).not.toHaveBeenCalled()
+      expect(window.api.pty.writeAccepted).not.toHaveBeenCalled()
     })
 
     it(`refuses to type into a ${agent} wrapper without a live child`, async () => {
-      vi.mocked(inspectRuntimeTerminalProcess).mockResolvedValue({
+      vi.mocked(window.api.pty.inspectProcess).mockResolvedValue({
         foregroundProcess: 'python3',
         hasChildProcesses: false
       })
@@ -80,19 +78,18 @@ describe('sendFollowupPromptWhenAgentReady — interpreter-wrapped agents', () =
       const delivered = await sendFollowupPromptWhenAgentReady({
         ptyId: 'pty-1',
         expectedProcess,
-        prompt: 'ship it',
-        settings: null
+        prompt: 'ship it'
       })
 
       expect(delivered).toBe(false)
-      expect(sendRuntimePtyInputVerified).not.toHaveBeenCalled()
+      expect(window.api.pty.writeAccepted).not.toHaveBeenCalled()
     })
   }
 
   it('types immediately when the resolver already returns the agent name (local ps path)', async () => {
     // On local desktop the ps-table resolver usually resolves python3 → aider
     // before we poll; the exact-match path must keep working.
-    vi.mocked(inspectRuntimeTerminalProcess).mockResolvedValue({
+    vi.mocked(window.api.pty.inspectProcess).mockResolvedValue({
       foregroundProcess: 'aider',
       hasChildProcesses: true
     })
@@ -100,11 +97,10 @@ describe('sendFollowupPromptWhenAgentReady — interpreter-wrapped agents', () =
     const delivered = await sendFollowupPromptWhenAgentReady({
       ptyId: 'pty-1',
       expectedProcess: 'aider',
-      prompt: 'ship it',
-      settings: null
+      prompt: 'ship it'
     })
 
     expect(delivered).toBe(true)
-    expect(sendRuntimePtyInputVerified).toHaveBeenCalledWith(null, 'pty-1', 'ship it\r')
+    expect(window.api.pty.writeAccepted).toHaveBeenCalledWith('pty-1', 'ship it\r')
   })
 })

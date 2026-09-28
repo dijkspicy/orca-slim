@@ -1,6 +1,34 @@
-import type { BrowserHistoryEntry } from './browser-workspace-types'
 import type { WorkspaceSessionState } from './workspace-session-state-types'
-import { redactKagiSessionToken } from './browser-url'
+
+type BrowserHistoryEntry = {
+  url: string
+  normalizedUrl: string
+  title: string
+  faviconUrl?: string | null
+  lastVisitedAt: number
+  visitCount: number
+}
+
+// Moved from browser-url (removed with the browser domain): Kagi private-session
+// links carry an account bearer token — strip it before URLs reach history.
+function redactKagiSessionToken(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl)
+    const hostname = parsed.hostname.toLowerCase()
+    if (
+      parsed.protocol === 'https:' &&
+      (hostname === 'kagi.com' || hostname === 'www.kagi.com') &&
+      (parsed.pathname === '/search' || parsed.pathname === '/search/') &&
+      parsed.searchParams.has('token')
+    ) {
+      parsed.searchParams.delete('token')
+      return parsed.toString()
+    }
+  } catch {
+    // Keep non-URL inputs unchanged.
+  }
+  return rawUrl
+}
 
 export const MAX_BROWSER_HISTORY_ENTRIES = 200
 

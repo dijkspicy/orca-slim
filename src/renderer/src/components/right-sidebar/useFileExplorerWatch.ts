@@ -7,7 +7,6 @@ import type {
 } from './file-explorer-types'
 import type { InlineInput } from './file-explorer-inline-input-row'
 import { useAppStore } from '@/store'
-import { subscribeRuntimeFileChanges } from '@/runtime/runtime-file-client'
 import { normalizeRuntimePathForComparison } from '../../../../shared/cross-platform-path'
 import {
   getFileExplorerOperationOwner,
@@ -221,46 +220,11 @@ export function useFileExplorerWatch({
       processPayload(payload)
     }
 
-    let unsubscribeListener: (() => void) | null = null
-    if (activeRuntimeEnvironmentId?.trim() && activeWorktreeId) {
-      // Why: remote runtime watch events don't enter the local Electron fs:changed bus, so subscribe directly.
-      void subscribeRuntimeFileChanges(
-        {
-          settings: { activeRuntimeEnvironmentId },
-          worktreeId: activeWorktreeId,
-          worktreePath,
-          connectionId: undefined
-        },
-        handleFsChanged,
-        (err) => {
-          console.warn('[filesystem-watch] failed to subscribe to runtime file changes', {
-            worktreeId: activeWorktreeId,
-            worktreePath,
-            error: err.message
-          })
-        }
-      )
-        .then((unsubscribe) => {
-          if (disposed) {
-            unsubscribe()
-            return
-          }
-          unsubscribeListener = unsubscribe
-        })
-        .catch((err) => {
-          console.warn('[filesystem-watch] failed to subscribe to runtime file changes', {
-            worktreeId: activeWorktreeId,
-            worktreePath,
-            error: err instanceof Error ? err.message : String(err)
-          })
-        })
-    } else {
-      unsubscribeListener = window.api.fs.onFsChanged(handleFsChanged)
-    }
+    const unsubscribeListener = window.api.fs.onFsChanged(handleFsChanged)
 
     return () => {
       disposed = true
-      unsubscribeListener?.()
+      unsubscribeListener()
       if (activeResyncByWatchKey.get(currentWatchKey) === scheduler.requestFullRefresh) {
         activeResyncByWatchKey.delete(currentWatchKey)
       }

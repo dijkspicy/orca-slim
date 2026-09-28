@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, vi } from 'vitest'
 import { awaitRuntimeFileWatcherUnsubscribes, RuntimeFileCommands } from './orca-runtime-files'
-import { resetSshConnectionGenerations } from '../ssh/ssh-connection-generation'
 import { resetRuntimeFileMocks } from './orca-runtime-files-mock-registry'
 import {
   LOCAL_EXECUTION_HOST_ID,
@@ -16,7 +15,6 @@ export function useRuntimeFileCommandsLifecycle(): void {
   beforeEach(() => {
     vi.useFakeTimers()
     resetRuntimeFileMocks()
-    resetSshConnectionGenerations()
     Object.defineProperty(process, 'platform', {
       configurable: true,
       value: originalPlatform

@@ -1,8 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import { checksPanelAsyncResultKey } from '../checks-panel-async-result-key'
-import { loadGitLabJobLogDetails } from '@/runtime/gitlab-job-trace-client'
-import type { PRCheckDetail } from '../../../../../shared/github/check-types'
-import type { PRInfo } from '../../../../../shared/github/pull-request-types'
+import type { ChecksPanelCheck } from './check-details-model'
 
 import type { ChecksPanelContextState } from './use-checks-panel-context-state'
 import type { ChecksPanelControllerState } from './use-checks-panel-controller-state'
@@ -20,7 +18,6 @@ type ChecksPanelReviewDataInput = Pick<
     | 'gitLabProjectRefRef'
     | 'isPanelVisible'
     | 'repo'
-    | 'settings'
     | 'setComments'
     | 'setCommentsLoading'
   > &
@@ -39,7 +36,6 @@ export function useChecksPanelReviewData(model: ChecksPanelReviewDataInput) {
     prCacheKey,
     prNumber,
     repo,
-    settings,
     setComments,
     setCommentsLoading
   } = model
@@ -52,7 +48,7 @@ export function useChecksPanelReviewData(model: ChecksPanelReviewDataInput) {
     }: {
       force?: boolean
       prNumberOverride?: number | null
-      prRepoOverride?: PRInfo['prRepo'] | null
+      prRepoOverride?: NonNullable<ChecksPanelContextState['pr']>['prRepo'] | null
     } = {}) => {
       const targetPRNumber = prNumberOverride ?? prNumber
       const targetPRRepo = prRepoOverride ?? pr?.prRepo
@@ -112,20 +108,9 @@ export function useChecksPanelReviewData(model: ChecksPanelReviewDataInput) {
   )
 
   const handleLoadCheckDetails = useCallback(
-    (check: PRCheckDetail) => {
+    (check: ChecksPanelCheck) => {
       if (!repo) {
         return Promise.resolve(null)
-      }
-      if (check.gitlabJobId) {
-        // Why: `settings` (not ownerSettings) is what fetched the job list, so the
-        // job id and its trace always resolve against the same host.
-        return loadGitLabJobLogDetails({
-          repoPath: repo.path,
-          repoId: repo.id,
-          settings,
-          check,
-          projectRef: gitLabProjectRefRef.current
-        })
       }
       return fetchPRCheckDetails(
         repo.path,
@@ -139,7 +124,7 @@ export function useChecksPanelReviewData(model: ChecksPanelReviewDataInput) {
         { repoId: repo.id }
       )
     },
-    [fetchPRCheckDetails, pr?.prRepo, repo, settings, gitLabProjectRefRef]
+    [fetchPRCheckDetails, pr?.prRepo, repo]
   )
 
   // Why: read at call time — the ref is filled by an async MR fetch, so a value prop would be stale.

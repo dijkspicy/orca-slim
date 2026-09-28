@@ -158,30 +158,6 @@ describe('prefetchWorktreeCreateBase local git routing', () => {
     expect(mocks.resolveRemoteTrackingBase).toHaveBeenCalledWith(repo.path, 'feature/topic')
     expect(mocks.fetchRemoteWithCache).toHaveBeenCalledWith(repo.path, 'origin')
   })
-
-  it('does not resolve a local base for SSH repos', async () => {
-    const prepareCheckout = vi.fn()
-    const provider = { exec: vi.fn() }
-    mocks.getSshGitProvider.mockReturnValue(provider)
-
-    await expect(
-      prefetchWorktreeCreateBase({
-        repo: { ...repo, connectionId: 'conn-1' },
-        prepareCheckout,
-        baseBranch: 'origin/main',
-        runtime: runtime(),
-        gitOptions: WSL
-      })
-    ).resolves.toBeUndefined()
-
-    expect(mocks.prefetchRemoteWorktreeCreateBase).toHaveBeenCalledWith(
-      provider,
-      expect.objectContaining({ connectionId: 'conn-1' }),
-      { baseBranch: 'origin/main' }
-    )
-    expect(mocks.gitExecFileAsync).not.toHaveBeenCalled()
-    expect(prepareCheckout).not.toHaveBeenCalled()
-  })
 })
 
 describe('checkout and refresh overlap', () => {

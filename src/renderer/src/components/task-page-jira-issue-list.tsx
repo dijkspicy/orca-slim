@@ -6,27 +6,43 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
-import type { JiraIssue, JiraProjectStatusOrder } from '../../../shared/jira-types'
+/** Structural Jira shapes covering the fields the list renders. */
+export type TaskPageTaskPageJiraIssue = {
+  id: string
+  key: string
+  siteId?: string
+  siteName?: string
+  title: string
+  url: string
+  updatedAt: string
+  labels: string[]
+  project: { key: string }
+  status: { id: string; name: string; categoryKey: string }
+  priority?: { name?: string | null } | null
+  assignee?: { displayName: string; avatarUrl?: string } | null
+}
 
-export type TaskPageJiraIssueSection = {
+export type TaskPageTaskPageJiraProjectStatusOrder = { statusIdsByColumn: string[][] }
+
+export type TaskPageTaskPageJiraIssueSection = {
   key: string
   label: string
-  issues: JiraIssue[]
+  issues: TaskPageJiraIssue[]
 }
 
-type TaskPageJiraIssueListProps = {
+type TaskPageTaskPageJiraIssueListProps = {
   formatUpdatedAt: (updatedAt: string) => string
   getStatusTone: (categoryKey: string) => string
-  issues: JiraIssue[]
-  onOpenIssue: (issue: JiraIssue) => void
-  onStartWorkspace: (issue: JiraIssue) => void
-  selectedIssue: JiraIssue | null
+  issues: TaskPageJiraIssue[]
+  onOpenIssue: (issue: TaskPageJiraIssue) => void
+  onStartWorkspace: (issue: TaskPageJiraIssue) => void
+  selectedIssue: TaskPageJiraIssue | null
   showSiteContext: boolean
   statusDirection?: 'asc' | 'desc'
-  statusOrder: JiraProjectStatusOrder | null
+  statusOrder: TaskPageJiraProjectStatusOrder | null
 }
 
-function statusColumnRanks(order: JiraProjectStatusOrder | null): Map<string, number> {
+function statusColumnRanks(order: TaskPageJiraProjectStatusOrder | null): Map<string, number> {
   const ranks = new Map<string, number>()
   for (const [columnIndex, statusIds] of (order?.statusIdsByColumn ?? []).entries()) {
     for (const statusId of statusIds) {
@@ -39,7 +55,7 @@ function statusColumnRanks(order: JiraProjectStatusOrder | null): Map<string, nu
 }
 
 function sectionColumnRank(
-  section: TaskPageJiraIssueSection,
+  section: TaskPageTaskPageJiraIssueSection,
   ranks: ReadonlyMap<string, number>
 ): number {
   let rank = Number.POSITIVE_INFINITY
@@ -49,12 +65,12 @@ function sectionColumnRank(
   return rank
 }
 
-export function groupJiraIssuesByStatus(
-  issues: readonly JiraIssue[],
-  statusOrder: JiraProjectStatusOrder | null,
+export function groupTaskPageJiraIssuesByStatus(
+  issues: readonly TaskPageJiraIssue[],
+  statusOrder: TaskPageJiraProjectStatusOrder | null,
   statusDirection: 'asc' | 'desc' = 'asc'
-): TaskPageJiraIssueSection[] {
-  const sections = new Map<string, TaskPageJiraIssueSection>()
+): TaskPageTaskPageJiraIssueSection[] {
+  const sections = new Map<string, TaskPageTaskPageJiraIssueSection>()
   for (const issue of issues) {
     const key = `status:${issue.status.name}`
     const section = sections.get(key)
@@ -77,14 +93,17 @@ export function groupJiraIssuesByStatus(
   return statusDirection === 'desc' ? sortedSections.toReversed() : sortedSections
 }
 
-function isSelectedIssue(issue: JiraIssue, selectedIssue: JiraIssue | null): boolean {
+function isSelectedIssue(
+  issue: TaskPageJiraIssue,
+  selectedIssue: TaskPageJiraIssue | null
+): boolean {
   if (!selectedIssue || issue.key !== selectedIssue.key) {
     return false
   }
   return !selectedIssue.siteId || !issue.siteId || selectedIssue.siteId === issue.siteId
 }
 
-function JiraIssueRow({
+function TaskPageJiraIssueRow({
   formatUpdatedAt,
   getStatusTone,
   issue,
@@ -95,9 +114,9 @@ function JiraIssueRow({
 }: {
   formatUpdatedAt: (updatedAt: string) => string
   getStatusTone: (categoryKey: string) => string
-  issue: JiraIssue
-  onOpenIssue: (issue: JiraIssue) => void
-  onStartWorkspace: (issue: JiraIssue) => void
+  issue: TaskPageJiraIssue
+  onOpenIssue: (issue: TaskPageJiraIssue) => void
+  onStartWorkspace: (issue: TaskPageJiraIssue) => void
   selected: boolean
   showSiteContext: boolean
 }): React.JSX.Element {
@@ -275,7 +294,7 @@ function JiraIssueRow({
   )
 }
 
-export function TaskPageJiraIssueList({
+export function TaskPageTaskPageJiraIssueList({
   formatUpdatedAt,
   getStatusTone,
   issues,
@@ -285,10 +304,10 @@ export function TaskPageJiraIssueList({
   showSiteContext,
   statusDirection = 'asc',
   statusOrder
-}: TaskPageJiraIssueListProps): React.JSX.Element {
+}: TaskPageTaskPageJiraIssueListProps): React.JSX.Element {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set())
   const sections = useMemo(
-    () => groupJiraIssuesByStatus(issues, statusOrder, statusDirection),
+    () => groupTaskPageJiraIssuesByStatus(issues, statusOrder, statusDirection),
     [issues, statusDirection, statusOrder]
   )
 
@@ -333,7 +352,7 @@ export function TaskPageJiraIssueList({
             </CollapsibleTrigger>
             <CollapsibleContent className="divide-y divide-border/50 border-t border-border/50">
               {section.issues.map((issue) => (
-                <JiraIssueRow
+                <TaskPageJiraIssueRow
                   key={`${issue.siteId ?? 'site'}:${issue.id || issue.key}`}
                   formatUpdatedAt={formatUpdatedAt}
                   getStatusTone={getStatusTone}

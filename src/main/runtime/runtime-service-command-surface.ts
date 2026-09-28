@@ -1,9 +1,7 @@
 import type { RuntimeAccountController } from './runtime-account-controller'
 import type { RuntimeAiVaultCommands } from './runtime-ai-vault-commands'
-import type { RuntimeBrowserDriverController } from './runtime-browser-driver-controller'
 import type { RuntimeClientEventBus } from './runtime-client-event-bus'
 import type { RuntimeMessageWaiters } from './runtime-message-waiters'
-import type { RuntimeMobileNotificationController } from './runtime-mobile-notification-controller'
 import type { RuntimeNativeChatDraftResolutions } from './runtime-native-chat-draft-resolutions'
 import type { RuntimeSessionSearchSettingsController } from './runtime-session-search-settings'
 import type { RuntimeSubscriptionRegistry } from './runtime-subscription-registry'
@@ -24,18 +22,6 @@ export type RuntimeServiceCommandSurface = {
   cleanupSubscriptionsForConnection: RuntimeSubscriptionRegistry['cleanupForConnection']
   cleanupSubscriptionIfOwnedByConnection: RuntimeSubscriptionRegistry['cleanupIfOwnedByConnection']
   getSubscriptionRegistrationVersion: RuntimeSubscriptionRegistry['getRegistrationVersion']
-  onNotificationDispatched: RuntimeMobileNotificationController['onDispatched']
-  getMobileNotificationListenerCount: RuntimeMobileNotificationController['getListenerCount']
-  dispatchMobileNotification: RuntimeMobileNotificationController['dispatch']
-  getMissedNotificationsSince: RuntimeMobileNotificationController['getMissedSince']
-  configureNotificationDismissalStore: RuntimeMobileNotificationController['configureDismissalStore']
-  reconcileDismissedPushes: RuntimeMobileNotificationController['reconcileDismissedPushes']
-  getMobileNotificationEpoch: RuntimeMobileNotificationController['getEpoch']
-  dismissMobileNotification: RuntimeMobileNotificationController['dismiss']
-  setMobilePushRegistrar: RuntimeMobileNotificationController['setPushRegistrar']
-  testMobilePushDevice: RuntimeMobileNotificationController['testPushDevice']
-  registerMobilePushDevice: RuntimeMobileNotificationController['registerPushDevice']
-  unregisterMobilePushDevice: RuntimeMobileNotificationController['unregisterPushDevice']
   setAccountServices: RuntimeAccountController['setServices']
   setCommitMessageAgentEnvironmentResolvers: RuntimeAccountController['setCommitMessageAgentEnvironment']
   getCommitMessageAgentEnvironmentResolvers: RuntimeAccountController['getCommitMessageAgentEnvironment']
@@ -51,8 +37,6 @@ export type RuntimeServiceCommandSurface = {
   removeCodexAccount: RuntimeAccountController['removeCodex']
   addCodexAccountFromHome: RuntimeAccountController['addCodexFromHome']
   onAccountsChanged: RuntimeAccountController['onChanged']
-  getAllBrowserDrivers: RuntimeBrowserDriverController['getAll']
-  reclaimBrowserForDesktop: RuntimeBrowserDriverController['reclaimForDesktop']
   notifyMessageArrived(handle: string, messageType?: string): void
   waitForMessage: RuntimeMessageWaiters['wait']
   cancelMessageWaiters: RuntimeMessageWaiters['cancel']
@@ -64,9 +48,7 @@ type RuntimeServiceCommandOwners = {
   clientEvents: RuntimeClientEventBus
   nativeChatDraftResolutions: RuntimeNativeChatDraftResolutions
   subscriptions: RuntimeSubscriptionRegistry
-  mobileNotifications: RuntimeMobileNotificationController
   accounts: RuntimeAccountController
-  browserDrivers: RuntimeBrowserDriverController
   messageWaiters: RuntimeMessageWaiters
 }
 
@@ -79,9 +61,7 @@ export function installRuntimeServiceCommandSurface(
   const events = owners.clientEvents
   const drafts = owners.nativeChatDraftResolutions
   const subscriptions = owners.subscriptions
-  const notifications = owners.mobileNotifications
   const accounts = owners.accounts
-  const browsers = owners.browserDrivers
   const waiters = owners.messageWaiters
   Object.assign(target, {
     listAiVaultSessions: vault.list.bind(vault),
@@ -100,18 +80,6 @@ export function installRuntimeServiceCommandSurface(
     cleanupSubscriptionIfOwnedByConnection:
       subscriptions.cleanupIfOwnedByConnection.bind(subscriptions),
     getSubscriptionRegistrationVersion: subscriptions.getRegistrationVersion.bind(subscriptions),
-    onNotificationDispatched: notifications.onDispatched.bind(notifications),
-    getMobileNotificationListenerCount: notifications.getListenerCount.bind(notifications),
-    dispatchMobileNotification: notifications.dispatch.bind(notifications),
-    getMissedNotificationsSince: notifications.getMissedSince.bind(notifications),
-    configureNotificationDismissalStore: notifications.configureDismissalStore.bind(notifications),
-    reconcileDismissedPushes: notifications.reconcileDismissedPushes.bind(notifications),
-    getMobileNotificationEpoch: notifications.getEpoch.bind(notifications),
-    dismissMobileNotification: notifications.dismiss.bind(notifications),
-    setMobilePushRegistrar: notifications.setPushRegistrar.bind(notifications),
-    testMobilePushDevice: notifications.testPushDevice.bind(notifications),
-    registerMobilePushDevice: notifications.registerPushDevice.bind(notifications),
-    unregisterMobilePushDevice: notifications.unregisterPushDevice.bind(notifications),
     setAccountServices: accounts.setServices.bind(accounts),
     setCommitMessageAgentEnvironmentResolvers:
       accounts.setCommitMessageAgentEnvironment.bind(accounts),
@@ -129,8 +97,6 @@ export function installRuntimeServiceCommandSurface(
     removeCodexAccount: accounts.removeCodex.bind(accounts),
     addCodexAccountFromHome: accounts.addCodexFromHome.bind(accounts),
     onAccountsChanged: accounts.onChanged.bind(accounts),
-    getAllBrowserDrivers: browsers.getAll.bind(browsers),
-    reclaimBrowserForDesktop: browsers.reclaimForDesktop.bind(browsers),
     waitForMessage: waiters.wait.bind(waiters),
     cancelMessageWaiters: waiters.cancel.bind(waiters)
   })

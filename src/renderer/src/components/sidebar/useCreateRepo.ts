@@ -6,9 +6,7 @@ import { useAppStore } from '@/store'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { activateAndRevealWorktree } from '@/lib/worktree-activation'
 import { markOnboardingProjectAdded } from '@/lib/onboarding-project-checklist'
-import { callRuntimeRpc, getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
 import { isGitRepoKind } from '../../../../shared/repo-kind'
-import type { Repo } from '../../../../shared/repo-types'
 import { translate } from '@/i18n/i18n'
 import { extractIpcErrorMessage } from '@/lib/ipc-error'
 import { upsertAddedRepoWithProjectHostSetup } from './add-repo-store-upsert'
@@ -94,12 +92,6 @@ export function useCreateRepo(
     setIsCreating(true)
     setCreateError(null)
     try {
-      const target = options.runtimeEnvironmentId?.trim()
-        ? { kind: 'environment' as const, environmentId: options.runtimeEnvironmentId.trim() }
-        : getActiveRuntimeTarget({
-            ...useAppStore.getState().settings,
-            activeRuntimeEnvironmentId: null
-          })
       // Why: Create Project is intentionally Git-only; non-Git folders use the
       // existing add-folder flows instead of this path.
       const createKind = 'git' as const
@@ -110,22 +102,11 @@ export function useCreateRepo(
             name,
             kind: createKind
           })
-        : target.kind === 'environment'
-          ? await callRuntimeRpc<{ repo: Repo } | { error: string }>(
-              target,
-              'repo.create',
-              {
-                parentPath,
-                name,
-                kind: createKind
-              },
-              { timeoutMs: 60_000 }
-            )
-          : await window.api.repos.create({
-              parentPath,
-              name,
-              kind: createKind
-            })
+        : await window.api.repos.create({
+            parentPath,
+            name,
+            kind: createKind
+          })
       // Why: if the user closed the dialog or clicked Back mid-create,
       // createGenRef was bumped by resetCreateState. Ignore stale results.
       if (

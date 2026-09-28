@@ -1,10 +1,4 @@
 import type { GlobalSettings } from '../../../shared/global-settings-types'
-import {
-  createRuntimePath,
-  deleteRuntimePath,
-  runtimePathExists,
-  writeRuntimeFile
-} from '../runtime/runtime-file-client'
 import { detectLanguage } from './language-detect'
 import {
   applyMarkdownTemplatePlaceholders,
@@ -26,6 +20,15 @@ export type UntitledMarkdownFileInfo = {
   deleteUntouchedOnClose?: boolean
   mode: 'edit'
   operationProvenance?: EditorFileOperationProvenance
+}
+
+// Local-only file operation context: the mirror/SSH fields of the old runtime
+// file client no longer apply.
+type LocalFileOperationContext = {
+  settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined
+  worktreeId: string
+  worktreePath: string
+  connectionId?: string
 }
 
 type CreateUntitledMarkdownOptions = {
@@ -55,14 +58,11 @@ export async function createUntitledMarkdownFile(
   const baseName = 'untitled'
   const ext = '.md'
   const MAX_ATTEMPTS = 100
-  const context = {
+  const context: LocalFileOperationContext = {
     settings,
     worktreeId,
     worktreePath,
-    connectionId,
-    expectedExecutionHostId: options.expectedExecutionHostId,
-    expectedSshTargetId: options.expectedSshTargetId,
-    expectedSshConnectionGeneration: options.expectedSshConnectionGeneration
+    connectionId
   }
   const assertCurrent = (): void => {
     if (options.operationProvenance) {
@@ -86,28 +86,30 @@ export async function createUntitledMarkdownFile(
     const filePath = joinPath(worktreePath, fileName)
 
     assertCurrent()
-    if (await runtimePathExists(context, filePath)) {
+    if (await window.api.fs.pathExists({ filePath, connectionId: context.connectionId })) {
       continue
     }
 
     try {
       assertCurrent()
-      await createRuntimePath(context, filePath, 'file')
+      await window.api.fs.createFile({ filePath, connectionId: context.connectionId })
       if (templateContent !== null) {
         try {
           assertCurrent()
-          await writeRuntimeFile(
-            context,
+          await window.api.fs.writeFile({
             filePath,
-            applyMarkdownTemplatePlaceholders(templateContent, {
+            content: applyMarkdownTemplatePlaceholders(templateContent, {
               title: getMarkdownTemplateTitleForFileName(fileName),
               filename: fileName,
               now: options.now
-            })
-          )
+            }),
+            connectionId: context.connectionId
+          })
         } catch (error) {
           assertCurrent()
-          await deleteRuntimePath(context, filePath).catch(() => undefined)
+          await window.api.fs
+            .deletePath({ filePath, connectionId: context.connectionId })
+            .catch(() => undefined)
           throw error
         }
       }
@@ -149,14 +151,11 @@ export async function createUntitledMarkdownFileWithTemplateSelection(
   if (operationProvenance) {
     requireOperationAssertion(assertOperationCurrent)()
   }
-  const context = {
+  const context: LocalFileOperationContext = {
     settings,
     worktreeId,
     worktreePath,
-    connectionId,
-    expectedExecutionHostId,
-    expectedSshTargetId,
-    expectedSshConnectionGeneration
+    connectionId
   }
   const templates = await listMarkdownDocumentTemplates(context, worktreePath)
   const selection = await requestMarkdownTemplateSelection(templates)

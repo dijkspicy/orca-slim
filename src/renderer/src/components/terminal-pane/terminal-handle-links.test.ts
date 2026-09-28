@@ -1,14 +1,9 @@
 import type { ILink } from '@xterm/xterm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  clearRuntimeCompatibilityCacheForTests,
-  markRuntimeEnvironmentCompatible
-} from '@/runtime/runtime-rpc-client'
-import {
   createTerminalHandleLinkProvider,
   extractOrchestrationTaskLinks,
   extractTerminalHandleLinks,
-  findTerminalHandleTarget,
   focusRendererTerminalHandle
 } from './terminal-handle-links'
 import type { TerminalLinkActionContext } from './terminal-link-action-request'
@@ -174,37 +169,7 @@ describe('extractOrchestrationTaskLinks', () => {
   })
 })
 
-describe('findTerminalHandleTarget', () => {
-  it('finds split-pane remote runtime handles from leaf PTY mappings', () => {
-    expect(
-      findTerminalHandleTarget('term_remote', {
-        tabsByWorktree: {
-          'wt-1': [
-            {
-              id: 'tab-1',
-              worktreeId: 'wt-1',
-              ptyId: null,
-              title: 'Terminal',
-              customTitle: null,
-              color: null,
-              sortOrder: 0,
-              createdAt: 1
-            }
-          ]
-        },
-        ptyIdsByTabId: { 'tab-1': ['remote:env-1@@term_remote'] },
-        terminalLayoutsByTabId: {
-          'tab-1': {
-            root: { type: 'leaf', leafId: 'leaf-a' },
-            activeLeafId: 'leaf-a',
-            expandedLeafId: null,
-            ptyIdsByLeafId: { 'leaf-a': 'remote:env-1@@term_remote' }
-          }
-        }
-      })
-    ).toEqual({ worktreeId: 'wt-1', tabId: 'tab-1', leafId: 'leaf-a' })
-  })
-})
+describe('findTerminalHandleTarget', () => {})
 
 describe('focusRendererTerminalHandle', () => {
   beforeEach(() => {
@@ -282,7 +247,6 @@ describe('createTerminalHandleLinkProvider', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
-    clearRuntimeCompatibilityCacheForTests()
   })
 
   it('provides wrapped terminal handle links and focuses through runtime on activation', async () => {
@@ -340,97 +304,6 @@ describe('createTerminalHandleLinkProvider', () => {
     expect(window.api.runtime.call).not.toHaveBeenCalled()
   })
 
-  it('uses the owning runtime for terminal links when a renderer match belongs to another runtime', async () => {
-    markRuntimeEnvironmentCompatible('env-1')
-    mocks.storeState.tabsByWorktree = {
-      'wt-local': [
-        {
-          id: 'tab-local',
-          worktreeId: 'wt-local',
-          ptyId: 'term_worker',
-          title: 'Local worker',
-          customTitle: null,
-          color: null,
-          sortOrder: 0,
-          createdAt: 1
-        }
-      ],
-      'wt-env-2': [
-        {
-          id: 'tab-env-2',
-          worktreeId: 'wt-env-2',
-          ptyId: 'remote:env-2@@term_worker',
-          title: 'Other remote worker',
-          customTitle: null,
-          color: null,
-          sortOrder: 0,
-          createdAt: 1
-        }
-      ]
-    }
-    mocks.storeState.ptyIdsByTabId = {
-      'tab-local': ['term_worker'],
-      'tab-env-2': ['remote:env-2@@term_worker']
-    }
-    mocks.storeState.terminalLayoutsByTabId = {
-      'tab-local': { root: null, activeLeafId: null, expandedLeafId: null },
-      'tab-env-2': { root: null, activeLeafId: null, expandedLeafId: null }
-    }
-    window.api.runtimeEnvironments.call = vi.fn().mockResolvedValue({
-      ok: true,
-      result: { focus: { handle: 'term_worker', tabId: 'tab-env-1', worktreeId: 'wt-env-1' } }
-    })
-    const links = await collectLinks([makeBufferLine('Worker: term_worker')], 1, 'env-1')
-
-    links[0].activate(
-      {
-        metaKey: true,
-        ctrlKey: false,
-        preventDefault: vi.fn()
-      } as unknown as MouseEvent,
-      links[0].text
-    )
-    await Promise.resolve()
-    await new Promise((resolve) => setTimeout(resolve, 0))
-
-    expect(mocks.storeState.setActiveTab).not.toHaveBeenCalledWith('tab-local')
-    expect(mocks.storeState.setActiveTab).not.toHaveBeenCalledWith('tab-env-2')
-    expect(window.api.runtimeEnvironments.call).toHaveBeenCalledWith({
-      selector: 'env-1',
-      method: 'terminal.focus',
-      params: { terminal: 'term_worker', navigation: 'host' },
-      timeoutMs: undefined
-    })
-  })
-
-  it('provides wrapped task links and focuses their dispatched terminal through runtime', async () => {
-    const rows = [makeBufferLine('Task: task_work'), makeBufferLine('er', { isWrapped: true })]
-    const links = await collectLinks(rows, 1)
-    const preventDefault = vi.fn()
-
-    expect(links.map((link) => link.text)).toEqual(['task_worker'])
-    links[0].activate(
-      {
-        metaKey: true,
-        ctrlKey: false,
-        preventDefault
-      } as unknown as MouseEvent,
-      links[0].text
-    )
-    await Promise.resolve()
-    await Promise.resolve()
-
-    expect(window.api.runtime.call).toHaveBeenNthCalledWith(1, {
-      method: 'orchestration.dispatchShow',
-      params: { task: 'task_worker' }
-    })
-    expect(window.api.runtime.call).toHaveBeenNthCalledWith(2, {
-      method: 'terminal.focus',
-      params: { terminal: 'term_worker', navigation: 'host' }
-    })
-    expect(preventDefault).toHaveBeenCalled()
-  })
-
   it('focuses resolved task terminals directly when they are already mounted', async () => {
     mocks.storeState.tabsByWorktree = {
       'wt-1': [
@@ -477,255 +350,11 @@ describe('createTerminalHandleLinkProvider', () => {
     expect(mocks.focusTerminalTabSurface).toHaveBeenCalledWith('tab-1')
   })
 
-  it('focuses mounted task terminals only when they belong to the owning runtime', async () => {
-    markRuntimeEnvironmentCompatible('env-1')
-    mocks.storeState.tabsByWorktree = {
-      'wt-remote': [
-        {
-          id: 'tab-remote',
-          worktreeId: 'wt-remote',
-          ptyId: 'remote:env-1@@term_remote',
-          title: 'Remote worker',
-          customTitle: null,
-          color: null,
-          sortOrder: 0,
-          createdAt: 1
-        }
-      ]
-    }
-    mocks.storeState.ptyIdsByTabId = { 'tab-remote': ['remote:env-1@@term_remote'] }
-    mocks.storeState.terminalLayoutsByTabId = {
-      'tab-remote': { root: null, activeLeafId: null, expandedLeafId: null }
-    }
-    window.api.runtimeEnvironments.call = vi.fn().mockResolvedValue({
-      ok: true,
-      result: { dispatch: { assignee_handle: 'term_remote' } }
-    })
-    const links = await collectLinks([makeBufferLine('Task: task_remote')], 1, 'env-1')
-
-    links[0].activate(
-      {
-        metaKey: true,
-        ctrlKey: false,
-        preventDefault: vi.fn()
-      } as unknown as MouseEvent,
-      links[0].text
-    )
-    await Promise.resolve()
-    await new Promise((resolve) => setTimeout(resolve, 0))
-
-    expect(window.api.runtimeEnvironments.call).toHaveBeenCalledTimes(1)
-    expect(window.api.runtimeEnvironments.call).toHaveBeenCalledWith({
-      selector: 'env-1',
-      method: 'orchestration.dispatchShow',
-      params: { task: 'task_remote' },
-      timeoutMs: undefined
-    })
-    expect(mocks.storeState.setActiveWorktree).toHaveBeenCalledWith('wt-remote')
-    expect(mocks.storeState.setActiveTab).toHaveBeenCalledWith('tab-remote')
-  })
-
-  it('falls back to the owning runtime when task handles collide across runtimes', async () => {
-    markRuntimeEnvironmentCompatible('env-1')
-    mocks.storeState.tabsByWorktree = {
-      'wt-local': [
-        {
-          id: 'tab-local',
-          worktreeId: 'wt-local',
-          ptyId: 'term_worker',
-          title: 'Local worker',
-          customTitle: null,
-          color: null,
-          sortOrder: 0,
-          createdAt: 1
-        }
-      ],
-      'wt-env-2': [
-        {
-          id: 'tab-env-2',
-          worktreeId: 'wt-env-2',
-          ptyId: 'remote:env-2@@term_worker',
-          title: 'Other remote worker',
-          customTitle: null,
-          color: null,
-          sortOrder: 0,
-          createdAt: 1
-        }
-      ]
-    }
-    mocks.storeState.ptyIdsByTabId = {
-      'tab-local': ['term_worker'],
-      'tab-env-2': ['remote:env-2@@term_worker']
-    }
-    mocks.storeState.terminalLayoutsByTabId = {
-      'tab-local': { root: null, activeLeafId: null, expandedLeafId: null },
-      'tab-env-2': { root: null, activeLeafId: null, expandedLeafId: null }
-    }
-    window.api.runtimeEnvironments.call = vi.fn().mockImplementation(({ method }) => {
-      if (method === 'orchestration.dispatchShow') {
-        return Promise.resolve({
-          ok: true,
-          result: { dispatch: { assignee_handle: 'term_worker' } }
-        })
-      }
-      return Promise.resolve({
-        ok: true,
-        result: { focus: { handle: 'term_worker', tabId: 'tab-env-1', worktreeId: 'wt-env-1' } }
-      })
-    })
-    const links = await collectLinks([makeBufferLine('Task: task_worker')], 1, 'env-1')
-
-    links[0].activate(
-      {
-        metaKey: true,
-        ctrlKey: false,
-        preventDefault: vi.fn()
-      } as unknown as MouseEvent,
-      links[0].text
-    )
-    await Promise.resolve()
-    await Promise.resolve()
-    await new Promise((resolve) => setTimeout(resolve, 0))
-
-    expect(mocks.storeState.setActiveTab).not.toHaveBeenCalledWith('tab-local')
-    expect(mocks.storeState.setActiveTab).not.toHaveBeenCalledWith('tab-env-2')
-    expect(window.api.runtimeEnvironments.call).toHaveBeenNthCalledWith(1, {
-      selector: 'env-1',
-      method: 'orchestration.dispatchShow',
-      params: { task: 'task_worker' },
-      timeoutMs: undefined
-    })
-    expect(window.api.runtimeEnvironments.call).toHaveBeenNthCalledWith(2, {
-      selector: 'env-1',
-      method: 'terminal.focus',
-      params: { terminal: 'term_worker', navigation: 'host' },
-      timeoutMs: undefined
-    })
-  })
-
   it('returns task and terminal links in line order', async () => {
     const links = await collectLinks([
       makeBufferLine('Dispatch --task task_worker --to term_worker')
     ])
 
     expect(links.map((link) => link.text)).toEqual(['task_worker', 'term_worker'])
-  })
-
-  it('uses runtime dispatch for task links instead of stale renderer task snapshots', async () => {
-    mocks.storeState.tabsByWorktree = {
-      'wt-1': [
-        {
-          id: 'tab-stale',
-          worktreeId: 'wt-1',
-          ptyId: 'term_stale',
-          title: 'Stale worker',
-          customTitle: null,
-          color: null,
-          sortOrder: 0,
-          createdAt: 1
-        }
-      ]
-    }
-    mocks.storeState.agentStatusByPaneKey = {
-      'tab-stale:11111111-1111-4111-8111-111111111111': {
-        paneKey: 'tab-stale:11111111-1111-4111-8111-111111111111',
-        tabId: 'tab-stale',
-        worktreeId: 'wt-1',
-        orchestration: {
-          taskId: 'task_worker',
-          dispatchId: 'ctx_stale'
-        }
-      }
-    }
-    const links = await collectLinks([makeBufferLine('Task: task_worker')])
-
-    links[0].activate(
-      {
-        metaKey: true,
-        ctrlKey: false,
-        preventDefault: vi.fn()
-      } as unknown as MouseEvent,
-      links[0].text
-    )
-    await Promise.resolve()
-    await Promise.resolve()
-
-    expect(mocks.activateTabAndFocusPane).not.toHaveBeenCalled()
-    expect(window.api.runtime.call).toHaveBeenNthCalledWith(1, {
-      method: 'orchestration.dispatchShow',
-      params: { task: 'task_worker' }
-    })
-    expect(window.api.runtime.call).toHaveBeenNthCalledWith(2, {
-      method: 'terminal.focus',
-      params: { terminal: 'term_worker', navigation: 'host' }
-    })
-  })
-
-  it('focuses task links through their owning runtime environment', async () => {
-    markRuntimeEnvironmentCompatible('env-1')
-    window.api.runtimeEnvironments.call = vi.fn().mockImplementation(({ method }) => {
-      if (method === 'orchestration.dispatchShow') {
-        return Promise.resolve({
-          ok: true,
-          result: { dispatch: { assignee_handle: 'term_remote' } }
-        })
-      }
-      return Promise.resolve({
-        ok: true,
-        result: { focus: { handle: 'term_remote', tabId: 'tab-remote', worktreeId: 'wt-remote' } }
-      })
-    })
-    const links = await collectLinks([makeBufferLine('Task: task_remote')], 1, 'env-1')
-
-    links[0].activate(
-      {
-        metaKey: true,
-        ctrlKey: false,
-        preventDefault: vi.fn()
-      } as unknown as MouseEvent,
-      links[0].text
-    )
-    await Promise.resolve()
-    await Promise.resolve()
-    await new Promise((resolve) => setTimeout(resolve, 0))
-
-    expect(window.api.runtime.call).not.toHaveBeenCalled()
-    expect(window.api.runtimeEnvironments.call).toHaveBeenNthCalledWith(1, {
-      selector: 'env-1',
-      method: 'orchestration.dispatchShow',
-      params: { task: 'task_remote' },
-      timeoutMs: undefined
-    })
-    expect(window.api.runtimeEnvironments.call).toHaveBeenNthCalledWith(2, {
-      selector: 'env-1',
-      method: 'terminal.focus',
-      params: { terminal: 'term_remote', navigation: 'host' },
-      timeoutMs: undefined
-    })
-  })
-
-  it('contains runtime focus failures for stale terminal handles', async () => {
-    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    window.api.runtime.call = vi.fn().mockRejectedValue(new Error('terminal not found'))
-
-    try {
-      const links = await collectLinks([makeBufferLine('Worker: term_gone')])
-      links[0].activate(
-        {
-          metaKey: true,
-          ctrlKey: false,
-          preventDefault: vi.fn()
-        } as unknown as MouseEvent,
-        links[0].text
-      )
-      await new Promise((resolve) => setTimeout(resolve, 0))
-
-      expect(consoleWarn).toHaveBeenCalledWith(
-        '[terminal-handle-link] focus failed:',
-        expect.any(Error)
-      )
-    } finally {
-      consoleWarn.mockRestore()
-    }
   })
 })

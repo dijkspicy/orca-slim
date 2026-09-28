@@ -5,7 +5,6 @@ import { setForegroundTerminalTabIds } from '@/lib/foreground-terminal-tabs'
 import { useClientHostedBrowserRows } from '@/lib/pane-manager/client-hosted-browser-row-state'
 import { useTerminalProviderSnapshotCapability } from './terminal/use-terminal-provider-snapshot-capability'
 import { getEffectiveLayoutForWorktree as getEffectiveLayout } from './terminal/split-group-mount'
-import { useContextualTour } from './contextual-tours/use-contextual-tour'
 import type { TerminalWorkspaceStoreController } from './use-terminal-workspace-store-bindings'
 import { useWorktreeFiles } from './terminal/use-worktree-files'
 
@@ -16,7 +15,6 @@ export function useTerminalWorkspaceProjection(controller: TerminalWorkspaceStor
     activeTabType,
     activeView,
     activeWorktreeId,
-    activityTerminalPortals,
     browserTabsByWorktree,
     ensureWorktreeRootGroup,
     groupsByWorktree,
@@ -32,11 +30,8 @@ export function useTerminalWorkspaceProjection(controller: TerminalWorkspaceStor
     if (activeView === 'terminal' && activeTabType === 'terminal' && activeTabId) {
       ids.add(activeTabId)
     }
-    for (const portal of activityTerminalPortals) {
-      ids.add(portal.tabId)
-    }
     return Array.from(ids)
-  }, [activeTabId, activeTabType, activeView, activityTerminalPortals])
+  }, [activeTabId, activeTabType, activeView])
 
   useEffect(() => {
     setForegroundTerminalTabIds(foregroundTerminalTabIds)
@@ -83,19 +78,6 @@ export function useTerminalWorkspaceProjection(controller: TerminalWorkspaceStor
   const activeContextualTourId = useAppStore((state) => state.activeContextualTourId)
   const hasSplitTerminalPane = useAppStore((state) =>
     hasFeatureInteraction(state.featureInteractions, 'terminal-pane-split')
-  )
-
-  useContextualTour(
-    'workspace-agent-sessions',
-    Boolean(
-      activeWorktreeId &&
-      activeView === 'terminal' &&
-      workspaceSessionReady &&
-      activeTabType === 'terminal' &&
-      Boolean(activeTabId) &&
-      (!hasSplitTerminalPane || activeContextualTourId === 'workspace-agent-sessions')
-    ),
-    'workspace_agent_sessions_visible'
   )
 
   return {

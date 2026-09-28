@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { LinearIssue } from '../../../shared/linear/issue-types'
+import type { TaskPageLinearIssue } from './task-page-linear-cache-selectors'
 import {
   findLinearWorkflowStateForStatus,
   getLinearStatusSectionState,
@@ -13,8 +13,8 @@ import {
 } from './task-page-linear-jira-list-model'
 
 function issue(
-  overrides: Partial<LinearIssue> & Pick<LinearIssue, 'id' | 'identifier'>
-): LinearIssue {
+  overrides: Partial<TaskPageLinearIssue> & Pick<TaskPageLinearIssue, 'id' | 'identifier'>
+): TaskPageLinearIssue {
   return {
     title: overrides.title ?? overrides.identifier,
     url: 'https://linear.app/issue',
@@ -23,7 +23,7 @@ function issue(
     state: { name: 'Todo', type: 'unstarted', color: '#000' },
     team: { id: 'team-1', name: 'Core', key: 'COR' },
     ...overrides
-  } as LinearIssue
+  } as TaskPageLinearIssue
 }
 
 describe('getLinearPriorityRank', () => {

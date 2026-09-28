@@ -6,14 +6,12 @@ import type { ExecutionHostId } from '../../../shared/execution-host'
 import { shouldAutoCreateInitialTerminal } from '@/components/terminal/initial-terminal'
 import { createSequencedSetupAgentCommands } from '../../../shared/setup-agent-sequencing'
 import { getSetupRunnerCommandPlatformForPath } from '../../../shared/setup-runner-command'
-import { agentKindToTuiAgent } from '../../../shared/agent-kind'
 import { useAppStore } from '@/store'
 import { queueHookCommandsForFirstWorktreeTab } from '@/lib/hook-command-delayed-delivery'
 import { resolveWorkspaceTerminalHostAuthority } from '@/lib/workspace-terminal-host-authority'
 import { initialAgentTabViewModeProps } from './native-chat-initial-view-mode'
 import { getConnectionId } from '@/lib/connection-context'
 import { isNativeChatTranscriptLocalReadable } from '@/lib/native-chat-transcript-readability'
-import { seedNativeChatAppliedSessionOptions } from '@/components/native-chat/native-chat-session-option-cache'
 import type {
   InitialTerminalOptions,
   WorktreeActivationStore
@@ -217,12 +215,8 @@ export function ensureWorktreeHasInitialTerminal(
   }
 
   // Why: tag this activation-created tab so its PTY spawn doesn't count as activity and reshuffle the Recent sort.
-  // Why: stamp the seeded agent before hooks arrive so native chat and provider chrome can resolve it immediately.
-  const launchAgent =
-    sequencedStartup?.launchAgent ??
-    (sequencedStartup?.telemetry
-      ? (agentKindToTuiAgent(sequencedStartup.telemetry.agent_kind) ?? undefined)
-      : undefined)
+  // Why: stamp the seeded agent before hooks arrive so provider chrome can resolve it immediately.
+  const launchAgent = sequencedStartup?.launchAgent
   const terminalTab = store.createTab(worktreeId, undefined, undefined, {
     pendingActivationSpawn: true,
     ...(launchAgent
@@ -247,13 +241,6 @@ export function ensureWorktreeHasInitialTerminal(
 
   // Why: queue the seeded startup on the initial pane so the terminal begins in the requested agent session instead of an idle shell.
   if (sequencedStartup) {
-    if (launchAgent) {
-      seedNativeChatAppliedSessionOptions(
-        terminalTab.id,
-        launchAgent,
-        sequencedStartup.sessionOptions
-      )
-    }
     store.queueTabStartupCommand(terminalTab.id, sequencedStartup)
   }
   queueSetupAndIssueCommands(

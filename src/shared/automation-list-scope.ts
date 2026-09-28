@@ -16,7 +16,6 @@ import type { Automation } from './automations-types'
 import type { AutomationUsageSummary } from './automation-usage-summary'
 import { getAutomationRunRepoId } from './automation-run-identity'
 import { parseExecutionHostId } from './execution-host'
-import { sanitizeSshTargetGeneration } from './ssh-target-generation'
 import { isWorkspaceSshPinRepinned } from './automation-workspace-repin'
 
 export type AutomationListScopeSelector =
@@ -27,6 +26,12 @@ export type AutomationListScopeSelector =
 export type AutomationListParams = {
   /** Omitted, like `null` or `{}`, requests the authority's complete list. */
   selector?: AutomationListScopeSelector
+}
+
+// Verbatim helper formerly supplied by `ssh-target-generation.ts` (culled with
+// the SSH target registry); legacy persisted rows still carry generation fences.
+function sanitizeSshTargetGeneration(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 ? value : undefined
 }
 
 export type AutomationListItemSelector =

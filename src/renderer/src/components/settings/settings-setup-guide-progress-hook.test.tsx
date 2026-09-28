@@ -1,7 +1,15 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FeatureWallSetupProgress } from '../feature-wall/feature-wall-setup-progress'
+import type { FeatureWallSetupStepId } from '../../../../shared/feature-wall-setup-steps'
 import { useSettingsSetupGuideProgress } from './settings-setup-guide-progress'
+
+// Structural mirror of the shared setup-progress shape the mocked hook returns.
+type FeatureWallSetupProgress = {
+  ready: boolean
+  stepDone: Partial<Record<FeatureWallSetupStepId, boolean>>
+  coreDoneCount: number
+  coreTotal: number
+}
 
 const mocks = vi.hoisted(() => ({
   useSetupGuideProgress: vi.fn()

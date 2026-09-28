@@ -8,7 +8,6 @@ import { CrashReportDialog } from '../components/crash-report/CrashReportDialog'
 import { MarkdownTemplatePicker } from '../components/editor/MarkdownTemplatePicker'
 import RecentTabSwitcher from '../components/tab-bar/RecentTabSwitcher'
 import { SkillFreshnessUpdateDialog } from '../components/skills/SkillFreshnessUpdateDialog'
-import { NativeChatResumeOnRestartModal } from '../components/NativeChatResumeOnRestartModal'
 import { ZoomOverlay } from '../components/ZoomOverlay'
 import { useAppStore } from '../store'
 import { useLazyModalMounts } from './use-lazy-modal-mounts'
@@ -239,9 +238,6 @@ export function AppRootSurfaces(props: {
           </OverlayBoundary>
         </Suspense>
       </NotificationCardStack>
-      <OverlayBoundary boundaryId="overlay.native-chat-resume-on-restart" resetKey={activeView}>
-        <NativeChatResumeOnRestartModal />
-      </OverlayBoundary>
       <OverlayBoundary boundaryId="overlay.zoom" resetKey={activeView}>
         <ZoomOverlay />
       </OverlayBoundary>

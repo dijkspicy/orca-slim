@@ -11,11 +11,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestStore } from './store-test-helpers'
 import type { Repo } from '../../../../shared/repo-types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 
 vi.mock('sonner', () => ({
   toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() }
@@ -132,7 +127,6 @@ function remainingRepoIds(store: ReturnType<typeof seed>): string[] {
 }
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   for (const mock of [
     reposRemove,
     reposRemoveForHost,
@@ -141,9 +135,7 @@ beforeEach(() => {
   ]) {
     mock.mockReset()
   }
-  runtimeEnvironmentTransportCall.mockImplementation(
-    (args) => createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
-  )
+  runtimeEnvironmentTransportCall.mockImplementation((args) => runtimeEnvironmentCall(args))
   answerRepoRm()
   vi.stubGlobal('window', {
     api: {

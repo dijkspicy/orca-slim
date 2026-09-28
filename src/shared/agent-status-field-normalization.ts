@@ -4,8 +4,6 @@
 // truncate without splitting surrogate pairs. Extracted from
 // agent-status-types.ts, which owns the payload shapes and per-field caps.
 
-import { compactDispatchPromptForStatus } from './orca-dispatch-status-prompt'
-
 /** Maximum character length for the prompt field. Truncated on parse. */
 export const AGENT_STATUS_MAX_FIELD_LENGTH = 200
 
@@ -37,18 +35,12 @@ function normalizeField(value: unknown, maxLength: number = AGENT_STATUS_MAX_FIE
   return normalizeSingleLinePreview(value, maxLength)
 }
 
-/** Normalize the agent prompt field, compacting Orca dispatch preambles. */
+/** Normalize the agent prompt field. */
 export function normalizePromptField(value: unknown): string {
   if (typeof value !== 'string') {
     return ''
   }
-  return (
-    compactDispatchPromptForStatus(
-      value,
-      AGENT_STATUS_MAX_FIELD_LENGTH,
-      normalizeSingleLinePreview
-    ) ?? normalizeSingleLinePreview(value, AGENT_STATUS_MAX_FIELD_LENGTH)
-  )
+  return normalizeSingleLinePreview(value, AGENT_STATUS_MAX_FIELD_LENGTH)
 }
 
 function normalizeSingleLinePreview(value: string, maxLength: number): string {

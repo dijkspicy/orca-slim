@@ -4,7 +4,6 @@ import type { HostedReviewProvider } from '../../shared/hosted-review'
 import { withLinkedIssueDraftContext } from '../../shared/source-control-ai-action-variables'
 import type { TuiAgent } from '../../shared/tui-agent'
 import { getStagedCommitContext } from '../git/status'
-import { SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE } from '../providers/ssh-git-dispatch'
 import { loadPullRequestLinkedIssue } from '../source-control/pull-request-linked-issue'
 import { resolveHostedReviewBodyForGeneration } from '../source-control/pull-request-template'
 import { prepareLocalCommitMessageAgentEnv } from '../text-generation/commit-message-agent-environment'
@@ -12,7 +11,6 @@ import {
   cancelGenerateCommitMessageLocal,
   cancelGeneratePullRequestFieldsLocal,
   discoverCommitMessageModelsLocal,
-  discoverCommitMessageModelsRemote,
   generateCommitMessageFromContext,
   generatePullRequestFieldsFromContext,
   resolveCommitMessageSettings,
@@ -44,10 +42,10 @@ export class RuntimeGitGenerationCommands {
     settingsOverride?: RuntimeCommitMessageSettingsOverride
   ): Promise<GenerateCommitMessageResult> {
     const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
-    const route = runtimeGitRouteForTarget(target)
+    // Routing validation: non-local hosts throw rather than run their Git here.
+    runtimeGitRouteForTarget(target)
     const discoveryHostKey =
-      settingsOverride?.commitMessageDiscoveryHostKey ??
-      getCommitMessageModelDiscoveryHostKey(route.kind === 'ssh' ? route.connectionId : null)
+      settingsOverride?.commitMessageDiscoveryHostKey ?? getCommitMessageModelDiscoveryHostKey(null)
     const resolvedSettings = settingsOverride?.sourceControlAiResolvedParams
       ? { ok: true as const, params: settingsOverride.sourceControlAiResolvedParams }
       : resolveCommitMessageSettings(
@@ -62,31 +60,6 @@ export class RuntimeGitGenerationCommands {
         )
     if (!resolvedSettings.ok) {
       return { success: false, error: resolvedSettings.error }
-    }
-
-    if (route.kind === 'ssh') {
-      const provider = route.provider
-      if (!provider) {
-        return { success: false, error: SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE }
-      }
-      let context: CommitMessageDraftContext | null
-      try {
-        context = await provider.getStagedCommitContext(target.worktree.path)
-      } catch (error) {
-        console.error('[runtime-git] Failed to read remote staged commit context:', error)
-        return { success: false, error: 'Failed to read staged changes.' }
-      }
-      if (!context) {
-        return { success: false, error: 'No staged changes to summarize.' }
-      }
-      context = withLinkedIssueDraftContext(context, linkedIssueForTarget(this.host, target))
-      return generateCommitMessageFromContext(context, resolvedSettings.params, {
-        kind: 'remote',
-        cwd: target.worktree.path,
-        execute: (plan, cwd, timeoutMs, operation) =>
-          provider.executeCommitMessagePlan(plan, cwd, timeoutMs, operation),
-        missingBinaryLocation: 'remote PATH'
-      })
     }
 
     let context: CommitMessageDraftContext | null
@@ -120,13 +93,8 @@ export class RuntimeGitGenerationCommands {
 
   async cancelRuntimeGenerateCommitMessage(worktreeSelector: string): Promise<{ ok: true }> {
     const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
-    const route = runtimeGitRouteForTarget(target)
-    if (route.kind === 'ssh') {
-      // Cancelling an unreachable host is a no-op, not a local cancel: the local registry is keyed
-      // by path and would abort an unrelated generation running here for the same path.
-      await route.provider?.cancelGenerateCommitMessage(target.worktree.path, 'commit-message')
-      return { ok: true }
-    }
+    // Routing validation: a non-local host must never cancel a local generation for same path.
+    runtimeGitRouteForTarget(target)
     cancelGenerateCommitMessageLocal(target.worktree.path)
     return { ok: true }
   }
@@ -146,8 +114,7 @@ export class RuntimeGitGenerationCommands {
     const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
     const route = runtimeGitRouteForTarget(target)
     const discoveryHostKey =
-      settingsOverride?.commitMessageDiscoveryHostKey ??
-      getCommitMessageModelDiscoveryHostKey(route.kind === 'ssh' ? route.connectionId : null)
+      settingsOverride?.commitMessageDiscoveryHostKey ?? getCommitMessageModelDiscoveryHostKey(null)
     const resolvedSettings = settingsOverride?.sourceControlAiResolvedParams
       ? { ok: true as const, params: settingsOverride.sourceControlAiResolvedParams }
       : resolveCommitMessageSettings(
@@ -164,30 +131,21 @@ export class RuntimeGitGenerationCommands {
       return { success: false, error: resolvedSettings.error }
     }
 
-    const provider = route.kind === 'ssh' ? route.provider : null
-    if (route.kind === 'ssh' && !provider) {
-      return { success: false, error: SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE }
-    }
     const issueMeta = linkedIssueMetaForTarget(this.host, target)
     const linkedIssueDetailsPromise = loadPullRequestLinkedIssue({
       meta: issueMeta,
       provider: input.provider,
       repoPath: target.worktree.path,
-      connectionId: route.kind === 'ssh' ? route.connectionId : undefined,
-      localGitOptions:
-        route.kind === 'ssh'
-          ? {}
-          : {
-              ...localGitOptionsForTarget(target),
-              admissionTier: 'interactive'
-            }
+      localGitOptions: {
+        ...localGitOptionsForTarget(target),
+        admissionTier: 'interactive'
+      }
     })
     let context: Awaited<ReturnType<typeof getPullRequestDraftContext>>
     try {
       const currentBody = await resolveHostedReviewBodyForGeneration({
         body: input.body,
         repoPath: target.worktree.path,
-        connectionId: route.kind === 'ssh' ? route.connectionId : undefined,
         provider: input.provider,
         useTemplate: input.useTemplate
       })
@@ -213,15 +171,6 @@ export class RuntimeGitGenerationCommands {
       ...(linkedIssueDetails ? { linkedIssueDetails } : {})
     }
 
-    if (route.kind === 'ssh') {
-      return generatePullRequestFieldsFromContext(context, resolvedSettings.params, {
-        kind: 'remote',
-        cwd: target.worktree.path,
-        execute: (plan, cwd, timeoutMs, operation) =>
-          provider!.executeCommitMessagePlan(plan, cwd, timeoutMs, operation),
-        missingBinaryLocation: 'remote PATH'
-      })
-    }
     const localEnv = await prepareLocalCommitMessageAgentEnv(
       resolvedSettings.params.agentId,
       this.host.getCommitMessageAgentEnvironment?.(),
@@ -239,11 +188,8 @@ export class RuntimeGitGenerationCommands {
 
   async cancelRuntimeGeneratePullRequestFields(worktreeSelector: string): Promise<{ ok: true }> {
     const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
-    const route = runtimeGitRouteForTarget(target)
-    if (route.kind === 'ssh') {
-      await route.provider?.cancelGenerateCommitMessage(target.worktree.path, 'pull-request-fields')
-      return { ok: true }
-    }
+    // Routing validation: a non-local host must never cancel a local generation for same path.
+    runtimeGitRouteForTarget(target)
     cancelGeneratePullRequestFieldsLocal(target.worktree.path)
     return { ok: true }
   }
@@ -258,19 +204,8 @@ export class RuntimeGitGenerationCommands {
     const agentCommandOverride =
       settingsOverride?.agentCmdOverrides?.[typedAgentId] ??
       this.host.getRuntimeSettings().agentCmdOverrides?.[typedAgentId]
-    const route = runtimeGitRouteForTarget(target)
-    if (route.kind === 'ssh') {
-      const provider = route.provider
-      if (!provider) {
-        return { success: false, error: `No git provider for connection "${route.connectionId}"` }
-      }
-      return discoverCommitMessageModelsRemote(
-        typedAgentId,
-        target.worktree.path,
-        (plan, cwd, timeoutMs) => provider.executeCommitMessagePlan(plan, cwd, timeoutMs),
-        agentCommandOverride
-      )
-    }
+    // Routing validation: non-local hosts throw rather than discover models here.
+    runtimeGitRouteForTarget(target)
     const localEnv = await prepareLocalCommitMessageAgentEnv(
       typedAgentId,
       this.host.getCommitMessageAgentEnvironment?.(),

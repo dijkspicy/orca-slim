@@ -7,25 +7,10 @@ import type {
   HostedReviewCreationEligibilityArgs,
   HostedReviewInfo
 } from '../../shared/hosted-review'
-import type { GitHubOwnerRepo } from '../../shared/github/pull-request-types'
-import type {
-  GitHubPRRefreshReason,
-  PRRefreshOutcome
-} from '../../shared/github/pull-request-refresh-types'
 import type { Repo } from '../../shared/repo-types'
-import {
-  getPRForBranchOutcome,
-  getRepoSlug,
-  getRepoUpstream,
-  type GitHubPRBranchLookupOptions
-} from '../github/client'
-import { admissionTierForRefreshReason } from '../github/pr-refresh-candidate-policy'
 import type { GitAdmissionTier } from '../git/command-runner/git-exec-options'
 import { getHostedReviewForBranch } from '../source-control/hosted-review'
-import {
-  getRepoHostedReviewExecutionHostId,
-  hostedReviewSshConnectionId
-} from '../source-control/hosted-review-execution-host'
+import { getRepoHostedReviewExecutionHostId } from '../source-control/hosted-review-execution-host'
 import {
   createHostedReview,
   getHostedReviewCreationEligibility
@@ -47,58 +32,6 @@ type RuntimeHostedReviewCommandsDeps = {
 
 export class RuntimeHostedReviewCommands {
   constructor(private readonly deps: RuntimeHostedReviewCommandsDeps) {}
-
-  async getRepoSlug(repoSelector: string): Promise<GitHubOwnerRepo | null> {
-    const repo = await this.deps.resolveRepo(repoSelector)
-    const options = this.deps.getExecutionOptions(repo)
-    const connectionId = hostedReviewSshConnectionId(getRepoHostedReviewExecutionHostId(repo))
-    return options
-      ? getRepoSlug(repo.path, connectionId, options)
-      : getRepoSlug(repo.path, connectionId)
-  }
-
-  async getRepoUpstream(repoSelector: string): Promise<GitHubOwnerRepo | null> {
-    const repo = await this.deps.resolveRepo(repoSelector)
-    const options = this.deps.getExecutionOptions(repo)
-    const connectionId = hostedReviewSshConnectionId(getRepoHostedReviewExecutionHostId(repo))
-    return options
-      ? getRepoUpstream(repo.path, connectionId, options)
-      : getRepoUpstream(repo.path, connectionId)
-  }
-
-  async getRepoPRForBranch(
-    repoSelector: string,
-    branch: string,
-    linkedPRNumber?: number | null,
-    fallbackPRNumber?: number | null,
-    acceptMergedFallbackPR?: boolean,
-    currentHeadOid?: string | null,
-    reason?: GitHubPRRefreshReason
-  ): Promise<PRRefreshOutcome> {
-    const repo = await this.deps.resolveRepo(repoSelector)
-    const lookupOptions: GitHubPRBranchLookupOptions = {
-      ...this.deps.getExecutionOptions(
-        repo,
-        reason ? admissionTierForRefreshReason(reason) : undefined
-      )
-    }
-    if (acceptMergedFallbackPR === true) {
-      lookupOptions.acceptMergedFallbackPR = true
-    }
-    if (typeof currentHeadOid === 'string' && currentHeadOid.trim().length > 0) {
-      lookupOptions.currentHeadOid = currentHeadOid.trim()
-    }
-    const lookupOptionArgs: [] | [GitHubPRBranchLookupOptions] =
-      Object.keys(lookupOptions).length > 0 ? [lookupOptions] : []
-    return getPRForBranchOutcome(
-      repo.path,
-      branch,
-      linkedPRNumber ?? null,
-      hostedReviewSshConnectionId(getRepoHostedReviewExecutionHostId(repo)),
-      linkedPRNumber == null ? (fallbackPRNumber ?? null) : null,
-      ...lookupOptionArgs
-    )
-  }
 
   async getHostedReviewForBranch(args: {
     repoSelector: string

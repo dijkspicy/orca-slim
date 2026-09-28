@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { GitHubWorkItem } from '../../../shared/github/work-item-types'
+import type { TaskPageWorkItemRow } from './task-page-work-item-pagination'
 import {
   accumulateWorkItemPages,
   applyEmptyPageClamp,
@@ -12,7 +12,7 @@ import {
   workItemIdentity
 } from './task-page-work-item-pagination'
 
-function item(repoId: string, id: string, updatedAt: string): GitHubWorkItem {
+function item(repoId: string, id: string, updatedAt: string) {
   return {
     id,
     type: 'issue',
@@ -29,8 +29,8 @@ function item(repoId: string, id: string, updatedAt: string): GitHubWorkItem {
 
 // Build a run of issues numbered `from`..`to` (inclusive) with strictly
 // decreasing updatedAt, on repo `r`, so `at(-1)` is the oldest.
-function run(r: string, from: number, to: number): GitHubWorkItem[] {
-  const out: GitHubWorkItem[] = []
+function run(r: string, from: number, to: number): TaskPageWorkItemRow[] {
+  const out: TaskPageWorkItemRow[] = []
   for (let n = from; n <= to; n += 1) {
     // Larger number => newer; encode as a descending timestamp so sort order is
     // unambiguous and distinct.

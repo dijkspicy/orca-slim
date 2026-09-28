@@ -29,7 +29,6 @@ import {
 import type { TerminalPaneManagerOptionsContext } from './terminal-pane-mount-context'
 import { installTerminalPaneInputHandling } from './terminal-pane-pane-input'
 import { installTerminalPaneLinkHandling } from './terminal-pane-pane-links'
-import { scheduleRuntimeGraphSync } from '@/runtime/sync-runtime-graph'
 
 export type PaneCreatedSetupContext = TerminalPaneManagerOptionsContext
 
@@ -220,7 +219,6 @@ export function createTerminalPaneCreatedHandler(
     ptyDeps.cwd = nextInitialCwdState.ptyCwd
     deps.panePtyBindingsRef.current.set(pane.id, panePtyBinding)
     context.syncPaneCount()
-    scheduleRuntimeGraphSync()
     context.queueResizeAll(true)
   }
 }

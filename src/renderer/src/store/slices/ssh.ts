@@ -5,7 +5,7 @@ import type {
   PortForwardEntry,
   EnrichedDetectedPort,
   SshTargetSummary
-} from '../../../../shared/ssh-types'
+} from './ssh-host-state-contracts'
 import {
   buildRemovedSshTargetCleanupPatch,
   collectSshTargetGenerations,

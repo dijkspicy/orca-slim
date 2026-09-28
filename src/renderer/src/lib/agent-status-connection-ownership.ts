@@ -1,6 +1,4 @@
-import { parseAppSshPtyId } from '../../../shared/ssh-pty-id'
 import { parsePaneKey } from '../../../shared/stable-pane-id'
-import { parseRemoteRuntimePtyId } from '@/runtime/runtime-terminal-stream'
 
 export type AgentStatusConnectionRouting = { connectionId: string | null }
 
@@ -13,6 +11,8 @@ type AgentStatusRoutingState = {
   transientClearedAgentStatusConnectionIds: Record<string, true>
 }
 
+// SSH and remote-runtime PTY namespaces were culled with the remote hosts; a
+// remaining concrete PTY is authoritative local/WSL ownership.
 export function resolveAgentStatusConnectionRouting(args: {
   ptyId: string | null | undefined
   expectedConnectionId?: string | null
@@ -22,42 +22,9 @@ export function resolveAgentStatusConnectionRouting(args: {
   if (!ptyId) {
     return undefined
   }
-  const expectedConnectionId = args.expectedConnectionId?.trim() || args.expectedConnectionId
-  const sshPty = parseAppSshPtyId(ptyId)
-  if (sshPty) {
-    if (
-      typeof args.runtimeEnvironmentId === 'string' ||
-      expectedConnectionId === null ||
-      (typeof expectedConnectionId === 'string' && expectedConnectionId !== sshPty.connectionId)
-    ) {
-      return undefined
-    }
-    return { connectionId: sshPty.connectionId }
-  }
-  if (ptyId.startsWith('ssh:')) {
-    return undefined
-  }
-
-  const runtimePty = parseRemoteRuntimePtyId(ptyId)
-  if (runtimePty?.handle) {
-    if (
-      typeof expectedConnectionId === 'string' ||
-      args.runtimeEnvironmentId === null ||
-      (typeof args.runtimeEnvironmentId === 'string' &&
-        runtimePty.environmentId !== null &&
-        runtimePty.environmentId !== args.runtimeEnvironmentId)
-    ) {
-      return undefined
-    }
-    return { connectionId: null }
-  }
-  if (ptyId.startsWith('remote:')) {
-    return undefined
-  }
-
-  // Why: app-wide SSH and remote-runtime PTY IDs are namespaced; a remaining
-  // concrete PTY is authoritative local/WSL ownership, never an SSH guess.
-  if (typeof expectedConnectionId === 'string') {
+  // Why: launch contexts that name an expected connection own their routing;
+  // a local status observation must not answer for one.
+  if (typeof args.expectedConnectionId === 'string') {
     return undefined
   }
   return { connectionId: null }
@@ -78,18 +45,5 @@ export function resolveLiveAgentStatusConnectionRouting(args: {
   ) {
     return undefined
   }
-  const routing = resolveAgentStatusConnectionRouting(args)
-  if (!routing) {
-    return undefined
-  }
-  // Why: transient relay reconnect clears statuses without dropping durable
-  // PTY bindings; old renderer callbacks must stay blocked until reconnect.
-  if (
-    routing.connectionId !== null &&
-    (args.state.sshConnectionStates.get(routing.connectionId)?.status !== 'connected' ||
-      routing.connectionId in args.state.transientClearedAgentStatusConnectionIds)
-  ) {
-    return undefined
-  }
-  return routing
+  return resolveAgentStatusConnectionRouting(args)
 }

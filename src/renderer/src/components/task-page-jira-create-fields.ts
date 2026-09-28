@@ -1,5 +1,13 @@
 import { buildJiraCreateTextAdf } from '@/components/jira-create-adf'
-import type { JiraCreateField } from '../../../shared/jira-types'
+
+type JiraCreateFieldAllowedValueRef = { id?: string; value?: string; name?: string }
+
+type JiraCreateFieldRef = {
+  key: string
+  required: boolean
+  schema?: { type?: string; items?: string; custom?: string }
+  allowedValues?: JiraCreateFieldAllowedValueRef[]
+}
 
 const JIRA_CREATE_SYSTEM_FIELD_KEYS = new Set(['project', 'issuetype', 'summary', 'description'])
 
@@ -7,7 +15,7 @@ const JIRA_CREATE_SYSTEM_FIELD_KEYS = new Set(['project', 'issuetype', 'summary'
 export const JIRA_REPORTER_FIELD_KEY = 'reporter'
 
 /** True for required create fields the dialog must render (system fields excluded). */
-export function isVisibleJiraCreateField(field: JiraCreateField): boolean {
+export function isVisibleJiraCreateField(field: JiraCreateFieldRef): boolean {
   return field.required && !JIRA_CREATE_SYSTEM_FIELD_KEYS.has(field.key)
 }
 
@@ -15,7 +23,7 @@ export function isVisibleJiraCreateField(field: JiraCreateField): boolean {
  * True for any user-typed field, scalar or array. User pickers carry no
  * allowedValues, so schema type is the only way to tell them from free text.
  */
-export function isJiraUserCreateField(field: JiraCreateField): boolean {
+export function isJiraUserCreateField(field: JiraCreateFieldRef): boolean {
   return (
     field.schema?.type === 'user' ||
     (field.schema?.type === 'array' && field.schema?.items === 'user')
@@ -27,7 +35,7 @@ export function isJiraUserCreateField(field: JiraCreateField): boolean {
  * array-of-user fields stay on the comma-separated text path until the dialog
  * can collect and submit several.
  */
-export function isJiraScalarUserCreateField(field: JiraCreateField): boolean {
+export function isJiraScalarUserCreateField(field: JiraCreateFieldRef): boolean {
   return field.schema?.type === 'user'
 }
 
@@ -35,24 +43,22 @@ export function isJiraScalarUserCreateField(field: JiraCreateField): boolean {
  * Collects the user-typed field keys for the host to shape, which it cannot
  * infer from the values alone since a user id is just a string.
  */
-export function getJiraUserCreateFieldKeys(fields: readonly JiraCreateField[]): string[] {
+export function getJiraUserCreateFieldKeys(fields: readonly JiraCreateFieldRef[]): string[] {
   return fields.filter(isJiraUserCreateField).map((field) => field.key)
 }
 
-export function getJiraCreateAllowedValueLabel(
-  value: NonNullable<JiraCreateField['allowedValues']>[number]
-): string {
+export function getJiraCreateAllowedValueLabel(value: JiraCreateFieldAllowedValueRef): string {
   return value.name ?? value.value ?? value.id ?? 'Option'
 }
 
-export function findJiraCreateAllowedValue(field: JiraCreateField, draftValue: string) {
+export function findJiraCreateAllowedValue(field: JiraCreateFieldRef, draftValue: string) {
   return field.allowedValues?.find((value) => {
     return value.id === draftValue || value.value === draftValue || value.name === draftValue
   })
 }
 
 export function getJiraCreateOptionPayload(
-  value: NonNullable<JiraCreateField['allowedValues']>[number] | undefined,
+  value: JiraCreateFieldAllowedValueRef | undefined,
   fallback: string
 ): Record<string, string> | string {
   if (value?.id) {
@@ -67,7 +73,7 @@ export function getJiraCreateOptionPayload(
   return fallback
 }
 
-export function buildJiraCreateFieldValue(field: JiraCreateField, draftValue: string): unknown {
+export function buildJiraCreateFieldValue(field: JiraCreateFieldRef, draftValue: string): unknown {
   const trimmed = draftValue.trim()
   if (!trimmed) {
     return undefined
@@ -98,7 +104,7 @@ export function buildJiraCreateFieldValue(field: JiraCreateField, draftValue: st
 }
 
 export function buildJiraCreateCustomFields(
-  fields: readonly JiraCreateField[],
+  fields: readonly JiraCreateFieldRef[],
   values: Record<string, string>
 ): Record<string, unknown> | undefined {
   const customFields: Record<string, unknown> = {}

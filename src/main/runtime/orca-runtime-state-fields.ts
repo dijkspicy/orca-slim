@@ -1,5 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
-import { OrcaRuntimeWithLinearCommands } from './orca-runtime-linear-commands'
+import { OrcaRuntimeWithFileCommands } from './orca-runtime-file-commands'
 import type { RuntimeStore } from './runtime-store-contract'
 import type { StatsCollector } from '../stats/collector'
 import type { IPtyProvider } from '../providers/types'
@@ -7,7 +7,6 @@ import type { PrepareClaudeAuth } from '../ipc/pty/host-env/types'
 import type { RuntimeTerminalAgentStatusEvent } from './runtime-terminal-contracts'
 import type { TerminalSideEffectBatch } from '../../shared/terminal-side-effect-facts'
 import type { AgentStatusIpcPayload } from '../../shared/agent-status-types'
-import type { StructuredAgentSessionStatusSink } from '../native-chat/agent-session-wire/structured-agent-session-status-feed'
 import type { ObservedAgentStatusPaneIdentity } from '../ipc/agent-status-ipc-boundary'
 import type { AgentHookAuthorityAttestation } from '../agent-hooks/server'
 import type {
@@ -21,13 +20,7 @@ import type { RuntimeCommandSurfaceHost } from './orca-runtime-core'
 import { installRuntimeFileCommandSurface } from './runtime-file-command-surface'
 import { installRuntimeGitCommandSurface } from './runtime-git-command-surface'
 import { installRuntimeRepositoryCommandSurface } from './runtime-repository-command-surface'
-import { installRuntimeReviewCommandSurface } from './runtime-review-command-surface'
 import { installRuntimeServiceCommandSurface } from './runtime-service-command-surface'
-import {
-  RuntimeSkillCommands,
-  installRuntimeSkillCommandSurface
-} from './runtime-skill-command-surface'
-import { getAppEnvironment } from '../../shared/app-environment'
 import { RuntimeClientSettingsController } from './runtime-client-settings'
 import {
   RuntimeSessionSearchSettingsController,
@@ -35,13 +28,12 @@ import {
 } from './runtime-session-search-settings'
 import { RuntimeAutomationController } from './runtime-automation-controller'
 import { RuntimeOrchestrationFederation } from './runtime-orchestration-federation'
-import { configureHostReadableTranscriptPathSources } from '../native-chat/host-readable-transcript-path'
 import { createEphemeralAgentSessionClaimSigner } from './agent-session-claim-identity'
 import { registerConptyDa1OverrideInstaller } from './terminal-model-query-authority'
 import { registerTerminalViewAttributesApplier } from './terminal-view-attribute-store'
 import { RuntimeMachineName } from './runtime-machine-name'
 
-export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
+export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithFileCommands {
   protected readonly prepareClaudeAuth?: PrepareClaudeAuth
 
   protected readonly machineName = new RuntimeMachineName(
@@ -62,9 +54,6 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
       // terminal output. worktree.ps reads this at query time so mobile shows the
       // same inline agent rows the desktop sidebar does — same source, 1:1.
       getAgentStatusSnapshot?: () => AgentStatusIpcPayload[]
-      /** Where structured (native chat) sessions publish into that same store, so the snapshot
-       *  above lists them like every other agent. */
-      structuredAgentStatusSink?: StructuredAgentSessionStatusSink
       /** The identity the runtime resolved for a pane as each status arrived. Without it the
        *  fleet path reminted cached rows against whatever the pane owns now. */
       readObservedAgentStatusPaneIdentity?: (paneKey: string) => ObservedAgentStatusPaneIdentity
@@ -86,11 +75,6 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
       // Why: the device registry lives on the RPC server, which is constructed with this runtime;
       // a closure defers the lookup past that ordering instead of inverting ownership.
       getPairedDeviceName?: (pairedDeviceId: string) => string | null
-      // Why: codex-home paths for the Agent Session History scan must be sourced
-      // here, not via the window-only registerCoreHandlers path — that path never
-      // runs under `orca serve`, so remote/SSH hosts would silently drop
-      // managed-Codex sessions. The runtime ctor runs in BOTH window and serve.
-      getAdditionalAiVaultCodexHomePaths?: () => readonly string[]
       prepareAiVaultSessionResume?: (
         args: AiVaultPrepareSessionResumeArgs
       ) => Promise<AiVaultPrepareSessionResumeResult>
@@ -138,18 +122,8 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
       repositoryClones: this.repositoryClones,
       repositorySettings: this.repositorySettings,
       repositoryRefQueries: this.repositoryRefQueries,
-      hostedReviews: this.hostedReviews,
-      gitHubRepositoryQueries: this.gitHubRepositoryQueries,
       repositoryHooks: this.repositoryHooks,
       repositoryIssueCommand: this.repositoryIssueCommand
-    })
-    installRuntimeReviewCommandSurface(runtime, {
-      gitLabQueries: this.gitLabQueryCommands,
-      gitLabMutations: this.gitLabMutationCommands,
-      gitHubReviewQueries: this.gitHubReviewQueries,
-      gitHubReviewMutations: this.gitHubReviewMutations,
-      gitHubIssueComments: this.gitHubIssueComments,
-      gitHubProjects: this.gitHubProjectCommands
     })
     installRuntimeServiceCommandSurface(runtime, {
       aiVault: this.aiVault,
@@ -160,38 +134,9 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
       clientEvents: this.clientEvents,
       nativeChatDraftResolutions: this.nativeChatDraftResolutions,
       subscriptions: this.subscriptions,
-      mobileNotifications: this.mobileNotifications,
       accounts: this.accounts,
-      browserDrivers: this.browserDrivers,
       messageWaiters: this.messageWaiters
     })
-    this.skillCommands = new RuntimeSkillCommands({
-      getRuntimeId: () => this.runtimeId,
-      getUserDataPath: () => getAppEnvironment().getPath('userData'),
-      isPackaged: () => getAppEnvironment().isPackaged(),
-      getSettings: () => this.store?.getSettings?.() ?? {},
-      listRepos: () => this.listRepos(),
-      listFolderWorkspaces: () =>
-        (this.store?.getFolderWorkspaces?.() ?? []).map((workspace) => ({
-          id: workspace.id,
-          folderPath: workspace.folderPath,
-          connectionId: workspace.connectionId,
-          executionHostId: workspace.executionHostId
-        })),
-      listResolvedWorktrees: () => this.listResolvedWorktrees(),
-      showManagedWorktree: (selector) => this.showManagedWorktree(selector),
-      resolveProjectRuntimeForWorktree: (worktreeId) =>
-        this.resolveProjectRuntimeForWorktree(worktreeId),
-      getSshProvider: (connectionId) => this.getSshProviderFn?.(connectionId),
-      getClaudeConfigDirectory: (target) => this.accounts.getClaudeConfigDirectory(target),
-      skillTransactionRecovery: (deps?.skillTransactionRecovery ?? Promise.resolve()).catch(
-        (error) => {
-          console.warn('[skills] startup transaction recovery failed:', error)
-        }
-      )
-    })
-    installRuntimeSkillCommandSurface(runtime, this.skillCommands)
-    Object.assign(this, this.edgeCommands.surface)
     // Why: keep cache-boundary test seams live while the fetch owner holds the mutable maps.
     void this.canonicalFetchKeyCache
     void this.fetchLastCompletedAt
@@ -219,7 +164,6 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
       this.stats = stats
     }
     this.getAgentStatusSnapshotFn = deps?.getAgentStatusSnapshot ?? null
-    this.structuredAgentStatusSinkFn = deps?.structuredAgentStatusSink ?? null
     this.readObservedAgentStatusPaneIdentityFn =
       deps?.readObservedAgentStatusPaneIdentity ?? (() => ({ kind: 'unobserved' }))
     this.getAgentProviderSessionSnapshotFn =
@@ -232,15 +176,6 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
     this.reconcileAgentStatusForEndedProcessFn = deps?.reconcileAgentStatusForEndedProcess ?? null
     this.canRecoverPersistentLocalPtysFn = deps?.canRecoverPersistentLocalPtys ?? (() => true)
     this.getPairedDeviceNameFn = deps?.getPairedDeviceName ?? (() => null)
-    // Why: host-readable transcript sources must be configured from a
-    // serve-mode-reachable seam so native-chat session reading includes
-    // managed-Codex sessions even on headless `orca serve` hosts where
-    // registerCoreHandlers never runs.
-    if (deps?.getAdditionalAiVaultCodexHomePaths) {
-      configureHostReadableTranscriptPathSources({
-        getAdditionalCodexHomePaths: deps.getAdditionalAiVaultCodexHomePaths
-      })
-    }
     // Why: the daemon adapter is installed via `setLocalPtyProvider()` during
     // attachMainWindowServices, AFTER this service is constructed. Capturing
     // `getLocalPtyProvider()` at construction time would freeze a reference to

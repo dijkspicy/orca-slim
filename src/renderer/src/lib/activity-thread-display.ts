@@ -5,11 +5,6 @@ import type {
 } from '../../../shared/agent-status-types'
 import type { TerminalTab } from '../../../shared/terminal-tab-types'
 import type { Worktree } from '../../../shared/worktree/types'
-import {
-  getAgentRowPrimaryText,
-  isOrcaDispatchPrompt,
-  orchestrationLabelsMatchLiveDispatch
-} from './agent-row-primary-text'
 import { formatAgentToolPreview } from './agent-row-tool-preview'
 
 // Why: follow-up replies ("yes", "ok proceed") are valid hook prompts but are
@@ -29,10 +24,6 @@ export function isTerseAgentFollowUpPrompt(prompt: string): boolean {
 }
 
 function taskTitleFromPrompt(prompt: string): string | null {
-  if (isOrcaDispatchPrompt(prompt)) {
-    const preview = getAgentRowPrimaryText({ prompt })
-    return preview || null
-  }
   const trimmed = prompt.trim()
   if (!trimmed || isTerseAgentFollowUpPrompt(trimmed)) {
     return null
@@ -60,10 +51,9 @@ function bestTaskPromptFromHistory(history: readonly AgentStateHistoryEntry[]): 
 }
 
 // Why: orchestration labels are the stable identity across follow-up turns, but
-// sticky metadata can outlive the task. Trust the label only when it still
-// describes the live work: a dispatch turn must share the task id (mirrors
-// getAgentRowPrimaryText), and a substantive non-dispatch prompt means the pane
-// moved on to new work — a terse follow-up ("yes") is still the same task.
+// sticky metadata can outlive the task. Dispatch prompts were culled with
+// orchestration, so only a substantive new prompt means the pane moved on — a
+// terse follow-up ("yes") is still the same task.
 function orchestrationLabelForEntry(
   entry: Pick<AgentStatusEntry, 'orchestration' | 'prompt'>
 ): string | null {
@@ -71,9 +61,6 @@ function orchestrationLabelForEntry(
     entry.orchestration?.displayName?.trim() || entry.orchestration?.taskTitle?.trim() || ''
   if (!label) {
     return null
-  }
-  if (isOrcaDispatchPrompt(entry.prompt)) {
-    return orchestrationLabelsMatchLiveDispatch(entry) ? label : null
   }
   if (taskTitleFromPrompt(entry.prompt)) {
     return null

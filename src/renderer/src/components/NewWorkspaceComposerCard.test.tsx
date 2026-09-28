@@ -16,8 +16,7 @@ const storeMocks = vi.hoisted(() => ({
 }))
 
 const apiMocks = vi.hoisted(() => ({
-  runtimeGetStatus: vi.fn(),
-  sshConnect: vi.fn()
+  runtimeGetStatus: vi.fn()
 }))
 
 vi.mock('@/store', () => ({
@@ -41,10 +40,6 @@ vi.mock('@/store', () => ({
       })
     }
   )
-}))
-
-vi.mock('@/components/contextual-tours/use-contextual-tour', () => ({
-  useContextualTour: vi.fn()
 }))
 
 vi.mock('@/components/ui/tooltip', () => ({
@@ -165,24 +160,6 @@ const devboxNeedsSetupHostOption: ProjectHostSetupOption = {
   canSetLocation: true
 }
 
-function makeDisconnectedHostOption(targetId: string, label: string): ProjectHostSetupOption {
-  return {
-    kind: 'needs-setup',
-    id: `needs-setup:ssh:${targetId}`,
-    projectId: 'project-group:platform',
-    hostId: `ssh:${targetId}`,
-    label,
-    detail: 'Connect this host to set up projects',
-    isAvailable: false,
-    attention: false,
-    canSetLocation: false,
-    connectAction: { kind: 'ssh', targetId }
-  }
-}
-
-const disconnectedDevboxNeedsSetupHostOption = makeDisconnectedHostOption('devbox', 'Devbox')
-const disconnectedBastionNeedsSetupHostOption = makeDisconnectedHostOption('bastion', 'Bastion')
-
 const pnpmInstallSetupConfig = {
   source: 'yaml' as const,
   command: 'pnpm install',
@@ -202,13 +179,6 @@ const vmRecipeHostOptions: ProjectHostSetupOption[] = [
     path: '/workspace/orca'
   }
 ]
-
-function findConnectButton(label: string): HTMLButtonElement | undefined {
-  const item = findRunTargetItem(label)
-  return [...(item?.querySelectorAll('button') ?? [])].find((button) =>
-    button.textContent?.includes('Connect')
-  )
-}
 
 function renderCard(
   overrides: Partial<React.ComponentProps<typeof NewWorkspaceComposerCard>> = {}
@@ -336,9 +306,6 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
     ;(window as unknown as { api: unknown }).api = {
       runtimeEnvironments: {
         getStatus: apiMocks.runtimeGetStatus
-      },
-      ssh: {
-        connect: apiMocks.sshConnect
       }
     }
     apiMocks.runtimeGetStatus.mockResolvedValue({
@@ -354,7 +321,6 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
       },
       _meta: { runtimeId: 'runtime-devbox' }
     })
-    apiMocks.sshConnect.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -676,104 +642,6 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
     expect(hostChanges).toEqual([])
   })
 
-  it('connects disconnected setup-needed SSH hosts without selecting them', async () => {
-    const hostChanges: string[] = []
-    current = renderCard({
-      projectHostSetupOptions: [localReadyHostOption, disconnectedDevboxNeedsSetupHostOption],
-      selectedProjectHostSetupId: 'setup-local',
-      onProjectHostSetupChange: (setupId) => hostChanges.push(setupId)
-    })
-
-    openRunTargetPicker(current.container)
-    const devboxItem = findRunTargetItem('Devbox')
-    expect(devboxItem).toBeTruthy()
-    const connectButton = [...(devboxItem?.querySelectorAll('button') ?? [])].find((button) =>
-      button.textContent?.includes('Connect')
-    )
-    expect(connectButton).toBeTruthy()
-
-    await act(async () => {
-      connectButton?.click()
-    })
-
-    expect(apiMocks.sshConnect).toHaveBeenCalledWith({ targetId: 'devbox' })
-    expect(hostChanges).toEqual([])
-    // The picker stays open so the connecting state is visible; the row is not auto-selected.
-    expect(findRunTargetItem('Devbox')).toBeTruthy()
-  })
-
-  it('keeps other hosts connectable while one connect is still in flight', async () => {
-    // First host's connect never resolves — a stalled connect must not disable the others.
-    apiMocks.sshConnect.mockImplementation(({ targetId }: { targetId: string }) =>
-      targetId === 'devbox' ? new Promise(() => {}) : Promise.resolve(undefined)
-    )
-    current = renderCard({
-      projectHostSetupOptions: [
-        localReadyHostOption,
-        disconnectedDevboxNeedsSetupHostOption,
-        disconnectedBastionNeedsSetupHostOption
-      ],
-      selectedProjectHostSetupId: 'setup-local'
-    })
-
-    openRunTargetPicker(current.container)
-    await act(async () => {
-      findConnectButton('Devbox')?.click()
-    })
-
-    // The picker stays open through the connect, so the state is inspectable in place.
-    // Devbox is mid-connect: disabled, showing the connecting indicator; Bastion stays clickable.
-    const devboxButton = findConnectButton('Devbox')
-    expect(devboxButton?.disabled).toBe(true)
-    expect(devboxButton?.textContent).toContain('Connecting')
-    const bastionButton = findConnectButton('Bastion')
-    expect(bastionButton?.disabled).toBe(false)
-    expect(bastionButton?.textContent).toContain('Connect')
-
-    await act(async () => {
-      bastionButton?.click()
-    })
-    expect(apiMocks.sshConnect).toHaveBeenCalledWith({ targetId: 'bastion' })
-  })
-
-  it('stops the connecting indicator when the connect fails', async () => {
-    // A failed connect must clear the spinner and restore the Connect button so the user
-    // can retry — the row can't stay stuck on "Connecting" after the error.
-    apiMocks.sshConnect.mockRejectedValue(new Error('connection refused'))
-    current = renderCard({
-      projectHostSetupOptions: [localReadyHostOption, disconnectedDevboxNeedsSetupHostOption],
-      selectedProjectHostSetupId: 'setup-local'
-    })
-
-    openRunTargetPicker(current.container)
-    await act(async () => {
-      findConnectButton('Devbox')?.click()
-    })
-
-    const devboxButton = findConnectButton('Devbox')
-    expect(devboxButton?.disabled).toBe(false)
-    expect(devboxButton?.textContent).toContain('Connect')
-    expect(devboxButton?.textContent).not.toContain('Connecting')
-  })
-
-  it('opens the SSH host add dialog over the composer without leaving for Settings', () => {
-    current = renderCard({
-      projectHostSetupOptions: [localReadyHostOption, devboxNeedsSetupHostOption],
-      selectedProjectHostSetupId: 'setup-local'
-    })
-
-    openRunTargetPicker(current.container)
-    act(() => findRunTargetItem('Add host')?.click())
-    act(() => findRunTargetItem('Add SSH host')?.click())
-
-    const dialog = document.body.querySelector('[data-testid="add-remote-host-dialog"]')
-    expect(dialog?.getAttribute('data-mode')).toBe('ssh')
-    // The composer stays put — no navigation that would discard the in-progress form.
-    expect(storeMocks.closeModal).not.toHaveBeenCalled()
-    expect(storeMocks.openSettingsPage).not.toHaveBeenCalled()
-    expect(storeMocks.openSettingsTarget).not.toHaveBeenCalled()
-  })
-
   it('opens the add-host submenu on hover without a click', () => {
     current = renderCard({
       projectHostSetupOptions: [localReadyHostOption, devboxNeedsSetupHostOption],
@@ -791,23 +659,6 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
 
     expect(findRunTargetItem('Add SSH host')).toBeTruthy()
     expect(findRunTargetItem('Add Remote Orca Server')).toBeTruthy()
-  })
-
-  it('opens the remote Orca server add dialog over the composer without leaving for Settings', () => {
-    current = renderCard({
-      projectHostSetupOptions: [localReadyHostOption, devboxNeedsSetupHostOption],
-      selectedProjectHostSetupId: 'setup-local'
-    })
-
-    openRunTargetPicker(current.container)
-    act(() => findRunTargetItem('Add host')?.click())
-    act(() => findRunTargetItem('Add Remote Orca Server')?.click())
-
-    const dialog = document.body.querySelector('[data-testid="add-remote-host-dialog"]')
-    expect(dialog?.getAttribute('data-mode')).toBe('server')
-    expect(storeMocks.closeModal).not.toHaveBeenCalled()
-    expect(storeMocks.openSettingsPage).not.toHaveBeenCalled()
-    expect(storeMocks.openSettingsTarget).not.toHaveBeenCalled()
   })
 
   it('shows VM recipes inside the run target picker', () => {

@@ -2,15 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestStore } from './store-test-helpers'
 import type { Project, ProjectHostSetup } from '../../../../shared/project-types'
 import type { Repo } from '../../../../shared/repo-types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 
 // One project cloned on the local Mac and on a remote Orca server under distinct repo ids —
 // the shape the compat merge exists to serve, and the only shape whose sourceRepoIds are
 // assembled from two hosts.
+
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
+
 const SHARED_PROJECT_ID = 'github:stablyai/orca'
 
 const localRepo: Repo = {
@@ -89,7 +87,6 @@ function runtimeResult(method: string): unknown {
 }
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   reposList.mockReset()
   projectsList.mockReset()
   listHostSetups.mockReset()
@@ -101,10 +98,6 @@ beforeEach(() => {
   listHostSetups.mockImplementation(async () => [clone(setup('local-repo', '/local/orca'))])
   runtimeEnvironmentsList.mockResolvedValue([{ id: 'env-1', name: 'awin' }])
   runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-    const compatible = createCompatibleRuntimeStatusResponseIfNeeded(args)
-    if (compatible) {
-      return compatible
-    }
     return {
       id: `rpc-${args.method}`,
       ok: true,

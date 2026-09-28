@@ -1,4 +1,3 @@
-import type { RuntimeFileOperationArgs } from '@/runtime/runtime-file-client'
 import type { TreeNode } from './file-explorer-types'
 
 export function shouldShowCollapseFolderAction(node: TreeNode, isExpanded: boolean): boolean {
@@ -20,16 +19,15 @@ export function shouldShowViewFileAction(node: TreeNode): boolean {
 export function shouldShowRemoteDownloadAction(
   node: TreeNode,
   connectionId?: string | null,
-  runtimeDownloadContext?: RuntimeFileOperationArgs | null,
   // Why: fail closed — only show folder download when the connection explicitly
   // advertises SFTP recursive transfer (system-SSH and unknown states stay off).
   supportsFolderDownload = false
 ): boolean {
   // Why: Desktop-only because download depends on Electron's native save/folder dialogs;
-  // runtime and system-SSH folders have no recursive transfer contract.
+  // system-SSH folders have no recursive transfer contract.
   const hasDownloadCapability = node.isDirectory
     ? Boolean(connectionId && supportsFolderDownload)
-    : Boolean(connectionId || runtimeDownloadContext)
+    : Boolean(connectionId)
   return (
     hasDownloadCapability &&
     (globalThis as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__ !== true

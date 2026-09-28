@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { getAgentSessionOptionCatalog } from './agent-session-option-catalog'
 import { OMP_SESSION_OPTION_CATALOG } from './agent-session-option-catalog-omp'
 import { resolveAgentSessionOptionLaunch } from './agent-session-option-launch'
-import { parseBuiltSessionOptionCommand } from './native-chat-session-option-commands'
 import { OMP_MODEL_LIST_ARGS, parseOmpModelList } from './omp-model-list-probe'
 
 const LISTING = JSON.stringify({
@@ -131,9 +130,6 @@ describe('omp session option catalog', () => {
     if (midSession?.kind !== 'command') {
       throw new Error('expected a command apply')
     }
-    const command = midSession.build('minimax-cn/MiniMax-M3')
-    expect(command).toBe('/orca-model minimax-cn/MiniMax-M3')
-    expect(parseBuiltSessionOptionCommand(midSession.build, command)).toBe('minimax-cn/MiniMax-M3')
-    expect(parseBuiltSessionOptionCommand(midSession.build, '/orca-model ')).toBeNull()
+    expect(midSession.build('minimax-cn/MiniMax-M3')).toBe('/orca-model minimax-cn/MiniMax-M3')
   })
 })

@@ -159,8 +159,7 @@ vi.mock('./use-workspace-status-drop', () => ({
   useWorkspaceStatusDocumentDrop: vi.fn()
 }))
 
-vi.mock('./workspace-board-task-status-sync', async (importOriginal) => ({
-  ...(await importOriginal<Record<string, unknown>>()),
+vi.mock('./workspace-board-task-status-sync', () => ({
   syncWorkspaceBoardTaskStatuses: syncWorkspaceBoardTaskStatusesMock
 }))
 

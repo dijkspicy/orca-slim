@@ -4,7 +4,6 @@ import { CircleCheck, CircleDot, CircleX, Clock, GitMerge } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PullRequestIcon, checksLabel } from './WorktreeCardHelpers'
 import type { WorktreeCardPrDisplay } from './worktree-card-pr-display'
-import type { IssueInfo } from '../../../../shared/github/pull-request-types'
 import { translate } from '@/i18n/i18n'
 
 function MetadataStatusBadge({
@@ -30,7 +29,7 @@ function MetadataStatusBadge({
   )
 }
 
-export function IssueStateBadge({ state }: { state: IssueInfo['state'] }): React.JSX.Element {
+export function IssueStateBadge({ state }: { state: 'open' | 'closed' }): React.JSX.Element {
   if (state === 'closed') {
     return (
       <MetadataStatusBadge

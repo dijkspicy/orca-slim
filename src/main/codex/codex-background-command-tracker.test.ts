@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import type { AgentJournalItemBody } from '../../shared/agent-session-journal-types'
-import { agentJournalItemKey } from '../../shared/agent-session-journal-item-key'
 import { CodexBackgroundCommandTracker } from './codex-background-command-tracker'
-import { createCodexJournalTranslator } from './codex-structured-journal-translation'
-import type { CodexStructuredSessionEvent } from './codex-structured-session-state'
 
 function notification(
   method: string,
   params: Record<string, unknown>
-): Extract<CodexStructuredSessionEvent, { type: 'notification' }> {
+): {
+  type: 'notification'
+  sessionId: string
+  threadId: string
+  method: string
+  params: Record<string, unknown>
+} {
   return {
     type: 'notification',
     sessionId: 'session',
@@ -52,40 +54,6 @@ describe('persistent command ownership', () => {
     expect(tracker.retainedMetadataBytes).toBeLessThanOrEqual(700)
     tracker.clear()
     expect(tracker.retainedMetadataBytes).toBe(0)
-  })
-
-  it('keeps the journal running across turn completion and accepts late output and exit', () => {
-    const rows: { key: string; body: AgentJournalItemBody }[] = []
-    const translator = createCodexJournalTranslator({
-      primaryThreadId: () => 'root',
-      sink: {
-        appendItem: (identity, body) => rows.push({ key: agentJournalItemKey(identity), body }),
-        appendTombstone: () => {},
-        publish: () => {}
-      }
-    })
-    const tracker = new CodexBackgroundCommandTracker('root')
-    const deliver = (event: Extract<CodexStructuredSessionEvent, { type: 'notification' }>) => {
-      expect(translator.handle(event)).toEqual({ accepted: true })
-      tracker.observe(event)
-    }
-    deliver(notification('turn/started', { turn: { id: 'turn' } }))
-    deliver(command('item/started'))
-    const originalKey = rows.find(({ body }) => body.kind === 'tool-call')?.key
-    deliver(notification('turn/completed', { turn: { id: 'turn' } }))
-    expect(rows.filter(({ body }) => body.kind === 'tool-call').map(({ body }) => body)).toEqual([
-      expect.objectContaining({ state: 'running' })
-    ])
-    expect(tracker.tasks()).toHaveLength(1)
-    deliver(
-      notification('item/commandExecution/outputDelta', { itemId: 'exec', delta: 'late output' })
-    )
-    translator.flush()
-    expect(rows.at(-1)).toMatchObject({ key: originalKey, body: { state: 'running' } })
-    deliver(command('item/completed'))
-    expect(rows.at(-1)).toMatchObject({ key: originalKey, body: { state: 'completed' } })
-    expect(tracker.tasks()).toEqual([])
-    translator.dispose()
   })
 
   it('counts child shells only after the child stops covering them, without resurrecting exits', () => {

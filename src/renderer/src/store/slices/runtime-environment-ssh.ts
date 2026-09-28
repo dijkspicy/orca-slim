@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand'
 import type { AppState } from '../types'
-import type { SshConnectionState, SshTargetSummary } from '../../../../shared/ssh-types'
-import { sanitizeSshTargetGeneration } from '../../../../shared/ssh-target-generation'
+import type { SshConnectionState, SshTargetSummary } from './ssh-host-state-contracts'
+import { sanitizeSshTargetGeneration } from './ssh-host-state-contracts'
 import { sshConnectionStatesEqual, sshTargetLabelsEqual } from './ssh-target-cleanup'
 export {
   selectRuntimeAwareSshError,

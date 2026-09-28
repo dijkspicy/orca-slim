@@ -1,6 +1,5 @@
 import React from 'react'
 import GitHubItemDialog from '@/components/GitHubItemDialog'
-import { launchWorkItemDirect } from '@/lib/launch-work-item-direct'
 import { useAppStore } from '@/store'
 import { translate } from '@/i18n/i18n'
 import ProjectViewList from './ProjectViewList'
@@ -104,18 +103,10 @@ function ProjectViewBody({
         )}
         onUse={(item) => {
           rowActions.setDialogRepoItem(null)
-          // Why: issue #4756 keeps project-view actions on the direct "start work now" path, not the TaskPage background-create flow.
-          void launchWorkItemDirect({
-            item,
-            repoId: dialogItem.workItem.repoId,
-            launchSource: 'task_page',
-            telemetrySource: 'sidebar',
-            openModalFallback: () => {
-              if (item.url) {
-                void window.api.shell.openUrl(item.url)
-              }
-            }
-          })
+          // Why: the direct work-item launch is gone with the forge cull; degrade to opening the item URL.
+          if (item.url) {
+            void window.api.shell.openUrl(item.url)
+          }
         }}
         onClose={() => rowActions.setDialogRepoItem(null)}
       />

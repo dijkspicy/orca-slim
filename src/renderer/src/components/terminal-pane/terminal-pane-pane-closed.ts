@@ -1,6 +1,5 @@
 import { useAppStore } from '@/store'
 import { makePaneKey } from '../../../../shared/stable-pane-id'
-import { scheduleRuntimeGraphSync } from '@/runtime/sync-runtime-graph'
 import {
   resolveTabTitleAfterPaneClose,
   shouldClearLaunchAgentForClosedPane
@@ -160,7 +159,6 @@ export function createTerminalPaneClosedHandler(
       const paneTitles = useAppStore.getState().runtimePaneTitlesByTabId[tabId] ?? {}
       updateTabTitle(tabId, resolveTabTitleAfterPaneClose(paneTitles, activePane.id))
     }
-    scheduleRuntimeGraphSync()
   }
 }
 

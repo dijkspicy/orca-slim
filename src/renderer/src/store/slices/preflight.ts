@@ -1,7 +1,6 @@
 import type { StateCreator } from 'zustand'
 import type { PreflightRuntimeContext, PreflightStatus } from '../../../../preload/api-types'
 import type { AppState } from '../types'
-import { callRuntimeRpc, getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
 import {
   getLocalPreflightContext,
   localPreflightContextKey,
@@ -81,7 +80,6 @@ export const createPreflightSlice: StateCreator<AppState, [], [], PreflightSlice
 
     const requestId = ++latestPreflightRequestId
     const contextChanged = get().preflightStatusContextKey !== contextKey
-    const runtimeTarget = getActiveRuntimeTarget(get().settings)
     const preflightArgs = buildPreflightArgs(force, context)
     set({
       preflightStatus: contextChanged ? null : get().preflightStatus,
@@ -92,11 +90,9 @@ export const createPreflightSlice: StateCreator<AppState, [], [], PreflightSlice
 
     const localPreflightCheck = window.api?.preflight?.check
     const request = (
-      runtimeTarget.kind === 'environment'
-        ? callRuntimeRpc<PreflightStatus>(runtimeTarget, 'preflight.check', force ? { force } : {})
-        : localPreflightCheck
-          ? localPreflightCheck(preflightArgs)
-          : Promise.reject(new Error('Desktop preflight API is unavailable.'))
+      localPreflightCheck
+        ? localPreflightCheck(preflightArgs)
+        : Promise.reject(new Error('Desktop preflight API is unavailable.'))
     )
       .then((status) => {
         if (requestId !== latestPreflightRequestId) {

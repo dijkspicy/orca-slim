@@ -31,11 +31,6 @@ import {
   type ClipboardFileDeps,
   type ClipboardFileResult
 } from './clipboard-file-copy'
-import {
-  cleanupExpiredRemoteClipboardFiles,
-  scheduleLegacyRemoteClipboardFileCleanup,
-  writeRemoteFileToClipboard
-} from './clipboard-remote-file-copy'
 import { saveClipboardImageBufferInRuntime } from './clipboard-runtime-image-upload'
 import { readWindowsClipboardImageFileAsPng } from './clipboard-windows-image-file'
 import { buildClipboardImageThumbnail } from './clipboard-image-thumbnail'
@@ -96,9 +91,6 @@ export function registerClipboardHandlers(store: Store): void {
   ipcMain.removeHandler('clipboard:writeFile')
   ipcMain.removeHandler('clipboard:saveImageAsTempFile')
   ipcMain.removeHandler('clipboard:readImageThumbnail')
-
-  void cleanupExpiredRemoteClipboardFiles()
-  scheduleLegacyRemoteClipboardFileCleanup()
 
   ipcMain.handle('clipboard:readText', async (event, options?: ReadClipboardTextOptions) => {
     assertTrustedClipboardTextSender(event)
@@ -167,13 +159,6 @@ export function registerClipboardHandlers(store: Store): void {
           return { ok: false, reason: isENOENT(error) ? 'not-found' : 'invalid-path' }
         }
       })
-      if (request.connectionId) {
-        return writeRemoteFileToClipboard({
-          remotePath: request.filePath,
-          connectionId: request.connectionId,
-          deps
-        })
-      }
       return writeFileToClipboard(request.filePath, deps)
     }
   )

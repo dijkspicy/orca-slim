@@ -1,11 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 import { getDefaultSettings } from '../../../../shared/constants'
 import type { ProjectGroup } from '../../../../shared/project-group-types'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
 import { createTestStore } from './store-test-helpers'
 
 const projectGroup: ProjectGroup = {
@@ -22,10 +19,6 @@ const projectGroup: ProjectGroup = {
 }
 const refreshedGroup = { ...projectGroup, name: 'Renamed after creation', updatedAt: 2 }
 const otherHostGroup = { ...projectGroup, executionHostId: 'runtime:other' }
-
-beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
-})
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -45,10 +38,6 @@ function setup(runtimeEnvironmentId: string | null) {
       projectGroups: { create, list },
       runtimeEnvironments: {
         call: async (request: RuntimeEnvironmentCallRequest) => {
-          const compatibility = createCompatibleRuntimeStatusResponseIfNeeded(request)
-          if (compatibility) {
-            return compatibility
-          }
           expect(request).toMatchObject({ selector: runtimeEnvironmentId })
           switch (request.method) {
             case 'projectGroup.create':

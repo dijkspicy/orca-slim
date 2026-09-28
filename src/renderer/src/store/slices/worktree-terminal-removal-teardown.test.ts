@@ -22,8 +22,6 @@ globalThis.window = {
 } as never
 
 import { getDefaultSettings } from '../../../../shared/constants'
-import { createCompatibleRuntimeStatusResponseIfNeeded } from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import { createTestStore, makeRuntimeOwnedWorktree, makeTab, seedStore } from './store-test-helpers'
 
 const worktreeId = 'repo1::/srv/worktree'
@@ -50,16 +48,13 @@ function seedRuntimeOwnedWorktree(store: ReturnType<typeof createTestStore>): vo
 describe('worktree terminal removal teardown', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    clearRuntimeCompatibilityCacheForTests()
-    runtimeCall.mockImplementation((args: { method: string }) =>
-      Promise.resolve(
-        createCompatibleRuntimeStatusResponseIfNeeded(args) ?? {
-          id: 'rpc-default',
-          ok: true,
-          result: {},
-          _meta: { runtimeId: 'remote-runtime' }
-        }
-      )
+    runtimeCall.mockImplementation(() =>
+      Promise.resolve({
+        id: 'rpc-default',
+        ok: true,
+        result: {},
+        _meta: { runtimeId: 'remote-runtime' }
+      })
     )
   })
 

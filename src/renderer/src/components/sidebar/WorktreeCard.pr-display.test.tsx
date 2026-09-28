@@ -2,7 +2,6 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostedReviewInfo } from '../../../../shared/hosted-review'
-import type { PRInfo } from '../../../../shared/github/pull-request-types'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { Repo } from '../../../../shared/repo-types'
 import type { WorktreeCardProperty } from '../../../../shared/ui-chrome-types'
@@ -128,13 +127,15 @@ function makeHostedReview(overrides: Partial<HostedReviewInfo> = {}): HostedRevi
   }
 }
 
-function makePRInfo(overrides: Partial<PRInfo> = {}): PRInfo {
+// PR cache fixtures use the hosted-review shape now that provider PR types are gone.
+function makePRInfo(overrides: Partial<HostedReviewInfo> = {}): HostedReviewInfo {
   return {
+    provider: 'github',
     number: 456,
     title: 'Fix stale GH PR',
     state: 'open',
     url: 'https://github.com/acme/orca/pull/456',
-    checksStatus: 'success',
+    status: 'success',
     updatedAt: '2026-05-17T00:00:00.000Z',
     mergeable: 'MERGEABLE',
     ...overrides
@@ -662,7 +663,7 @@ describe('WorktreeCard linked PR display', () => {
           title: 'Remove split terminal from onboarding checklist',
           state: 'merged',
           headSha: 'abc123',
-          checksStatus: 'success'
+          status: 'success'
         }),
         fetchedAt: Date.now()
       }
@@ -695,7 +696,7 @@ describe('WorktreeCard linked PR display', () => {
           number: 6341,
           title: 'Keep local PR status visible',
           state: 'open',
-          checksStatus: 'pending'
+          status: 'pending'
         }),
         fetchedAt: Date.now()
       },
@@ -734,7 +735,7 @@ describe('WorktreeCard linked PR display', () => {
           number: 6340,
           title: 'Remove split terminal from onboarding checklist',
           state: 'open',
-          checksStatus: 'success'
+          status: 'success'
         }),
         fetchedAt: 200
       }
@@ -769,7 +770,7 @@ describe('WorktreeCard linked PR display', () => {
           number: 6340,
           title: 'Remove split terminal from onboarding checklist',
           state: 'open',
-          checksStatus: 'success'
+          status: 'success'
         }),
         fetchedAt: 200
       }
@@ -803,7 +804,7 @@ describe('WorktreeCard linked PR display', () => {
           number: 6340,
           title: 'Remove split terminal from onboarding checklist',
           state: 'open',
-          checksStatus: 'success'
+          status: 'success'
         }),
         fetchedAt: 200
       }
@@ -837,7 +838,7 @@ describe('WorktreeCard linked PR display', () => {
           number: 6340,
           title: 'Remove split terminal from onboarding checklist',
           state: 'open',
-          checksStatus: 'success'
+          status: 'success'
         }),
         fetchedAt: 100
       }
@@ -870,7 +871,7 @@ describe('WorktreeCard linked PR display', () => {
           number: 6340,
           title: 'Remove split terminal from onboarding checklist',
           state: 'open',
-          checksStatus: 'success'
+          status: 'success'
         }),
         fetchedAt: 200
       }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { PRComment } from './github/comment-types'
+import type { PRComment } from './pr-review-data-types'
 import {
   getPRCommentGroupCount,
   getPRCommentGroupId,

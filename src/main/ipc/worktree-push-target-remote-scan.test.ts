@@ -4,7 +4,6 @@
 // across the remote shapes a real repo produces.
 
 import { describe, expect, it } from 'vitest'
-import { parseGitHubOwnerRepo } from '../github/gh-utils'
 import { findRemoteForUrl } from './worktree-push-target-setup'
 import type { GitRemoteExec } from './worktree-push-target-cleanup'
 
@@ -52,7 +51,6 @@ async function findRemoteForUrlPerRemote(
   repoPath: string,
   remoteUrl: string
 ): Promise<string | null> {
-  const target = parseGitHubOwnerRepo(remoteUrl)
   try {
     const { stdout } = await execGit(['remote'], repoPath)
     for (const remote of stdout
@@ -61,17 +59,7 @@ async function findRemoteForUrlPerRemote(
       .filter(Boolean)) {
       try {
         const { stdout: urlStdout } = await execGit(['remote', 'get-url', remote], repoPath)
-        const candidateUrl = urlStdout.trim()
-        const candidate = parseGitHubOwnerRepo(candidateUrl)
-        if (
-          target &&
-          candidate &&
-          target.owner.toLowerCase() === candidate.owner.toLowerCase() &&
-          target.repo.toLowerCase() === candidate.repo.toLowerCase()
-        ) {
-          return remote
-        }
-        if (candidateUrl === remoteUrl) {
+        if (urlStdout.trim() === remoteUrl) {
           return remote
         }
       } catch {

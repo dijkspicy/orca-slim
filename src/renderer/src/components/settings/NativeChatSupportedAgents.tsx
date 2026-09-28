@@ -1,4 +1,4 @@
-import { NATIVE_CHAT_SUPPORTED_AGENT_LIST } from '../../../../shared/native-chat-agent-support'
+import { NATIVE_CHAT_SUPPORTED_AGENT_LIST } from '@/lib/native-chat-supported-agent'
 import { AgentIcon, getAgentLabel } from '@/lib/agent-catalog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'

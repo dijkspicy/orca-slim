@@ -1,19 +1,31 @@
 import type { AppState } from '@/store/types'
-import type { OrcaHooks } from '../../../shared/orca-yaml-hook-types'
 import { resolveHookCommandSourcePolicy } from '../../../shared/hook-command-source-policy'
 import { hashOrcaHookScript, type OrcaHookScriptKind } from './orca-hook-trust'
-import {
-  checkRuntimeHooks,
-  readRuntimeIssueCommand,
-  type IssueCommandReadResult
-} from '@/runtime/runtime-hooks-client'
-import { getRuntimeEnvironmentIdForRepo } from './repo-runtime-owner'
 import { MODAL_DISMISSED_KEY } from '@/store/slices/modal-slot-dismissal'
-import {
-  getRepoExecutionHostId,
-  parseExecutionHostId,
-  type ExecutionHostId
-} from '../../../shared/execution-host'
+import { getRepoExecutionHostId, type ExecutionHostId } from '../../../shared/execution-host'
+
+// The shared orca-yaml-hook-types module was culled; hooks trust now reads only
+// this local structural view of the yaml content it confirms.
+type OrcaHooks = {
+  scripts?: { setup?: string; archive?: string }
+  defaultTabs?: { title?: string; color?: string; command?: string }[]
+}
+
+type HookCheckResult = {
+  status?: 'ok' | 'error'
+  hasHooks: boolean
+  hooks: OrcaHooks | null
+  mayNeedUpdate: boolean
+}
+
+type IssueCommandReadResult = {
+  status?: 'ok' | 'error'
+  localContent: string | null
+  sharedContent: string | null
+  effectiveContent: string | null
+  localFilePath: string
+  source: 'local' | 'shared' | 'none'
+}
 
 export type HookScriptKind = OrcaHookScriptKind
 
@@ -26,10 +38,6 @@ function enqueueTrustPrompt<T>(task: () => Promise<T>): Promise<T> {
   const next = trustPromptChain.then(task, task)
   trustPromptChain = next.catch(() => undefined)
   return next
-}
-
-export function __resetTrustPromptChainForTests(): void {
-  trustPromptChain = Promise.resolve()
 }
 
 function getSetupTrustContent(yamlHooks: OrcaHooks | null): string {
@@ -46,53 +54,10 @@ function getSetupTrustContent(yamlHooks: OrcaHooks | null): string {
   return [yamlHooks?.scripts?.setup?.trim(), ...defaultTabCommands].filter(Boolean).join('\n\n')
 }
 
-function getVmRecipeTrustContent(yamlHooks: OrcaHooks | null): string {
-  return (yamlHooks?.environmentRecipes ?? [])
-    .map((recipe) =>
-      [
-        `# environmentRecipes.${recipe.id}`,
-        `name: ${recipe.name}`,
-        recipe.description ? `description: ${recipe.description}` : null,
-        `create: ${recipe.create}`,
-        recipe.suspend ? `suspend: ${recipe.suspend}` : null,
-        recipe.resume ? `resume: ${recipe.resume}` : null,
-        recipe.destroyDisabled
-          ? 'destroy: none'
-          : recipe.destroy
-            ? `destroy: ${recipe.destroy}`
-            : null
-      ]
-        .filter((entry): entry is string => entry !== null)
-        .join('\n')
-    )
-    .join('\n\n')
-}
-
 function findHookRepo(state: AppState, repoId: string, hostId?: ExecutionHostId) {
   return hostId
     ? state.repos.find((repo) => repo.id === repoId && getRepoExecutionHostId(repo) === hostId)
     : state.repos.find((repo) => repo.id === repoId)
-}
-
-function settingsForHookRepoOwner(
-  state: AppState,
-  repoId: string,
-  hostId?: ExecutionHostId,
-  runtimeOwnerEnvironmentId?: string | null
-): AppState['settings'] {
-  const parsedHost = hostId ? parseExecutionHostId(hostId) : null
-  const runtimeEnvironmentId =
-    runtimeOwnerEnvironmentId?.trim() ||
-    (hostId
-      ? parsedHost?.kind === 'runtime'
-        ? parsedHost.environmentId
-        : null
-      : getRuntimeEnvironmentIdForRepo(state, repoId))
-  // Why: hook inspection must follow the repo owner. SSH/local repos execute
-  // through desktop IPC, while runtime repos may differ from the focused host.
-  return state.settings
-    ? { ...state.settings, activeRuntimeEnvironmentId: runtimeEnvironmentId }
-    : ({ activeRuntimeEnvironmentId: runtimeEnvironmentId } as AppState['settings'])
 }
 
 function canUseRepoWideTrust(state: AppState, repoId: string): boolean {
@@ -215,11 +180,7 @@ export async function readAndConfirmRuntimeIssueCommand(
 ): Promise<ConfirmedRuntimeIssueCommand> {
   let result: IssueCommandReadResult
   try {
-    result = await readRuntimeIssueCommand(
-      settingsForHookRepoOwner(state, repoId, hostId),
-      repoId,
-      hostId
-    )
+    result = await window.api.hooks.readIssueCommand({ repoId, ...(hostId ? { hostId } : {}) })
   } catch {
     result = {
       status: 'error',
@@ -238,7 +199,6 @@ export async function ensureHooksConfirmed(
   repoId: string,
   scriptKind: HookScriptKind,
   hostId?: ExecutionHostId,
-  runtimeOwnerEnvironmentId?: string | null,
   isCancelled: () => boolean = NEVER_CANCEL_TRUST_CHECK
 ): Promise<'run' | 'skip'> {
   return enqueueTrustPrompt(async () => {
@@ -253,13 +213,10 @@ export async function ensureHooksConfirmed(
     try {
       if (scriptKind === 'issueCommand') {
         // Local overrides are user-owned; only shared orca.yaml commands need repo trust.
-        // Why: hostId disambiguates duplicate repo ids on the local IPC path,
-        // matching the checkRuntimeHooks call below.
-        const result = await readRuntimeIssueCommand(
-          settingsForHookRepoOwner(state, repoId, hostId, runtimeOwnerEnvironmentId),
+        const result = await window.api.hooks.readIssueCommand({
           repoId,
-          hostId
-        )
+          ...(hostId ? { hostId } : {})
+        })
         if (result.source === 'local') {
           return 'run'
         }
@@ -282,21 +239,20 @@ export async function ensureHooksConfirmed(
         if (sourcePolicy === 'local-only') {
           return 'run'
         }
-        const result = await checkRuntimeHooks(
-          settingsForHookRepoOwner(state, repoId, hostId, runtimeOwnerEnvironmentId),
+        const result: HookCheckResult = await window.api.hooks.check({
           repoId,
-          hostId
-        )
+          ...(hostId ? { hostId } : {})
+        })
         if (result.status === 'error') {
           return 'skip'
         }
-        const yamlHooks = (result.hooks as OrcaHooks | null) ?? null
+        const yamlHooks = result.hooks
         scriptContent =
           scriptKind === 'setup'
             ? getSetupTrustContent(yamlHooks)
-            : scriptKind === 'vmRecipe'
-              ? getVmRecipeTrustContent(yamlHooks)
-              : (yamlHooks?.scripts?.[scriptKind] ?? '').trim()
+            : scriptKind === 'archive'
+              ? (yamlHooks?.scripts?.archive ?? '').trim()
+              : ''
       }
     } catch {
       // Fail closed: if we cannot inspect the script, we cannot trust it.

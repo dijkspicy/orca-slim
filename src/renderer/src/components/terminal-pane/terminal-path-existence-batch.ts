@@ -2,10 +2,13 @@ import {
   PATH_EXISTENCE_BATCH_MAX,
   type PathExistenceResult
 } from '../../../../shared/path-existence-batch'
-import type { RuntimeFileOperationArgs } from '@/runtime/runtime-file-client-types'
-import { runtimePathsExist } from '@/runtime/runtime-path-existence-batch'
-import { getActiveRuntimeTarget } from '@/runtime/runtime-client-target'
-import { captureRuntimeEnvironmentRequestRevision } from '@/runtime/runtime-environment-revision'
+
+/** Structural subset of the file-operation context this batch reads. */
+type TerminalPathContext = {
+  worktreeId?: string | null
+  worktreePath?: string | null
+  connectionId?: string
+}
 
 type PendingPath = {
   path: string
@@ -14,37 +17,22 @@ type PendingPath = {
   promise: Promise<boolean>
 }
 type PathGroup = {
-  context: RuntimeFileOperationArgs
-  remote: boolean
-  pairingRevision?: number
+  context: TerminalPathContext
   paths: Map<string, PendingPath>
 }
 
 /** One hover turn shares a host request; no answers survive into another turn. */
 export function createTerminalPathExistenceBatch(): (
-  context: RuntimeFileOperationArgs,
-  path: string,
-  remote: boolean
+  context: TerminalPathContext,
+  path: string
 ) => Promise<boolean> {
   const groups = new Map<string, PathGroup>()
   let queued = false
-  return (context, path, remote) => {
-    const target = getActiveRuntimeTarget(context.settings)
-    const pairingRevision =
-      target.kind === 'environment'
-        ? captureRuntimeEnvironmentRequestRevision(target.environmentId)
-        : undefined
-    const key = JSON.stringify([
-      context.settings?.activeRuntimeEnvironmentId,
-      context.worktreeId,
-      context.worktreePath,
-      context.connectionId,
-      pairingRevision,
-      remote
-    ])
+  return (context, path) => {
+    const key = JSON.stringify([context.worktreeId, context.worktreePath, context.connectionId])
     let group = groups.get(key)
     if (!group) {
-      group = { context, remote, pairingRevision, paths: new Map() }
+      group = { context, paths: new Map() }
       groups.set(key, group)
     }
     const existing = group.paths.get(path)
@@ -91,18 +79,14 @@ export function createTerminalPathExistenceBatch(): (
   async function run(group: PathGroup, pending: PendingPath[]): Promise<void> {
     try {
       const paths = pending.map((row) => row.path)
-      let results: PathExistenceResult[]
-      if (group.context.connectionId || group.remote) {
-        results = await runtimePathsExist(group.context, paths, group.pairingRevision)
-      } else {
-        const values = window.api.shell.pathsExist
-          ? await window.api.shell.pathsExist(paths)
-          : await Promise.all(paths.map((path) => window.api.shell.pathExists(path)))
-        if (values.length !== paths.length || values.some((value) => typeof value !== 'boolean')) {
-          throw new Error('Invalid local path existence response')
-        }
-        results = values.map((exists) => ({ exists }))
+      // Runtime and SSH transports are gone; existence is always probed locally.
+      const values = window.api.shell.pathsExist
+        ? await window.api.shell.pathsExist(paths)
+        : await Promise.all(paths.map((path) => window.api.shell.pathExists(path)))
+      if (values.length !== paths.length || values.some((value) => typeof value !== 'boolean')) {
+        throw new Error('Invalid local path existence response')
       }
+      const results: PathExistenceResult[] = values.map((exists) => ({ exists }))
       results.forEach((result, index) => {
         if ('exists' in result) {
           pending[index].resolve(result.exists)

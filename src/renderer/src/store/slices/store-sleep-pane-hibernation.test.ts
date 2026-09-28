@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type * as AgentStatusModule from '@/lib/agent-status'
 import { getDefaultSettings } from '../../../../shared/constants'
-import { createCompatibleRuntimeStatusResponseIfNeeded } from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import {
   createTestStore,
   makeRuntimeOwnedWorktree,
@@ -44,7 +42,6 @@ const mockApi = createStoreCascadesMockApi()
 describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    clearRuntimeCompatibilityCacheForTests()
     mockApi.pty.kill.mockResolvedValue(undefined)
     mockUnregisterPtyDataHandlers.mockReturnValue([])
     applySleepRuntimeRpcDefault(mockApi)
@@ -426,22 +423,20 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
     const targetPaneKey = `tab-1:${targetLeaf}`
 
     mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) =>
-      Promise.resolve(
-        createCompatibleRuntimeStatusResponseIfNeeded(args) ?? {
-          id: 'rpc-default',
-          ok: true,
-          result:
-            args.method === 'terminal.stopExact'
-              ? {
-                  stoppedPtyIds: ['terminal-1'],
-                  livePtyIds: ['terminal-1', 'terminal-2'],
-                  postStopVerified: true,
-                  remainingLivePtyIds: ['terminal-2']
-                }
-              : {},
-          _meta: { runtimeId: 'remote-runtime' }
-        }
-      )
+      Promise.resolve({
+        id: 'rpc-default',
+        ok: true,
+        result:
+          args.method === 'terminal.stopExact'
+            ? {
+                stoppedPtyIds: ['terminal-1'],
+                livePtyIds: ['terminal-1', 'terminal-2'],
+                postStopVerified: true,
+                remainingLivePtyIds: ['terminal-2']
+              }
+            : {},
+        _meta: { runtimeId: 'remote-runtime' }
+      })
     )
     seedStore(store, {
       settings: { ...getDefaultSettings('/tmp'), activeRuntimeEnvironmentId: 'runtime-1' },
@@ -641,22 +636,20 @@ describe('shutdownWorktreeTerminals (sleep) — agent status hygiene', () => {
     const targetPaneKey = `tab-1:${targetLeaf}`
 
     mockApi.runtimeEnvironments.call.mockImplementation((args: { method: string }) =>
-      Promise.resolve(
-        createCompatibleRuntimeStatusResponseIfNeeded(args) ?? {
-          id: 'rpc-default',
-          ok: true,
-          result:
-            args.method === 'terminal.stopExact'
-              ? {
-                  stoppedPtyIds: ['terminal-1'],
-                  livePtyIds: ['terminal-1', 'terminal-2'],
-                  postStopVerified: false,
-                  postStopFailure: 'target_still_live'
-                }
-              : {},
-          _meta: { runtimeId: 'remote-runtime' }
-        }
-      )
+      Promise.resolve({
+        id: 'rpc-default',
+        ok: true,
+        result:
+          args.method === 'terminal.stopExact'
+            ? {
+                stoppedPtyIds: ['terminal-1'],
+                livePtyIds: ['terminal-1', 'terminal-2'],
+                postStopVerified: false,
+                postStopFailure: 'target_still_live'
+              }
+            : {},
+        _meta: { runtimeId: 'remote-runtime' }
+      })
     )
     seedStore(store, {
       settings: { ...getDefaultSettings('/tmp'), activeRuntimeEnvironmentId: 'runtime-1' },

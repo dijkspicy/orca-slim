@@ -1,4 +1,3 @@
-import { parseAppSshPtyId } from '../../../../shared/ssh-pty-id'
 import { isRuntimeOwnedSshTargetId } from '../../../../shared/execution-host'
 
 export type SshPaneConnectGate = {
@@ -24,19 +23,8 @@ export function resolveSshPaneConnectGate(input: {
   hasLeafSessionMap: boolean
 }): SshPaneConnectGate {
   const sshConnected = input.sshStatus === 'connected'
-  // Why: the deferred maps can miss a tab (e.g. activeConnectionIdsAtShutdown
-  // wasn't persisted, so restore registered no deferred target). The tab's own
-  // restored app SSH pty id still names the session — reattach it rather than
-  // spawning a replacement shell. Skipped when a per-leaf session map exists:
-  // leaves carry their own ids and the tab-level id must not be attached by
-  // every leaf of a split.
-  const fallbackTabSessionId =
-    !sshConnected &&
-    !input.hasLeafSessionMap &&
-    input.tabPtyId &&
-    parseAppSshPtyId(input.tabPtyId)?.connectionId === input.connectionId
-      ? input.tabPtyId
-      : null
+  // SSH pty ids no longer exist, so the tab-level fallback can never match.
+  const fallbackTabSessionId = null
   const pendingSessionId =
     input.restoredLeafSessionId ?? input.deferredTabSessionId ?? fallbackTabSessionId ?? null
   // Why: runtime-owned targets are excluded — their relay health is owned by

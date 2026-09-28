@@ -9,13 +9,10 @@ import {
   redactRuntimeEnvironment,
   type PublicKnownRuntimeEnvironment
 } from '../../shared/runtime-environments'
-import { RemoteRuntimeClientError } from '../../shared/remote-runtime-client-error'
 import { RuntimeRpcCallQueueOverloadError } from '../../shared/runtime-rpc-call-queue'
 import type { RuntimeRpcFailure, RuntimeRpcResponse } from '../../shared/runtime-rpc-envelope'
 import type { RuntimeStatus } from '../../shared/runtime-types'
 import type { Store } from '../persistence'
-import { clearBrowserRoutePartitionStorageForEnvironment } from '../browser/browser-route-partition-storage-runtime'
-import { retireBrowserRoutePartitionStorageForEnvironment } from '../browser/browser-route-partition-storage-retirement'
 import { verifyAndAddRuntimeEnvironmentFromPairingCode } from './runtime-environment-pairing-verification'
 import { clearRuntimeEnvironmentCapabilityEvidence } from './runtime-environment-capability-evidence'
 import {
@@ -108,20 +105,8 @@ export function registerRuntimeEnvironmentConnectivityHandlers({
       const removed = removeEnvironment(getUserDataPath(), args.selector)
       clearRuntimeEnvironmentCapabilityEvidence(removed.id)
       clearRuntimeEnvironmentManualDisconnect(removed.id)
-      const retiring = Promise.resolve(invalidateTransport(removed.id))
+      void Promise.resolve(invalidateTransport(removed.id))
       closeLegacySelectorTransport(args.selector, removed.id)
-      // Why: removal is an explicit lifecycle decision, so its client-hosted browser storage goes
-      // too -- but only once the client host releases its partitions, or every one refuses as live.
-      void retireBrowserRoutePartitionStorageForEnvironment({
-        environmentId: removed.id,
-        whenClientHostClosed: retiring,
-        clearStorage: clearBrowserRoutePartitionStorageForEnvironment,
-        onError: (error) => {
-          console.warn('[runtime-environments] browser partition storage clear failed:', error)
-        }
-      }).catch((error) => {
-        console.warn('[runtime-environments] browser partition storage clear failed:', error)
-      })
       return { removed: redactRuntimeEnvironment(removed) }
     }
   )
@@ -202,10 +187,7 @@ function runtimeEnvironmentCallFailure(
   method: string,
   error: unknown
 ): RuntimeRpcFailure | null {
-  if (
-    !(error instanceof RemoteRuntimeClientError) &&
-    !(error instanceof RuntimeRpcCallQueueOverloadError)
-  ) {
+  if (!(error instanceof RuntimeRpcCallQueueOverloadError)) {
     return null
   }
   return {

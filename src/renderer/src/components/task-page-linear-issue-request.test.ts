@@ -3,18 +3,8 @@ import {
   buildLinearIssueListReadArgs,
   buildLinearIssueListRequestSignature,
   isLinearIssueSearchActive,
-  shouldClearTeamDerivedFacets,
-  shouldForceLinearIssueListRead,
-  teamDerivedFacetsForPrimaryTeamChange
+  shouldForceLinearIssueListRead
 } from './task-page-linear-issue-request'
-import type { LinearIssueAttributeFilter } from '../../../shared/linear/issue-attribute-filter'
-
-const filter: LinearIssueAttributeFilter = {
-  stateIds: ['s1'],
-  priorities: [1],
-  assignee: { kind: 'unassigned' },
-  labelIds: ['l1']
-}
 
 describe('task-page-linear-issue-request', () => {
   it('treats immediate or applied search as active', () => {
@@ -23,31 +13,32 @@ describe('task-page-linear-issue-request', () => {
     expect(isLinearIssueSearchActive('  ', '  ')).toBe(false)
   })
 
-  it('omits attribute filters from list read args while search is active', () => {
-    expect(
-      buildLinearIssueListReadArgs({
-        limit: 36,
-        attributeFilter: filter,
-        searchActive: true
-      }).attributeFilter
-    ).toBeUndefined()
-    expect(
-      buildLinearIssueListReadArgs({
-        limit: 36,
-        attributeFilter: filter,
-        searchActive: false
-      }).attributeFilter
-    ).toEqual(filter)
+  it('builds list read args with filter and limit', () => {
+    expect(buildLinearIssueListReadArgs({ limit: 36 })).toEqual({
+      kind: 'list',
+      filter: 'all',
+      limit: 36
+    })
+    expect(buildLinearIssueListReadArgs({ limit: 36, filter: 'assigned' })).toEqual({
+      kind: 'list',
+      filter: 'assigned',
+      limit: 36
+    })
   })
 
-  it('includes source scope and canonical signature in the request identity', () => {
+  it('includes workspace, filter, and limit in the request identity', () => {
     const signature = buildLinearIssueListRequestSignature({
       workspaceId: 'ws-1',
-      limit: 36,
-      attributeFilter: filter
+      limit: 36
     })
-    expect(signature).toContain('local::ws-1::list::all::36::')
-    expect(signature).toContain('"stateIds":["s1"]')
+    expect(signature).toBe('local::ws-1::list::all::36')
+    expect(
+      buildLinearIssueListRequestSignature({
+        workspaceId: 'ws-1',
+        limit: 36,
+        searchQuery: 'bug'
+      })
+    ).toBe('local::ws-1::search::bug')
   })
 
   it('forces a read when the filter signature changes within one workspace', () => {
@@ -94,42 +85,5 @@ describe('task-page-linear-issue-request', () => {
         refreshForced: false
       })
     ).toBe(false)
-  })
-
-  it('clears team-derived facets only when the primary team changes within one workspace', () => {
-    expect(
-      shouldClearTeamDerivedFacets({
-        previous: { workspaceId: 'ws-1', teamId: 'team-a' },
-        next: { workspaceId: 'ws-1', teamId: 'team-b' }
-      })
-    ).toBe(true)
-    // Why: a workspace switch swaps in that workspace's own persisted filter.
-    expect(
-      shouldClearTeamDerivedFacets({
-        previous: { workspaceId: 'ws-1', teamId: 'team-a' },
-        next: { workspaceId: 'ws-2', teamId: 'team-b' }
-      })
-    ).toBe(false)
-    expect(
-      shouldClearTeamDerivedFacets({
-        previous: null,
-        next: { workspaceId: 'ws-1', teamId: 'team-a' }
-      })
-    ).toBe(false)
-    expect(
-      shouldClearTeamDerivedFacets({
-        previous: { workspaceId: 'ws-1', teamId: 'team-a' },
-        next: { workspaceId: 'ws-1', teamId: 'team-a' }
-      })
-    ).toBe(false)
-  })
-
-  it('clears team-derived facets while preserving priority', () => {
-    expect(teamDerivedFacetsForPrimaryTeamChange(filter)).toEqual({
-      stateIds: [],
-      priorities: [1],
-      assignee: null,
-      labelIds: []
-    })
   })
 })

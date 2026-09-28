@@ -30,7 +30,6 @@ vi.mock('../ssh/ssh-target-registry', () => moduleMocks.sshModuleMock(reposMocks
 
 import { registerRepoHandlers } from './repos'
 import { clearGitCapabilityStateForTests } from '../git/git-capability-state'
-import { resetSshProviderAuthorities } from '../ssh/ssh-provider-authority'
 import { createRepoHandlerHarness } from './repos-remote-test-harness'
 import { REPO_SEARCH_REFS_MAX_LIMIT } from '../../shared/repo-search-limits'
 
@@ -38,7 +37,6 @@ const { handleMock, mockStore, mockGitProvider, prepareLocalWorktreeRootForRepoM
 
 beforeEach(() => {
   clearGitCapabilityStateForTests()
-  resetSshProviderAuthorities()
 })
 
 describe('repos:getBaseRefDefault envelope', () => {

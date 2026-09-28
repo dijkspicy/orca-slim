@@ -1,14 +1,11 @@
 // Default-driven create-project state for AddRepoDialog: resolves the default
-// parent (local/runtime host home) and probes Git
+// parent (local host home) and probes Git
 // availability, guarding against stale async results when the target changes.
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { browseRuntimeServerDirectory } from '@/runtime/runtime-server-directory-browser'
-import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
 import type { AddRepoDialogStep } from './add-repo-dialog-types'
-import { getDefaultCreateProjectParent, type GitAvailability } from './create-project-defaults'
+import type { GitAvailability } from './create-project-defaults'
 
 const LOCAL_GIT_AVAILABILITY_TIMEOUT_MS = 1500
-const RUNTIME_GIT_AVAILABILITY_TIMEOUT_MS = 3000
 
 export type CreateRuntimeParentStatus = 'idle' | 'checking' | 'failed'
 
@@ -188,76 +185,6 @@ export function useCreateProjectDefaults({
     if (step !== 'create') {
       return
     }
-    const runtimeEnvironmentId = activeCreateParentRuntimeEnvironmentId
-    if (!runtimeEnvironmentId || activeCreateParentSshTargetId) {
-      setCreateRuntimeParentStatus('idle')
-      return
-    }
-    if (!canReplaceCreateParentDefault(createParent)) {
-      setCreateRuntimeParentStatus('idle')
-      return
-    }
-    if (
-      createParent.trim() &&
-      autoFilledCreateParentRef.current?.targetKey !== `runtime:${runtimeEnvironmentId}` &&
-      autoFilledCreateParentRef.current?.parent === createParent.trim()
-    ) {
-      setCreateDefaultParent('')
-      setCreateRuntimeParentStatus('checking')
-      setCreateParent('')
-      return
-    }
-    if (
-      autoFilledCreateParentRef.current?.targetKey === `runtime:${runtimeEnvironmentId}` &&
-      autoFilledCreateParentRef.current.parent === createParent.trim()
-    ) {
-      setCreateRuntimeParentStatus('idle')
-      return
-    }
-    setCreateDefaultParent('')
-
-    const gen = ++createParentDefaultGenRef.current
-    setCreateRuntimeParentStatus('checking')
-    void withTimeout(
-      browseRuntimeServerDirectory(runtimeEnvironmentId, '~'),
-      RUNTIME_GIT_AVAILABILITY_TIMEOUT_MS
-    )
-      .then((result) => {
-        if (
-          gen !== createParentDefaultGenRef.current ||
-          !canReplaceCreateParentDefault(createParent)
-        ) {
-          return
-        }
-        const parent = getDefaultCreateProjectParent(result.resolvedPath)
-        createStepAutoFilledRef.current = true
-        autoFilledCreateParentRef.current = { parent, targetKey: `runtime:${runtimeEnvironmentId}` }
-        createParentProvenanceRef.current = { parent, targetKey: `runtime:${runtimeEnvironmentId}` }
-        setCreateDefaultParent(parent)
-        setCreateParent(parent)
-        setCreateRuntimeParentStatus('idle')
-      })
-      .catch(() => {
-        if (gen !== createParentDefaultGenRef.current) {
-          return
-        }
-        setCreateRuntimeParentStatus('failed')
-      })
-  }, [
-    activeRuntimeEnvironmentId,
-    activeCreateParentRuntimeEnvironmentId,
-    activeCreateParentSshTargetId,
-    canReplaceCreateParentDefault,
-    createParent,
-    setCreateParent,
-    step
-  ])
-
-  useEffect(() => {
-    if (step !== 'create') {
-      return
-    }
-    const runtimeEnvironmentId = activeRuntimeEnvironmentId?.trim()
     const gen = ++createGitProbeGenRef.current
     if (activeCreateParentSshTargetId) {
       // Why: SSH creation happens through the relay; probing client Git would
@@ -266,19 +193,9 @@ export function useCreateProjectDefaults({
       return
     }
     setCreateGitAvailability('checking')
-    const probe = runtimeEnvironmentId
-      ? callRuntimeRpc<{ available: boolean }>(
-          { kind: 'environment', environmentId: runtimeEnvironmentId },
-          'repo.gitAvailable',
-          undefined,
-          { timeoutMs: RUNTIME_GIT_AVAILABILITY_TIMEOUT_MS }
-        ).then((result) => result.available)
-      : window.api.repos.isGitAvailable()
-    const timeoutMs = runtimeEnvironmentId
-      ? RUNTIME_GIT_AVAILABILITY_TIMEOUT_MS
-      : LOCAL_GIT_AVAILABILITY_TIMEOUT_MS
+    const timeoutMs = LOCAL_GIT_AVAILABILITY_TIMEOUT_MS
 
-    void withTimeout(probe, timeoutMs)
+    void withTimeout(window.api.repos.isGitAvailable(), timeoutMs)
       .then((available) => {
         if (gen !== createGitProbeGenRef.current) {
           return
@@ -291,7 +208,7 @@ export function useCreateProjectDefaults({
         }
         setCreateGitAvailability('unknown')
       })
-  }, [activeRuntimeEnvironmentId, activeCreateParentSshTargetId, step])
+  }, [activeCreateParentSshTargetId, step])
 
   return {
     createDefaultParent,

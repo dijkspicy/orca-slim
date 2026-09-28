@@ -120,7 +120,6 @@ export function useQuickSubmitPreparation(input: QuickSubmitPreparationInput) {
               repoId,
               'setup',
               selectedRepoExecutionHostId ?? undefined,
-              undefined,
               isSubmissionCancelled
             )
           : Promise.resolve<'skip'>('skip'),

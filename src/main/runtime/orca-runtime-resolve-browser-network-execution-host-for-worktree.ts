@@ -1,15 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
 import { OrcaRuntimeWithTransitionGraphReloadToTerminalState } from './orca-runtime-transition-graph-reload-to-terminal-state'
-import type { ExecutionHostId } from '../../shared/execution-host'
-import type { BrowserNetworkExecutionHost } from '../../shared/browser-client-host-protocol'
-import {
-  LOCAL_EXECUTION_HOST_ID,
-  getWorktreeExecutionHostId,
-  parseExecutionHostId
-} from '../../shared/execution-host'
-import { resolveRuntimeBrowserNetworkExecutionHost } from './runtime-browser-network-execution-host'
-import { resolveLocalProjectRuntimeForWorktreeId } from '../local-project-runtime-resolution'
-import { getRegisteredSshState } from '../ssh/ssh-target-registry'
 import { resolveWorktreeLaunchHost } from './worktree-launch-host-repo'
 import { parseWorkspaceKey } from '../../shared/workspace-scope'
 import type { FolderWorkspace } from '../../shared/folder-workspace-types'
@@ -27,34 +17,6 @@ import { WorktreeIdRequiresFullPathError } from './runtime-worktree-lineage-reso
 import { triggerTerminalSpawnPushTargetMaterialization } from './runtime-terminal-spawn-push-target-materialization'
 
 export class OrcaRuntimeWithResolveBrowserNetworkExecutionHostForWorktree extends OrcaRuntimeWithTransitionGraphReloadToTerminalState {
-  protected resolveBrowserNetworkExecutionHostForWorktree(worktree?: {
-    id: string
-    repoId?: string
-    hostId?: ExecutionHostId
-  }): BrowserNetworkExecutionHost | Promise<BrowserNetworkExecutionHost> {
-    const repo = worktree?.repoId ? this.requireStore().getRepo(worktree.repoId) : undefined
-    const executionHostId = worktree
-      ? getWorktreeExecutionHostId(worktree, repo)
-      : LOCAL_EXECUTION_HOST_ID
-    const parsedHost = parseExecutionHostId(executionHostId)
-    return resolveRuntimeBrowserNetworkExecutionHost({
-      runtimeId: this.getRuntimeId(),
-      runtimeRevision: this.getStartedAt(),
-      executionHostId,
-      ...(worktree
-        ? {
-            projectRuntime: resolveLocalProjectRuntimeForWorktreeId(
-              this.requireStore(),
-              worktree.id
-            )
-          }
-        : {}),
-      ...(parsedHost?.kind === 'ssh'
-        ? { sshState: getRegisteredSshState(parsedHost.targetId) }
-        : {})
-    })
-  }
-
   protected folderWorkspaceToResolvedWorktree(folderWorkspace: FolderWorkspace): ResolvedWorktree {
     const worktree = folderWorkspaceToWorktree(folderWorkspace)
     return {

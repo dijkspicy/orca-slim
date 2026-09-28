@@ -3,15 +3,13 @@ import {
   resolveLinearIssueEmptyKind,
   shouldOfferLinearIssueFetchMore
 } from './task-page-linear-issue-empty-state'
-import { emptyLinearIssueAttributeFilter } from '../../../shared/linear/issue-attribute-filter'
 
 describe('task-page-linear-issue-empty-state', () => {
-  it('prefers context, then search, then server filter, then client team, then unfiltered', () => {
+  it('prefers context, then search, then client team, then unfiltered', () => {
     expect(
       resolveLinearIssueEmptyKind({
         hasContextLabel: true,
         searchActive: true,
-        attributeFilter: emptyLinearIssueAttributeFilter(),
         serverIssueCount: 0,
         filteredIssueCount: 0
       })
@@ -21,12 +19,6 @@ describe('task-page-linear-issue-empty-state', () => {
       resolveLinearIssueEmptyKind({
         hasContextLabel: false,
         searchActive: true,
-        attributeFilter: {
-          stateIds: ['s'],
-          priorities: [],
-          assignee: null,
-          labelIds: []
-        },
         serverIssueCount: 0,
         filteredIssueCount: 0
       })
@@ -36,22 +28,6 @@ describe('task-page-linear-issue-empty-state', () => {
       resolveLinearIssueEmptyKind({
         hasContextLabel: false,
         searchActive: false,
-        attributeFilter: {
-          stateIds: ['s'],
-          priorities: [],
-          assignee: null,
-          labelIds: []
-        },
-        serverIssueCount: 0,
-        filteredIssueCount: 0
-      })
-    ).toBe('server-attribute-filter')
-
-    expect(
-      resolveLinearIssueEmptyKind({
-        hasContextLabel: false,
-        searchActive: false,
-        attributeFilter: emptyLinearIssueAttributeFilter(),
         serverIssueCount: 3,
         filteredIssueCount: 0
       })
@@ -61,7 +37,6 @@ describe('task-page-linear-issue-empty-state', () => {
       resolveLinearIssueEmptyKind({
         hasContextLabel: false,
         searchActive: false,
-        attributeFilter: emptyLinearIssueAttributeFilter(),
         serverIssueCount: 0,
         filteredIssueCount: 0
       })
@@ -72,11 +47,8 @@ describe('task-page-linear-issue-empty-state', () => {
     expect(shouldOfferLinearIssueFetchMore({ emptyKind: 'client-team', serverHasMore: true })).toBe(
       true
     )
-    expect(
-      shouldOfferLinearIssueFetchMore({
-        emptyKind: 'server-attribute-filter',
-        serverHasMore: true
-      })
-    ).toBe(false)
+    expect(shouldOfferLinearIssueFetchMore({ emptyKind: 'search', serverHasMore: true })).toBe(
+      false
+    )
   })
 })

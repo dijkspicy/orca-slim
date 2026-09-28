@@ -1,8 +1,4 @@
-import { BrowserError } from '../browser/browser-error'
-import {
-  BROWSER_UNAVAILABLE_ERROR_CODE,
-  type RuntimeBrowserUnavailableReason
-} from '../../shared/runtime-types'
+import type { RuntimeBrowserUnavailableReason } from '../../shared/runtime-types'
 import type { RuntimeBrowserCommandHost, RuntimeBrowserCommands } from './orca-runtime-browser'
 
 /**
@@ -106,10 +102,9 @@ export function createRuntimeBrowserCommands(
         return undefined
       }
       return () => {
-        throw new BrowserError(
-          BROWSER_UNAVAILABLE_ERROR_CODE,
-          'Browser automation is unavailable on this host.'
-        )
+        // The browser command implementations were culled with the browser domain, so no
+        // factory can be installed; every command rejects rather than pretending.
+        throw new Error('Browser automation is unavailable on this host.')
       }
     }
   })

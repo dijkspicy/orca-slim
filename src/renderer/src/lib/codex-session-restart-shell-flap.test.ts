@@ -4,11 +4,6 @@ import {
   markLiveCodexSessionsForRestart,
   markRestoredStaleCodexSessionsForRestart
 } from './codex-session-restart'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '@/runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '@/runtime/runtime-rpc-client'
 
 const ACCOUNT_A = 'account-a@example.com'
 const ACCOUNT_B = 'account-b@example.com'
@@ -20,8 +15,6 @@ const ACCOUNT_B = 'account-b@example.com'
  */
 describe('spurious shell readings on Codex-launched panes', () => {
   const originalWindow = (globalThis as { window?: typeof window }).window
-  const runtimeEnvironmentCall = vi.fn()
-  const runtimeEnvironmentTransportCall = vi.fn()
 
   function seedPane(args: { ptyId?: string; launchAgent?: 'codex' } = {}): void {
     const ptyId = args.ptyId ?? 'pty-1'
@@ -49,12 +42,6 @@ describe('spurious shell readings on Codex-launched panes', () => {
   }
 
   beforeEach(() => {
-    clearRuntimeCompatibilityCacheForTests()
-    runtimeEnvironmentCall.mockReset()
-    runtimeEnvironmentTransportCall.mockReset()
-    runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
-      return createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
-    })
     seedPane({ launchAgent: 'codex' })
     ;(globalThis as { window: typeof window }).window = {
       ...originalWindow,
@@ -77,10 +64,6 @@ describe('spurious shell readings on Codex-launched panes', () => {
             activeAccountId: 'account-b'
           }),
           listStalePanes: vi.fn().mockResolvedValue([])
-        },
-        runtimeEnvironments: {
-          ...originalWindow?.api?.runtimeEnvironments,
-          call: runtimeEnvironmentTransportCall
         }
       }
     } as unknown as typeof window

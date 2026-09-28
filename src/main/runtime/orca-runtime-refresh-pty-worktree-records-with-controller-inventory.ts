@@ -26,7 +26,6 @@ import {
   indexPersistedPtySurfaceBindings,
   indexPersistedPtyWorktreeBindings
 } from './runtime-worktree-binding-index'
-import { parseAppSshPtyId } from '../../shared/ssh-pty-id'
 import { NO_OBSERVING_PROVIDER_REASON } from '../../shared/pty-liveness-verdict'
 import { buildControllerTerminalIdentities } from './orca-runtime-build-controller-terminal-identities'
 import { retireOrchestrationAuthorityAbsentFromInventory } from './runtime-restored-orchestration-authority-sweep'
@@ -148,9 +147,7 @@ export class OrcaRuntimeWithRefreshPtyWorktreeRecordsWithControllerInventory ext
       // The owning inventory positively observed this PTY again, so this is host evidence of life,
       // not merely the absence of doubt.
       this.markPtyLivenessLive(session.id, livenessObservationAtStart)
-      const sessionConnectionId =
-        parseAppSshPtyId(session.id)?.connectionId ??
-        (typeof connectionId === 'string' ? connectionId : null)
+      const sessionConnectionId = typeof connectionId === 'string' ? connectionId : null
       const persistedIndexes = getPersistedIndexes(
         sessionConnectionId ? toSshExecutionHostId(sessionConnectionId) : LOCAL_EXECUTION_HOST_ID
       )

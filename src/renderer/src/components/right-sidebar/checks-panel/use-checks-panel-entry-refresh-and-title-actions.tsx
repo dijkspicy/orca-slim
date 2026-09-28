@@ -48,7 +48,7 @@ type ChecksPanelEntryRefreshAndTitleActionsInput = Pick<
     | 'titleInputRef'
   > &
   Pick<ChecksPanelReviewState, 'checksFetchedAt' | 'commentsFetchedAt' | 'prFetchedAt'> &
-  Pick<ChecksPanelPollingState, 'fetchChecks' | 'fetchGitLabDetails'> &
+  Pick<ChecksPanelPollingState, 'fetchChecks'> &
   Pick<ChecksPanelReviewDataState, 'fetchComments'>
 
 export function useChecksPanelEntryRefreshAndTitleActions(
@@ -67,7 +67,6 @@ export function useChecksPanelEntryRefreshAndTitleActions(
     fallbackGitHubPRNumber,
     fetchChecks,
     fetchComments,
-    fetchGitLabDetails,
     fetchHostedReviewForBranch,
     fetchPRForBranch,
     hostedReviewCacheKey,
@@ -112,9 +111,6 @@ export function useChecksPanelEntryRefreshAndTitleActions(
           linkedAzureDevOpsPR,
           linkedGiteaPR
         })
-        if (activeGitLabReview) {
-          void fetchGitLabDetails()
-        }
         return
       }
       enqueueGitHubPRRefresh(activeWorktreeId, 'active', 80)
@@ -126,7 +122,6 @@ export function useChecksPanelEntryRefreshAndTitleActions(
       }
     },
     [
-      activeGitLabReview,
       activeWorktree?.head,
       activeWorktreeId,
       branch,
@@ -134,7 +129,6 @@ export function useChecksPanelEntryRefreshAndTitleActions(
       fallbackGitHubPRNumber,
       fetchChecks,
       fetchComments,
-      fetchGitLabDetails,
       fetchHostedReviewForBranch,
       isGitLabReviewContext,
       linkedAzureDevOpsPR,
@@ -201,7 +195,7 @@ export function useChecksPanelEntryRefreshAndTitleActions(
       return
     }
     if (activeReview?.provider === 'gitlab') {
-      const refreshedReview = await refreshHostedReviewCard(fetchHostedReviewForBranch, {
+      await refreshHostedReviewCard(fetchHostedReviewForBranch, {
         repoPath: repo.path,
         repoId: repo.id,
         branch,
@@ -212,15 +206,6 @@ export function useChecksPanelEntryRefreshAndTitleActions(
         linkedAzureDevOpsPR,
         linkedGiteaPR
       })
-      const refreshedGitLabReview =
-        refreshedReview?.provider === 'gitlab' ? refreshedReview : activeGitLabReview
-      if (refreshedGitLabReview) {
-        await fetchGitLabDetails({
-          mrNumberOverride: refreshedGitLabReview.number,
-          headShaOverride: refreshedGitLabReview.headSha,
-          commitAsCurrent: true
-        })
-      }
       return
     }
     const refreshedPR = await fetchPRForBranch(repo.path, branch, {
@@ -242,12 +227,10 @@ export function useChecksPanelEntryRefreshAndTitleActions(
       linkedGiteaPR
     })
   }, [
-    activeGitLabReview,
     activeReview?.provider,
     activeWorktreeId,
     branch,
     fallbackGitHubPRNumber,
-    fetchGitLabDetails,
     fetchHostedReviewForBranch,
     fetchPRForBranch,
     linkedAzureDevOpsPR,

@@ -3,7 +3,9 @@ import {
   type AgentProviderSessionMetadata,
   type ResumableTuiAgent
 } from './agent-session-resume'
-import type { SessionOptionValue } from './native-chat-session-options'
+// Same shape the session-option catalog applies; kept local so resume launch
+// does not depend on the deleted shared options module.
+type SessionOptionValue = string | boolean
 import { buildSleepingAgentLaunchConfig } from './sleeping-agent-launch-config'
 import { resolveAgentLaunchCommand } from './tui-agent-launch-command'
 import type { AgentStartupPlan } from './tui-agent-startup'

@@ -3,7 +3,6 @@ import { useMemo } from 'react'
 import { ArrowLeft, Search, Server } from 'lucide-react'
 import type { RepoIcon } from '../../../../shared/repo-icon'
 import type { SettingsNavIcon, SettingsNavInstallStatus } from '@/lib/settings-navigation-types'
-import type { GitHubRepositoryIdentity } from '../../../../shared/github/pull-request-types'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { useShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import { ShortcutKeyCombo } from '../ShortcutKeyCombo'
@@ -38,7 +37,8 @@ type RepoNavSection = NavSection & {
   badgeColor?: string
   isRemote?: boolean
   repoIcon?: RepoIcon | null
-  upstream?: GitHubRepositoryIdentity | null
+  // Structural mirror of the deleted shared GitHubRepositoryIdentity.
+  upstream?: { owner: string; repo: string; host?: string } | null
 }
 
 type SettingsSidebarProps = {

@@ -8,7 +8,6 @@
  * `hostId: 'local'` catalog whose repos carry runtime stamps also merges.
  */
 import { describe, it, expect, vi } from 'vitest'
-import type * as RuntimeRpcClientModule from '@/runtime/runtime-rpc-client'
 import type { Repo } from '../../../../shared/repo-types'
 import type { PublicKnownRuntimeEnvironment } from '../../../../shared/runtime-environments'
 
@@ -21,20 +20,22 @@ vi.mock('@/components/terminal-pane/pty-dispatcher', () => ({
   unregisterPtyDataHandlers: vi.fn()
 }))
 
-// Every runtime RPC (repo.list, project.list, projectHostSetup.list, capability
-// probes) resolves this shape — repo.list reads `.repos`; the compatibility probes
-// read `.projects` / `.setups`; anything else falls back safely.
+// Every runtime RPC (repo.list, project.list, projectHostSetup.list) resolves this
+// shape — repo.list reads `.repos`; anything else falls back safely.
 const rpcResult = vi.hoisted(() => ({ current: { repos: [] as Repo[], projects: [], setups: [] } }))
 
-vi.mock('@/runtime/runtime-rpc-client', async (importOriginal) => {
-  const actual = await importOriginal<typeof RuntimeRpcClientModule>()
-  return { ...actual, callRuntimeRpc: vi.fn(async () => rpcResult.current) }
-})
+const runtimeEnvironmentCall = vi.fn(async () => ({
+  id: 'rpc',
+  ok: true,
+  result: rpcResult.current
+}))
 
 const localReposList = vi.fn<() => Promise<Repo[]>>()
 
 // @ts-expect-error -- minimal window.api stub for the store under test
-globalThis.window = { api: { repos: { list: localReposList } } }
+globalThis.window = {
+  api: { repos: { list: localReposList }, runtimeEnvironments: { call: runtimeEnvironmentCall } }
+}
 
 import { createTestStore, seedStore, TEST_REPO } from './store-test-helpers'
 

@@ -1,5 +1,4 @@
 import type { ExecutionHostId } from './execution-host'
-import type { TaskSourceContext } from './task-source-context'
 import type { TuiAgent } from './tui-agent'
 import type { DiffComment } from './diff-comment-types'
 import type {
@@ -26,7 +25,6 @@ export type FolderWorkspace = {
   /** Authenticated client that created this workspace. Missing means unknown legacy origin. */
   creatorProvenance?: WorkspaceCreatorProvenance
   linkedTask: WorkspaceLinkedItem | null
-  linkedTaskSourceContext?: TaskSourceContext | null
   comment: string
   isArchived: boolean
   isUnread: boolean

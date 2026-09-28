@@ -1,14 +1,7 @@
 // @ts-nocheck -- mechanically split declarations.
-import type { FileReadLimits, IFilesystemProvider } from '../providers/types'
 import type { RuntimeFilePreviewResult } from '../../shared/runtime-types'
-import { FileReadCapExceededError } from '../ssh/ssh-filesystem-stream-reader'
-import {
-  REMOTE_RPC_MAX_CONTENT_BYTES,
-  remoteRpcResultExceedsContentBudget
-} from '../../shared/remote-rpc-content-budget'
 import { constants } from 'node:fs/promises'
-import { getSshTargetIdForExecutionHost, type ExecutionHostId } from '../../shared/execution-host'
-import { assertSshMutationExpectation } from '../ssh/ssh-connection-generation'
+import type { ExecutionHostId } from '../../shared/execution-host'
 import { basenameFromRelativePath } from './runtime-file-paths'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 
@@ -43,33 +36,23 @@ export function previewableBinaryByteLimit(maxContentBytes: number): number {
   return Math.floor(base64Bytes / 4) * 3
 }
 
-export async function readPreviewFileWithinCap(
-  provider: IFilesystemProvider,
-  filePath: string,
-  limits: FileReadLimits
-): Promise<RuntimeFilePreviewResult> {
-  try {
-    return await provider.readFile(filePath, limits)
-  } catch (error) {
-    if (error instanceof FileReadCapExceededError) {
-      throw new Error('file_too_large')
-    }
-    throw error
-  }
-}
-
 export function assertPreviewWithinTransportBudget(
   result: RuntimeFilePreviewResult,
   maxContentBytes: number | undefined
 ): RuntimeFilePreviewResult {
+  // The relay frame-budget module was culled; the caller-supplied cap is the surviving bound.
   if (
     maxContentBytes !== undefined &&
-    remoteRpcResultExceedsContentBudget(result, maxContentBytes, PREVIEW_CONTENT_FIELDS)
+    Buffer.byteLength(JSON.stringify({ content: result.content }), 'utf8') > maxContentBytes
   ) {
     throw new Error('file_too_large')
   }
   return result
 }
+
+// The remote-relay reply ceiling was 4 MiB of JSON minus its envelope reserve; kept as a
+// constant so preview budgets stay stable after the relay transport was culled.
+const REMOTE_RPC_MAX_CONTENT_BYTES = 4 * 1024 * 1024 - 4 * 1024
 
 export const RUNTIME_PREVIEWABLE_BINARY_MAX_BYTES = previewableBinaryByteLimit(
   REMOTE_RPC_MAX_CONTENT_BYTES
@@ -92,8 +75,8 @@ export function assertRuntimeFileMutationExpectation(
   // a host it never named (#11163).
   executionHostId: ExecutionHostId,
   expectedExecutionHostId: string | undefined,
-  expectedSshTargetId: string | undefined,
-  expectedSshConnectionGeneration: number | undefined
+  _expectedSshTargetId: string | undefined,
+  _expectedSshConnectionGeneration: number | undefined
 ): void {
   if (!expectedExecutionHostId) {
     throw new Error(RUNTIME_FILE_MUTATION_UPDATE_REQUIRED)
@@ -101,11 +84,8 @@ export function assertRuntimeFileMutationExpectation(
   if (expectedExecutionHostId !== executionHostId) {
     throw new Error('Workspace host changed; refresh and try again')
   }
-  assertSshMutationExpectation(
-    getSshTargetIdForExecutionHost(executionHostId) ?? undefined,
-    expectedSshTargetId,
-    expectedSshConnectionGeneration
-  )
+  // The SSH connection-generation fence was culled with the SSH host; only the
+  // host-identity expectations are checkable now.
 }
 
 export const pendingRuntimeFileWatcherUnsubscribes = new Set<Promise<void>>()
@@ -120,8 +100,6 @@ export const runtimeFileWatcherLeasesByOwnerAndRoot = new Map<
   string,
   Set<RuntimeFileWatcherLease>
 >()
-
-export const sshFileExplorerWatchRearms = new Map<string, Set<() => void>>()
 
 export const MOBILE_BINARY_EXTENSIONS = new Set([
   '.avif',

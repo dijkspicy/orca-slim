@@ -12,7 +12,6 @@ import { isTuiAgentEnabled } from '../../../../shared/tui-agent-selection'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import type { SourceControlAgentActionDialogProps } from './SourceControlAgentActionDialog'
 import type { UseSourceControlAgentActionDialogResult } from './source-control-agent-action-dialog-result'
-import { ensureLocalRuntimeCapabilities } from '@/runtime/local-runtime-capabilities'
 import { sourceControlLaunchAppliesAgentArgs } from './source-control-launch-agent-args-applicability'
 import { useSavedSourceControlAgentActionAutoStart } from './useSavedSourceControlAgentActionAutoStart'
 import {
@@ -114,27 +113,22 @@ export function useSourceControlAgentActionDialog({
     setSaveLaunchRecipe(true)
     setSaveTargetValue(defaultSaveTargetValue)
     let stale = false
-    // Why: whether CLI arguments apply is read synchronously from the local runtime's
-    // capabilities; settling them alongside detection keeps the field from appearing for a
-    // frame on a launch that turns out to be structured.
-    void Promise.all([refreshDetectedAgents(), ensureLocalRuntimeCapabilities()]).then(
-      ([nextAgents]) => {
-        if (stale || openCycleRef.current !== cycle) {
-          return
-        }
-        setSelectedAgent(
-          (current) =>
-            current ??
-            pickSourceControlLaunchAgent({
-              savedAgent: savedAgentId,
-              defaultAgent: settings?.defaultTuiAgent,
-              detectedAgents: nextAgents,
-              disabledAgents
-            })
-        )
-        setDetectedOpenCycle(cycle)
+    void refreshDetectedAgents().then((nextAgents) => {
+      if (stale || openCycleRef.current !== cycle) {
+        return
       }
-    )
+      setSelectedAgent(
+        (current) =>
+          current ??
+          pickSourceControlLaunchAgent({
+            savedAgent: savedAgentId,
+            defaultAgent: settings?.defaultTuiAgent,
+            detectedAgents: nextAgents,
+            disabledAgents
+          })
+      )
+      setDetectedOpenCycle(cycle)
+    })
     return () => {
       stale = true
     }

@@ -43,11 +43,9 @@ export function WorktreeCardParentContent({
     handleRenameTitle,
     handleEditIssue,
     handleEditComment,
-    handleOpenGitHubIssueInOrca,
     handleOpenIssueInBrowser,
     linearIssue,
     handleOpenLinearIssueInOrca,
-    handleOpenReviewInOrca,
     handleOpenReviewInBrowser,
     handleOpenAutomation,
     handleOpenAutomationRun,
@@ -95,18 +93,10 @@ export function WorktreeCardParentContent({
         onRenameWorkspaceTitle={affiliateListMode ? undefined : handleRenameTitle}
         onEditIssue={affiliateListMode ? undefined : handleEditIssue}
         onEditComment={affiliateListMode ? undefined : handleEditComment}
-        onOpenGitHubIssueInOrca={
-          hoverIssue && 'url' in hoverIssue && hoverIssue.url
-            ? handleOpenGitHubIssueInOrca
-            : undefined
-        }
         onOpenIssueInBrowser={
           hoverIssue && 'url' in hoverIssue && hoverIssue.url ? handleOpenIssueInBrowser : undefined
         }
         onOpenLinearIssueInOrca={linearIssue?.url ? handleOpenLinearIssueInOrca : undefined}
-        onOpenReviewInOrca={
-          hoverReview?.url && hoverReview.provider === 'github' ? handleOpenReviewInOrca : undefined
-        }
         onOpenReviewInBrowser={hoverReview?.url ? handleOpenReviewInBrowser : undefined}
         onOpenAutomation={affiliateListMode ? undefined : handleOpenAutomation}
         onOpenAutomationRun={affiliateListMode ? undefined : handleOpenAutomationRun}

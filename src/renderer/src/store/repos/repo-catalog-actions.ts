@@ -27,7 +27,6 @@ import {
   filterSetupsForPrunedRepoRows,
   mergeFetchedRepoCatalog,
   projectCompatibilityForReconciledRepos,
-  reconcileReadoptedSshWorktreeState,
   reconcileSupersededSshRepos
 } from './repo-catalog-merge'
 import {
@@ -56,7 +55,6 @@ export function createRepoCatalogActions(
         )
         const reconciliation = reconcileReadoptedSshRepoRows(s.repos, pendingSshRepoReadoptions)
         const repos = reconciliation.repos
-        const worktreeState = reconcileReadoptedSshWorktreeState(s, pendingSshRepoReadoptions)
         const remainingSetups = filterSetupsForPrunedRepoRows(s.projectHostSetups, s.repos, repos)
         const compatibility = mergeProjectHostSetupCompatibility(
           projectCompatibilityFromRepos(repos),
@@ -83,7 +81,6 @@ export function createRepoCatalogActions(
         return {
           repos,
           pendingSshRepoReadoptions: reconciliation.pendingReadoptions,
-          ...worktreeState,
           projects,
           projectHostSetups
         }
@@ -145,7 +142,6 @@ export function createRepoCatalogActions(
           return {
             repos: prunedRepos,
             pendingSshRepoReadoptions: reconciliation.pendingReadoptions,
-            ...reconcileReadoptedSshWorktreeState(s, s.pendingSshRepoReadoptions),
             ...mergedProjectCompatibility,
             ...(arrayElementsUnchanged(prunedRepos, s.repos)
               ? {}

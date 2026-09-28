@@ -1,25 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import {
-  getTaskSourceCacheScope,
-  type TaskSourceContext
-} from '../../../shared/task-source-context'
-import type { JiraIssue } from '../../../shared/jira-types'
 import { findTaskPageJiraIssue } from './task-page-jira-cache-selectors'
 
-function jiraSourceContext(environmentId: string): TaskSourceContext {
-  return {
-    kind: 'task-source',
-    provider: 'jira',
-    projectId: 'logical-project',
-    hostId: `runtime:${environmentId}`,
-    providerIdentity: {
-      provider: 'jira',
-      siteId: 'site-1'
-    }
-  }
-}
-
-function jiraIssue(key: string, title: string, siteId = 'site-1'): JiraIssue {
+function issue(key: string, title: string, siteId = 'site-1') {
   return {
     id: `${siteId}:${key}`,
     key,
@@ -37,56 +19,36 @@ function jiraIssue(key: string, title: string, siteId = 'site-1'): JiraIssue {
 }
 
 describe('findTaskPageJiraIssue', () => {
-  it('keeps same-key Jira issues separated by source context', () => {
-    const localSource = jiraSourceContext('local-runtime')
-    const remoteSource = jiraSourceContext('remote-runtime')
-    const localScope = getTaskSourceCacheScope(localSource)
-    const remoteScope = getTaskSourceCacheScope(remoteSource)
-
+  it('finds an issue cached under an issue-key entry', () => {
     const found = findTaskPageJiraIssue(
       {
-        [`${localScope}::site-1::ALP-1`]: {
-          data: jiraIssue('ALP-1', 'Local issue'),
+        'scope::site-1::ALP-1': {
+          data: issue('ALP-1', 'Cached issue'),
           fetchedAt: Date.now()
         }
       },
-      {
-        [`${remoteScope}::site-1::list::assigned::30`]: {
-          data: [jiraIssue('ALP-1', 'Remote issue')],
-          fetchedAt: Date.now()
-        }
-      },
-      'ALP-1',
-      {
-        sourceContext: remoteSource,
-        siteId: 'site-1'
-      }
+      {},
+      'ALP-1'
     )
 
-    expect(found?.title).toBe('Remote issue')
+    expect(found?.title).toBe('Cached issue')
   })
 
   it('filters same-key Jira issues by site id', () => {
-    const source = jiraSourceContext('remote-runtime')
-    const scope = getTaskSourceCacheScope(source)
-
     const found = findTaskPageJiraIssue(
       {},
       {
-        [`${scope}::site-1::list::assigned::30`]: {
-          data: [jiraIssue('ALP-1', 'Site one issue', 'site-1')],
+        'scope::site-1::list::assigned::30': {
+          data: [issue('ALP-1', 'Site one issue', 'site-1')],
           fetchedAt: Date.now()
         },
-        [`${scope}::site-2::list::assigned::30`]: {
-          data: [jiraIssue('ALP-1', 'Site two issue', 'site-2')],
+        'scope::site-2::list::assigned::30': {
+          data: [issue('ALP-1', 'Site two issue', 'site-2')],
           fetchedAt: Date.now()
         }
       },
       'ALP-1',
-      {
-        sourceContext: source,
-        siteId: 'site-2'
-      }
+      { siteId: 'site-2' }
     )
 
     expect(found?.title).toBe('Site two issue')

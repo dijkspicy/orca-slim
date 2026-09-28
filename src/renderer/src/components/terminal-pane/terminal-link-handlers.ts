@@ -6,7 +6,6 @@ import {
   resolveTerminalFileLink
 } from '@/lib/terminal-links'
 import type { PaneManager } from '@/lib/pane-manager/pane-manager'
-import { isRemoteRuntimeFileOperation } from '@/runtime/runtime-file-client'
 import {
   buildCandidateLogicalLinesForBufferPosition,
   dedupeLogicalLines,
@@ -158,11 +157,10 @@ export function createFilePathLinkProvider(
                 worktreePath,
                 runtimeEnvironmentId
               )
-              const isRemoteRuntimePath = isRemoteRuntimeFileOperation(fileContext, mappedPath)
               const cacheKey = getTerminalPathExistsCacheKey({
                 absolutePath: mappedPath,
                 connectionId: fileContext.connectionId,
-                isRemoteRuntimePath,
+                isRemoteRuntimePath: false,
                 runtimeEnvironmentId
               })
               const worktreeRootLink = resolveKnownWorktreeRootPathLink(mappedPath)
@@ -173,8 +171,7 @@ export function createFilePathLinkProvider(
               // stale local paths even when filesystem probing says "missing".
               if (!worktreeRootLink) {
                 const cachedExists = readTerminalPathExistsCache(pathExistsCache, cacheKey)
-                const exists =
-                  cachedExists ?? (await pathExists(fileContext, mappedPath, isRemoteRuntimePath))
+                const exists = cachedExists ?? (await pathExists(fileContext, mappedPath))
                 writeTerminalPathExistsCache(pathExistsCache, cacheKey, exists)
                 if (!exists) {
                   return null

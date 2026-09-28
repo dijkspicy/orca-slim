@@ -10,36 +10,13 @@ vi.mock('./macos-tahoe-release', async () =>
   (await import('./createMainWindow-test-harness')).macosTahoeReleaseMock()
 )
 vi.mock('../app-icon', async () => (await import('./createMainWindow-test-harness')).appIconMock())
-vi.mock('../browser/browser-manager', async () =>
-  (await import('./createMainWindow-test-harness')).browserManagerMock()
-)
-vi.mock('../browser/browser-client-page-renderer-runtime', async () => {
-  const harness = await import('./createMainWindow-test-harness')
-  return {
-    attachBrowserClientPageRenderer: harness.attachClientPageRendererMock,
-    retireBrowserClientPageRenderer: harness.retireClientPageRendererMock
-  }
-})
 
 import { createMainWindow } from './createMainWindow'
-import { ipcMain } from 'electron'
-import { shouldRecoverRendererAfterProcessGone } from '../crash-reporting/process-gone-classification'
-import {
-  resetExpectedTeardownStateForTest,
-  resolveExpectedTeardownScope
-} from '../crash-reporting/expected-teardown-state'
-import {
-  attachClientPageRendererMock,
-  browserWindowMock,
-  resetMainWindowMocks,
-  retireClientPageRendererMock,
-  withPlatform
-} from './createMainWindow-test-harness'
+import { browserWindowMock, resetMainWindowMocks } from './createMainWindow-test-harness'
 
 describe('createMainWindow', () => {
   beforeEach(() => {
     resetMainWindowMocks()
-    resetExpectedTeardownStateForTest()
     vi.useRealTimers()
   })
 
@@ -89,123 +66,6 @@ describe('createMainWindow', () => {
     // cleanup runs during updater shutdown. The cleanup must not crash, or
     // Squirrel.Mac never reaches the relaunch step.
     expect(() => windowHandlers.closed?.()).not.toThrow()
-  })
-
-  it('retires renderer generations and resets focus on crash, navigation, and destroy', async () => {
-    const windowHandlers: Record<string, (...args: any[]) => void> = {}
-    const webContents = {
-      getURL: vi.fn(() => 'file:///opt/orca/renderer/index.html'),
-      isDestroyed: vi.fn(() => false),
-      isLoadingMainFrame: vi.fn(() => false),
-      mainFrame: {},
-      on: vi.fn((event, handler) => {
-        windowHandlers[event] = handler
-      }),
-      setZoomLevel: vi.fn(),
-      setBackgroundThrottling: vi.fn(),
-      invalidate: vi.fn(),
-      setWindowOpenHandler: vi.fn(),
-      send: vi.fn(),
-      isDevToolsOpened: vi.fn(),
-      openDevTools: vi.fn(),
-      closeDevTools: vi.fn()
-    }
-    const browserWindowInstance = {
-      webContents,
-      on: vi.fn(),
-      isDestroyed: vi.fn(() => false),
-      isMaximized: vi.fn(() => true),
-      isFullScreen: vi.fn(() => false),
-      getSize: vi.fn(() => [1200, 800]),
-      setSize: vi.fn(),
-      maximize: vi.fn(),
-      show: vi.fn(),
-      loadFile: vi.fn(() => Promise.resolve()),
-      loadURL: vi.fn(() => Promise.resolve())
-    }
-    browserWindowMock.mockImplementation(function () {
-      return browserWindowInstance
-    })
-
-    createMainWindow(null)
-    windowHandlers['did-finish-load']?.()
-    expect(attachClientPageRendererMock).toHaveBeenCalledWith(webContents)
-
-    const setFocusedListener = vi
-      .mocked(ipcMain.on)
-      .mock.calls.find(([channel]) => channel === 'ui:setMarkdownEditorFocused')?.[1]
-    const isDarwin = process.platform === 'darwin'
-
-    const cmdBInput = {
-      type: 'keyDown',
-      code: 'KeyB',
-      key: 'b',
-      meta: isDarwin,
-      control: !isDarwin,
-      alt: false,
-      shift: false
-    } as never
-
-    const assertInterceptsAfterReset = (): void => {
-      webContents.send.mockClear()
-      const preventDefault = vi.fn()
-      windowHandlers['before-input-event']({ preventDefault } as never, cmdBInput)
-      expect(preventDefault).toHaveBeenCalledTimes(1)
-      expect(webContents.send).toHaveBeenCalledWith('ui:toggleLeftSidebar')
-    }
-
-    retireClientPageRendererMock.mockClear()
-    setFocusedListener?.({ sender: webContents } as never, true)
-    windowHandlers['render-process-gone']?.()
-    expect(retireClientPageRendererMock).toHaveBeenCalledWith(webContents)
-    assertInterceptsAfterReset()
-    windowHandlers['did-finish-load']?.()
-
-    retireClientPageRendererMock.mockClear()
-    setFocusedListener?.({ sender: webContents } as never, true)
-    windowHandlers['did-start-navigation']?.({} as never, 'https://example.com/', false, true)
-    expect(retireClientPageRendererMock).not.toHaveBeenCalled()
-
-    windowHandlers['did-start-navigation']?.(
-      {} as never,
-      'file:///opt/orca/renderer/index.html?reload=1',
-      false,
-      true
-    )
-    expect(retireClientPageRendererMock).toHaveBeenCalledWith(webContents)
-    assertInterceptsAfterReset()
-
-    attachClientPageRendererMock.mockClear()
-    windowHandlers['did-fail-provisional-load']?.(
-      {} as never,
-      -3,
-      'aborted',
-      'file:///opt/orca/renderer/index.html?reload=1',
-      true
-    )
-    await Promise.resolve()
-    expect(attachClientPageRendererMock).toHaveBeenCalledWith(webContents)
-
-    retireClientPageRendererMock.mockClear()
-    setFocusedListener?.({ sender: webContents } as never, true)
-    windowHandlers['did-start-navigation']?.({} as never, '#same-document', true, true)
-    expect(retireClientPageRendererMock).not.toHaveBeenCalled()
-    windowHandlers['did-start-navigation']?.({} as never, 'https://example.com/', false, false)
-    expect(retireClientPageRendererMock).not.toHaveBeenCalled()
-    webContents.send.mockClear()
-    const subframePreventDefault = vi.fn()
-    windowHandlers['before-input-event'](
-      { preventDefault: subframePreventDefault } as never,
-      cmdBInput
-    )
-    expect(subframePreventDefault).not.toHaveBeenCalled()
-    expect(webContents.send).not.toHaveBeenCalledWith('ui:toggleLeftSidebar')
-
-    retireClientPageRendererMock.mockClear()
-    setFocusedListener?.({ sender: webContents } as never, true)
-    windowHandlers['destroyed']?.()
-    expect(retireClientPageRendererMock).toHaveBeenCalledWith(webContents)
-    assertInterceptsAfterReset()
   })
 
   it('notifies the caller when the renderer process is gone', () => {
@@ -411,45 +271,6 @@ describe('createMainWindow', () => {
     consoleError.mockRestore()
   })
 
-  it('still preserves PTYs and reloads after Windows session-end', () => {
-    vi.useFakeTimers()
-
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const { browserWindowInstance, windowHandlers } = createRendererRecoveryWindowHarness()
-    const onBeforeRecoveryReload = vi.fn()
-    const onRendererRecoveryExhausted = vi.fn()
-
-    withPlatform('win32', () => {
-      createMainWindow(null, {
-        onBeforeRecoveryReload,
-        onRendererRecoveryExhausted,
-        shouldRecoverRenderer: (details) =>
-          shouldRecoverRendererAfterProcessGone({
-            reason: details.reason,
-            expectedTeardown: resolveExpectedTeardownScope({
-              isQuitting: false,
-              isExpectedRendererReload: false,
-              includeSystemSessionEnd: false
-            })
-          })
-      })
-    })
-    windowHandlers['session-end']?.({} as never)
-    windowHandlers['render-process-gone']?.(
-      {} as never,
-      { reason: 'killed', exitCode: 1 } as Electron.RenderProcessGoneDetails
-    )
-    vi.advanceTimersByTime(250)
-
-    expect(onBeforeRecoveryReload).toHaveBeenCalledWith(143, 'automatic')
-    expect(browserWindowInstance.loadFile).toHaveBeenCalledTimes(2)
-    // Why the watchdog must stay quiet here: this reload is deliberate during logoff, and a process that
-    // outlives the session-end signal must not put a native modal on screen mid-teardown.
-    vi.runAllTimers()
-    expect(onRendererRecoveryExhausted).not.toHaveBeenCalled()
-    consoleError.mockRestore()
-  })
-
   it('does not reload after renderer loss when recovery is disabled', () => {
     vi.useFakeTimers()
 
@@ -644,11 +465,7 @@ describe('createMainWindow', () => {
     try {
       createMainWindow(null, {
         onRendererRecoveryExhausted,
-        shouldRecoverRenderer: (details) =>
-          shouldRecoverRendererAfterProcessGone({
-            reason: details.reason,
-            expectedTeardown: 'none'
-          })
+        shouldRecoverRenderer: (details) => details.reason === 'launch-failed'
       })
 
       const details = {

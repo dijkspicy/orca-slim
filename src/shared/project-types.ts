@@ -2,7 +2,6 @@ import type { ExecutionHostId } from './execution-host'
 import type { RepoIcon } from './repo-icon'
 import type { GitRemoteIdentity } from './git-remote-identity'
 import type { LocalWindowsRuntimePreference } from './project-execution-runtime'
-import type { RepoHookSettings } from './orca-yaml-hook-types'
 import type { RepoSourceControlAiOverrides } from './source-control-ai-types'
 import type { Repo, RepoKind } from './repo-types'
 
@@ -57,7 +56,6 @@ export type ProjectHostSetup = {
   /** Renderer projection of the paired runtime that owns this setup's transport. */
   runtimeOwnerEnvironmentId?: string
   worktreeBasePath?: string
-  hookSettings?: RepoHookSettings
   gitUsername?: string
   setupState: ProjectHostSetupState
   setupMethod: ProjectHostSetupMethod

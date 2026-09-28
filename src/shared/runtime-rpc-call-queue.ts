@@ -1,5 +1,7 @@
 import { abortSignalReason } from './abort-signal-reason'
-import { REMOTE_RUNTIME_MAX_PREPARED_RPC_BYTES } from './remote-runtime-memory-limits'
+
+// Local floor for retained prepared-call bytes (was remote-runtime-memory-limits).
+const MAX_RETAINED_CALL_BYTES = 32 * 1024 * 1024
 
 const DEFAULT_REMOTE_RUNTIME_CALL_CONCURRENCY = 8
 const DEFAULT_REMOTE_RUNTIME_BACKGROUND_CALL_CONCURRENCY = 2
@@ -61,7 +63,7 @@ export class RuntimeRpcCallQueuePool {
     private readonly backgroundConcurrency = DEFAULT_REMOTE_RUNTIME_BACKGROUND_CALL_CONCURRENCY,
     private readonly maxQueuedPerSelector = RUNTIME_RPC_MAX_QUEUED_CALLS_PER_SELECTOR,
     private readonly maxQueuedTotal = RUNTIME_RPC_MAX_QUEUED_CALLS_TOTAL,
-    private readonly maxRetainedBytes = REMOTE_RUNTIME_MAX_PREPARED_RPC_BYTES
+    private readonly maxRetainedBytes = MAX_RETAINED_CALL_BYTES
   ) {}
 
   enqueue<T>(

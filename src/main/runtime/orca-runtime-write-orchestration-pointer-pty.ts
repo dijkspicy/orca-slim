@@ -6,8 +6,6 @@ import type { RuntimeLeafRecord } from './runtime-terminal-state-records'
 import type { ExecutionHostId } from '../../shared/execution-host'
 import { getPtyExecutionHost } from '../../shared/terminal-execution-host'
 import type { TuiAgent } from '../../shared/tui-agent'
-import { selectRuntimeHookAgentRowForPane } from './runtime-mobile-agent-status-projection'
-import { isTuiAgent } from '../../shared/tui-agent-config'
 import { resolvePublishedPaneAgentIdentity } from '../../shared/published-pane-agent-identity'
 import type { RuntimeTerminalSummary, RuntimeWorktreePsSummary } from '../../shared/runtime-types'
 import type { RuntimeWorktreeSummaryPathIndex } from './runtime-worktree-summary-paths'
@@ -15,7 +13,6 @@ import { parseRuntimeWorktreeId } from './runtime-worktree-path-identity'
 import { findRuntimeWorktreeSummaryByPath } from './runtime-worktree-summary-paths'
 import type { ResolvedWorktree } from './runtime-worktree-path-identity'
 import { getLatestLeafTitle } from './runtime-worktree-status-projection'
-import { parseAppSshPtyId } from '../../shared/ssh-pty-id'
 import { isTerminalLeafId, makePaneKey } from '../../shared/stable-pane-id'
 import type { OrchestrationMailboxLeaf } from './orchestration/mailbox-owner'
 import type { OrchestrationMailboxPointerSubmitTarget } from './orchestration/mailbox-pointer-submit'
@@ -90,16 +87,13 @@ export class OrcaRuntimeWithWriteOrchestrationPointerPty extends OrcaRuntimeWith
   protected resolvePaneAgentIdentityField(
     launchAgent: TuiAgent | null | undefined,
     foregroundAgent: TuiAgent | null | undefined,
-    title: string | null,
-    paneKey: string | null
+    title: string | null
   ): { agentIdentity?: TuiAgent } {
-    const hookRow = paneKey
-      ? selectRuntimeHookAgentRowForPane(this.getAgentProviderSessionRowsForPaneFn?.(paneKey) ?? [])
-      : null
-    const hookAgent = isTuiAgent(hookRow?.agentType) ? hookRow.agentType : null
+    // The hook-row selector was culled with the mobile agent-status projection;
+    // identity now resolves from launch/foreground/title evidence only.
     const agentIdentity = resolvePublishedPaneAgentIdentity({
-      hookAgent,
-      hookIsLive: hookRow?.agentIsLive,
+      hookAgent: null,
+      hookIsLive: undefined,
       launchAgent,
       foregroundAgent,
       title
@@ -152,17 +146,15 @@ export class OrcaRuntimeWithWriteOrchestrationPointerPty extends OrcaRuntimeWith
     // Why: leaf.connected mirrors the renderer graph (`ptyId !== null`), so a
     // restored surface whose PTY died with a prior run still reads connected.
     // Demote only on a controller-proven absence, and only for locally-scoped
-    // ids the aggregate inventory authoritatively covers — SSH/remote scopes may
-    // be legitimately missing from it, and unknown liveness never demotes.
-    // The sync hasPty rescue closes the spawn/list race: a just-spawned PTY can
-    // register after the inventory snapshot, and federation reads one
-    // connected:false as exited.
+    // ids the aggregate inventory authoritatively covers — unknown liveness
+    // never demotes. The sync hasPty rescue closes the spawn/list race: a
+    // just-spawned PTY can register after the inventory snapshot, and
+    // federation reads one connected:false as exited.
     const provenAbsent =
       provenLivePtyIds !== null &&
       leaf.ptyId !== null &&
       !provenLivePtyIds.has(leaf.ptyId) &&
       !leaf.ptyId.startsWith('remote:') &&
-      parseAppSshPtyId(leaf.ptyId) === null &&
       this.ptyController?.hasPty?.(leaf.ptyId) !== true
     return {
       handle: this.issueHandle(leaf),
@@ -181,12 +173,7 @@ export class OrcaRuntimeWithWriteOrchestrationPointerPty extends OrcaRuntimeWith
       preview: leaf.preview,
       ...(leaf.lastExitCause ? { exitCause: leaf.lastExitCause } : {}),
       ...this.terminalExecutionHostField(leaf.ptyId, leaf.worktreeId),
-      ...this.resolvePaneAgentIdentityField(
-        pty?.launchAgent,
-        pty?.foregroundAgent,
-        title,
-        isTerminalLeafId(leaf.leafId) ? makePaneKey(leaf.tabId, leaf.leafId) : null
-      )
+      ...this.resolvePaneAgentIdentityField(pty?.launchAgent, pty?.foregroundAgent, title)
     }
   }
 }

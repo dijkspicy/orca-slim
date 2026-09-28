@@ -2,9 +2,23 @@
 // config-overlay dir it materialized. Best-effort: an older guest bundle lacks
 // the handler (-32601) and routine teardown races resolve to `unavailable`.
 // Mirrors the SSH relay's installPluginsOnRelay swallow list.
-import type { SshChannelMultiplexer } from '../ssh/ssh-channel-multiplexer'
+import type { SshChannelMultiplexer } from '../hook-relay/ssh-channel-multiplexer'
 import { AGENT_HOOK_INSTALL_PLUGINS_METHOD } from '../../shared/agent-hook-relay'
-import type { PluginSources } from '../../relay/plugin-overlay'
+
+/** Plugin/extension sources shipped to the guest relay so an Orca update needn't
+ *  redeploy the relay bundle. Wire payload of AGENT_HOOK_INSTALL_PLUGINS_METHOD. */
+export type PluginSources = {
+  /** Source body of `orca-opencode-status.js` to drop into <overlay>/plugins/. */
+  opencodePluginSource?: string
+  /** Source body of OpenCode 2's status plugin. */
+  opencode2PluginSource?: string
+  /** Source body of Pi's `orca-agent-status.ts` to drop into <overlay>/extensions/. */
+  piExtensionSource?: string
+  /** Source body of OMP's `orca-agent-status.ts` to drop into <overlay>/extensions/. */
+  ompExtensionSource?: string
+  /** Source body of Prime Agent's `orca-agent-status.ts` to install in its real agent dir. */
+  primeAgentExtensionSource?: string
+}
 
 /** Structural, not the deps type itself, so this stays free of the deps module. */
 type GuestPluginInstallDeps = {

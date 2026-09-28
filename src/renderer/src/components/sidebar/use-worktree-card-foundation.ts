@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE } from '../../../../shared/constants'
 import {
@@ -9,11 +9,6 @@ import {
 import { getHostDisplayLabelOverrides } from '../../../../shared/host-setting-overrides'
 import { getWorkspacePortsByWorktreeId } from '@/lib/workspace-port-groups'
 import { getExplicitRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
-import { hydrateRuntimeEnvironmentSshState } from '@/runtime/runtime-environment-ssh-state'
-import {
-  isDisconnectedRuntimeHostState,
-  runtimeHostConnectionStateForEntry
-} from '@/runtime/runtime-host-connection-state'
 import { useAppStore } from '@/store'
 import {
   selectRuntimeAwareSshStatus,
@@ -150,11 +145,6 @@ export function useWorktreeCardFoundation({
     }
     return selectRuntimeAwareSshStatus(s, sshOwnerEnvironmentId, repo.connectionId)
   })
-  useEffect(() => {
-    if (sshOwnerEnvironmentId) {
-      void hydrateRuntimeEnvironmentSshState(sshOwnerEnvironmentId).catch(() => {})
-    }
-  }, [sshOwnerEnvironmentId])
   const isSshDisconnected = sshStatus != null && sshStatus !== 'connected'
   // Why: only reported on positive evidence, so a removed host never offers a Connect that can
   // only fail. Runtime-owned targets are excluded for the same reason sshStatus excludes them —
@@ -181,18 +171,6 @@ export function useWorktreeCardFoundation({
   const runtimeHostLabel = runtimeHostId
     ? (getHostDisplayLabelOverrides(settings).get(runtimeHostId) ?? runtimeEnvironmentName)
     : null
-  // Why the shared derivation, not raw truthiness: an absent entry means "not probed yet",
-  // which is not the same verdict as a probe that came back unreachable.
-  const isRuntimeDisconnected = useAppStore((s) => {
-    if (!runtimeOwnerEnvironmentId) {
-      return false
-    }
-    return isDisconnectedRuntimeHostState(
-      runtimeHostConnectionStateForEntry(
-        s.runtimeStatusByEnvironmentId.get(runtimeOwnerEnvironmentId)
-      )
-    )
-  })
   const [titleRenaming, setTitleRenaming] = useState(false)
   const [showRenameErrorDialog, setShowRenameErrorDialog] = useState(false)
   // Why: read the target label from its owning host's store instead of exposing HUB-private SSH metadata as client-local state.
@@ -233,7 +211,6 @@ export function useWorktreeCardFoundation({
     sshTargetRemoved,
     parsedRepoHost,
     runtimeHostLabel,
-    isRuntimeDisconnected,
     titleRenaming,
     setTitleRenaming,
     showRenameErrorDialog,

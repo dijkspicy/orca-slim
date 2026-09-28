@@ -1,5 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
-import { OrcaRuntimeWithCreateManagedRemoteWorktree } from './orca-runtime-create-managed-remote-worktree'
+import { OrcaRuntimeWithCreateManagedWorktree } from './orca-runtime-create-managed-worktree'
 import {
   resolveWorktreeRemovalMetadata,
   resolveWorktreeRemovalRepoOwner
@@ -11,7 +11,6 @@ import {
   getRuntimeWorktreeRemovalOptionsKey,
   type RemoveManagedWorktreeOptions
 } from './runtime-worktree-selection'
-import { withWorktreeSpan } from '../observability/instrumentation'
 import { invalidateAuthorizedRootsCache } from '../ipc/filesystem-auth'
 import {
   resolveWorktreeRemovalHome,
@@ -27,12 +26,11 @@ import { isWindowsAbsolutePathLike } from '../../shared/cross-platform-path'
 import { isRuntimeWorktreePathMissing } from './runtime-worktree-filesystem'
 import { removeStaleLocalWorktreeRegistration } from '../local-worktree-removal-recovery'
 import { cleanupUnusedWorktreePushTargetRemote } from '../ipc/worktree-remote'
-import { removeRuntimeRegisteredRemoteWorktree } from './runtime-registered-remote-worktree-removal'
+import { deleteRemoteWorktreeHistory } from '../remote-worktree-history-cleanup'
 import { removeRuntimeRegisteredLocalWorktree } from './runtime-registered-local-worktree-removal'
 import { removeOrphanOrFolderWorktree } from './orca-runtime-remove-orphan-or-folder-worktree'
-import { deleteRemoteWorktreeHistory } from '../remote-worktree-history-cleanup'
 
-export class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWithCreateManagedRemoteWorktree {
+export class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWithCreateManagedWorktree {
   async removeManagedWorktree(
     worktreeSelector: string,
     options: RemoveManagedWorktreeOptions = {}
@@ -69,7 +67,7 @@ export class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWithCreateM
       return inFlightRemoval
     }
     const removal = (async (): Promise<RemoveWorktreeResult & { warning?: string }> => {
-      return withWorktreeSpan({ stage: 'remove', path: removalTarget.path }, async () => {
+      const performRemoval = async (): Promise<RemoveWorktreeResult & { warning?: string }> => {
         const repoOwner = resolveWorktreeRemovalRepoOwner(
           store,
           removalTarget.repoId,
@@ -200,50 +198,6 @@ export class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWithCreateM
           this.notifyWorktreesChanged(repo.id)
           return removalResult ?? {}
         }
-        if (route.kind === 'ssh') {
-          return removeRuntimeRegisteredRemoteWorktree({
-            runHooks,
-            allowFailedArchiveHook,
-            repo,
-            target: removalTarget,
-            registeredWorktree,
-            removedPushTarget,
-            store,
-            provider: route.provider,
-            connectionId: route.connectionId,
-            force,
-            allowUnverifiedPtyStop,
-            deleteBranch,
-            acquireWatcherRemoval: this.acquireFileWatcherRemoval,
-            stopPtys: () =>
-              this.stopPtysForDestructiveWorktreeRemoval(removalTarget.id, {
-                connectionId: route.connectionId,
-                allowUnverifiedStop: allowUnverifiedPtyStop
-              }),
-            deleteHistory: () =>
-              deleteRemoteWorktreeHistory(
-                this.getSshProviderFn?.(route.connectionId),
-                removalTarget.id
-              ),
-            preserveBranchHead: (result, fallbackHead) =>
-              this.preservedBranchCleanup.preserveHead(result, fallbackHead),
-            finishRemoval: (result) => {
-              this.preservedBranchCleanup.remember(
-                removalTarget.id,
-                cleanupHostId,
-                result,
-                registeredWorktree.head,
-                removedPushTarget
-              )
-              this.clearOptimisticReconcileToken(removalTarget.id)
-              this.removeWorktreeMetadataAndHistory(store, removalTarget.id, removalHostId)
-              this.invalidateResolvedWorktreeCache()
-              this.invalidateWorktreeScanCacheForRepo(removalTarget.repoId)
-              invalidateAuthorizedRootsCache()
-              this.notifyWorktreesChanged(repo.id)
-            }
-          })
-        }
         return removeRuntimeRegisteredLocalWorktree({
           repo,
           target: removalTarget,
@@ -285,7 +239,8 @@ export class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWithCreateM
             this.notifyWorktreesChanged(repo.id)
           }
         })
-      })
+      }
+      return performRemoval()
     })()
     this.removeManagedWorktreeInFlight.track(cleanupScopeKey, optionsKey, removal)
     try {

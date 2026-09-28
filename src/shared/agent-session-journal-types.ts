@@ -10,9 +10,24 @@
 import type { AgentType } from './agent-status-types'
 import type { AgentSessionQuestionAnswer } from './agent-session-question-answer'
 import type { AgentJournalTurnOutcome } from './agent-turn-outcome'
-import type { NativeChatToolMetadata } from './native-chat-tool-identity'
 import type { AgentSessionContextUsage } from './agent-session-context-usage'
-import type { NativeChatBlock, NativeChatRole } from './native-chat-types'
+export {
+  NATIVE_CHAT_ROLES,
+  type NativeChatRole,
+  type NativeChatToolMetadata,
+  type NativeChatTextBlock,
+  type NativeChatToolCallBlock,
+  type NativeChatEditPatchHunk,
+  type NativeChatEditPatch,
+  type NativeChatToolResultBlock,
+  type NativeChatImageRefBlock,
+  NATIVE_CHAT_SUBAGENT_STATES,
+  type NativeChatSubagentState,
+  type NativeChatSubagentEntry,
+  type NativeChatSubagentGroupBlock,
+  type NativeChatBackgroundTaskBlock,
+  type NativeChatBlock
+} from './native-chat-blocks'
 
 export { type AgentType }
 

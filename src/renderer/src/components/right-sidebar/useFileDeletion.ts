@@ -18,11 +18,6 @@ import {
   requestEditorSaveQuiesce
 } from '@/components/editor/editor-autosave'
 import { commitFileExplorerOp } from './fileExplorerUndoRedo'
-import {
-  deleteRuntimePath,
-  readRuntimeFileContent,
-  writeRuntimeFile
-} from '@/runtime/runtime-file-client'
 import { translate } from '@/i18n/i18n'
 
 type UseFileDeletionParams = {
@@ -123,17 +118,7 @@ export function useFileDeletion({
 
         // Why: confirmation and autosave can outlive a reconnect or graph replacement; mutations require the owner generation that produced the row.
         const operationRoute = operationGuard.assertCurrent()
-        const state = useAppStore.getState()
-        const worktree = activeWorktreeId ? state.getKnownWorktreeById(activeWorktreeId) : null
-        const fileContext = {
-          settings: operationRoute.settings,
-          worktreeId: activeWorktreeId,
-          worktreePath: worktree?.path ?? null,
-          connectionId: operationRoute.connectionId,
-          expectedExecutionHostId: operationRoute.expectedExecutionHostId,
-          expectedSshTargetId: operationRoute.expectedSshTargetId,
-          expectedSshConnectionGeneration: operationRoute.expectedSshConnectionGeneration
-        }
+        const { connectionId } = operationRoute
 
         const parentDir = dirname(node.path)
         // Why: read file content before deleting so undo can restore it.
@@ -142,12 +127,9 @@ export function useFileDeletion({
         let undoContent: string | undefined
         if (!node.isDirectory) {
           try {
-            const rf = await readRuntimeFileContent({
-              settings: fileContext.settings,
+            const rf = await window.api.fs.readFile({
               filePath: node.path,
-              relativePath: node.relativePath,
-              worktreeId: activeWorktreeId ?? undefined,
-              connectionId: operationRoute.connectionId
+              connectionId
             })
             if (!rf.isBinary) {
               undoContent = rf.content
@@ -159,34 +141,30 @@ export function useFileDeletion({
         }
 
         operationGuard.assertCurrent()
-        await deleteRuntimePath(fileContext, node.path, node.isDirectory)
+        await window.api.fs.deletePath({
+          targetPath: node.path,
+          connectionId,
+          recursive: node.isDirectory
+        })
 
         if (undoContent !== undefined) {
           commitFileExplorerOp({
             undo: async () => {
               const currentRoute = operationGuard.assertCurrent()
-              await writeRuntimeFile(
-                {
-                  ...fileContext,
-                  settings: currentRoute.settings,
-                  connectionId: currentRoute.connectionId
-                },
-                node.path,
-                undoContent
-              )
+              await window.api.fs.writeFile({
+                filePath: node.path,
+                content: undoContent,
+                connectionId: currentRoute.connectionId
+              })
               await refreshDir(parentDir)
             },
             redo: async () => {
               const currentRoute = operationGuard.assertCurrent()
-              await deleteRuntimePath(
-                {
-                  ...fileContext,
-                  settings: currentRoute.settings,
-                  connectionId: currentRoute.connectionId
-                },
-                node.path,
-                node.isDirectory
-              )
+              await window.api.fs.deletePath({
+                targetPath: node.path,
+                connectionId: currentRoute.connectionId,
+                recursive: node.isDirectory
+              })
               await refreshDir(parentDir)
             }
           })

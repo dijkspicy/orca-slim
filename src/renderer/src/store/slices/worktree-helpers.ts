@@ -36,7 +36,7 @@ import type {
   HostQualifiedDetectedWorktreeResult,
   SshExecutionHostId
 } from '../../../../shared/detected-worktree-provider-contract'
-import type { DirectSshAuthority } from '../../../../shared/ssh-types'
+import type { DirectSshAuthority } from './ssh-host-state-contracts'
 import type {
   PendingWorktreeCreation,
   WorktreeCreationPhase

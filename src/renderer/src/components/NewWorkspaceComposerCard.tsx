@@ -1,27 +1,17 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 import { useAppStore } from '@/store'
 import { cn } from '@/lib/utils'
 import { getAgentCatalog } from '@/lib/agent-catalog'
 import { getScreenSubmitModifierLabel } from '@/lib/screen-submit-shortcut'
 import { resolveProjectCloneUrlPrefill } from '@/lib/project-clone-url-prefill'
-import { useContextualTour } from '@/components/contextual-tours/use-contextual-tour'
-import {
-  AddRemoteHostDialog,
-  type AddRemoteHostMode
-} from '@/components/sidebar/AddRemoteHostDialog'
 import { lazyWithRetry } from '@/lib/lazy-with-retry'
 import type * as SetProjectLocationDialogModule from '@/components/new-workspace/SetProjectLocationDialog'
-import { unwrapRuntimeRpcResult } from '@/runtime/runtime-rpc-client'
-import { withUiConnectTimeout } from '@/ssh/ssh-connect-ui-timeout'
-import { isSshConnectInFlight, trackSshConnect } from '@/ssh/ssh-connect-in-flight'
 import { translate } from '@/i18n/i18n'
 import {
   DEFAULT_DISABLED_TUI_AGENTS,
   filterEnabledTuiAgents
 } from '../../../shared/tui-agent-selection'
-import type { RuntimeStatus } from '../../../shared/runtime-types'
 import type { TuiAgent } from '../../../shared/tui-agent'
 import { NewWorkspaceComposerAdvancedSection } from './new-workspace/NewWorkspaceComposerAdvancedSection'
 import { NewWorkspaceComposerAgentSection } from './new-workspace/NewWorkspaceComposerAgentSection'
@@ -57,7 +47,6 @@ export default function NewWorkspaceComposerCard(
 ): React.JSX.Element {
   useTranslation()
   const {
-    contextualTourSource,
     containerClassName,
     contentClassName,
     composerRef,
@@ -84,7 +73,6 @@ export default function NewWorkspaceComposerCard(
   const ephemeralVmRecipes = props.ephemeralVmRecipes ?? EMPTY_EPHEMERAL_VM_RECIPES
   const { isFileDragOver, dragHandlers } = useComposerFileDragOver()
   const openModal = useAppStore((state) => state.openModal)
-  const activeModal = useAppStore((state) => state.activeModal)
   const defaultTuiAgent = useAppStore((state) => state.settings?.defaultTuiAgent ?? null)
   const disabledTuiAgents = useAppStore(
     (state) => state.settings?.disabledTuiAgents ?? DEFAULT_DISABLED_TUI_AGENTS
@@ -95,7 +83,6 @@ export default function NewWorkspaceComposerCard(
   const nameInputFocusFrameRef = React.useRef<number | null>(null)
   const branchNameInputId = React.useId()
   const projectDescriptionId = React.useId()
-  const [addRemoteHostMode, setAddRemoteHostMode] = React.useState<AddRemoteHostMode | null>(null)
   const [setLocationOption, setSetLocationOption] = React.useState<NeedsProjectHostOption | null>(
     null
   )
@@ -223,44 +210,6 @@ export default function NewWorkspaceComposerCard(
     },
     [handleSetLocationClose, onProjectHostSetupChange]
   )
-  const handleConnectRunTargetHost = React.useCallback(
-    async (option: NeedsProjectHostOption): Promise<void> => {
-      const action = option.connectAction
-      if (!action) {
-        return
-      }
-      try {
-        if (action.kind === 'ssh') {
-          if (isSshConnectInFlight(action.targetId)) {
-            return
-          }
-          await withUiConnectTimeout(
-            trackSshConnect(action.targetId, window.api.ssh.connect({ targetId: action.targetId }))
-          )
-          return
-        }
-        const response = await window.api.runtimeEnvironments.getStatus({
-          selector: action.environmentId,
-          timeoutMs: 15_000
-        })
-        unwrapRuntimeRpcResult<RuntimeStatus>(response)
-        await useAppStore.getState().readRuntimeHostStatusSnapshots()
-      } catch (error) {
-        if (action.kind === 'runtime') {
-          await useAppStore.getState().readRuntimeHostStatusSnapshots()
-        }
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : translate(
-                'auto.components.NewWorkspaceComposerCard.hostConnectionFailed',
-                'Connection failed'
-              )
-        )
-      }
-    },
-    []
-  )
   const handleSetDefaultAgent = React.useCallback(
     (next: TuiAgent | 'blank' | null): void => {
       void updateSettings({ defaultTuiAgent: next })
@@ -273,15 +222,6 @@ export default function NewWorkspaceComposerCard(
     )
     agentTrigger?.focus()
   }, [composerRef])
-
-  useContextualTour(
-    'workspace-creation',
-    projectOptions.length > 0 && Boolean(selectedProjectId),
-    contextualTourSource ??
-      (activeModal === 'new-workspace-composer'
-        ? 'workspace_creation_modal'
-        : 'workspace_creation_visible')
-  )
 
   return (
     <div
@@ -307,9 +247,6 @@ export default function NewWorkspaceComposerCard(
           focusNameInput={focusNameInput}
           shouldShowRunTargetPicker={shouldShowRunTargetPicker}
           handleProjectHostSetupChange={(setupId) => onProjectHostSetupChange?.(setupId)}
-          handleAddSshHost={() => setAddRemoteHostMode('ssh')}
-          handleAddRemoteServer={() => setAddRemoteHostMode('server')}
-          handleConnectRunTargetHost={handleConnectRunTargetHost}
           handleSetLocation={handleSetLocation}
           sshStatusLabel={sshStatusLabel}
           connectButtonLabel={connectButtonLabel}
@@ -344,7 +281,6 @@ export default function NewWorkspaceComposerCard(
           submitShortcutModifierLabel={getScreenSubmitModifierLabel()}
         />
       </div>
-      <AddRemoteHostDialog mode={addRemoteHostMode} onOpenChange={setAddRemoteHostMode} />
       {setLocationDialogMounted ? (
         <React.Suspense fallback={null}>
           <SetProjectLocationDialog

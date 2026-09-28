@@ -21,7 +21,6 @@ import { SearchableSetting } from './SearchableSetting'
 import { SettingsSubsectionHeader, SettingsSwitchRow } from './SettingsFormControls'
 import { translate } from '@/i18n/i18n'
 import { DefaultWindowsProjectRuntimeSetting } from './DefaultWindowsProjectRuntimeSetting'
-import { getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
 
 export {
   createAutoSaveDelayDraftState,
@@ -105,14 +104,14 @@ export function GeneralPane({
   const defaultsSupportedRuntimeEnvironmentId = useAppStore(
     (s) => s.worktreeVisibilityDefaultsSupportedRuntimeEnvironmentId
   )
-  const activeRuntimeTarget = getActiveRuntimeTarget(settings)
+  const activeRuntimeEnvironmentId = settings.activeRuntimeEnvironmentId?.trim() || null
   const defaultsSupported =
-    activeRuntimeTarget.kind === 'local' ||
-    activeRuntimeTarget.environmentId === defaultsSupportedRuntimeEnvironmentId
+    activeRuntimeEnvironmentId === null ||
+    activeRuntimeEnvironmentId === defaultsSupportedRuntimeEnvironmentId
   const sourceDefaultsSupported =
     defaultsSupported &&
-    (activeRuntimeTarget.kind === 'local' ||
-      activeRuntimeTarget.environmentId === sourceDefaultsSupportedRuntimeEnvironmentId)
+    (activeRuntimeEnvironmentId === null ||
+      activeRuntimeEnvironmentId === sourceDefaultsSupportedRuntimeEnvironmentId)
   const generalNavigationSearchEntries = getGeneralNavigationSearchEntries()
   const tabOrderKeywords = getTabOrderControlSearchKeywords(generalNavigationSearchEntries)
   const projectRuntimeSearchEntries = wslSupportedPlatform

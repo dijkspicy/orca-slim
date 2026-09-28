@@ -1,4 +1,3 @@
-import { __resetSshWorktreeCreateFetchCacheForTests } from './worktree-remote'
 import {
   __resetCreatedWorktreeRootsForTests,
   invalidateAuthorizedRootsCache
@@ -7,7 +6,6 @@ import { registerWorktreeHandlers } from './worktrees'
 import { __resetDetectedWorktreeScanCacheForTests } from './worktrees/listing/detected-worktree-scan-cache'
 import { clearConfiguredWorktreeSharedDirectoriesCacheForTests } from '../git/worktree-shared-directories'
 import { resetRetirementCollisionKeyCacheForTests } from '../worktree-name-retirement'
-import { resetSshProviderAuthorities } from '../ssh/ssh-provider-authority'
 import { createWorktreeRuntimeStub, type WorktreeRuntimeStub } from './worktrees-test-runtime-stub'
 import { handlers, mainWindow, store } from './worktrees-test-ipc-surface'
 import { configureMetadataPruningStoreMocks } from './worktrees-test-metadata-pruning-store'
@@ -93,9 +91,7 @@ export function setupWorktreeHandlers(): WorktreeRuntimeStub {
     .getAllWorktreeMetaForHost
   setPlatform(ORIGINAL_PLATFORM)
   clearConfiguredWorktreeSharedDirectoriesCacheForTests()
-  __resetSshWorktreeCreateFetchCacheForTests()
   __resetDetectedWorktreeScanCacheForTests()
-  resetSshProviderAuthorities()
   invalidateAuthorizedRootsCache()
   __resetCreatedWorktreeRootsForTests()
   for (const m of [

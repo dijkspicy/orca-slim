@@ -1,18 +1,12 @@
 import type { RuntimeRpcResponse } from '../../shared/runtime-rpc-envelope'
-import { withRemoteRuntimeTailscaleHint } from '../../shared/remote-runtime-tailscale-hint'
 
+/**
+ * The Tailscale hint formatter lived in the removed remote-runtime domain, so
+ * responses now pass through unchanged.
+ */
 export function withTailscaleHintForResponse<TResult>(
   response: RuntimeRpcResponse<TResult>,
-  endpoint: string
+  _endpoint: string
 ): RuntimeRpcResponse<TResult> {
-  if (response.ok === true) {
-    return response
-  }
-  return {
-    ...response,
-    error: {
-      ...response.error,
-      message: withRemoteRuntimeTailscaleHint(response.error.message, endpoint)
-    }
-  }
+  return response
 }

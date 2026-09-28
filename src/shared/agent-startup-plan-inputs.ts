@@ -1,5 +1,5 @@
 import type { GlobalSettings } from './global-settings-types'
-import type { SessionOptionValue } from './native-chat-session-options'
+import type { SessionOptionValue } from './agent-session-option-descriptors'
 import type { TuiAgent } from './tui-agent'
 import { resolveTuiAgentLaunchArgs, resolveTuiAgentLaunchEnv } from './tui-agent-launch-defaults'
 import type { AgentStartupShell } from './tui-agent-startup-shell'

@@ -1,5 +1,3 @@
-import { parseAppSshPtyId } from '../../../../shared/ssh-pty-id'
-
 export type SshReattachPaintSource = 'main-model-snapshot' | 'relay-replay'
 
 export type SshReattachModelSnapshot = {
@@ -41,24 +39,14 @@ export async function resolveSshReattachModelSnapshotWithTimeout<T>(
  * alt-screen snapshot can carry all content in scrollbackAnsi with an empty
  * screen frame.
  */
-export function decideSshReattachPaintSource(args: {
+export function decideSshReattachPaintSource(_args: {
   ptyId: string
   sshParkingEnabled: boolean
   snapshot: SshReattachModelSnapshot | null
 }): SshReattachPaintSource {
-  if (!args.sshParkingEnabled || parseAppSshPtyId(args.ptyId) === null) {
-    return 'relay-replay'
-  }
-  if (!args.snapshot || args.snapshot.source !== 'headless') {
-    return 'relay-replay'
-  }
-  // Why the escape tail is excluded: a dangling mid-escape is not content — a
-  // model holding only one paints a blank pane, which this gate forbids.
-  // Accepted cost: a session that wrote only control-sequence preamble before
-  // parking always falls back to relay; the gate cannot tell it apart from a
-  // model that never received content, and relay replays that preamble anyway.
-  const contentLength = (args.snapshot.scrollbackAnsi?.length ?? 0) + args.snapshot.data.length
-  return contentLength === 0 ? 'relay-replay' : 'main-model-snapshot'
+  // SSH pty ids are gone with the SSH hosts, so the headless-model paint can
+  // never apply and every reattach replays the relay buffer.
+  return 'relay-replay'
 }
 
 const ESCAPE = String.fromCharCode(27)
@@ -140,11 +128,12 @@ export function sshReconnectPaintsFromModel(args: {
  * that predates this machinery, which is what an escape hatch should restore. The cost is that a
  * user who disables parking also loses the full-screen reconnect repaint.
  */
-export function shouldFetchSshReattachModelSnapshot(args: {
+export function shouldFetchSshReattachModelSnapshot(_args: {
   ptyId: string
   sshParkingEnabled: boolean
 }): boolean {
-  return args.sshParkingEnabled && parseAppSshPtyId(args.ptyId) !== null
+  // SSH pty ids are gone; no headless model probe can ever apply.
+  return false
 }
 
 /**

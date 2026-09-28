@@ -1,9 +1,7 @@
 import { defineMethod, defineStreamingMethod } from '../core'
 import { runFileWatchStream } from './file-watch-stream-lifecycle'
 import { FILE_MUTATION_METHODS } from './files-mutation-methods'
-import { remoteFileContentBudget } from './files-remote-content-budget'
 import { QUICK_OPEN_SEARCH_VERSION } from '../../../../shared/quick-open-path-search'
-import { limitQuickOpenSearchReplyBySerializedBytes } from '../../../../shared/quick-open-transport-budget'
 import { FileOpen, WorktreeSelector } from './files-target-schemas'
 import { FILE_TERMINAL_ARTIFACT_METHODS } from './files-terminal-artifact-methods'
 import {
@@ -34,7 +32,7 @@ export const FILE_METHODS = [
   defineMethod({
     name: 'files.searchPaths',
     params: FilePathSearch,
-    handler: async (params, { runtime, signal, clientKind, requestId }) => {
+    handler: async (params, { runtime, signal }) => {
       if (params.mode !== 'quick-open') {
         return runtime.searchMobileFilePaths(params.worktree, params.query, params.limit)
       }
@@ -48,10 +46,9 @@ export const FILE_METHODS = [
         )),
         quickOpenSearchVersion: QUICK_OPEN_SEARCH_VERSION
       }
-      const maxContentBytes = remoteFileContentBudget(clientKind, requestId)
-      return maxContentBytes === undefined
-        ? result
-        : limitQuickOpenSearchReplyBySerializedBytes(result, maxContentBytes)
+      // The request-scoped content budget screened the paired mobile/relay transports,
+      // which are gone; every remaining caller reads the full reply.
+      return result
     }
   }),
   defineMethod({
@@ -75,14 +72,13 @@ export const FILE_METHODS = [
   defineMethod({
     name: 'files.readDocPreview',
     params: DocPreviewFileRead,
-    handler: async (params, { runtime, clientKind, requestId }) =>
+    handler: async (params, { runtime }) =>
       runtime.readDocPreviewFile(
         params.worktree,
         params.relativePath,
         params.entryRelativePath,
         params.implicitRootRelativePath,
-        params.authorizedRootRelativePaths,
-        remoteFileContentBudget(clientKind, requestId)
+        params.authorizedRootRelativePaths
       )
   }),
   defineMethod({
@@ -103,12 +99,8 @@ export const FILE_METHODS = [
   defineMethod({
     name: 'files.readPreview',
     params: FileOpen,
-    handler: async (params, { runtime, clientKind, requestId }) => {
-      const budget = remoteFileContentBudget(clientKind, requestId)
-      return budget === undefined
-        ? runtime.readFileExplorerPreview(params.worktree, params.relativePath)
-        : runtime.readFileExplorerPreview(params.worktree, params.relativePath, budget)
-    }
+    handler: async (params, { runtime }) =>
+      runtime.readFileExplorerPreview(params.worktree, params.relativePath)
   }),
   defineMethod({
     name: 'files.readChunk',
@@ -150,15 +142,12 @@ export const FILE_METHODS = [
   defineMethod({
     name: 'files.listAll',
     params: FileListAll,
-    handler: async (params, { runtime, clientKind, requestId, signal }) => {
-      const maxContentBytes = remoteFileContentBudget(clientKind, requestId)
-      return runtime.listRuntimeFiles(params.worktree, {
+    handler: async (params, { runtime, signal }) =>
+      runtime.listRuntimeFiles(params.worktree, {
         excludePaths: params.excludePaths,
         ...(params.maxResults === undefined ? {} : { maxResults: params.maxResults }),
-        ...(signal === undefined ? {} : { signal }),
-        ...(maxContentBytes === undefined ? {} : { maxContentBytes })
+        ...(signal === undefined ? {} : { signal })
       })
-    }
   }),
   defineMethod({
     name: 'files.listMarkdownDocuments',

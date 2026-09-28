@@ -1,5 +1,3 @@
-import type { SshMutationExpectation } from './ssh-types'
-
 export type RuntimeUploadSkipReason = 'missing' | 'symlink' | 'permission-denied' | 'unsupported'
 
 /**
@@ -47,4 +45,4 @@ export type RuntimeUploadFileStreamRequest = {
   relativePath: string
   expectedEnvironmentPairingRevision?: number
   expectedEnvironmentRuntimeId?: string
-} & SshMutationExpectation
+}

@@ -1,6 +1,5 @@
 import type { TaskPageComposerActionsModel } from '../../use-task-page-composer-actions'
 import { ChevronDown, FolderOpen, ArrowRight, ExternalLink } from 'lucide-react'
-import { findLinearIssueWorkspaceAttachmentInIndex } from '@/lib/linear-issue-workspace-attachment'
 import { getWorktreeAttachmentLabel } from '@/lib/worktree-attachment-label'
 import { cn } from '@/lib/utils'
 import { LinearPriorityIcon } from '@/components/linear-priority-icon'
@@ -19,7 +18,6 @@ export function TaskPageLinearIssueTable({
     linearTaskSourceContext,
     selectedLinearIssueId,
     openLinearDetailPage,
-    linearIssueAttachmentIndex,
     effectiveLinearDisplayProperties,
     linearIssueGridStyle,
     linearIssueListRows,
@@ -46,10 +44,8 @@ export function TaskPageLinearIssueTable({
           selectedLinearWorkspaceId === 'all' && issue.workspaceName
             ? `${issue.workspaceName} / ${issue.team.name}`
             : issue.team.name
-        const attachedWorkspace = findLinearIssueWorkspaceAttachmentInIndex(
-          linearIssueAttachmentIndex,
-          issue
-        )
+        // Why: the attachment index is gone with the Linear workspace cull.
+        const attachedWorkspace = null
         const attachedWorkspaceLabel = attachedWorkspace
           ? getWorktreeAttachmentLabel(attachedWorkspace)
           : null

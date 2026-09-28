@@ -1,8 +1,25 @@
-import type {
-  GitHubReaction,
-  GitHubReactionContent,
-  PRComment
-} from '../../../shared/github/comment-types'
+// Why: the shared GitHub comment types were culled; these structural shapes keep the reaction
+// contract the surviving comment UI still calls.
+export type GitHubReactionContent =
+  | '+1'
+  | '-1'
+  | 'laugh'
+  | 'confused'
+  | 'heart'
+  | 'hooray'
+  | 'rocket'
+  | 'eyes'
+
+export type GitHubReaction = {
+  content: GitHubReactionContent
+  count: number
+  viewerHasReacted: boolean
+}
+
+type ReactableComment = {
+  reactionSubjectId: string
+  reactions?: GitHubReaction[]
+}
 
 export const GITHUB_REACTION_ORDER: readonly GitHubReactionContent[] = [
   '+1',
@@ -22,11 +39,11 @@ function sortReactions(reactions: GitHubReaction[]): GitHubReaction[] {
   )
 }
 
-export function setCommentReaction(
-  comment: PRComment,
+export function setCommentReaction<T extends ReactableComment>(
+  comment: T,
   content: GitHubReactionContent,
   reacted: boolean
-): PRComment {
+): T {
   const reactions = comment.reactions ?? []
   const current = reactions.find((reaction) => reaction.content === content)
   if (Boolean(current?.viewerHasReacted) === reacted) {
@@ -48,11 +65,11 @@ export function setCommentReaction(
   return { ...comment, reactions: nextReactions.length > 0 ? nextReactions : undefined }
 }
 
-export function restoreCommentReaction(
-  comment: PRComment,
+export function restoreCommentReaction<T extends ReactableComment>(
+  comment: T,
   content: GitHubReactionContent,
   previousReaction?: GitHubReaction
-): PRComment {
+): T {
   const reactions = sortReactions([
     ...(comment.reactions ?? []).filter((reaction) => reaction.content !== content),
     ...(previousReaction ? [previousReaction] : [])
@@ -60,12 +77,12 @@ export function restoreCommentReaction(
   return { ...comment, reactions: reactions.length > 0 ? reactions : undefined }
 }
 
-export function setReactionOnSubject(
-  comments: readonly PRComment[],
+export function setReactionOnSubject<T extends ReactableComment>(
+  comments: readonly T[],
   reactionSubjectId: string,
   content: GitHubReactionContent,
   reacted: boolean
-): PRComment[] {
+): T[] {
   return comments.map((comment) =>
     comment.reactionSubjectId === reactionSubjectId
       ? setCommentReaction(comment, content, reacted)
@@ -73,12 +90,12 @@ export function setReactionOnSubject(
   )
 }
 
-export function restoreReactionOnSubject(
-  comments: readonly PRComment[],
+export function restoreReactionOnSubject<T extends ReactableComment>(
+  comments: readonly T[],
   reactionSubjectId: string,
   content: GitHubReactionContent,
   previousReaction?: GitHubReaction
-): PRComment[] {
+): T[] {
   return comments.map((comment) =>
     comment.reactionSubjectId === reactionSubjectId
       ? restoreCommentReaction(comment, content, previousReaction)

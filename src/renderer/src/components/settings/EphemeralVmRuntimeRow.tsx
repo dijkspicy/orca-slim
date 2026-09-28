@@ -1,9 +1,22 @@
 import { AlertTriangle, Copy, Loader2, Square, Trash2 } from 'lucide-react'
-import type { EphemeralVmRuntimeRecord } from '../../../../shared/ephemeral-vm-runtimes'
-import { getEphemeralVmRecipeResultProjectRoot } from '../../../../shared/ephemeral-vm-recipes'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { Button } from '../ui/button'
+
+type EphemeralVmRuntimeRecord = Awaited<
+  ReturnType<typeof window.api.ephemeralVm.listRuntimes>
+>[number]
+
+// Same read as the deleted shared accessor: results with a `connection` object
+// nest the project root, legacy results carry it at the top level.
+function recipeResultProjectRoot(result: EphemeralVmRuntimeRecord['recipeResult']): string {
+  if (typeof result === 'object' && result !== null && 'connection' in result) {
+    return result.connection.projectRoot
+  }
+  return typeof result === 'object' && result !== null && 'projectRoot' in result
+    ? result.projectRoot
+    : ''
+}
 
 type EphemeralVmRuntimeRowProps = {
   runtime: EphemeralVmRuntimeRecord
@@ -46,7 +59,7 @@ export function EphemeralVmRuntimeRow({
           {hasError ? <AlertTriangle className="size-3.5 shrink-0 text-destructive" /> : null}
         </div>
         <p className="truncate text-xs text-muted-foreground">
-          {runtime.recipeId} · {getEphemeralVmRecipeResultProjectRoot(runtime.recipeResult)}
+          {runtime.recipeId} · {recipeResultProjectRoot(runtime.recipeResult)}
         </p>
         {runtime.cleanupLastError ? (
           <p className="mt-0.5 truncate text-xs text-destructive">{runtime.cleanupLastError}</p>

@@ -5,7 +5,7 @@ import { createTestStore, makeWorktree, makeTab, makeLayout } from './store-test
 import { computeVisibleWorktreeIds } from '@/components/sidebar/visible-worktrees'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
 import { createStoreSessionMockApi } from './store-session-test-harness'
-import type { DirectSshAuthority, SshProviderEpoch } from '../../../../shared/ssh-types'
+import type { DirectSshAuthority, SshProviderEpoch } from './ssh-host-state-contracts'
 
 // Mock sonner (imported by repos.ts)
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }))

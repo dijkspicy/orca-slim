@@ -1,8 +1,8 @@
 import {
-  callRuntimeRpc,
+  callRuntimeEnvironmentRpc,
   getActiveRuntimeTarget,
   runtimeEnvironmentSupportsCapability
-} from '@/runtime/runtime-rpc-client'
+} from './runtime-environment-rpc-call'
 import {
   LOCAL_EXECUTION_HOST_ID,
   toRuntimeExecutionHostId,
@@ -23,13 +23,19 @@ export async function readRuntimeWorktreeVisibilityDefaults(
   environmentId: string
 ): Promise<WorktreeVisibilityDefaults | null | undefined> {
   try {
-    const result = await callRuntimeRpc<{ settings: Partial<GlobalSettings> }>(
-      { kind: 'environment', environmentId },
+    const response = await callRuntimeEnvironmentRpc<{ settings: Partial<GlobalSettings> }>(
+      environmentId,
       'settings.get',
       undefined,
-      { timeoutMs: 15_000, reuseRecentCompatibilityFailure: true }
+      { timeoutMs: 15_000 }
     )
-    return normalizeWorktreeVisibilityDefaults(result.settings.worktreeVisibilityDefaults) ?? null
+    if (!response.ok) {
+      throw new Error(response.errorMessage)
+    }
+    return (
+      normalizeWorktreeVisibilityDefaults(response.result.settings.worktreeVisibilityDefaults) ??
+      null
+    )
   } catch {
     return undefined
   }

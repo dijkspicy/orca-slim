@@ -11,10 +11,6 @@ import {
   localTerminalArtifactContentDigest,
   terminalFileStatIdentity
 } from './runtime-file-commands-terminal-artifact-access'
-import {
-  SSH_FILESYSTEM_PROVIDER_UNAVAILABLE_MESSAGE,
-  getSshFilesystemProvider
-} from '../providers/ssh-filesystem-dispatch'
 import { open } from 'node:fs/promises'
 import type {
   RuntimeFileStatLike,
@@ -22,7 +18,6 @@ import type {
 } from './runtime-file-commands-mobile-file-list-limit'
 import { TERMINAL_FILE_GRANT_TTL_MS } from './runtime-file-commands-mobile-file-list-limit'
 import type { RuntimeTerminalPathResolution } from '../../shared/runtime-types'
-import { isPathInsideOrEqual } from '../../shared/cross-platform-path'
 import { randomUUID } from 'node:crypto'
 import {
   runtimeFileSshTargetId,
@@ -35,24 +30,14 @@ export class RuntimeFileCommandsWithResolveAllowedTerminalArtifactPath extends R
     connectionId?: string
     worktreePath: string
   }): Promise<string | null> {
-    if (args.connectionId) {
-      return this.resolveAllowedRemoteTerminalArtifactPath(args.absolutePath, args.connectionId)
-    }
+    // The SSH filesystem dispatch was culled; only local artifact grants resolve.
     return resolveAllowedLocalTerminalArtifactPath(args.absolutePath, args.worktreePath)
   }
 
-  protected async resolveNativeChatArtifactPath(
-    absolutePath: string,
-    connectionId?: string
-  ): Promise<string> {
-    if (!connectionId) {
-      return canonicalPathForArtifactComparison(absolutePath)
-    }
-    const provider = getSshFilesystemProvider(connectionId)
-    if (!provider) {
-      throw new Error(SSH_FILESYSTEM_PROVIDER_UNAVAILABLE_MESSAGE)
-    }
-    return provider.realpath(absolutePath)
+  protected async resolveNativeChatArtifactPath(absolutePath: string): Promise<string> {
+    // The SSH filesystem dispatch was culled; remote realpath resolution is gone and
+    // only the local canonicalization survives.
+    return canonicalPathForArtifactComparison(absolutePath)
   }
 
   protected async resolveAbsoluteFileGrant(args: {
@@ -66,13 +51,9 @@ export class RuntimeFileCommandsWithResolveAllowedTerminalArtifactPath extends R
   }): Promise<RuntimeTerminalPathResolution> {
     let contentDigest: string | null = null
     let stats: RuntimeFileStatLike & { isDirectory: () => boolean }
-    if (args.connectionId) {
-      stats = await this.statRemoteTerminalPath(args.artifactPath, args.connectionId)
-    } else {
-      const local = await this.statLocalTerminalArtifact(args.artifactPath)
-      stats = local.stats
-      contentDigest = local.contentDigest
-    }
+    const local = await this.statLocalTerminalArtifact(args.artifactPath)
+    stats = local.stats
+    contentDigest = local.contentDigest
     const isDirectory = stats.isDirectory()
     if (!isDirectory && isTerminalArtifactHardLinked(stats)) {
       return {
@@ -112,32 +93,6 @@ export class RuntimeFileCommandsWithResolveAllowedTerminalArtifactPath extends R
           }
         : undefined
     }
-  }
-
-  protected async resolveAllowedRemoteTerminalArtifactPath(
-    absolutePath: string,
-    connectionId: string
-  ): Promise<string | null> {
-    const provider = getSshFilesystemProvider(connectionId)
-    if (!provider) {
-      throw new Error(SSH_FILESYSTEM_PROVIDER_UNAVAILABLE_MESSAGE)
-    }
-    const roots = ['/tmp', '/private/tmp']
-    const providerTempDir = await provider.getTempDir?.().catch(() => null)
-    if (providerTempDir) {
-      roots.push(providerTempDir)
-    }
-    if (!roots.some((root) => isPathInsideOrEqual(root, absolutePath))) {
-      return null
-    }
-    const [realArtifactPath, ...realRoots] = await Promise.all([
-      provider.realpath(absolutePath),
-      ...roots.map((root) => provider.realpath(root).catch(() => root))
-    ])
-    // Why: SSH I/O follows symlinks on the relay; grant the canonical target so a /tmp link can't escape the temp boundary.
-    return realRoots.some((root) => isPathInsideOrEqual(root, realArtifactPath))
-      ? realArtifactPath
-      : null
   }
 
   protected async statLocalTerminalPath(

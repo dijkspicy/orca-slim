@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type * as AgentStatusModule from '@/lib/agent-status'
 import type { DetectedWorktreeListResult, Worktree } from '../../../../shared/worktree/types'
-import type { SshProviderEpoch } from '../../../../shared/ssh-types'
+import type { SshProviderEpoch } from './ssh-host-state-contracts'
 import { getDefaultWorkspaceSession } from '../../../../shared/constants'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
 import { createTestStore, makeWorktree, makeTab, makeLayout, TEST_REPO } from './store-test-helpers'

@@ -6,16 +6,11 @@ import { pruneLocalTerminalScrollbackBuffers } from '../../../shared/workspace-s
 import { normalizeBrowserHistoryEntries } from '../../../shared/workspace-session-browser-history'
 import { normalizeWorkspaceDocHistoryEntries } from '../../../shared/workspace-doc-history'
 import {
-  buildActiveConnectionIdsAtShutdown,
   buildEditorSessionData,
   buildSanitizedTabsByWorktree,
   buildTerminalSessionData,
   type WorkspaceSessionSnapshot
 } from './workspace-session'
-import {
-  buildPersistedBrowserPagesByWorkspace,
-  buildPersistedBrowserTabsByWorktree
-} from './workspace-session-browser-tabs'
 import { withoutStagedBrowserTabs } from './workspace-session-staged-browser-tabs'
 import { buildPersistedUnifiedTabSessionData } from './workspace-session-unified-tabs'
 import { buildLastVisitedAtByWorktreeId } from './workspace-session-focus-recency'
@@ -111,19 +106,6 @@ export function buildWorkspaceSessionPatch(
   ) {
     const terminalSessionData = buildTerminalSessionData(snapshot)
     Object.assign(patch, terminalSessionData)
-    // Why: the reconnect list is derived from persisted remote session ids as
-    // well as live SSH state. Recompute it alongside remoteSessionIdsByTabId
-    // so a crash between patches cannot leave a target on disk whose sessions
-    // were all closed (or vice versa).
-    patch.activeConnectionIdsAtShutdown = buildActiveConnectionIdsAtShutdown(
-      snapshot,
-      terminalSessionData.remoteSessionIdsByTabId ?? null
-    )
-  } else if (changed.has('sshConnectionStates')) {
-    patch.activeConnectionIdsAtShutdown = buildActiveConnectionIdsAtShutdown(
-      snapshot,
-      buildTerminalSessionData(snapshot).remoteSessionIdsByTabId ?? null
-    )
   }
   if (
     hasAnyChangedField(changed, [
@@ -148,17 +130,6 @@ export function buildWorkspaceSessionPatch(
   // Why: withoutStagedBrowserTabs hides rows based on the handle map, so clearing a staged flag
   // changes which browser and tab rows persist even when the rows themselves are untouched.
   const stagedVisibilityChanged = changed.has('remoteBrowserPageHandlesByPageId')
-  if (stagedVisibilityChanged || changed.has('browserTabsByWorktree')) {
-    patch.browserTabsByWorktree = buildPersistedBrowserTabsByWorktree(
-      snapshot.browserTabsByWorktree
-    )
-  }
-  if (stagedVisibilityChanged || changed.has('browserPagesByWorkspace')) {
-    patch.browserPagesByWorkspace = buildPersistedBrowserPagesByWorkspace(
-      snapshot.browserPagesByWorkspace,
-      snapshot.remoteBrowserPageHandlesByPageId
-    )
-  }
   if (stagedVisibilityChanged || changed.has('activeBrowserTabIdByWorktree')) {
     patch.activeBrowserTabIdByWorktree = snapshot.activeBrowserTabIdByWorktree
   }

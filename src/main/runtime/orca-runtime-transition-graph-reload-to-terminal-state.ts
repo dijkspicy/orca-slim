@@ -8,15 +8,8 @@ import {
   inferFolderWorkspacePathConnection
 } from '../project-groups/folder-workspace-path-status'
 import type { TerminalWorkspaceLaunchScope } from './runtime-legacy-worker-terminal-recovery-types'
-import { getSshFilesystemProvider } from '../providers/ssh-filesystem-dispatch'
 import { folderWorkspaceKey, parseWorkspaceKey } from '../../shared/workspace-scope'
 import type { ResolvedWorktree } from './runtime-worktree-path-identity'
-import type { BrowserExecutionHostKeyResolution } from './runtime-browser-client-page-adoption'
-import { browserNetworkExecutionHostKey } from '../browser/browser-network-execution-route'
-import type { ClientHostedBrowserRpcRoute } from './runtime-browser-client-automation'
-import { routeRuntimeBrowserClientAutomation } from './runtime-browser-client-automation'
-import { getRuntimeBrowserPageRegistry } from './runtime-browser-page-registry'
-import { getBrowserHostLeaseRegistry } from './browser-host-lease-registry-instance'
 
 export class OrcaRuntimeWithTransitionGraphReloadToTerminalState extends OrcaRuntimeWithHasTerminalsForWorktree {
   protected transitionGraphReloadToTerminalState(windowId: number): void {
@@ -105,7 +98,7 @@ export class OrcaRuntimeWithTransitionGraphReloadToTerminalState extends OrcaRun
     const status = await getFolderWorkspacePathStatus(
       this.store,
       { scope: 'folder-workspace', folderWorkspaceId: workspace.id },
-      { getSshFilesystemProvider }
+      {}
     )
     assertFolderWorkspacePathUsable(status)
     return {
@@ -137,59 +130,5 @@ export class OrcaRuntimeWithTransitionGraphReloadToTerminalState extends OrcaRun
     return folderScope?.folderWorkspace
       ? this.folderWorkspaceToResolvedWorktree(folderScope.folderWorkspace)
       : this.resolveWorktreeSelector(selector)
-  }
-
-  /**
-   * Closes the window in which snapshots warn that this client's client-hosted pages are still
-   * unaccounted for. Keyed by paired device because one client attaching says nothing about another.
-   */
-  markClientHostedPagesReconciled(pairedDeviceId: string): void {
-    this.clientHostedPageReconciliation.markReconciled(pairedDeviceId)
-  }
-
-  /**
-   * The execution-host key a client-hosted page in this workspace would be created under now.
-   *
-   * Adoption cannot reuse the key an inventory entry reports: native and WSL keys name the runtime
-   * that minted them, and an SSH key carries a per-process provider epoch, so a restart always
-   * invalidates them.
-   *
-   * The two failure modes are not the same answer. A workspace that no longer resolves is gone and
-   * its pages have nothing left to be restored into; an execution host that is merely not up yet --
-   * an SSH provider mid-reconnect, a project runtime still repairing -- is a "not now", and must
-   * never be read as permission to retire the page.
-   */
-  async resolveBrowserExecutionHostKeyForWorkspace(
-    workspaceId: string
-  ): Promise<BrowserExecutionHostKeyResolution> {
-    let worktree: ResolvedWorktree
-    try {
-      worktree = await this.resolveBrowserWorkspace(`id:${workspaceId}`)
-    } catch {
-      return { status: 'workspace-gone' }
-    }
-    try {
-      return {
-        status: 'resolved',
-        executionHostKey: browserNetworkExecutionHostKey(
-          await this.resolveBrowserNetworkExecutionHostForWorktree(worktree)
-        )
-      }
-    } catch {
-      return { status: 'unavailable' }
-    }
-  }
-
-  routeClientHostedBrowserRpc(
-    method: string,
-    params: unknown
-  ): Promise<ClientHostedBrowserRpcRoute> {
-    return routeRuntimeBrowserClientAutomation({
-      method,
-      params,
-      pages: getRuntimeBrowserPageRegistry(this),
-      leases: getBrowserHostLeaseRegistry(this),
-      resolveWorkspace: (selector) => this.resolveBrowserWorkspace(selector)
-    })
   }
 }

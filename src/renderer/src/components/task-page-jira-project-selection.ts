@@ -1,6 +1,12 @@
-import type { JiraProject } from '../../../shared/jira-types'
+type JiraProjectRef = {
+  id: string
+  key: string
+  name: string
+  siteId?: string
+  siteName?: string
+}
 
-export function getJiraProjectSelectionKey(project: JiraProject): string {
+export function getJiraProjectSelectionKey(project: JiraProjectRef): string {
   return `${project.siteId ?? 'selected'}:${project.id}`
 }
 
@@ -10,8 +16,8 @@ const jiraProjectLabelCollator = new Intl.Collator(undefined, {
 })
 
 export function compareJiraProjectsByDisplayLabel(
-  a: JiraProject,
-  b: JiraProject,
+  a: JiraProjectRef,
+  b: JiraProjectRef,
   includeSiteName: boolean
 ): number {
   const siteComparison = includeSiteName

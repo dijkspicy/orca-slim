@@ -9,12 +9,6 @@ import { useAppStore } from '../../store'
 import { translate } from '@/i18n/i18n'
 import { isWebClientLocation } from '@/lib/web-client-location'
 import {
-  emptyClaudeAccountsState,
-  emptyCodexAccountsState,
-  hasRemoteProviderAccountOwner,
-  watchProviderAccounts
-} from '@/runtime/runtime-provider-accounts-client'
-import {
   getAccountsClaudeSearchEntries,
   getAccountsCodexSearchEntries,
   getAccountsGeminiSearchEntries,
@@ -64,6 +58,40 @@ import { renderAccountsRemovalDialogs } from './accounts-pane-removal-dialogs'
 
 export { getAccountsPaneSearchEntries }
 
+type ProviderAccountsSnapshot = {
+  claude: ClaudeRateLimitAccountsState
+  codex: CodexRateLimitAccountsState
+  // Why: a failed provider's half is a substituted empty roster, not
+  // authoritative data; consumers must not treat that half as authoritative.
+  failedProviders?: ('claude' | 'codex')[]
+}
+
+const claudeAccountsStateEmpty: ClaudeRateLimitAccountsState = {
+  accounts: [],
+  activeAccountId: null,
+  activeAccountIdsByRuntime: { host: null, wsl: {} }
+}
+const codexAccountsStateEmpty: CodexRateLimitAccountsState = {
+  accounts: [],
+  activeAccountId: null,
+  activeAccountIdsByRuntime: { host: null, wsl: {} }
+}
+
+function providerAccountsLoadError(provider: 'Claude' | 'Codex', cause: unknown): Error {
+  const message = String((cause as Error)?.message ?? cause)
+  return new Error(`Could not load ${provider} accounts: ${message}`)
+}
+
+function reportAccountsLoadError(error: Error | AggregateError): void {
+  toast.error(
+    translate(
+      'auto.components.settings.AccountsPane.loadAccountsFailed',
+      'Could not load provider accounts.'
+    ),
+    { description: error.message }
+  )
+}
+
 export function AccountsPane({
   settings,
   updateSettings,
@@ -97,7 +125,7 @@ export function AccountsPane({
   )
   // Why: with a Remote Orca Server active the server owns provider accounts
   // (see #7973); every list/select/remove below must scope to it, not host/WSL.
-  const isRemoteAccountScope = hasRemoteProviderAccountOwner(settings)
+  const isRemoteAccountScope = Boolean(settings.activeRuntimeEnvironmentId?.trim())
   const activeRuntimeEnvironmentId = settings.activeRuntimeEnvironmentId?.trim() || null
   // Why: keep the real name separate from the prose fallback below; the scope
   // label must not interpolate the fallback.
@@ -140,11 +168,11 @@ export function AccountsPane({
     ) : null
 
   const [codexAccounts, setCodexAccounts] =
-    useState<CodexRateLimitAccountsState>(emptyCodexAccountsState)
+    useState<CodexRateLimitAccountsState>(codexAccountsStateEmpty)
   const [codexAccountsLoaded, setCodexAccountsLoaded] = useState(false)
   const [codexAction, setCodexAction] = useState<CodexAccountAction>('idle')
   const [claudeAccounts, setClaudeAccounts] =
-    useState<ClaudeRateLimitAccountsState>(emptyClaudeAccountsState)
+    useState<ClaudeRateLimitAccountsState>(claudeAccountsStateEmpty)
   const [claudeAction, setClaudeAction] = useState<ClaudeAccountAction>('idle')
   // Why: capture the account's runtime slot when the dialog opens; the roster
   // can change underneath an open dialog and lose the slot to diff for restarts.
@@ -251,36 +279,58 @@ export function AccountsPane({
   }, [])
 
   useEffect(() => {
-    // Why: remote snapshots stream usage refreshes after the synchronous ready
-    // message, so the watcher stays open for the pane's lifetime; the local
-    // path resolves once and the close() is a no-op.
-    const watcher = watchProviderAccounts(
-      { activeRuntimeEnvironmentId },
-      {
-        onSnapshot: (snapshot) => {
-          // Why: a failed provider's half is a substituted empty roster, not
-          // authoritative data; keep prior state and leave the loaded gate shut.
-          if (!snapshot.failedProviders?.includes('codex')) {
-            setCodexAccounts(snapshot.codex)
-            setCodexAccountsLoaded(true)
-          }
-          if (!snapshot.failedProviders?.includes('claude')) {
-            setClaudeAccounts(snapshot.claude)
-          }
-        },
-        onError: (error) => {
-          toast.error(
-            translate(
-              'auto.components.settings.AccountsPane.loadAccountsFailed',
-              'Could not load provider accounts.'
-            ),
-            { description: String((error as Error)?.message ?? error) }
-          )
+    // Why: the local path resolves once per scope change; the pane refetches
+    // after each mutation. A temporarily half-failed load substitutes an empty
+    // roster for that provider and keeps the loaded gate shut for it.
+    let closed = false
+    void Promise.allSettled([
+      window.api.claudeAccounts.list(),
+      window.api.codexAccounts.list()
+    ]).then(([claudeResult, codexResult]) => {
+      if (closed) {
+        return
+      }
+      const claudeError =
+        claudeResult.status === 'rejected'
+          ? providerAccountsLoadError('Claude', claudeResult.reason)
+          : null
+      const codexError =
+        codexResult.status === 'rejected'
+          ? providerAccountsLoadError('Codex', codexResult.reason)
+          : null
+      if (claudeError && codexError) {
+        const errors = [claudeError, codexError]
+        reportAccountsLoadError(
+          new AggregateError(errors, errors.map((error) => error.message).join(' '))
+        )
+        return
+      }
+      const failedProviders = (['claude', 'codex'] as const).filter(
+        (provider) => (provider === 'claude' ? claudeError : codexError) !== null
+      )
+      const snapshot: ProviderAccountsSnapshot = {
+        claude: claudeResult.status === 'fulfilled' ? claudeResult.value : claudeAccountsStateEmpty,
+        codex: codexResult.status === 'fulfilled' ? codexResult.value : codexAccountsStateEmpty,
+        ...(failedProviders.length > 0 ? { failedProviders } : {})
+      }
+      // Why: a failed provider's half is a substituted empty roster, not
+      // authoritative data; keep prior state and leave the loaded gate shut.
+      if (!snapshot.failedProviders?.includes('codex')) {
+        setCodexAccounts(snapshot.codex)
+        setCodexAccountsLoaded(true)
+      }
+      if (!snapshot.failedProviders?.includes('claude')) {
+        setClaudeAccounts(snapshot.claude)
+      }
+      // Why: publish the healthy provider first, then surface any partial error.
+      for (const error of [claudeError, codexError]) {
+        if (error) {
+          reportAccountsLoadError(error)
         }
       }
-    )
+    })
     return () => {
-      watcher.close()
+      closed = true
     }
   }, [activeRuntimeEnvironmentId])
 

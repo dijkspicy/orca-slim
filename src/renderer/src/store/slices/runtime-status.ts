@@ -4,11 +4,6 @@ import type { RuntimeStatusSlice } from './runtime-status-types'
 export type { RuntimeEnvironmentStatus, RuntimeStatusSlice } from './runtime-status-types'
 import { lastVerifiedRuntimeStatus } from '../../../../shared/runtime-host-status'
 import { runtimeEnvironmentStatusesEqual } from './runtime-environment-status-equality'
-import {
-  clearRecentRuntimeCompatibilityFailure,
-  clearRuntimeCompatibilityCache
-} from '@/runtime/runtime-rpc-client'
-import { replaceRuntimeEnvironmentRevisions } from '@/runtime/runtime-environment-revision'
 import { bumpProviderRuntimeSessionGeneration } from '@/lib/provider-runtime-context'
 import { evictInstalledAgentSkillDiscoveryForRuntimeEnvironments } from '@/hooks/installed-agent-skill-discovery'
 import {
@@ -19,11 +14,6 @@ import { reconcileCatalogRows } from './repo-identity-reconcile'
 import { createRuntimeStatusHydration } from './runtime-status-hydration'
 import { refreshRuntimeEnvironmentStatus } from './runtime-status-refresh'
 import * as runtimeStatusConnectionGeneration from './runtime-status-connection-generation'
-import { replayClientHostedBrowserCloseIntents } from '@/runtime/client-hosted-browser-close-intent-replay'
-import {
-  ensureBrowserClientHostForRestartedRuntime,
-  ensureBrowserClientHostsForRestoredPages
-} from '@/runtime/restored-client-hosted-browser-host-attach'
 import { applyRuntimeHostStatusSnapshot } from './runtime-status-snapshot'
 
 export const clearRuntimeEnvironmentConnectionGenerationsForTests = (): void => {
@@ -70,7 +60,6 @@ export const createRuntimeStatusSlice: StateCreator<AppState, [], [], RuntimeSta
         )
       })
       .map((environment) => environment.id)
-    replaceRuntimeEnvironmentRevisions(environments)
     // Why: diff against the accumulated in-memory saved list (not a second disk
     // read) so a main-initiated removal that never calls setRuntimeEnvironments
     // still enters the diff on the next list read. #8881.
@@ -145,7 +134,6 @@ export const createRuntimeStatusSlice: StateCreator<AppState, [], [], RuntimeSta
     // A detached environment's mirrored SSH state must not outlive it.
     get().retainEnvironmentSshState?.(environments.map((environment) => environment.id))
     for (const id of replacedEnvironmentIds) {
-      clearRuntimeCompatibilityCache(id)
       get().markEnvironmentSshStateStale?.(id)
     }
     // Why: same-id re-pair publications belong to the retired peer just as surely as removed ids.
@@ -174,19 +162,6 @@ export const createRuntimeStatusSlice: StateCreator<AppState, [], [], RuntimeSta
     }
     const previousVerifiedStatus = lastVerifiedRuntimeStatus(previous)
     const pairedDeviceId = status.status?.pairedDeviceId?.trim()
-    // A new runtime id under a known previous one is a restart, not a first connect: the guests are
-    // still ours to host, but only a fresh attach hands them back to the replacement runtime.
-    const runtimeRestarted = Boolean(
-      status.status !== null &&
-      previousVerifiedStatus != null &&
-      previousVerifiedStatus.runtimeId !== status.status.runtimeId
-    )
-    // Why: a non-null status proves the runtime just answered, so drop any stale
-    // "offline" compat failure before this online transition fires the
-    // reuse-flagged background refetches — a recovered host must re-probe.
-    if (status.status !== null) {
-      clearRecentRuntimeCompatibilityFailure(environmentId, status.status)
-    }
     set((s) => {
       const sessionEnded = status.status === null && previous?.status != null
       // A reachable answer where we held none (never asked, or recorded unreachable) or
@@ -252,9 +227,6 @@ export const createRuntimeStatusSlice: StateCreator<AppState, [], [], RuntimeSta
         ...(environmentsChanged ? { runtimeEnvironments } : {})
       }
     })
-    if (runtimeRestarted) {
-      void ensureBrowserClientHostForRestartedRuntime(get(), environmentId)
-    }
     if (options?.suppressDisconnectToast) {
       dismissRuntimeDisconnectedToast(environmentId)
     } else if (previous?.status === null && status.status !== null) {
@@ -302,18 +274,7 @@ export const createRuntimeStatusSlice: StateCreator<AppState, [], [], RuntimeSta
       environmentId,
       timeoutMs,
       (entry) => {
-        // Why: setRuntimeEnvironmentStatus drops any stale compat failure on a non-null
-        // (reachable) status, so a recovered host's reuse-flagged refetches re-probe.
         get().setRuntimeEnvironmentStatus(environmentId, entry)
-        if (entry.status) {
-          // Why here: hydration can ask before the environment is reachable, and a restored
-          // client-hosted page only comes back once this desktop attaches as its host.
-          void ensureBrowserClientHostsForRestoredPages(get())
-          // Why alongside: the same restart that hands those rows back also restores rows the user
-          // already closed while this environment was down, so the closes it never heard have to be
-          // replayed before its persisted records can put them on screen again.
-          void replayClientHostedBrowserCloseIntents(environmentId, get())
-        }
       },
       (snapshot) => get().applyRuntimeHostStatusSnapshot(snapshot)
     ),

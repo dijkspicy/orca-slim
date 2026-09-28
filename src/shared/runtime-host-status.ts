@@ -1,4 +1,3 @@
-import type { RemoteRuntimeSharedConnectionDiagnostics } from './remote-runtime-shared-control-types'
 import type { RuntimeRpcFailure, RuntimeRpcResponse } from './runtime-rpc-envelope'
 import type { RuntimeStatus } from './runtime-types'
 
@@ -13,7 +12,6 @@ export type RuntimeHostStatusSnapshot = {
   status: RuntimeStatus | null
   verification: 'checking' | 'verified' | 'unavailable' | 'blocked'
   transport: 'unknown' | 'connecting' | 'ready' | 'disconnected'
-  remoteControl?: RemoteRuntimeSharedConnectionDiagnostics | null
   retired?: true
 }
 
@@ -26,7 +24,6 @@ export type RuntimeHostStatusSnapshot = {
 export type RuntimeEnvironmentStatus = {
   snapshot?: RuntimeHostStatusSnapshot
   status: RuntimeStatus | null
-  remoteControl?: RuntimeStatus['remoteControl'] | null
   appVersion?: string | null
   checkedAt: number
   /**

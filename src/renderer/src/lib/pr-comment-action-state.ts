@@ -1,5 +1,4 @@
 import { getPRCommentGroupRoot, type PRCommentGroup } from '../../../shared/pr-comment-groups'
-import type { PRComment } from '../../../shared/github/comment-types'
 
 /** How a comment group should read in the PR sidebar triage UI. */
 export type PRCommentGroupActionState = 'open' | 'conversation' | 'resolved'
@@ -43,7 +42,7 @@ export function partitionPRCommentGroupsForTriage(groups: readonly PRCommentGrou
 }
 
 /** Null when the host sent an unparseable (often empty) `createdAt`. */
-function commentMs(comment: PRComment): number | null {
+function commentMs(comment: { createdAt: string }): number | null {
   const ts = Date.parse(comment.createdAt)
   return Number.isNaN(ts) ? null : ts
 }

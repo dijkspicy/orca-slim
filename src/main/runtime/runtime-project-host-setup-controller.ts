@@ -13,11 +13,7 @@ import type {
   ProjectUpdateArgs
 } from '../../shared/project-types'
 import type { Repo } from '../../shared/repo-types'
-import {
-  getSshTargetIdForExecutionHost,
-  parseExecutionHostId,
-  type ExecutionHostId
-} from '../../shared/execution-host'
+import { parseExecutionHostId, type ExecutionHostId } from '../../shared/execution-host'
 import { getProjectIdForProviderIdentity } from '../../shared/project-host-setup-projection'
 import { getProjectHostSetupForRepo } from '../../shared/project-host-setup-lookup'
 import { invalidateAuthorizedRootsCache } from '../ipc/filesystem-auth'
@@ -28,13 +24,6 @@ type RuntimeProjectHostSetupDependencies = {
   getStore: () => RuntimeStore | null
   listRepos: () => Repo[]
   addRepo: (path: string, kind: 'folder' | 'git', hostId: ExecutionHostId) => Promise<Repo>
-  /** Register an existing path that lives on an SSH host; `addRepo` only reaches local/runtime hosts. */
-  addRemoteRepo: (args: {
-    connectionId: string
-    remotePath: string
-    displayName?: string
-    kind: 'folder' | 'git'
-  }) => Promise<Repo>
   cloneRepo: (url: string, destination: string, hostId: ExecutionHostId) => Promise<Repo>
   invalidateResolvedWorktrees: () => void
   invalidateWorktreeScan: (repoId: string) => void
@@ -99,18 +88,7 @@ export class RuntimeProjectHostSetupController {
     }
     const kind = args.kind === 'folder' ? 'folder' : 'git'
     const knownRepoIds = new Set(this.deps.listRepos().map((repo) => repo.id))
-    // Why route rather than refuse: this process owns the SSH connection, and its own IPC handler
-    // already registers `ssh:*` hosts correctly. Refusing here only made the CLI and runtime RPC
-    // disagree with the desktop app about what the same process can do.
-    const sshTargetId = getSshTargetIdForExecutionHost(args.hostId)
-    const repo = sshTargetId
-      ? await this.deps.addRemoteRepo({
-          connectionId: sshTargetId,
-          remotePath: args.path,
-          ...(args.displayName ? { displayName: args.displayName } : {}),
-          kind
-        })
-      : await this.deps.addRepo(args.path, kind, args.hostId)
+    const repo = await this.deps.addRepo(args.path, kind, args.hostId)
     return this.completeSetup(args, repo, !knownRepoIds.has(repo.id))
   }
 

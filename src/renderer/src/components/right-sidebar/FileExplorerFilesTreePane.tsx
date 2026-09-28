@@ -63,9 +63,7 @@ export function FileExplorerFilesTreePane({
   const { selectedPaths, preserveSelectionForContextMenu, copyPathsForNode } = selection
   const {
     scrollRef,
-    runtimeDownloadContext,
     supportsFolderDownload,
-    canOpenWorkspaceFileBrowserForPath,
     statusByRelativePath,
     folderStatusByRelativePath,
     deletion,
@@ -185,9 +183,7 @@ export function FileExplorerFilesTreePane({
           connectionId={activeRepo?.connectionId ?? null}
           sourceWorkspaceId={tree.sourceWorkspaceId}
           dirCache={tree.dirCache}
-          runtimeDownloadContext={runtimeDownloadContext}
           supportsFolderDownload={supportsFolderDownload}
-          canOpenInOrcaBrowser={canOpenWorkspaceFileBrowserForPath}
           onClick={handleRowClick}
           onDoubleClick={handleDoubleClick}
           onViewFile={handleClick}

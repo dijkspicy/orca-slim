@@ -6,7 +6,6 @@ import { deriveRemoteRuntimeTerminalCreateHandle } from './remote-runtime-termin
 import { withTimeoutResult } from './runtime-async-boundaries'
 import { PTY_CONTROLLER_LIST_TIMEOUT_MS } from './orca-runtime-postlude'
 import { inferWorktreeIdFromPtyId } from './runtime-worktree-path-identity'
-import { getRegisteredSshState } from '../ssh/ssh-target-registry'
 import { LOCAL_EXECUTION_HOST_ID, toSshExecutionHostId } from '../../shared/execution-host'
 import { resolveWorktreeLaunchHost } from './worktree-launch-host-repo'
 import type { TuiAgent } from '../../shared/tui-agent'
@@ -127,11 +126,9 @@ export class OrcaRuntimeWithTerminalCreateDeduplication extends OrcaRuntimeWithC
       return {}
     }
     if (pty.connectionId) {
-      const remotePlatform = getRegisteredSshState(pty.connectionId)?.remotePlatform
       return {
         executionHostId: toSshExecutionHostId(pty.connectionId),
-        ...(pty.incarnationId ? { incarnationId: pty.incarnationId } : {}),
-        ...(remotePlatform ? { hostPlatform: remotePlatform } : {})
+        ...(pty.incarnationId ? { incarnationId: pty.incarnationId } : {})
       }
     }
     return {

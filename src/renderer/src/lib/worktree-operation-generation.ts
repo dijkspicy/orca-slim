@@ -5,7 +5,6 @@ import {
 } from '@/store/slices/runtime-environment-ssh'
 import { getLocalSshTargetConnectionGeneration } from '@/store/slices/ssh'
 import { getRuntimeEnvironmentConnectionGeneration } from '@/store/slices/runtime-status'
-import { getRuntimeEnvironmentRevision } from '@/runtime/runtime-environment-revision'
 import {
   resolveWorktreeOperationRoute,
   type WorktreeOperationRoute
@@ -20,7 +19,6 @@ export type WorktreeOperationGenerationGuard = {
 export type WorktreeOperationGenerationSnapshot = {
   route: WorktreeOperationRoute
   runtimeConnectionGeneration: number | null
-  runtimePairingRevision: number | undefined
   runtimeSshGeneration: number | null
   nestedSshGeneration: number | null
   directSshGeneration: number | null
@@ -36,9 +34,6 @@ export function captureWorktreeOperationGenerationSnapshot(
     runtimeConnectionGeneration: environmentId
       ? getRuntimeEnvironmentConnectionGeneration(environmentId)
       : null,
-    runtimePairingRevision: environmentId
-      ? getRuntimeEnvironmentRevision(environmentId)
-      : undefined,
     runtimeSshGeneration: environmentId ? getEnvironmentSshStateGeneration(environmentId) : null,
     nestedSshGeneration:
       environmentId && executionHost?.kind === 'ssh'
@@ -68,8 +63,6 @@ export function assertWorktreeOperationGenerationSnapshotCurrent(
     (environmentId &&
       getRuntimeEnvironmentConnectionGeneration(environmentId) !==
         snapshot.runtimeConnectionGeneration) ||
-    (environmentId &&
-      getRuntimeEnvironmentRevision(environmentId) !== snapshot.runtimePairingRevision) ||
     (environmentId &&
       getEnvironmentSshStateGeneration(environmentId) !== snapshot.runtimeSshGeneration) ||
     (environmentId &&

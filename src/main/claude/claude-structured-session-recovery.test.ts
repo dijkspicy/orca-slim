@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { StructuredAgentSessionEventSink } from '../native-chat/agent-session-wire/structured-agent-session-event-sink'
+import type { StructuredAgentSessionEventSink } from './claude-structured-session-sink'
 import {
   ClaudeStructuredSessionAdapter,
   type ClaudeStructuredSessionAdapterDeps,

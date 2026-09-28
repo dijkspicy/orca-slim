@@ -4,7 +4,6 @@ import {
   type MobileRelayMintFailure
 } from '../../../shared/mobile-relay-mint-failure'
 import { encodePairingOffer, PAIRING_OFFER_VERSION } from '../../../shared/pairing'
-import { NETWORK_EXPOSURE_FAILED_GUIDANCE } from '../network-exposure-guidance'
 import { RuntimeRpcPairing } from './runtime-rpc-pairing'
 import {
   DEVICE_REGISTRY_UNAVAILABLE_GUIDANCE,
@@ -31,7 +30,10 @@ export class RuntimeRpcMobilePairing extends RuntimeRpcPairing {
         '[runtime] Network exposure failed while creating a mobile pairing offer:',
         error
       )
-      return pairingUnavailable('network_exposure_failed', NETWORK_EXPOSURE_FAILED_GUIDANCE)
+      return pairingUnavailable(
+        'network_exposure_failed',
+        'Could not expose the runtime to the network for pairing. The listener kept serving locally; retry, or choose an unused --port if the LAN bind was refused.'
+      )
     }
     if (args.connectionMode === 'local-only') {
       this.mobilePairingOfferGeneration += 1

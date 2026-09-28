@@ -17,7 +17,6 @@ import {
   getPRCommentGroupSurfaceClasses,
   type PRCommentPresentationClasses
 } from '../pr-comment-presentation'
-import type { GitHubReactionContent, PRComment } from '../../../../../shared/github/comment-types'
 import { getPRCommentGroupId, type PRCommentGroup } from '../../../../../shared/pr-comment-groups'
 import type { PRCommentGroupActionState } from '@/lib/pr-comment-action-state'
 import {
@@ -25,6 +24,7 @@ import {
   type RightPanelCommentSubmitResult
 } from '../right-panel-comment-composer'
 import { CommentRow } from './comment-row'
+import type { PanelComment } from './comment-controls'
 import { translate } from '@/i18n/i18n'
 
 export function PRCommentGroupView({
@@ -60,19 +60,15 @@ export function PRCommentGroupView({
   onResolve?: (threadId: string, resolve: boolean) => boolean | Promise<boolean>
   onStartReply?: (commentId: number) => void
   onCancelReply?: (commentId: number) => void
-  onReply?: (comment: PRComment, body: string) => Promise<RightPanelCommentSubmitResult>
-  onEditComment?: (comment: PRComment, body: string) => Promise<boolean>
-  onDeleteComment?: (comment: PRComment) => void | Promise<void>
-  onSetReaction?: (
-    comment: PRComment,
-    content: GitHubReactionContent,
-    reacted: boolean
-  ) => Promise<boolean>
+  onReply?: (comment: PanelComment, body: string) => Promise<RightPanelCommentSubmitResult>
+  onEditComment?: (comment: PanelComment, body: string) => Promise<boolean>
+  onDeleteComment?: (comment: PanelComment) => void | Promise<void>
+  onSetReaction?: (comment: PanelComment, content: string, reacted: boolean) => Promise<boolean>
   onQueueForAgent?: () => void
 }): React.JSX.Element {
   // Reply targets a specific comment id so any comment in a thread — root or
   // nested reply — can be replied to, not just the thread root.
-  const renderReplyComposer = (comment: PRComment, nested = false): React.ReactNode =>
+  const renderReplyComposer = (comment: PanelComment, nested = false): React.ReactNode =>
     replyingCommentId === comment.id && onReply ? (
       <div
         className={cn(
@@ -97,7 +93,7 @@ export function PRCommentGroupView({
         />
       </div>
     ) : null
-  const startReply = onStartReply ? (comment: PRComment) => onStartReply(comment.id) : undefined
+  const startReply = onStartReply ? (comment: PanelComment) => onStartReply(comment.id) : undefined
   const surfaceClassName = cn(
     getPRCommentGroupSurfaceClasses(presentation, actionState, {
       queued: isQueued
@@ -213,14 +209,10 @@ export function ResolvedCommentGroupsSection({
   onResolve?: (threadId: string, resolve: boolean) => boolean | Promise<boolean>
   onStartReply?: (commentId: number) => void
   onCancelReply?: (commentId: number) => void
-  onReply?: (comment: PRComment, body: string) => Promise<RightPanelCommentSubmitResult>
-  onEditComment?: (comment: PRComment, body: string) => Promise<boolean>
-  onDeleteComment?: (comment: PRComment) => void | Promise<void>
-  onSetReaction?: (
-    comment: PRComment,
-    content: GitHubReactionContent,
-    reacted: boolean
-  ) => Promise<boolean>
+  onReply?: (comment: PanelComment, body: string) => Promise<RightPanelCommentSubmitResult>
+  onEditComment?: (comment: PanelComment, body: string) => Promise<boolean>
+  onDeleteComment?: (comment: PanelComment) => void | Promise<void>
+  onSetReaction?: (comment: PanelComment, content: string, reacted: boolean) => Promise<boolean>
 }): React.JSX.Element | null {
   if (groups.length === 0) {
     return null

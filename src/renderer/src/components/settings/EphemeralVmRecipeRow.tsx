@@ -1,13 +1,19 @@
 import { Play } from 'lucide-react'
 import type React from 'react'
-import type { OrcaHooks } from '../../../../shared/orca-yaml-hook-types'
 import { Button } from '../ui/button'
 import { translate } from '@/i18n/i18n'
 
 type RecipeCatalogEntry = Awaited<
   ReturnType<typeof window.api.ephemeralVm.listRecipeCatalog>
 >[number]
-type Recipe = NonNullable<OrcaHooks['environmentRecipes']>[number]
+// Structural mirror of the recipe entries the deleted shared orca-yaml type carried.
+type Recipe = {
+  id: string
+  name: string
+  create: string
+  destroy?: string
+  destroyDisabled?: boolean
+}
 
 export function EphemeralVmRecipeRow({
   entry,

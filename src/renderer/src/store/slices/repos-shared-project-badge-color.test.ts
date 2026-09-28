@@ -2,11 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestStore } from './store-test-helpers'
 import type { Project, ProjectHostSetup } from '../../../../shared/project-types'
 import type { Repo } from '../../../../shared/repo-types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 
 // Mirrors the real report: one project name ("orca") set up on the local Mac and on a
 // remote Orca server, where only the local repo row carries the user's chosen color.
@@ -87,7 +82,6 @@ function runtimeResult(method: string): unknown {
 }
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   reposList.mockReset()
   reposUpdate.mockReset()
   projectsList.mockReset()
@@ -104,15 +98,14 @@ beforeEach(() => {
   projectsList.mockResolvedValue([localProject])
   listHostSetups.mockResolvedValue([setup(SHARED_PROJECT_ID, 'local-repo', '/local/orca')])
   runtimeEnvironmentsList.mockResolvedValue([{ id: 'env-1', name: 'awin' }])
-  runtimeEnvironmentCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => ({
+  runtimeEnvironmentCall.mockImplementation((args: { method: string }) => ({
     id: `rpc-${args.method}`,
     ok: true,
     result: runtimeResult(args.method),
     _meta: { runtimeId: 'runtime-remote' }
   }))
-  runtimeEnvironmentTransportCall.mockImplementation(
-    (args: RuntimeEnvironmentCallRequest) =>
-      createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+  runtimeEnvironmentTransportCall.mockImplementation((args: { method: string }) =>
+    runtimeEnvironmentCall(args)
   )
 
   vi.stubGlobal('window', {

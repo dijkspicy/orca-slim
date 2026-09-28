@@ -8,8 +8,18 @@ import {
   isDirectClaudeCommand,
   type ClaudeAgentTeamsMode
 } from '../../shared/claude-agent-teams-tmux-compat'
-import { getOrcaCliCommandNameForPlatform } from '../../shared/orca-cli-command-name'
 import { resolvePathEnvKey } from '../pty/windows-path-segment-merge'
+
+// Why: the CLI binary name the agent-teams shim advertises, per platform (formerly shared helper).
+const getOrcaCliCommandNameForPlatform = (platform: NodeJS.Platform): string => {
+  if (platform === 'linux') {
+    return 'orca-ide'
+  }
+  if (platform === 'win32') {
+    return 'orca.cmd'
+  }
+  return 'orca'
+}
 
 export type ClaudeAgentTeamsLaunchPlan = {
   command: string

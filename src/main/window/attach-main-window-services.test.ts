@@ -20,7 +20,6 @@ const {
   hydrateLocalPtyRegistryAtBootMock,
   setWorktreeBaseDirectoryWatcherSyncContextMock,
   scheduleWorktreeBaseDirectoryWatcherSyncMock,
-  browserManagerUnregisterAllMock,
   runWorktreeChangeInvalidatorsMock,
   acknowledgePendingTccPromptNoticeMock,
   consumePendingTccPromptNoticeMock,
@@ -44,7 +43,6 @@ const {
   hydrateLocalPtyRegistryAtBootMock: vi.fn(),
   setWorktreeBaseDirectoryWatcherSyncContextMock: vi.fn(),
   scheduleWorktreeBaseDirectoryWatcherSyncMock: vi.fn(),
-  browserManagerUnregisterAllMock: vi.fn(),
   runWorktreeChangeInvalidatorsMock: vi.fn(),
   acknowledgePendingTccPromptNoticeMock: vi.fn(),
   consumePendingTccPromptNoticeMock: vi.fn(),
@@ -104,12 +102,6 @@ vi.mock('../memory/hydrate-local-pty-registry', () => ({
 vi.mock('../ipc/worktree-base-directory-watcher', () => ({
   setWorktreeBaseDirectoryWatcherSyncContext: setWorktreeBaseDirectoryWatcherSyncContextMock,
   scheduleWorktreeBaseDirectoryWatcherSync: scheduleWorktreeBaseDirectoryWatcherSyncMock
-}))
-
-vi.mock('../browser/browser-manager', () => ({
-  browserManager: {
-    unregisterAll: browserManagerUnregisterAllMock
-  }
 }))
 
 vi.mock('../macos-tcc-prompt-notice', () => ({
@@ -551,19 +543,6 @@ describe('attachMainWindowServices', () => {
     } finally {
       Object.defineProperty(process, 'platform', platform ?? { value: process.platform })
     }
-  })
-
-  it('clears browser guest registrations when the main window closes', () => {
-    const mainWindowOnMock = vi.fn()
-    const mainWindow = createMainWindow()
-    mainWindow.on = mainWindowOnMock
-
-    attachMainWindowServices(mainWindow as never, createStore(), createRuntime() as never)
-
-    const closedHandler = getClosedHandlers(mainWindowOnMock).at(-1)
-    expect(closedHandler).toBeTypeOf('function')
-    closedHandler?.()
-    expect(browserManagerUnregisterAllMock).toHaveBeenCalledTimes(1)
   })
 
   it('removes the native file-drop relay when the main window closes', () => {

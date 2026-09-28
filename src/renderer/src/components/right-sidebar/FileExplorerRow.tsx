@@ -17,7 +17,6 @@ import type { TreeNode } from './file-explorer-types'
 import { useFileExplorerRowDrag } from './useFileExplorerRowDrag'
 import { translate } from '@/i18n/i18n'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/components/tab-bar/SortableTab'
-import type { RuntimeFileOperationArgs } from '@/runtime/runtime-file-client'
 import { createMultiSelectDragGhost } from './file-explorer-multi-drag-image'
 import { FileExplorerRowContextMenu } from './file-explorer-row-context-menu'
 
@@ -38,7 +37,6 @@ export type FileExplorerRowProps = {
   sourceWorkspaceId?: string | null
   /** Resolved at dragstart so the virtualized list pays nothing per render. */
   resolveDragSourceHostId?: (paths: readonly string[]) => ExecutionHostId | null
-  runtimeDownloadContext?: RuntimeFileOperationArgs | null
   supportsFolderDownload?: boolean
   canOpenInOrcaBrowser: boolean
   canCollapseFolderSubtree: boolean
@@ -81,7 +79,6 @@ export function FileExplorerRow({
   connectionId,
   sourceWorkspaceId,
   resolveDragSourceHostId,
-  runtimeDownloadContext,
   supportsFolderDownload = false,
   canOpenInOrcaBrowser,
   canCollapseFolderSubtree,
@@ -266,7 +263,6 @@ export function FileExplorerRow({
         isExpanded={isExpanded}
         deleteShortcutLabel={deleteShortcutLabel}
         connectionId={connectionId}
-        runtimeDownloadContext={runtimeDownloadContext}
         supportsFolderDownload={supportsFolderDownload}
         canOpenInOrcaBrowser={canOpenInOrcaBrowser}
         canCollapseFolderSubtree={canCollapseFolderSubtree}

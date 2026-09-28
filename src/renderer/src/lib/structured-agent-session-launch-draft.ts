@@ -1,5 +1,7 @@
 import type { AgentSessionHandleProvider } from '../../../shared/agent-session-provider-handle'
-import { structuredAgentSessionTabId } from '../../../shared/structured-agent-session-projection'
+// Why: the projection module was culled; the tab id convention is the stable literal prefix.
+const structuredAgentSessionTabId = (sessionId: string): string =>
+  `structured-agent-session-${sessionId}`
 import { useAppStore } from '@/store'
 import type { StructuredAgentLaunchOptions } from './structured-agent-session-launch-callers'
 

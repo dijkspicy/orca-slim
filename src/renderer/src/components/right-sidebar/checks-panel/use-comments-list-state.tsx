@@ -18,7 +18,7 @@ import {
   sortPRCommentGroupsByRecency
 } from '@/lib/pr-comment-action-state'
 import { getPRCommentPresentationClasses } from '../pr-comment-presentation'
-import type { GitHubReactionContent, PRComment } from '../../../../../shared/github/comment-types'
+import type { PanelComment } from './comment-controls'
 import {
   RightPanelCommentComposer,
   type RightPanelCommentSubmitResult
@@ -41,7 +41,7 @@ export function getPRCommentsListDisplayModeLabel(mode: PRCommentsListDisplayMod
 }
 
 export type PRCommentsListProps = {
-  comments: PRComment[]
+  comments: PanelComment[]
   commentsLoading: boolean
   reviewKind?: 'PR' | 'MR'
   commentsDisabled?: boolean
@@ -52,15 +52,11 @@ export type PRCommentsListProps = {
   resolveCommentsWithAIDisabledReason?: string
   onAddComment?: (body: string) => Promise<RightPanelCommentSubmitResult>
   onResolveSelectedCommentsWithAI?: (groups: PRCommentGroup[]) => void
-  onReply?: (comment: PRComment, body: string) => Promise<RightPanelCommentSubmitResult>
+  onReply?: (comment: PanelComment, body: string) => Promise<RightPanelCommentSubmitResult>
   onResolve?: (threadId: string, resolve: boolean) => boolean | Promise<boolean>
-  onEditComment?: (comment: PRComment, body: string) => Promise<boolean>
-  onDeleteComment?: (comment: PRComment) => void | Promise<void>
-  onSetReaction?: (
-    comment: PRComment,
-    content: GitHubReactionContent,
-    reacted: boolean
-  ) => Promise<boolean>
+  onEditComment?: (comment: PanelComment, body: string) => Promise<boolean>
+  onDeleteComment?: (comment: PanelComment) => void | Promise<void>
+  onSetReaction?: (comment: PanelComment, content: string, reacted: boolean) => Promise<boolean>
 }
 
 export function useCommentsListState({

@@ -1,7 +1,4 @@
-import {
-  boundPayload,
-  digestPayload
-} from '../native-chat/agent-session-journal/journal-payload-bounds'
+import { boundPayload, digestPayload } from './codex-journal-payload-bounds'
 
 /** Codex records the user message first in a turn, so a restored submission is
  *  ordinal 0 of `(threadId, turnId)`. */

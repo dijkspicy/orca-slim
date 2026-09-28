@@ -4,7 +4,7 @@ import type { ContextualTourId } from './contextual-tours'
 import type { FeatureInteractionState } from './feature-interactions'
 import type { UsagePercentageDisplay } from './usage-percentage-display'
 import type { StatusBarUsageMode } from './status-bar-usage-mode'
-import type { PersistedTrustedOrcaHooks } from './orca-yaml-hook-types'
+import type { PersistedTrustedOrcaHooks } from './repo-hook-settings'
 import type {
   ActivityGroupBy,
   AgentActivityDisplayMode,

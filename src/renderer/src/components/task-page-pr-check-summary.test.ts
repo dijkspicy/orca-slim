@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import { deriveTaskPagePRCheckSummary } from './task-page-pr-check-summary'
-import type { PRCheckDetail } from '../../../shared/github/check-types'
+type CheckRow = { name: string; status: string; conclusion: string | null; url: string | null }
 
-function check(patch: Partial<PRCheckDetail>): PRCheckDetail {
+function check(patch: Partial<CheckRow>): CheckRow {
   return {
     name: 'ci',
     status: 'completed',

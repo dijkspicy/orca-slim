@@ -18,7 +18,6 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type * as AgentStatusModule from '@/lib/agent-status'
-import type * as RuntimeTerminalStreamModule from '@/runtime/runtime-terminal-stream'
 
 vi.mock('sonner', () => ({
   toast: { info: vi.fn(), success: vi.fn(), error: vi.fn(), warning: vi.fn() }
@@ -34,11 +33,6 @@ vi.mock('@/lib/agent-status', async (importOriginal) => {
   return { ...actual, detectAgentStatusFromTitle: vi.fn().mockReturnValue(null) }
 })
 
-vi.mock('@/runtime/runtime-terminal-stream', async (importOriginal) => {
-  const actual = await importOriginal<typeof RuntimeTerminalStreamModule>()
-  return { ...actual, parseRemoteRuntimePtyId: vi.fn(actual.parseRemoteRuntimePtyId) }
-})
-
 const mockApi = {
   worktrees: { list: vi.fn().mockResolvedValue([]), remove: vi.fn().mockResolvedValue(undefined) },
   pty: { kill: vi.fn().mockResolvedValue(undefined) }
@@ -48,9 +42,6 @@ const mockApi = {
 globalThis.window = { api: mockApi }
 
 import { createTestStore, seedStore, makeWorktree, makeTab } from './store-test-helpers'
-import { parseRemoteRuntimePtyId } from '@/runtime/runtime-terminal-stream'
-import type { SshProviderEpoch } from '../../../../shared/ssh-types'
-import type { DirectSshPaneRetryAttemptId } from './direct-ssh-terminal-recovery'
 
 const WT1 = 'repo1::/path/wt1'
 const WT2 = 'repo1::/path/wt2'
@@ -58,17 +49,9 @@ const TAB1 = 'tab-wt1'
 const TAB2 = 'tab-wt2'
 const PTY1 = 'pty-wt1'
 const PTY1_SPLIT = 'pty-wt1-split'
-const REMOTE_PTY1 = 'remote:env-1@@terminal-wt1'
-const REMOTE_HANDLE1 = 'terminal-wt1'
-const REMOTE_PTY2_SAME_HANDLE = 'remote:env-2@@terminal-wt1'
 const PTY2 = 'pty-wt2'
 
 function seedMaps(store: ReturnType<typeof createTestStore>): void {
-  const authority = {
-    targetId: 'target-a',
-    providerEpoch: 'epoch-a' as SshProviderEpoch,
-    connectionGeneration: 1
-  }
   seedStore(store, {
     worktreesByRepo: {
       repo1: [
@@ -132,40 +115,12 @@ function seedMaps(store: ReturnType<typeof createTestStore>): void {
     suppressedPtyExitIds: {
       [PTY1]: true,
       [PTY1_SPLIT]: true,
-      [REMOTE_PTY1]: true,
       [PTY2]: true
     },
     pendingCodexPaneRestartIds: {
       [PTY1]: true,
       [PTY1_SPLIT]: true,
-      [REMOTE_PTY1]: true,
       [PTY2]: true
-    },
-    directSshPaneRetryByTabId: {
-      [TAB1]: {
-        attemptId: 'attempt-1' as DirectSshPaneRetryAttemptId,
-        authority,
-        tabGeneration: 0,
-        startedAt: 1
-      }
-    },
-    directSshLivePtyBindingByTabId: {
-      [TAB1]: {
-        attemptId: 'attempt-1' as DirectSshPaneRetryAttemptId,
-        authority,
-        tabGeneration: 0,
-        ptyId: PTY1
-      },
-      [TAB2]: {
-        attemptId: 'attempt-2' as DirectSshPaneRetryAttemptId,
-        authority,
-        tabGeneration: 0,
-        ptyId: PTY2
-      }
-    },
-    directSshPaneRetryHistoryByTabId: {
-      [TAB1]: { authority, attemptedAt: [1] },
-      [TAB2]: { authority, attemptedAt: [2] }
     }
   })
 }
@@ -192,13 +147,8 @@ describe('bulk worktree purge evicts the per-tab/per-pty terminal maps it previo
     expect(s.migrationUnsupportedByPtyId[PTY1]).toBeUndefined()
     expect(s.suppressedPtyExitIds[PTY1]).toBeUndefined()
     expect(s.suppressedPtyExitIds[PTY1_SPLIT]).toBeUndefined()
-    expect(s.suppressedPtyExitIds[REMOTE_PTY1]).toBeUndefined()
     expect(s.pendingCodexPaneRestartIds[PTY1]).toBeUndefined()
     expect(s.pendingCodexPaneRestartIds[PTY1_SPLIT]).toBeUndefined()
-    expect(s.pendingCodexPaneRestartIds[REMOTE_PTY1]).toBeUndefined()
-    expect(s.directSshPaneRetryByTabId[TAB1]).toBeUndefined()
-    expect(s.directSshLivePtyBindingByTabId[TAB1]).toBeUndefined()
-    expect(s.directSshPaneRetryHistoryByTabId[TAB1]).toBeUndefined()
 
     // Surviving worktree's tab/pty: every entry retained (no over-eviction).
     expect(s.lastKnownRelayPtyIdByTabId[TAB2]).toBe(PTY2)
@@ -212,91 +162,5 @@ describe('bulk worktree purge evicts the per-tab/per-pty terminal maps it previo
     expect(s.migrationUnsupportedByPtyId[PTY2]).toBeDefined()
     expect(s.suppressedPtyExitIds[PTY2]).toBe(true)
     expect(s.pendingCodexPaneRestartIds[PTY2]).toBe(true)
-    expect(s.directSshLivePtyBindingByTabId[TAB2]).toBeDefined()
-    expect(s.directSshPaneRetryHistoryByTabId[TAB2]).toBeDefined()
-  })
-
-  it('keeps environment-scoped remote guard identities independent', () => {
-    const store = createTestStore()
-    seedMaps(store)
-    store.setState((s) => ({
-      ptyIdsByTabId: {
-        ...s.ptyIdsByTabId,
-        [TAB2]: [...s.ptyIdsByTabId[TAB2], REMOTE_PTY2_SAME_HANDLE]
-      },
-      suppressedPtyExitIds: {
-        ...s.suppressedPtyExitIds,
-        [REMOTE_PTY2_SAME_HANDLE]: true
-      },
-      pendingCodexPaneRestartIds: {
-        ...s.pendingCodexPaneRestartIds,
-        [REMOTE_PTY2_SAME_HANDLE]: true
-      }
-    }))
-
-    store.getState().purgeWorktreeTerminalState([WT1])
-    const s = store.getState()
-
-    expect(s.suppressedPtyExitIds[REMOTE_PTY1]).toBeUndefined()
-    expect(s.pendingCodexPaneRestartIds[REMOTE_PTY1]).toBeUndefined()
-    expect(s.suppressedPtyExitIds[REMOTE_PTY2_SAME_HANDLE]).toBe(true)
-    expect(s.pendingCodexPaneRestartIds[REMOTE_PTY2_SAME_HANDLE]).toBe(true)
-  })
-
-  it('retains a raw remote handle that is also a surviving local PTY id', () => {
-    const store = createTestStore()
-    seedMaps(store)
-    store.setState((s) => ({
-      ptyIdsByTabId: {
-        ...s.ptyIdsByTabId,
-        [TAB2]: [...s.ptyIdsByTabId[TAB2], REMOTE_HANDLE1]
-      },
-      pendingCodexPaneRestartIds: {
-        ...s.pendingCodexPaneRestartIds,
-        [REMOTE_HANDLE1]: true
-      },
-      suppressedPtyExitIds: {
-        ...s.suppressedPtyExitIds,
-        [REMOTE_HANDLE1]: true
-      }
-    }))
-
-    store.getState().purgeWorktreeTerminalState([WT1])
-    const s = store.getState()
-
-    expect(s.suppressedPtyExitIds[REMOTE_PTY1]).toBeUndefined()
-    expect(s.pendingCodexPaneRestartIds[REMOTE_PTY1]).toBeUndefined()
-    expect(s.suppressedPtyExitIds[REMOTE_HANDLE1]).toBe(true)
-    expect(s.pendingCodexPaneRestartIds[REMOTE_HANDLE1]).toBe(true)
-  })
-
-  it('does not parse aliases for environment-scoped remote guard cleanup', () => {
-    const store = createTestStore()
-    seedMaps(store)
-    const parseRemotePtyId = vi.mocked(parseRemoteRuntimePtyId)
-    parseRemotePtyId.mockClear()
-
-    store.getState().purgeWorktreeTerminalState([WT1])
-
-    // Why: guard keys stay scoped to their environment, so purge can delete
-    // exact identities without parsing aliases or scanning surviving terminals.
-    expect(parseRemotePtyId).not.toHaveBeenCalled()
-  })
-
-  it('preserves direct SSH ledgers when a surviving worktree reuses the tab id', () => {
-    const store = createTestStore()
-    seedMaps(store)
-    store.setState((state) => ({
-      tabsByWorktree: {
-        ...state.tabsByWorktree,
-        [WT2]: [...state.tabsByWorktree[WT2], makeTab({ id: TAB1, worktreeId: WT2, ptyId: PTY2 })]
-      }
-    }))
-
-    store.getState().purgeWorktreeTerminalState([WT1])
-
-    expect(store.getState().directSshPaneRetryByTabId[TAB1]).toBeDefined()
-    expect(store.getState().directSshLivePtyBindingByTabId[TAB1]).toBeDefined()
-    expect(store.getState().directSshPaneRetryHistoryByTabId[TAB1]).toBeDefined()
   })
 })

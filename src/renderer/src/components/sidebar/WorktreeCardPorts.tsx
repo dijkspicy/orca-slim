@@ -1,10 +1,11 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { Plug, Copy, ExternalLink, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { useWorktreeRuntimeTarget } from '@/runtime/use-worktree-runtime-target'
+import { getExecutionHostIdForWorktree } from '@/lib/worktree-runtime-owner'
+import { runtimeTargetForExecutionHostId } from '@/runtime/runtime-client-target'
 import {
   canStopWorkspacePort,
   getPortOpenBrowserTooltipLabel,
@@ -106,8 +107,15 @@ function WorktreePortRow({ port }: { port: WorkspacePort }): React.JSX.Element {
   const replaceWorkspacePortScans = useAppStore((s) => s.replaceWorkspacePortScans)
   const setWorkspacePortScanRefreshing = useAppStore((s) => s.setWorkspacePortScanRefreshing)
   const recordFeatureInteraction = useAppStore((s) => s.recordFeatureInteraction)
-  const runtimeTarget = useWorktreeRuntimeTarget(
-    port.kind === 'workspace' ? port.owner.worktreeId : null
+  const portWorktreeId = port.kind === 'workspace' ? port.owner.worktreeId : null
+  // Why: resolved inline from the same store selector the shared hook used — the per-worktree
+  // host must own the action, not the focused runtime.
+  const executionHostId = useAppStore((state) =>
+    getExecutionHostIdForWorktree(state, portWorktreeId)
+  )
+  const runtimeTarget = useMemo(
+    () => runtimeTargetForExecutionHostId(executionHostId),
+    [executionHostId]
   )
   const processLabel = port.processName ?? (port.pid ? `PID ${port.pid}` : 'Unknown process')
   const address = addressForPort(port)

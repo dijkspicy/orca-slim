@@ -7,8 +7,7 @@ import {
   ExecutionHostNotDispatchableError,
   resolveGitRouteForHost
 } from '../providers/execution-host-provider-dispatch'
-import { SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE } from '../providers/ssh-git-dispatch'
-import type { SshGitProvider } from '../providers/ssh-git-provider'
+import type { IGitProvider } from '../providers/types'
 import type { CommitMessageAgentEnvironmentResolvers } from '../text-generation/commit-message-agent-environment'
 import type { PullRequestLinkedIssueMeta } from '../source-control/pull-request-linked-issue'
 import { normalizeRuntimeRelativePath } from './runtime-relative-paths'
@@ -61,7 +60,7 @@ export type RuntimeGitCommandHost = {
 export type RuntimeGitRoute =
   | { kind: 'local' }
   /** `provider: null` is "remote and currently unreachable" — never "run it here". */
-  | { kind: 'ssh'; connectionId: string; provider: SshGitProvider | null }
+  | { kind: 'ssh'; connectionId: string; provider: IGitProvider | null }
 
 export function runtimeGitRouteForTarget(target: RuntimeGitTarget): RuntimeGitRoute {
   const route = resolveGitRouteForHost(target.executionHostId)
@@ -79,13 +78,14 @@ export function runtimeGitRouteForTarget(target: RuntimeGitTarget): RuntimeGitRo
  * `null` means exactly one thing: the host is `local`, and this command runs here as free
  * functions. An unreachable SSH host and a `runtime:` host both throw.
  */
-export function requireRuntimeGitProvider(target: RuntimeGitTarget): SshGitProvider | null {
+export function requireRuntimeGitProvider(target: RuntimeGitTarget): IGitProvider | null {
   const route = runtimeGitRouteForTarget(target)
   if (route.kind === 'local') {
     return null
   }
   if (!route.provider) {
-    throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
+    // Why: the shared constant lived in the removed ssh dispatch registry.
+    throw new Error('Remote connection dropped. Click Reconnect on the SSH target before retrying.')
   }
   return route.provider
 }

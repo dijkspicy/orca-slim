@@ -1,12 +1,15 @@
 import { useRef, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
-import { isNativeChatShellEnvironmentName } from '../../../../shared/native-chat-shell-environment'
 import { translate } from '@/i18n/i18n'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { SettingsSwitch } from './SettingsFormControls'
+
+// One whole variable name, as a shell would accept it.
+const SHELL_ENV_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/
+const isNativeChatShellEnvironmentName = (value: string): boolean => SHELL_ENV_NAME.test(value)
 
 type NativeChatShellEnvironmentSettingProps = {
   settings: GlobalSettings

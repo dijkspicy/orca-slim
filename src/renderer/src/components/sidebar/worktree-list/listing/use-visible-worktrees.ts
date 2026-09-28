@@ -10,11 +10,7 @@ import {
   EMPTY_PAIRED_DEVICE_IDS_BY_ENVIRONMENT,
   getPairedDeviceIdsByEnvironment
 } from '../../workspace-creator-visibility'
-import {
-  getVisibleWorktreeBrowserActivityTabs,
-  getVisibleWorktreeTerminalActivityTabs,
-  getStructuredChatWorktreeIds
-} from '../../visible-worktree-activity-inputs'
+import { getVisibleWorktreeTerminalActivityTabs } from '../../visible-worktree-activity-inputs'
 import type { SortBy } from '../../smart-sort'
 import type { SidebarWorktreeFilters } from './use-filters'
 import { useReusedArrayIdentity } from './use-reused-array-identity'
@@ -68,12 +64,10 @@ export function useVisibleSidebarWorktrees(args: {
     needsActivityMaps ? getVisibleWorktreeTerminalActivityTabs(s.tabsByWorktree) : null
   )
   const ptyIdsByTabId = useAppStore((s) => (needsActivityMaps ? s.ptyIdsByTabId : null))
-  const browserTabsByWorktree = useAppStore((s) =>
-    !showSleepingWorkspaces ? getVisibleWorktreeBrowserActivityTabs(s.browserTabsByWorktree) : null
-  )
-  const worktreeIdsWithStructuredChat = useAppStore((s) =>
-    getStructuredChatWorktreeIds(showSleepingWorkspaces, s.unifiedTabsByWorktree)
-  )
+  // Why: browser tabs and structured chat tabs no longer exist, so neither can
+  // mark a workspace active.
+  const browserTabsByWorktree = null
+  const worktreeIdsWithStructuredChat = EMPTY_WORKTREE_ID_SET
 
   const recomputedVisibleWorktrees = useMemo(() => {
     // Keyed on the epoch, not `agentStatusNow`: two bumps in one millisecond

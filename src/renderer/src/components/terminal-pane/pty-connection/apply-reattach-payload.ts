@@ -13,7 +13,6 @@ import {
 
 import { isRemoteRuntimePtyId } from './paired-parked-terminal-restore'
 import { restoredSnapshotPaintsPrintableContent } from '../restored-snapshot-coverage'
-import { resolveSshReconnectModelPaint } from './resolve-ssh-reconnect-model-paint'
 import { fitReattachedPaneToGrid, noteReattachAltFrameSkip } from './reattach-grid-fit'
 
 import type { ReattachPayloadContext } from './reattach-payload-context'
@@ -117,33 +116,15 @@ export function createReattachPayloadHandlers(
           window.api.pty.ackColdRestore(ctx.ptyId)
         }
       }
-    } else if (
-      ctx.connectResult?.replay ||
-      ctx.prefetchedParkModelSnapshot ||
-      ctx.reconnectMayUseModel
-    ) {
+    } else if (ctx.connectResult?.replay || ctx.prefetchedParkModelSnapshot) {
       // Why scoped to a park-reveal: the 100KiB relay tail loses scrollback the
       // model still holds, but an in-place reattach (network reconnect, wake,
       // reload) already has that replay in hand, so probing would only delay its
       // paint by the timeout. Memoized, so this is never a second probe.
-      // An SSH reconnect may use the model only under sshReconnectPaintsFromModel: the reconnect
-      // replay reaches the renderer without passing through main's model (forwardReattachReplay
-      // and the inline attach replay both bypass onPtyData), so the model is stale by exactly
-      // the outage and the replay is the only witness to it. A park has no such hole, so it
-      // keeps using the model either way.
-      const revealSnapshot = ctx.revealFollowsTerminalPark
+      const modelSnapshot = ctx.revealFollowsTerminalPark
         ? (ctx.prefetchedParkModelSnapshot ??
           (isRemoteRuntimePtyId(ctx.ptyId) ? null : await ctx.fetchSshMainModelReattachSnapshot()))
         : null
-      const reconnectPaint = await resolveSshReconnectModelPaint({
-        reconnectMayUseModel: !revealSnapshot && ctx.reconnectMayUseModel,
-        replay: ctx.connectResult?.replay,
-        fetchSnapshot: ctx.fetchSshMainModelReattachSnapshot,
-        readTargetCols: () => readProposedTerminalCols(session.pane)
-      })
-      const paintsReconnectFromModel = reconnectPaint.paintsFromModel
-      const modelSnapshot =
-        revealSnapshot ?? (paintsReconnectFromModel ? reconnectPaint.snapshot : null)
       if (!ctx.isCurrentReattachPayload()) {
         return
       }

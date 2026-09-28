@@ -19,10 +19,8 @@ import { PullRequestIcon, prStateColor } from './checks-panel/check-presentation
 import { useChecksPanelControllerState } from './checks-panel/use-checks-panel-controller-state'
 import { useChecksPanelContextState } from './checks-panel/use-checks-panel-context-state'
 import { useChecksPanelReviewState } from './checks-panel/use-checks-panel-review-state'
-import { useChecksPanelGeneration } from './checks-panel/use-checks-panel-generation'
 import { useChecksPanelComposerState } from './checks-panel/use-checks-panel-composer-state'
 import { useChecksPanelForegroundEffects } from './checks-panel/use-checks-panel-foreground-effects'
-import { useChecksPanelGitStatusEffects } from './checks-panel/use-checks-panel-git-status-effects'
 import { useChecksPanelConflictRefresh } from './checks-panel/use-checks-panel-conflict-refresh'
 import { useChecksPanelPolling } from './checks-panel/use-checks-panel-polling'
 import { useChecksPanelReviewData } from './checks-panel/use-checks-panel-review-data'
@@ -151,10 +149,8 @@ export default function ChecksPanel(): React.JSX.Element {
   const baseModel = useChecksPanelControllerState()
   const contextModel = Object.assign(baseModel, useChecksPanelContextState(baseModel))
   const reviewModel = Object.assign(contextModel, useChecksPanelReviewState(contextModel))
-  const generationModel = Object.assign(reviewModel, useChecksPanelGeneration(reviewModel))
-  const composerModel = Object.assign(generationModel, useChecksPanelComposerState(generationModel))
+  const composerModel = Object.assign(reviewModel, useChecksPanelComposerState(reviewModel))
   useChecksPanelForegroundEffects(composerModel)
-  useChecksPanelGitStatusEffects(composerModel)
   useChecksPanelConflictRefresh(composerModel)
   const pollingModel = Object.assign(composerModel, useChecksPanelPolling(composerModel))
   const dataModel = Object.assign(pollingModel, useChecksPanelReviewData(pollingModel))

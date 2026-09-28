@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAppStore } from '@/store'
-import { registerRuntimeTerminalTab } from '@/runtime/sync-runtime-graph'
 import { awaitsCodexRestartAnswer, blocksCodexPaneInput } from '../codex-restart-notice-state'
 import { ptyDataHandlers } from './pty-dispatcher'
 import { deliverPtyExitToHandlers } from './pty-exit-delivery'
@@ -350,27 +349,6 @@ describe('codex detached pane restart executor', () => {
     expect(useAppStore.getState().ptyIdsByTabId['tab-1']).toEqual([NEW_PTY, 'wt1@@sibling'])
   })
 
-  it('leaves a tab with a mounted TerminalPane to its own restart effect', async () => {
-    seedQueuedRestart()
-    const unregister = registerRuntimeTerminalTab({
-      tabId: 'tab-1',
-      worktreeId: 'wt1',
-      getManager: () => null,
-      getContainer: () => null,
-      getPtyIdForPane: () => null,
-      getTabWideAgentHintLeafId: () => null
-    })
-    try {
-      await sweepUnclaimedCodexPaneRestarts()
-
-      expect(window.api.pty.spawn).not.toHaveBeenCalled()
-      expect(window.api.pty.kill).not.toHaveBeenCalled()
-      expect(useAppStore.getState().pendingCodexPaneRestartIds).toEqual({ [OLD_PTY]: true })
-    } finally {
-      unregister()
-    }
-  })
-
   it('keeps the replacement when a pane mounts during the spawn, since main already stopped the old PTY', async () => {
     seedQueuedRestart()
     const pendingSpawn = deferred<{ id: string }>()
@@ -378,26 +356,14 @@ describe('codex detached pane restart executor', () => {
 
     const restart = sweepUnclaimedCodexPaneRestarts()
     await vi.waitFor(() => expect(window.api.pty.spawn).toHaveBeenCalledTimes(1))
-    const unregister = registerRuntimeTerminalTab({
-      tabId: 'tab-1',
-      worktreeId: 'wt1',
-      getManager: () => null,
-      getContainer: () => null,
-      getPtyIdForPane: () => OLD_PTY,
-      getTabWideAgentHintLeafId: () => null
-    })
-    try {
-      pendingSpawn.resolve({ id: NEW_PTY })
-      await restart
+    pendingSpawn.resolve({ id: NEW_PTY })
+    await restart
 
-      expect(window.api.pty.kill).not.toHaveBeenCalled()
-      const state = useAppStore.getState()
-      expect(state.ptyIdsByTabId['tab-1']).toEqual([NEW_PTY])
-      expect(state.terminalLayoutsByTabId['tab-1']?.ptyIdsByLeafId?.[LEAF_ID]).toBe(NEW_PTY)
-      expect(state.pendingCodexPaneRestartIds).toEqual({})
-    } finally {
-      unregister()
-    }
+    expect(window.api.pty.kill).not.toHaveBeenCalled()
+    const state = useAppStore.getState()
+    expect(state.ptyIdsByTabId['tab-1']).toEqual([NEW_PTY])
+    expect(state.terminalLayoutsByTabId['tab-1']?.ptyIdsByLeafId?.[LEAF_ID]).toBe(NEW_PTY)
+    expect(state.pendingCodexPaneRestartIds).toEqual({})
   })
 
   it('rejects a detached spawn after the tab generation and leaf owner change', async () => {

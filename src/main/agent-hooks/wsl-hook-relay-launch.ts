@@ -8,7 +8,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { getAppEnvironment } from '../../shared/app-environment'
 
-import type { MultiplexerTransport } from '../ssh/ssh-channel-multiplexer'
+import type { MultiplexerTransport } from '../hook-relay/ssh-channel-multiplexer'
 import {
   MAX_STARTUP_BUFFER_BYTES,
   type waitForWslRelaySentinel,

@@ -18,8 +18,6 @@ import { buildTerminalKeyboardProtocolOptions } from '@/lib/pane-manager/termina
 import { resolvePaneKeyboardProtocolAgent } from './terminal-keyboard-protocol-pane-agent'
 import { getConnectionId } from '@/lib/connection-context'
 import { getExecutionHostIdForWorktree } from '@/lib/worktree-runtime-owner'
-import { scheduleRuntimeGraphSync } from '@/runtime/sync-runtime-graph'
-import { acquireWebviewsDragPassthrough } from '../browser-pane/host-guest/webview-registry'
 import { handleTerminalWebLinkClick } from './terminal-web-link-click'
 import { createTerminalPaneCreatedHandler } from './terminal-pane-pane-created'
 import { createTerminalPaneClosedHandler } from './terminal-pane-pane-closed'
@@ -68,7 +66,6 @@ export function createTerminalPaneManagerOptions(
           return
         }
       }
-      scheduleRuntimeGraphSync()
       context.syncPaneLayoutRevision()
       if (context.shouldPersistLayout()) {
         context.deps.persistLayoutSnapshot()
@@ -84,7 +81,6 @@ export function createTerminalPaneManagerOptions(
       }
     },
     onLayoutChanged: () => {
-      scheduleRuntimeGraphSync()
       context.deps.syncExpandedLayout()
       context.syncCanExpandState()
       context.syncPaneCount()
@@ -94,12 +90,9 @@ export function createTerminalPaneManagerOptions(
         context.deps.persistLayoutSnapshot()
       }
     },
-    onPaneDragActiveChange: (active) => {
-      if (active) {
-        context.releaseWebviewDragPassthrough.current?.()
-        context.releaseWebviewDragPassthrough.current = acquireWebviewsDragPassthrough()
-        return
-      }
+    onPaneDragActiveChange: () => {
+      // Browser panes are gone; the passthrough slot is only cleared here so a
+      // stale release closure can never outlive its owner.
       context.releaseWebviewDragPassthrough.current?.()
       context.releaseWebviewDragPassthrough.current = null
     },

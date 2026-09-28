@@ -6,11 +6,8 @@ import {
   pruneClosedBackgroundMountTabs,
   revealActivationDeferredTabs
 } from './terminal/background-terminal-worktree-mount'
-import { hasRegisteredRuntimeTerminalTab } from '../runtime/sync-runtime-graph'
 import { anyMountedWorktreeHasLayout as computeAnyMountedWorktreeHasLayout } from './terminal/split-group-mount'
-import { isParkRestorableTerminalPty } from './terminal-pane/terminal-hidden-view-parking'
 import { canWatcherCoverParkedTerminalTab } from './terminal-pane/terminal-parked-tab-watchers'
-import { isRemoteRuntimePtyId } from '@/runtime/runtime-terminal-inspection'
 import { terminalProviderHasAuthoritativeSnapshot } from './terminal/terminal-provider-snapshot-capability'
 import type { TerminalParkingFoundation } from './use-terminal-parking-foundation'
 
@@ -22,7 +19,6 @@ export function applyTerminalColdActivation(controller: TerminalParkingFoundatio
     activeTabId,
     activeTabIdByWorktree,
     activeWorktreeDeferralHostId,
-    activityTerminalPortals,
     backgroundMountTabIdsByWorktreeRef,
     groupsByWorktree,
     hydrationSucceeded,
@@ -74,11 +70,6 @@ export function applyTerminalColdActivation(controller: TerminalParkingFoundatio
         immediateTabIds.add(activeUnifiedTab.entityId)
       }
     }
-    for (const portal of activityTerminalPortals) {
-      if (portal.worktreeId === renderedActiveWorktreeId) {
-        immediateTabIds.add(portal.tabId)
-      }
-    }
     for (const tab of worktreeTabs) {
       if (pendingStartupByTabId[tab.id] !== undefined) {
         immediateTabIds.add(tab.id)
@@ -89,11 +80,7 @@ export function applyTerminalColdActivation(controller: TerminalParkingFoundatio
       pairedRuntimeParkingEnvironmentIds
     })
     const isColdActivationPtyEligible = (ptyId: string): boolean =>
-      isRemoteRuntimePtyId(ptyId)
-        ? isParkRestorableTerminalPty(ptyId, renderedActiveWorktreeId, {
-            pairedRuntimeParkingEnvironmentIds
-          })
-        : terminalProviderHasAuthoritativeSnapshot(ptyId)
+      terminalProviderHasAuthoritativeSnapshot(ptyId)
     if (lastActivationWorktreeIdRef.current !== renderedActiveWorktreeId) {
       lastActivationWorktreeIdRef.current = renderedActiveWorktreeId
       const tabById = new Map(worktreeTabs.map((tab) => [tab.id, tab]))
@@ -102,7 +89,9 @@ export function applyTerminalColdActivation(controller: TerminalParkingFoundatio
         deferredMountTabIdsByWorktree: activationDeferredMountTabIdsByWorktreeRef.current,
         worktreeId: renderedActiveWorktreeId,
         allTabIds: worktreeTabs.map((tab) => tab.id),
-        isTabLive: (tabId, worktreeId) => hasRegisteredRuntimeTerminalTab(tabId, worktreeId),
+        // Why: the mounted-tab registry went with the runtime graph; cold activation runs
+        // before any pane mounts for this worktree, so no tab is live here.
+        isTabLive: () => false,
         // Why the coverage gate: parked byte watchers own an unmounted tab's bells/titles/completions, so a tab they can't cover must mount immediately.
         isTabDeferrable: (tabId) => {
           const tab = tabById.get(tabId)

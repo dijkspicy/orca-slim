@@ -18,10 +18,8 @@ import type {
   SourceControlActionRecipe,
   SourceControlLaunchActionId
 } from '../../../../../shared/source-control-ai-actions'
-import type { PRCheckDetail } from '../../../../../shared/github/check-types'
-import type { PRComment } from '../../../../../shared/github/comment-types'
-import type { PRRefreshErrorType } from '../../../../../shared/github/pull-request-refresh-types'
-import type { GitLabProjectRef } from '../../../../../shared/gitlab-types'
+import type { ChecksPanelCheck, ChecksPanelGitLabProjectRef } from './check-details-model'
+import type { PanelComment } from './comment-controls'
 import type { PRCommentsListSelectionClearRequest } from '../pr-comments-list-selection'
 import {
   buildChecksPanelGitStatusContextKey,
@@ -91,11 +89,11 @@ export function useChecksPanelControllerState() {
       : null
   })
 
-  const [checks, setChecks] = useState<PRCheckDetail[]>([])
+  const [checks, setChecks] = useState<ChecksPanelCheck[]>([])
   const [checksLoading, setChecksLoading] = useState(false)
-  const [comments, setComments] = useState<PRComment[]>([])
+  const [comments, setComments] = useState<PanelComment[]>([])
   const [commentsLoading, setCommentsLoading] = useState(false)
-  const commentsRef = useRef<PRComment[]>([])
+  const commentsRef = useRef<PanelComment[]>([])
   const [commentsSelectionClearRequest, setCommentsSelectionClearRequest] =
     useState<PRCommentsListSelectionClearRequest | null>(null)
   const commentsSelectionClearTokenRef = useRef(0)
@@ -135,7 +133,7 @@ export function useChecksPanelControllerState() {
   // Sticky record of the latest hard refresh error so Create can't flap back until a qualifying eligibility request clears it.
   const [hardRefreshError, setHardRefreshError] = useState<{
     observedAt: number
-    errorType: PRRefreshErrorType
+    errorType: string
     contextKey: string
   } | null>(null)
   const [gitStatusSnapshot, setGitStatusSnapshot] = useState<ChecksPanelGitStatusSnapshot | null>(
@@ -159,7 +157,7 @@ export function useChecksPanelControllerState() {
   const prevChecksRef = useRef<string>('')
   // Why: a fork MR's pipeline lives in the source project, so job traces must be
   // fetched against the MR's own project rather than this repo's default remote.
-  const gitLabProjectRefRef = useRef<GitLabProjectRef | null>(null)
+  const gitLabProjectRefRef = useRef<ChecksPanelGitLabProjectRef | null>(null)
   const conflictSummaryRefreshKeyRef = useRef<string | null>(null)
   const panelVisibleSinceRef = useRef<number | null>(null)
   const foregroundedUnrenderedReviewKeyRef = useRef<string | null>(null)

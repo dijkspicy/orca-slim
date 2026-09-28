@@ -3,12 +3,24 @@
 // in repo-slug-index's `@/store` dependency, which would form an import cycle.
 import type { GlobalSettings } from '../../../shared/global-settings-types'
 import type { Repo } from '../../../shared/repo-types'
-import { getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
 import { getSettingsForRepoRuntimeOwner } from './repo-runtime-owner'
-import {
-  githubHostFromIdentityKey,
-  githubRepoIdentityKey
-} from '../../../shared/github/repository-identity-key'
+
+// Why: the shared identity-key helper was culled with the GitHub forge domain; the surviving
+// project-row routing still needs the same host-scoped slug key.
+export function githubRepoIdentityKey(repo: {
+  owner: string
+  repo: string
+  host?: string
+}): string {
+  const slug = `${repo.owner.toLowerCase()}/${repo.repo.toLowerCase()}`
+  const host = repo.host?.trim().toLowerCase()
+  return host && host !== 'github.com' ? `${host}/${slug}` : slug
+}
+
+function githubHostFromIdentityKey(key: string | null | undefined): string | undefined {
+  const segments = key?.split('/') ?? []
+  return segments.length === 3 ? segments[0] : undefined
+}
 
 /** Lowercased `owner/repo` → Repo[]. */
 export type SlugIndex = Map<string, Repo[]>
@@ -101,10 +113,10 @@ export function nextRepoSlugFailureRetryDelay(
 
 export function slugCacheKey(
   repoId: string,
-  settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined
+  _settings: Pick<GlobalSettings, 'activeRuntimeEnvironmentId'> | null | undefined
 ): string {
-  const target = getActiveRuntimeTarget(settings)
-  return `${target.kind === 'environment' ? `runtime:${target.environmentId}` : 'local'}:${repoId}`
+  // Why: remote runtime scoping is gone with the remote-host cull; slugs cache per local repo.
+  return `local:${repoId}`
 }
 
 export function settingsForRepoOwner(

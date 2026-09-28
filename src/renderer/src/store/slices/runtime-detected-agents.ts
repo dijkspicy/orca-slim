@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand'
 import type { AppState } from '../types'
 import type { TuiAgent } from '../../../../shared/tui-agent'
-import { callRuntimeRpc, RuntimeRpcCallError } from '@/runtime/runtime-rpc-client'
+import { callRuntimeEnvironmentRpc } from './runtime-environment-rpc-call'
 
 // Why: remote runtime hosts are not SSH connections, but their launch surfaces
 // (tab bar, quick launch, Settings → Agents under an Active Server) still have
@@ -26,10 +26,6 @@ export type RuntimeDetectedAgentsSlice = {
 // concurrent callers without storing a Promise in Zustand state.
 const runtimeDetectPromises = new Map<string, Promise<TuiAgent[]>>()
 const runtimeRefreshPromises = new Map<string, Promise<TuiAgent[]>>()
-
-function isRuntimeMethodNotFoundError(error: unknown): boolean {
-  return error instanceof RuntimeRpcCallError && error.code === 'method_not_found'
-}
 
 export function _getRuntimeDetectPromiseCountForTest(): number {
   return runtimeDetectPromises.size
@@ -66,12 +62,12 @@ export const createRuntimeDetectedAgentsSlice: StateCreator<
       isDetectingRuntimeAgents: { ...s.isDetectingRuntimeAgents, [environmentId]: true }
     }))
 
-    const pending = callRuntimeRpc<TuiAgent[]>(
-      { kind: 'environment', environmentId },
-      'preflight.detectAgents'
-    )
-      .then((ids) => {
-        const typed = ids as TuiAgent[]
+    const pending = callRuntimeEnvironmentRpc<TuiAgent[]>(environmentId, 'preflight.detectAgents')
+      .then((result) => {
+        if (!result.ok) {
+          throw new Error(result.errorMessage)
+        }
+        const typed = result.result
         // Why: skip committing if the environment was removed (retained out)
         // while the detect was in flight — otherwise it re-adds a stale entry
         // that retainRuntimeDetectedAgents just pruned.
@@ -120,24 +116,31 @@ export const createRuntimeDetectedAgentsSlice: StateCreator<
       isRefreshingRuntimeAgents: { ...s.isRefreshingRuntimeAgents, [environmentId]: true }
     }))
 
-    const pending = callRuntimeRpc<{ agents: TuiAgent[] }>(
-      { kind: 'environment', environmentId },
+    const pending = callRuntimeEnvironmentRpc<{ agents: TuiAgent[] }>(
+      environmentId,
       'preflight.refreshAgents'
     )
-      .then((result) => result.agents)
-      .catch((error) => {
-        if (!isRuntimeMethodNotFoundError(error)) {
-          throw error
+      .then((result) => {
+        if (!result.ok) {
+          // Why: only older servers need the fallback; retrying disconnects and
+          // runtime failures doubles remote work without any chance of recovery.
+          if (result.errorCode === 'method_not_found') {
+            return callRuntimeEnvironmentRpc<TuiAgent[]>(
+              environmentId,
+              'preflight.detectAgents'
+            ).then((fallback) => {
+              if (!fallback.ok) {
+                throw new Error(fallback.errorMessage)
+              }
+              return fallback.result
+            })
+          }
+          throw new Error(result.errorMessage)
         }
-        // Why: only older servers need the fallback; retrying disconnects and
-        // runtime failures doubles remote work without any chance of recovery.
-        return callRuntimeRpc<TuiAgent[]>(
-          { kind: 'environment', environmentId },
-          'preflight.detectAgents'
-        )
+        return result.result.agents
       })
       .then((ids) => {
-        const typed = ids as TuiAgent[]
+        const typed = ids
         // Why: same guard as ensureRuntimeDetectedAgents — if the environment
         // was retained out mid-refresh, don't re-add a pruned entry.
         if (runtimeRefreshPromises.get(environmentId) === pending) {

@@ -20,10 +20,9 @@ const testState = vi.hoisted(() => ({
   unsubscribe: vi.fn(),
   subscribeToPtyData: vi.fn(),
   replayPreHandlerPtyData: vi.fn(),
-  isRemoteRuntimePtyId: vi.fn(),
-  sendRuntimePtyInputVerified: vi.fn(),
-  inspectRuntimeTerminalProcess: vi.fn(),
-  subscribeToRuntimeTerminalData: vi.fn()
+  windowInspectProcess: vi.fn(),
+  windowWriteAccepted: vi.fn(),
+  windowWrite: vi.fn()
 }))
 
 vi.mock('@/store', () => ({
@@ -41,16 +40,6 @@ vi.mock('@/components/terminal-pane/pty-pre-handler-buffer', () => ({
   replayPreHandlerPtyData: testState.replayPreHandlerPtyData
 }))
 
-vi.mock('@/runtime/runtime-terminal-inspection', () => ({
-  isRemoteRuntimePtyId: testState.isRemoteRuntimePtyId,
-  sendRuntimePtyInputVerified: testState.sendRuntimePtyInputVerified,
-  inspectRuntimeTerminalProcess: testState.inspectRuntimeTerminalProcess
-}))
-
-vi.mock('@/runtime/runtime-terminal-stream', () => ({
-  subscribeToRuntimeTerminalData: testState.subscribeToRuntimeTerminalData
-}))
-
 const DECSET_BRACKETED_PASTE = '\x1b[?2004h'
 const CODEX_COMPOSER_PROMPT_RENDER = '\x1b[1m›\x1b[0m Ask Codex to do anything'
 const RENDER_QUIET_MS = 1500
@@ -63,7 +52,14 @@ describe('post-paste submit retry Enter', () => {
     vi.useFakeTimers()
     vi.stubGlobal('window', {
       setTimeout: globalThis.setTimeout,
-      clearTimeout: globalThis.clearTimeout
+      clearTimeout: globalThis.clearTimeout,
+      api: {
+        pty: {
+          inspectProcess: testState.windowInspectProcess,
+          writeAccepted: testState.windowWriteAccepted,
+          write: testState.windowWrite
+        }
+      }
     })
     testState.appState.settings = {}
     testState.appState.ptyIdsByTabId = { 'tab-1': ['pty-1'] }
@@ -80,12 +76,13 @@ describe('post-paste submit retry Enter', () => {
       }
     )
     testState.replayPreHandlerPtyData.mockReset()
-    testState.isRemoteRuntimePtyId.mockReset()
-    testState.isRemoteRuntimePtyId.mockReturnValue(false)
-    testState.sendRuntimePtyInputVerified.mockReset()
-    testState.sendRuntimePtyInputVerified.mockResolvedValue(true)
-    testState.inspectRuntimeTerminalProcess.mockReset()
-    testState.subscribeToRuntimeTerminalData.mockReset()
+    testState.windowWriteAccepted.mockReset()
+    testState.windowWriteAccepted.mockResolvedValue(true)
+    testState.windowInspectProcess.mockReset()
+    testState.windowInspectProcess.mockResolvedValue({
+      foregroundProcess: 'bash',
+      hasChildProcesses: false
+    })
   })
 
   afterEach(() => {
@@ -105,7 +102,7 @@ describe('post-paste submit retry Enter', () => {
 
     await expect(promise).resolves.toBe(true)
     expect(enterWrites()).toHaveLength(2)
-    expect(testState.sendRuntimePtyInputVerified).toHaveBeenLastCalledWith({}, 'pty-1', '\r')
+    expect(testState.windowWriteAccepted).toHaveBeenLastCalledWith('pty-1', '\r')
     expect(vi.getTimerCount()).toBe(0)
   })
 
@@ -129,7 +126,7 @@ describe('post-paste submit retry Enter', () => {
 
   it('holds the PTY input transaction across the retry Enter', async () => {
     const writes: string[] = []
-    testState.sendRuntimePtyInputVerified.mockImplementation(
+    testState.windowWriteAccepted.mockImplementation(
       async (_settings: unknown, _ptyId: string, data: string) => {
         writes.push(data)
         return true
@@ -157,7 +154,7 @@ describe('post-paste submit retry Enter', () => {
   })
 
   it('keeps a successful submit successful when the retry Enter is rejected', async () => {
-    testState.sendRuntimePtyInputVerified
+    testState.windowWriteAccepted
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(true)
       .mockRejectedValueOnce(new Error('terminal_not_writable'))
@@ -172,7 +169,7 @@ describe('post-paste submit retry Enter', () => {
 })
 
 function enterWrites(): unknown[][] {
-  return testState.sendRuntimePtyInputVerified.mock.calls.filter((call) => call[2] === '\r')
+  return testState.windowWriteAccepted.mock.calls.filter((call) => call[2] === '\r')
 }
 
 function startCodexSubmit(): Promise<boolean> {

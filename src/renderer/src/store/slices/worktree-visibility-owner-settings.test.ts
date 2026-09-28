@@ -1,8 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  clearRuntimeCompatibilityCacheForTests,
-  markRuntimeEnvironmentCompatible
-} from '@/runtime/runtime-rpc-client'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
 import {
@@ -13,8 +9,6 @@ import {
 const runtimeCall = vi.fn()
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
-  markRuntimeEnvironmentCompatible('env-1')
   runtimeCall.mockReset()
   vi.stubGlobal('window', { api: { runtimeEnvironments: { call: runtimeCall } } })
 })

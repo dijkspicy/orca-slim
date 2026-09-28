@@ -10,10 +10,6 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { useShallow } from 'zustand/react/shallow'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
 import { useAppStore } from '../../store'
-import {
-  findActivityTerminalPortal,
-  type ActivityTerminalPortalTarget
-} from '../activity/activity-terminal-portal'
 import { getTerminalTabColdParkRecheckDelayMs } from './terminal-cold-park-recheck-deadlines'
 import {
   clearTerminalTabColdParkRecheckTimers,
@@ -52,6 +48,13 @@ import {
 type TerminalOverlayTabAssignment = {
   groupId: string
   isActiveInGroup: boolean
+}
+
+/** Structural subset of the activity-terminal portal target this hook reads. */
+type ActivityTerminalPortalTarget = {
+  worktreeId: string
+  tabId: string
+  active: boolean
 }
 
 const EMPTY_TAB_IDS: ReadonlySet<string> = new Set()
@@ -303,11 +306,13 @@ export function useTerminalTabColdParking(args: {
     for (const terminalTab of terminalTabs) {
       const assignment = assignments.get(terminalTab.id)
       const isVisible = Boolean(isWorktreeActive && assignment && assignment.isActiveInGroup)
+      const tabPortalMatches = activityTerminalPortals.filter(
+        (portal) => portal.worktreeId === worktreeId && portal.tabId === terminalTab.id
+      )
+      // Mirrors the deleted shared finder's {worktreeId, tabId} query: an active
+      // portal owns the tab, and so does the only portal targeting it.
       const hasActivityTerminalPortal =
-        findActivityTerminalPortal(activityTerminalPortals, {
-          worktreeId,
-          tabId: terminalTab.id
-        }) !== null
+        tabPortalMatches.some((portal) => portal.active) || tabPortalMatches.length === 1
       if (
         (coldParkTerminalPanes ||
           (!isVisible &&

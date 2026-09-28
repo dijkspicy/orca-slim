@@ -3,14 +3,12 @@
 // fixtures pin every branch of the measurement to native JSON.stringify.
 import { describe, expect, it } from 'vitest'
 import type { GitDiffResult } from './git-diff-compare-types'
-import { REMOTE_RUNTIME_MAX_OUTBOUND_JSON_BYTES } from './remote-runtime-memory-limits'
 import {
   assertGitDiffWithinTransportBudget,
   gitDiffExceedsTransportBudget
 } from './git-diff-transport-budget'
-import { REMOTE_RPC_MAX_CONTENT_BYTES, remoteRpcContentBudget } from './remote-rpc-content-budget'
 
-const BUDGET = REMOTE_RPC_MAX_CONTENT_BYTES
+const BUDGET = 512 * 1024
 
 function referenceResultBytes(result: GitDiffResult): number {
   return Buffer.byteLength(JSON.stringify(result), 'utf8')
@@ -146,48 +144,5 @@ describe('gitDiffExceedsTransportBudget', () => {
     const result = textDiff('x'.repeat(BUDGET + 1))
 
     expect(assertGitDiffWithinTransportBudget(result, undefined)).toBe(result)
-  })
-})
-
-// Why: the invariant the cap rests on — a diff that exactly fills the content budget must still
-// serialize inside the outbound JSON limit once wrapped in an RPC reply. A base64-only version of
-// this passes trivially; the newline and control-char fixtures are the load-bearing ones.
-describe('envelope ceiling', () => {
-  function replyBytes(result: GitDiffResult, requestId = 'req_0123456789abcdef'): number {
-    return Buffer.byteLength(
-      JSON.stringify({
-        id: requestId,
-        ok: true,
-        result,
-        _meta: { runtimeId: '00000000-0000-4000-8000-000000000000' }
-      }),
-      'utf8'
-    )
-  }
-
-  it.each(UNITS)('keeps a $name diff at the budget inside the outbound limit', ({ unit }) => {
-    expect(replyBytes(binaryDiffOfJsonBytes(unit, BUDGET))).toBeLessThanOrEqual(
-      REMOTE_RUNTIME_MAX_OUTBOUND_JSON_BYTES
-    )
-  })
-
-  it('charges an escape-dense request id instead of overflowing the fixed reserve', () => {
-    const requestId = '\u0001'.repeat(8_192)
-    const budget = remoteRpcContentBudget(requestId)
-
-    expect(budget).toBeLessThan(BUDGET)
-    expect(replyBytes(binaryDiffOfJsonBytes('a', budget), requestId)).toBeLessThanOrEqual(
-      REMOTE_RUNTIME_MAX_OUTBOUND_JSON_BYTES
-    )
-  })
-
-  // Why: every reserved byte is content that transferred before this cap existed, so the reserve
-  // must stay close to the real envelope overhead. Fails if someone inflates it "just to be safe".
-  it('keeps the envelope reserve within 64x the overhead it covers', () => {
-    const overhead = replyBytes(binaryDiffOfJsonBytes('a', BUDGET)) - BUDGET
-    const reserve = REMOTE_RUNTIME_MAX_OUTBOUND_JSON_BYTES - BUDGET
-
-    expect(reserve).toBeGreaterThan(overhead)
-    expect(reserve).toBeLessThan(overhead * 64)
   })
 })

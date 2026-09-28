@@ -1,5 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
-import { OrcaRuntimeWithHasLiveOrPersistedServeOrSshOwnedPtyBinding } from './orca-runtime-has-live-or-persisted-serve-or-ssh-owned-pty-binding'
+import { OrcaRuntimeWithReconcileHeadlessMobileSessionBrowserTabs } from './orca-runtime-reconcile-headless-mobile-session-browser-tabs'
 import type { RuntimePtyWorktreeRecord } from './runtime-terminal-state-records'
 import { normalizeCompatibleAgentTitleForOwner } from '../../shared/agent-title-owner'
 import { getLatestPtyTitle } from './runtime-worktree-status-projection'
@@ -16,7 +16,7 @@ import {
   mergeMobileSessionTabGroups
 } from './mobile-session-tab-merge'
 
-export class OrcaRuntimeWithPublishPtyBackedMobileSessionTerminal extends OrcaRuntimeWithHasLiveOrPersistedServeOrSshOwnedPtyBinding {
+export class OrcaRuntimeWithPublishPtyBackedMobileSessionTerminal extends OrcaRuntimeWithReconcileHeadlessMobileSessionBrowserTabs {
   /**
    * Publishes a PTY-backed terminal tab snapshot to the synced mobile session,
    * normalizing Pi-compatible titles based on launch or foreground ownership.

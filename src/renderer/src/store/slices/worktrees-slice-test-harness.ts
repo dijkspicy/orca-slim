@@ -4,11 +4,13 @@ import type { AppState } from '../types'
 import type { DetectedWorktreeListResult, Worktree } from '../../../../shared/worktree/types'
 import type { WorktreeLineage } from '../../../../shared/worktree/lineage-types'
 import type { WorktreeMeta } from '../../../../shared/worktree/meta-types'
+import type { RuntimeRpcResponse } from '../../../../shared/runtime-rpc-envelope'
+import type { RuntimeStatus } from '../../../../shared/runtime-types'
 import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
+  MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION,
+  RUNTIME_CAPABILITIES,
+  RUNTIME_PROTOCOL_VERSION
+} from '../../../../shared/protocol-version'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
 import type {
   ForgetRemovedWorktreesForExecutionHostArgs,
@@ -35,6 +37,38 @@ export type StubMock<TArgs extends unknown[] = never[]> = Mock<(...args: TArgs) 
 
 function stubMock<TArgs extends unknown[] = never[]>(): StubMock<TArgs> {
   return vi.fn()
+}
+
+export type RuntimeEnvironmentCallRequest = {
+  method: string
+  params?: Record<string, unknown>
+}
+
+// Why inline: the deleted renderer-mirror fixture minted this; the kept suites still
+// need a status.get answer so slice hydration has a connected runtime to talk to.
+function createCompatibleRuntimeStatusResponseIfNeeded(
+  args: RuntimeEnvironmentCallRequest
+): RuntimeRpcResponse<RuntimeStatus> | null {
+  if (args.method !== 'status.get') {
+    return null
+  }
+  const runtimeId = 'remote-runtime'
+  return {
+    id: 'status',
+    ok: true,
+    result: {
+      runtimeId,
+      rendererGraphEpoch: 0,
+      graphStatus: 'ready',
+      authoritativeWindowId: null,
+      liveTabCount: 0,
+      liveLeafCount: 0,
+      runtimeProtocolVersion: RUNTIME_PROTOCOL_VERSION,
+      minCompatibleRuntimeClientVersion: MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION,
+      capabilities: [...RUNTIME_CAPABILITIES]
+    },
+    _meta: { runtimeId }
+  }
 }
 
 export const runtimeEnvironmentCall: Mock<(args: RuntimeEnvironmentCallRequest) => unknown> =
@@ -117,7 +151,6 @@ export const mockApi = {
 globalThis.window = { api: mockApi }
 
 export function resetRemoteRuntimeMocks() {
-  clearRuntimeCompatibilityCacheForTests()
   resetHostedReviewLinkMutationGenerationForTests()
   runtimeEnvironmentCall.mockReset()
   runtimeEnvironmentTransportCall.mockReset()

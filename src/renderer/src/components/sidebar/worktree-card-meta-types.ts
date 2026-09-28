@@ -1,4 +1,3 @@
-import type { IssueInfo } from '../../../../shared/github/pull-request-types'
 import type {
   AutomationWorkspaceProvenance,
   CliWorkspaceProvenance
@@ -6,15 +5,15 @@ import type {
 import type { WorktreeCardPrDisplay } from './worktree-card-pr-display'
 import type { WorktreeCardDetailsHoverControl } from './worktree-card-details-hover-state'
 
-export type WorktreeCardIssueDisplay =
-  | IssueInfo
-  | {
-      number: number
-      title: string
-      state?: IssueInfo['state']
-      url?: string
-      labels?: string[]
-    }
+// `state` mirrors the deleted shared/github IssueState union the linked-issue
+// data was typed with.
+export type WorktreeCardIssueDisplay = {
+  number: number
+  title: string
+  state?: 'open' | 'closed'
+  url?: string
+  labels?: string[]
+}
 
 export type WorktreeCardLinearIssueDisplay = {
   identifier: string

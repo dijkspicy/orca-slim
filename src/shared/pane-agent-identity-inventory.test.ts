@@ -255,7 +255,6 @@ const INVENTORY: readonly InventoryGroup[] = [
       ['src/renderer/src/components/sidebar/smart-attention.ts', 3],
       ['src/renderer/src/components/sidebar/worktree-title-derived-agent-rows.ts', 2],
       ['src/renderer/src/components/status-bar/workspace-space-presentation.ts', 3],
-      ['src/renderer/src/lib/active-agent-note-target.ts', 2],
       ['src/renderer/src/lib/worktree-status.ts', 3],
       ['src/renderer/src/store/slices/terminal-helpers.ts', 2]
     ]
@@ -414,11 +413,6 @@ const DIRECT_SINGLE_SOURCE_SURFACES: readonly {
     path: 'src/renderer/src/components/terminal-pane/pty-connection/pane-serializer-settle.ts',
     classification: 'action-consumer',
     marker: 'sendStartupDraftPaste'
-  },
-  {
-    path: 'src/renderer/src/lib/active-agent-note-send.ts',
-    classification: 'action-consumer',
-    marker: 'sendNotesToActiveAgentSession'
   },
   {
     path: 'src/renderer/src/components/native-chat/native-chat-runtime-send.ts',

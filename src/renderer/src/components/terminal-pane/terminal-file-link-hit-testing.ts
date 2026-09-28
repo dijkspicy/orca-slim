@@ -1,6 +1,5 @@
 import type { IBufferLine, IBufferRange } from '@xterm/xterm'
 import { extractTerminalFileLinkCandidates, resolveTerminalFileLink } from '@/lib/terminal-links'
-import { isRemoteRuntimeFileOperation } from '@/runtime/runtime-file-client'
 import {
   getTerminalFileContext,
   mapTerminalFilePath,
@@ -71,7 +70,7 @@ export function openFilePathLinkAtBufferPosition(
       const cacheKey = getTerminalPathExistsCacheKey({
         absolutePath: mappedPath,
         connectionId: fileContext.connectionId,
-        isRemoteRuntimePath: isRemoteRuntimeFileOperation(fileContext, mappedPath),
+        isRemoteRuntimePath: false,
         runtimeEnvironmentId: deps.runtimeEnvironmentId
       })
       const isKnownWorktreeRoot = Boolean(resolveKnownWorktreeRootPathLink(mappedPath))

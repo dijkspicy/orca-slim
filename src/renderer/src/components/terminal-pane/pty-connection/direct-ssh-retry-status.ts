@@ -1,4 +1,3 @@
-import { reportWorkerTerminalUserInput } from '@/lib/worker-terminal-takeover-report'
 import { useAppStore } from '@/store'
 import { getLocalProjectExecutionRuntimeContext } from '@/lib/local-preflight-context'
 import {
@@ -31,39 +30,14 @@ import {
   registerRendererOwnedAgentStatusPane
 } from '../renderer-owned-agent-status-registry'
 
-import { DIRECT_SSH_PANE_RETRY_SETTLEMENT_TIMEOUT_MS } from './pty-connect-limits'
 import { isRemoteRuntimePtyId } from './paired-parked-terminal-restore'
 import { resolveLatestAgentDoneStartedAt } from './agent-done-started-at'
 import { rendererAgentStatusObservations } from '@/lib/renderer-agent-status-observations'
 
 import type { ConnectPanePtySession } from './connect-pane-pty-session'
-import type { DirectSshRetryLease } from './direct-ssh-retry-lease'
 
-/** Direct-SSH retry arming plus the host/Windows capability flags and input-activity tracking its status routing reads. */
+/** Host/Windows capability flags and input-activity tracking the status routing reads. */
 export function installDirectSshRetryStatus(session: ConnectPanePtySession): void {
-  session.armDirectSshPaneRetryTimeout = (
-    promise: Promise<unknown>,
-    attempt: DirectSshRetryLease | undefined
-  ): void => {
-    if (!attempt || session.disposed || session.directSshPaneRetryTimedPromises.has(promise)) {
-      return
-    }
-    session.directSshPaneRetryTimedPromises.add(promise)
-    const timer = setTimeout(() => {
-      session.directSshPaneRetrySettlementTimers.delete(timer)
-      if (session.directSshPaneRetrySettlementCancelled) {
-        return
-      }
-      session.settlePaneAttachAttempt(attempt, 'timed-out')
-    }, DIRECT_SSH_PANE_RETRY_SETTLEMENT_TIMEOUT_MS)
-    session.directSshPaneRetrySettlementTimers.add(timer)
-    void promise
-      .finally(() => {
-        session.directSshPaneRetrySettlementTimers.delete(timer)
-        clearTimeout(timer)
-      })
-      .catch(() => {})
-  }
   session.shellOverride = session.tab?.shellOverride
   // Why: a serve/remote-runtime pane has no SSH connectionId and a Linux cwd, so
   // the native-Windows ConPTY heuristic misfires on a Windows client and wrongly
@@ -284,8 +258,6 @@ export function installDirectSshRetryStatus(session: ConnectPanePtySession): voi
   // solely as the fallback when the internal API is unavailable.
   session.recordRealUserTerminalInput = (): void => {
     session.recordTerminalInputForHibernation()
-    // Takeover must never fire from the onData fallback below: it mixes in auto-replies.
-    reportWorkerTerminalUserInput(session.cacheKey, session.runtimeEnvironmentId)
   }
   session.userInputActivityDisposable = subscribeToTerminalUserInput(
     session.pane.terminal,

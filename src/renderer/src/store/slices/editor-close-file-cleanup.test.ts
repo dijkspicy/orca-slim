@@ -6,12 +6,9 @@ import {
   flushAsyncRemoteRefresh
 } from './editor-slice-test-harness'
 import type { AppState } from '../types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 import type { Tab } from '../../../../shared/tab-types'
+
+type RuntimeEnvironmentCallRequest = { method: string; params?: Record<string, unknown> }
 
 const { toastErrorMock } = vi.hoisted(() => ({
   toastErrorMock: vi.fn()
@@ -50,14 +47,12 @@ describe('createEditorSlice untitled cleanup routing', () => {
   const localDeletePathMock = vi.fn()
 
   beforeEach(() => {
-    clearRuntimeCompatibilityCacheForTests()
     runtimeEnvironmentCallMock.mockReset()
     runtimeEnvironmentTransportCallMock.mockReset()
     localDeletePathMock.mockReset()
     runtimeEnvironmentCallMock.mockResolvedValue({ ok: true, result: { deleted: true } })
-    runtimeEnvironmentTransportCallMock.mockImplementation(
-      (args: RuntimeEnvironmentCallRequest) =>
-        createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCallMock(args)
+    runtimeEnvironmentTransportCallMock.mockImplementation((args: RuntimeEnvironmentCallRequest) =>
+      runtimeEnvironmentCallMock(args)
     )
     vi.stubGlobal('window', {
       api: {

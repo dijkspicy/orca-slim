@@ -123,33 +123,6 @@ export type StoreState = {
   markTerminalTabUnread: ReturnType<typeof vi.fn>
   markTerminalPaneUnread: ReturnType<typeof vi.fn>
   markAgentCompletionPaneUnread: ReturnType<typeof vi.fn>
-  directSshPaneRetryByTabId?: Record<
-    string,
-    {
-      attemptId: string
-      authority: {
-        targetId: string
-        providerEpoch: string
-        connectionGeneration: number
-      }
-      tabGeneration: number
-      startedAt: number
-    }
-  >
-  directSshLivePtyBindingByTabId?: Record<
-    string,
-    {
-      attemptId: string
-      authority: {
-        targetId: string
-        providerEpoch: string
-        connectionGeneration: number
-      }
-      tabGeneration: number
-      ptyId: string
-    }
-  >
-  settleDirectSshPaneRetry?: ReturnType<typeof vi.fn>
 }
 
 export type WindowsShiftEnterPaneState = Parameters<

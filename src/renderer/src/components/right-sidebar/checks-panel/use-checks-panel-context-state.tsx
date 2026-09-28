@@ -15,8 +15,6 @@ import {
 import type { ChecksPanelControllerState } from './use-checks-panel-controller-state'
 import { recordChecksPanelPRRefreshBreadcrumb } from '../checks-panel-pr-refresh-breadcrumb'
 import { isChecksPanelHardRefreshErrorType } from '../checks-panel-review-creation'
-import type { PRInfo } from '../../../../../shared/github/pull-request-types'
-import type { PRRefreshErrorType } from '../../../../../shared/github/pull-request-refresh-types'
 
 type ChecksPanelContextStateInput = Pick<
   ChecksPanelControllerState,
@@ -202,7 +200,7 @@ export function useChecksPanelContextState(model: ChecksPanelContextStateInput) 
   }
   // Why: background PR refreshes replace the cache map; Checks only renders the entry for the active repo and branch.
   const prCacheEntry = useAppStore((s) => selectReviewCacheEntry(s.prCache, prCacheKey || null))
-  const pr: PRInfo | null = prCacheEntry?.data ?? null
+  const pr = prCacheEntry?.data ?? null
   const prCachedHasPR = prCacheEntry ? prCacheEntry.data !== null : null
   const hostedReview = useAppStore((s) =>
     hostedReviewCacheKey ? (s.hostedReviewCache[hostedReviewCacheKey]?.data ?? null) : null
@@ -326,7 +324,7 @@ export function useChecksPanelContextState(model: ChecksPanelContextStateInput) 
       if (prev && prev.contextKey === contextKey && prev.observedAt >= observedAt) {
         return prev
       }
-      return { observedAt, errorType: errorType as PRRefreshErrorType, contextKey }
+      return { observedAt, errorType, contextKey }
     })
   }, [prRefreshState, setHardRefreshError, panelContextKeyRef])
   return {

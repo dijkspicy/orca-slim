@@ -1,11 +1,11 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
-import { OrcaRuntimeWithNotifySshStateChanged } from './orca-runtime-notify-ssh-state-changed'
+import { OrcaRuntimeWithGetStatus } from './orca-runtime-get-status'
 import { HEADLESS_RUNTIME_WINDOW_ID } from '../../shared/runtime-types'
 import type { ExecutionHostId } from '../../shared/execution-host'
 import type { WorkspaceSessionState } from '../../shared/workspace-session-state-types'
 import type { RuntimePtyWorktreeRecord } from './runtime-terminal-state-records'
 
-export class OrcaRuntimeWithAttachWindow extends OrcaRuntimeWithNotifySshStateChanged {
+export class OrcaRuntimeWithAttachWindow extends OrcaRuntimeWithGetStatus {
   attachWindow(windowId: number): void {
     if (this.authoritativeWindowId === HEADLESS_RUNTIME_WINDOW_ID) {
       if (

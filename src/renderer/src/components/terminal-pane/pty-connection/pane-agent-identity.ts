@@ -9,7 +9,6 @@ import {
 } from '@/lib/pane-manager/windows-pty-compatibility'
 import { createTerminalCommandLifecycle } from '../terminal-command-lifecycle'
 import { createPaneForegroundAgentTracker } from '../pane-foreground-agent-tracker'
-import { isRemoteExecutionHostPtyId } from '../remote-execution-host-pty'
 import { inspectRuntimeTerminalProcess } from '@/runtime/runtime-terminal-inspection'
 import { parseAppSshPtyId } from '../../../../../shared/ssh-pty-id'
 import { dispatchTerminalCommandFinishedEvent } from '@/hooks/terminal-command-finished-event'
@@ -128,10 +127,9 @@ export function installPaneAgentIdentity(session: ConnectPanePtySession): void {
       reconcile?.()
     }
   }
-  const isRemotePtyId = (id: string): boolean =>
-    Boolean(isRemoteExecutionHostPtyId(id) || parseAppSshPtyId(id))
+  const isRemotePtyId = (id: string): boolean => Boolean(parseAppSshPtyId(id))
   session.isForegroundTrackingAllowed = (id: string): boolean => {
-    if (isRemoteExecutionHostPtyId(id) || parseAppSshPtyId(id)) {
+    if (parseAppSshPtyId(id)) {
       return true
     }
     if (!navigator.userAgent.includes('Windows')) {

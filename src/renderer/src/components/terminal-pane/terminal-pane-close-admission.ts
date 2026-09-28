@@ -5,8 +5,6 @@ import {
 } from '@/store/slices/terminal-tab-retirement'
 import { locateTerminalTab } from '@/store/terminals/terminal-tab-location'
 import { resolveTerminalHostOwnership } from '@/lib/terminal-worktree-route'
-import { parseRemoteRuntimePtyId } from '@/runtime/runtime-terminal-stream'
-import { getRuntimeEnvironmentRevision } from '@/runtime/runtime-environment-revision'
 import type { TerminalPaneBindingController } from './use-terminal-pane-layout-bindings'
 
 export function capturePendingTerminalPaneClose(
@@ -24,27 +22,18 @@ export function capturePendingTerminalPaneClose(
     return undefined
   }
   const plan = buildTerminalTabRetirementPlan(state, tabId)
-  const remote = parseRemoteRuntimePtyId(ptyId)
-  const environmentId = remote?.environmentId?.trim()
   const owner = resolveTerminalHostOwnership(state, plan.worktreeId, 'teardown')
   const identity = getTerminalPtyOwnershipIdentity(state, ptyId, plan.worktreeId)
   const isIdentity = (id: string): boolean =>
     getTerminalPtyOwnershipIdentity(state, id, plan.worktreeId) === identity
-  if (
-    !plan.localOrSshPtyIds.some(isIdentity) &&
-    !(
-      environmentId &&
-      owner.kind === 'runtime' &&
-      owner.runtimeEnvironmentId === environmentId &&
-      plan.runtimeTerminals.some((terminal) => isIdentity(terminal.ptyId))
-    )
-  ) {
+  // Remote-runtime PTY ownership went with the remote domains; only the local/SSH
+  // plan rows can admit a close now.
+  if (!plan.localOrSshPtyIds.some(isIdentity)) {
     return undefined
   }
   const originalTab = locateTerminalTab(state.tabsByWorktree, tabId)?.tab
   const createdAt = originalTab?.createdAt
   const generation = originalTab?.generation ?? 0
-  const pairingRevision = environmentId ? getRuntimeEnvironmentRevision(environmentId) : undefined
   return {
     ptyId,
     isCurrent: () => {
@@ -65,7 +54,6 @@ export function capturePendingTerminalPaneClose(
         (currentTab?.tab.generation ?? 0) === generation &&
         currentOwner.kind === owner.kind &&
         currentOwner.runtimeEnvironmentId === owner.runtimeEnvironmentId &&
-        (!environmentId || getRuntimeEnvironmentRevision(environmentId) === pairingRevision) &&
         !!currentPtyId &&
         getTerminalPtyOwnershipIdentity(current, currentPtyId, plan.worktreeId) === identity &&
         (boundId === null ||

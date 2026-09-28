@@ -5,7 +5,7 @@ import type {
   HostQualifiedDetectedWorktreeResult,
   ListDetectedWorktreesArgs
 } from '../../../../shared/detected-worktree-provider-contract'
-import type { SshProviderEpoch } from '../../../../shared/ssh-types'
+import type { SshProviderEpoch } from './ssh-host-state-contracts'
 import { clearHugeRepoWarningDismissalsForTests } from '@/lib/source-control-huge-repo-warning-dismissals'
 import { acquireDirectSshDetectedWorktreeRefresh } from './worktrees'
 import {

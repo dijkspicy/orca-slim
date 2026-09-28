@@ -1,5 +1,4 @@
 import { useAppStore } from '@/store'
-import { getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
 import type { WorktreeStartupPayload } from '@/lib/worktree-startup-payload'
 import type {
   WorktreeCreationPhase,
@@ -40,7 +39,8 @@ export function getWorktreeCreationIndeterminate(request: WorktreeCreationReques
   if (request.worktreeCreateProgressMode) {
     return request.worktreeCreateProgressMode === 'indeterminate'
   }
-  return getActiveRuntimeTarget(useAppStore.getState().settings).kind !== 'local'
+  // Same answer as the removed runtime-target helper: an active runtime environment is non-local.
+  return Boolean(useAppStore.getState().settings?.activeRuntimeEnvironmentId?.trim())
 }
 
 export function getInitialWorktreeCreationPhase(

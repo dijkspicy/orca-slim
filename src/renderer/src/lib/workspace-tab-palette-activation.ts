@@ -1,9 +1,4 @@
 import { focusTerminalTabSurface } from '@/lib/focus-terminal-tab-surface'
-import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
-import {
-  activateWebRuntimeSessionTab,
-  isWebRuntimeSessionActive
-} from '@/runtime/web-runtime-session'
 import { useAppStore } from '@/store'
 import type { AppState } from '@/store/types'
 import type { ExecutionHostId } from '../../../shared/execution-host'
@@ -120,18 +115,10 @@ export function activateWorkspaceTabPaletteResult(
     return { status: 'failed', reason: finalFailure }
   }
 
-  const runtimeEnvironmentId = getRuntimeEnvironmentIdForWorktree(state, result.worktreeId)
   state.focusGroup(result.worktreeId, result.groupId)
   state.activateTab(result.tabId, { worktreeId: result.worktreeId })
 
   if (result.contentType === 'terminal') {
-    if (isWebRuntimeSessionActive(runtimeEnvironmentId)) {
-      void activateWebRuntimeSessionTab({
-        worktreeId: result.worktreeId,
-        tabId: result.entityId,
-        environmentId: runtimeEnvironmentId
-      })
-    }
     state.setActiveTab(result.entityId)
     state.setActiveTabType('terminal', result.worktreeId)
     focusTerminalTabSurface(result.entityId)

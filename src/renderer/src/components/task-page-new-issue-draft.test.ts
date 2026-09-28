@@ -5,8 +5,15 @@ import {
   resolveUserRepoSwitchReset,
   resolveVanishedNewIssueRepoReset
 } from './task-page-new-issue-draft'
-import type { NewIssueDraft } from '@/store/slices/new-issue-draft'
-import type { GitHubAssignableUser } from '../../../shared/github/pull-request-types'
+type GitHubAssignableUser = { login: string; name?: string; avatarUrl?: string }
+
+type NewIssueDraft = {
+  title: string
+  body: string
+  labels: string[]
+  assignees: GitHubAssignableUser[]
+  repoId: string | null
+}
 
 const assignee: GitHubAssignableUser = { login: 'octocat', name: 'Octo', avatarUrl: '' }
 

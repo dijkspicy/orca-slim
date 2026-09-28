@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { mergePRCommentIntoList } from '@/store/github/pr-comment-cache'
-import { githubProjectHost } from '../../../../../shared/github/project-identity'
 import { setReactionOnSubject, restoreReactionOnSubject } from '@/lib/pr-comment-reactions'
 import { buildPRCommentConversationReplyBody } from '../pr-comment-fixing-reply-body'
 import {
@@ -15,7 +14,7 @@ import type { ChecksPanelComposerState } from './use-checks-panel-composer-state
 import type { ChecksPanelContextState } from './use-checks-panel-context-state'
 import { checksPanelAsyncResultKey } from '../checks-panel-async-result-key'
 import { isMutablePRConversationComment } from './comment-controls'
-import type { GitHubReactionContent, PRComment } from '../../../../../shared/github/comment-types'
+import type { PanelComment } from './comment-controls'
 import { translate } from '@/i18n/i18n'
 
 type ChecksPanelCommentMutationsInput = Pick<
@@ -89,14 +88,14 @@ export function useChecksPanelCommentMutations(model: ChecksPanelCommentMutation
   )
 
   const handleEditComment = useCallback(
-    async (comment: PRComment, body: string): Promise<boolean> => {
+    async (comment: PanelComment, body: string): Promise<boolean> => {
       if (!pr?.prRepo || !isMutablePRConversationComment(comment)) {
         return false
       }
       const result = await window.api.gh.updateIssueCommentBySlug({
         owner: pr.prRepo.owner,
         repo: pr.prRepo.repo,
-        host: githubProjectHost(pr.prRepo.host),
+        host: pr.prRepo.host || 'github.com',
         commentId: comment.id,
         body
       })
@@ -113,7 +112,7 @@ export function useChecksPanelCommentMutations(model: ChecksPanelCommentMutation
   )
 
   const handleDeleteComment = useCallback(
-    async (comment: PRComment): Promise<void> => {
+    async (comment: PanelComment): Promise<void> => {
       if (!pr?.prRepo || !isMutablePRConversationComment(comment)) {
         return
       }
@@ -132,7 +131,7 @@ export function useChecksPanelCommentMutations(model: ChecksPanelCommentMutation
       const result = await window.api.gh.deleteIssueCommentBySlug({
         owner: pr.prRepo.owner,
         repo: pr.prRepo.repo,
-        host: githubProjectHost(pr.prRepo.host),
+        host: pr.prRepo.host || 'github.com',
         commentId: comment.id
       })
       if (!result.ok) {
@@ -145,11 +144,7 @@ export function useChecksPanelCommentMutations(model: ChecksPanelCommentMutation
   )
 
   const handleSetReaction = useCallback(
-    async (
-      comment: PRComment,
-      content: GitHubReactionContent,
-      reacted: boolean
-    ): Promise<boolean> => {
+    async (comment: PanelComment, content: string, reacted: boolean): Promise<boolean> => {
       const reactionSubjectId = comment.reactionSubjectId
       if (!repo || !prNumber || !pr?.prRepo || !reactionSubjectId) {
         return false
@@ -198,7 +193,7 @@ export function useChecksPanelCommentMutations(model: ChecksPanelCommentMutation
   )
 
   const handleReplyToComment = useCallback(
-    async (comment: PRComment, body: string, options: { notifyOnFailure?: boolean } = {}) => {
+    async (comment: PanelComment, body: string, options: { notifyOnFailure?: boolean } = {}) => {
       const notifyOnFailure = options.notifyOnFailure !== false
       if (!repo || !prNumber || !pr?.prRepo) {
         return { ok: false as const, error: commentsDisabledReason ?? 'Commenting unavailable.' }

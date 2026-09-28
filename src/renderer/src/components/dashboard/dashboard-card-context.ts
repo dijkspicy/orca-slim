@@ -2,8 +2,10 @@ import { branchName } from '@/lib/git-utils'
 import { getHostedReviewCacheKey } from '@/store/slices/hosted-review-cache-identity'
 import type { AppState } from '@/store/types'
 import type { DashboardCardReview } from '../../../../shared/dashboard-snapshot'
-import { hostedReviewInfoFromGitHubPRInfo } from '../../../../shared/hosted-review-github'
-import { isPositiveHostedReviewNumber } from '../../../../shared/hosted-review'
+import {
+  isPositiveHostedReviewNumber,
+  type HostedReviewInfo
+} from '../../../../shared/hosted-review'
 import type { Repo } from '../../../../shared/repo-types'
 import type { WorkspaceStatusDefinition, Worktree } from '../../../../shared/worktree/types'
 import {
@@ -11,13 +13,12 @@ import {
   getWorkspaceStatus
 } from '../../../../shared/workspace-statuses'
 import {
-  canUseParentPrChecksGitHubPRCacheEntry,
-  getParentPrChecksGitHubPRCacheEntry
-} from '../right-sidebar/parent-pr-checks-github-pr-cache'
-import { canUseParentPrChecksHostedReviewCacheEntry } from '../right-sidebar/parent-pr-checks-hosted-review-cache'
+  getWorktreeCardPrDisplay,
+  isCachedMergedBranchPRCurrentForWorktree
+} from '../sidebar/worktree-card-pr-display'
 
 export type DashboardCardContextState = Partial<
-  Pick<AppState, 'hostedReviewCache' | 'prCache' | 'settings' | 'workspaceStatuses'>
+  Pick<AppState, 'hostedReviewCache' | 'settings' | 'workspaceStatuses'>
 >
 
 export type DashboardCardContext = {
@@ -36,12 +37,30 @@ function hasLinkedReview(worktree: Worktree): boolean {
   ].some(isPositiveHostedReviewNumber)
 }
 
+// Why: a cached review only describes the card's worktree when the worktree's
+// links agree with it and a merged review still sits on the worktree's head.
+function canUseHostedReviewCacheEntry(worktree: Worktree, review: HostedReviewInfo): boolean {
+  if (review.state === 'merged' && !isCachedMergedBranchPRCurrentForWorktree(review, worktree)) {
+    return false
+  }
+  const display = getWorktreeCardPrDisplay(
+    review,
+    worktree.linkedPR,
+    worktree.linkedGitLabMR ?? null,
+    worktree.linkedBitbucketPR ?? null,
+    worktree.linkedAzureDevOpsPR ?? null,
+    worktree.linkedGiteaPR ?? null,
+    { suppressedGitHubPR: worktree.suppressedGitHubPR ?? null }
+  )
+  return display === review
+}
+
 function resolveReview(
   state: DashboardCardContextState,
   repo: Repo | null,
   worktree: Worktree
 ): DashboardCardReview | undefined {
-  if (!repo || !state.hostedReviewCache || !state.prCache || repo.kind === 'folder') {
+  if (!repo || !state.hostedReviewCache || repo.kind === 'folder') {
     return undefined
   }
   const branch = branchName(worktree.branch)
@@ -58,22 +77,10 @@ function resolveReview(
       )
     ]
   const hostedReview = hostedReviewEntry?.data
-  if (
-    hostedReview &&
-    canUseParentPrChecksHostedReviewCacheEntry(worktree, hostedReview, hostedReviewEntry)
-  ) {
+  if (hostedReview && canUseHostedReviewCacheEntry(worktree, hostedReview)) {
     return { number: hostedReview.number, state: hostedReview.state }
   }
-  const prEntry = getParentPrChecksGitHubPRCacheEntry({
-    prCache: state.prCache,
-    repo,
-    branch,
-    settings: state.settings ?? null
-  })
-  const review = canUseParentPrChecksGitHubPRCacheEntry(worktree, prEntry, hostedReviewEntry)
-    ? hostedReviewInfoFromGitHubPRInfo(prEntry.data)
-    : undefined
-  return review ? { number: review.number, state: review.state } : undefined
+  return undefined
 }
 
 export function resolveDashboardCardContext(

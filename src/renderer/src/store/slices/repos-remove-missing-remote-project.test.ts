@@ -10,11 +10,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { toast } from 'sonner'
 import { createTestStore } from './store-test-helpers'
 import type { Repo } from '../../../../shared/repo-types'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }))
 
@@ -51,7 +46,7 @@ const runtimeEnvironmentCall = vi.fn()
 const runtimeEnvironmentTransportCall = vi.fn()
 
 function answerRepoRmWith(code: string): void {
-  runtimeEnvironmentCall.mockImplementation((args: RuntimeEnvironmentCallRequest) => {
+  runtimeEnvironmentCall.mockImplementation((args: { method: string }) => {
     if (args.method === 'repo.rm') {
       return {
         id: 'rpc-repo-rm',
@@ -74,7 +69,6 @@ function seedRemoteProjects(repos: readonly Repo[]): ReturnType<typeof createTes
 }
 
 beforeEach(() => {
-  clearRuntimeCompatibilityCacheForTests()
   vi.mocked(toast.error).mockReset()
   for (const mock of [
     reposRemove,
@@ -85,9 +79,8 @@ beforeEach(() => {
   ]) {
     mock.mockReset()
   }
-  runtimeEnvironmentTransportCall.mockImplementation(
-    (args: RuntimeEnvironmentCallRequest) =>
-      createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCall(args)
+  runtimeEnvironmentTransportCall.mockImplementation((args: { method: string }) =>
+    runtimeEnvironmentCall(args)
   )
   vi.stubGlobal('window', {
     api: {

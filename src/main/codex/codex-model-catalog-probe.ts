@@ -7,9 +7,19 @@ import {
   type CodexStructuredLaunchResolverDeps
 } from './codex-structured-launch-resolution'
 import type {
-  AgentModelCatalogProbe,
-  AgentModelCatalogSuccess
-} from '../native-chat/agent-model-catalog/agent-model-catalog-store'
+  AgentSessionModelOption,
+  AgentSessionFastModeSupport
+} from '../../shared/agent-session-wire'
+
+/** What one successful probe reports, matching the catalog listing shape. */
+export type AgentModelCatalogSuccess = {
+  models: AgentSessionModelOption[]
+  fastModeSupport?: AgentSessionFastModeSupport
+  fastModeTierByModel: ReadonlyMap<string, string>
+  origin: 'live-session' | 'probe'
+}
+
+export type AgentModelCatalogProbe = (accountHomePath: string) => Promise<AgentModelCatalogSuccess>
 
 // Why 15s: the whole probe session is SIGKILLed at the deadline, and a cold
 // `model/list` may pay one network /models fetch behind provider auth.

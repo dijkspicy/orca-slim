@@ -1,11 +1,6 @@
 import { afterEach, beforeEach, vi } from 'vitest'
 import { registerHttpLinkStoreAccessor } from '@/lib/http-link-routing'
 import { getConnectionId } from '@/lib/connection-context'
-import {
-  createCompatibleRuntimeStatusResponseIfNeeded,
-  type RuntimeEnvironmentCallRequest
-} from '@/runtime/runtime-compatibility-test-fixture'
-import { clearRuntimeCompatibilityCacheForTests } from '@/runtime/runtime-rpc-client'
 import type { TerminalLinkTestDoubles } from './terminal-link-handlers-test-fixtures'
 
 export function setPlatform(userAgent: string): void {
@@ -44,15 +39,10 @@ export function installTerminalLinkTestEnvironment(doubles: TerminalLinkTestDoub
   } = doubles
 
   beforeEach(() => {
-    clearRuntimeCompatibilityCacheForTests()
     vi.clearAllMocks()
     runtimeEnvironmentTransportCallMock.mockReset()
     runtimeEnvironmentTransportCallMock.mockImplementation(
-      (args: RuntimeEnvironmentCallRequest) => {
-        return (
-          createCompatibleRuntimeStatusResponseIfNeeded(args) ?? runtimeEnvironmentCallMock(args)
-        )
-      }
+      (args: Parameters<typeof runtimeEnvironmentCallMock>[0]) => runtimeEnvironmentCallMock(args)
     )
     vi.mocked(getConnectionId).mockReturnValue(null)
     openFilePathMock.mockResolvedValue(true)

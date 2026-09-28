@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { PreflightStatus } from '../../../preload/api-types'
-import type { TaskSourceContext } from '../../../shared/task-source-context'
 import { getRepoBackedProviderAvailability } from './task-source-provider-availability'
 
 const readyPreflight: PreflightStatus = {
@@ -9,14 +8,8 @@ const readyPreflight: PreflightStatus = {
   glab: { installed: true, authenticated: true }
 }
 
-function source(hostId: TaskSourceContext['hostId']): TaskSourceContext {
-  return {
-    kind: 'task-source',
-    provider: 'github',
-    projectId: 'github:stablyai/orca',
-    hostId,
-    repoId: `repo-${hostId}`
-  }
+function source(hostId: string): { hostId: string } {
+  return { hostId }
 }
 
 describe('task source provider availability', () => {

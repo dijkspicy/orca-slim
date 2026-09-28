@@ -1,12 +1,11 @@
-import type { AgentSessionDeltaCoalescerDeps } from '../native-chat/agent-session-wire/agent-session-delta-coalescer'
-import type { StructuredAgentSessionEventSink } from '../native-chat/agent-session-wire/structured-agent-session-event-sink'
+import type { StructuredAgentSessionEventSink } from './claude-structured-session-sink'
 import type { ClaudeJournalTranslator } from './claude-journal-translator-contract'
 import {
   claudeStreamingMessageBody,
   type ClaudeToolUse
 } from './claude-structured-item-translation'
 import type { ClaudePromptRegistry } from './claude-structured-prompt-replies'
-import { claudeProviderFrameActivity } from '../native-chat/agent-session-wire/provider-frame-activity'
+import { claudeProviderFrameActivity } from './claude-provider-frame-activity'
 import {
   claudeProviderFrameKind,
   claudeResultFailure,
@@ -40,7 +39,7 @@ export type ClaudeJournalTranslatorDeps = {
   sink: StructuredAgentSessionEventSink
   bindPromptItemId?: (journalItemId: string, promptKey: string) => void
   coalesceMs?: number
-  schedule?: AgentSessionDeltaCoalescerDeps['schedule']
+  schedule?: (run: () => void, ms: number) => () => void
   fallbackIdPrefix?: string
   onBackgroundTaskJournalFailure?: (error: Error) => void
 }

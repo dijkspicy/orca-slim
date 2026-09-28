@@ -10,7 +10,6 @@ import type {
 } from './runtime-terminal-contracts'
 import type { TerminalSideEffectBatch } from '../../shared/terminal-side-effect-facts'
 import type { AgentStatusIpcPayload } from '../../shared/agent-status-types'
-import type { StructuredAgentSessionStatusSink } from '../native-chat/agent-session-wire/structured-agent-session-status-feed'
 import type { ObservedAgentStatusPaneIdentity } from '../ipc/agent-status-ipc-boundary'
 import type { AgentHookAuthorityAttestation } from '../agent-hooks/server'
 import type { RuntimeDesktopWindowStatus } from '../../shared/runtime-types'
@@ -26,8 +25,6 @@ import { reconcileRequestedWorkerTerminalReleases } from './orchestration/worker
 import type { RuntimeCommandSurfaceHost } from './orca-runtime-core'
 import { RuntimeAccountController } from './runtime-account-controller'
 import { RuntimeProjectHostSetupController } from './runtime-project-host-setup-controller'
-import { addRemoteRepoFromPath } from '../ipc/repos/remote-repo-registration'
-import type { Store } from '../persistence'
 import { RuntimeProjectGroupController } from './runtime-project-group-controller'
 import { RuntimeNestedRepoImport } from './runtime-nested-repo-import'
 import { RuntimeRepositoryRegistrationController } from './runtime-repository-registration-controller'
@@ -36,7 +33,6 @@ import { RuntimeRepositorySettingsController } from './runtime-repository-settin
 import { RuntimeRepositorySparsePresets } from './runtime-repository-sparse-presets'
 import { RuntimeRepositoryRefQueries } from './runtime-repository-ref-queries'
 import { RuntimeServerEnvironmentCommands } from './runtime-server-environment-commands'
-import { RuntimeRepositoryForkBackfill } from './runtime-repository-fork-backfill'
 import { RuntimeWorkspaceSessionController } from './runtime-workspace-session-controller'
 import { RuntimeAiVaultCommands } from './runtime-ai-vault-commands'
 import { ClaudeAgentTeamsService } from './claude-agent-teams-service'
@@ -64,8 +60,6 @@ export class OrcaRuntimeWithPreservedBranchCleanup extends OrcaRuntimeWithTermin
   protected terminalSideEffectConsumerAvailable = false
 
   protected readonly getAgentStatusSnapshotFn: (() => AgentStatusIpcPayload[]) | null
-
-  protected readonly structuredAgentStatusSinkFn: StructuredAgentSessionStatusSink | null
 
   protected readonly readObservedAgentStatusPaneIdentityFn: (
     paneKey: string
@@ -205,17 +199,6 @@ export class OrcaRuntimeWithPreservedBranchCleanup extends OrcaRuntimeWithTermin
     listRepos: () => this.listRepos(),
     addRepo: (path, kind, hostId) =>
       (this as RuntimeCommandSurfaceHost<this>).addRepo(path, kind, hostId),
-    addRemoteRepo: async (remote) => {
-      // The same registration the desktop IPC handler uses, so both surfaces agree on SSH hosts.
-      const result = await addRemoteRepoFromPath(this.requireStore() as unknown as Store, remote)
-      if ('error' in result) {
-        throw new Error(result.error)
-      }
-      this.invalidateResolvedWorktreeCache()
-      this.invalidateWorktreeScanCacheForRepo(result.repo.id)
-      this.notifyReposChanged()
-      return result.repo
-    },
     cloneRepo: (url, destination, hostId) =>
       (this as RuntimeCommandSurfaceHost<this>).cloneRepo(url, destination, hostId),
     invalidateResolvedWorktrees: () => this.invalidateResolvedWorktreeCache(),
@@ -286,11 +269,6 @@ export class OrcaRuntimeWithPreservedBranchCleanup extends OrcaRuntimeWithTermin
   })
 
   protected readonly serverEnvironment = new RuntimeServerEnvironmentCommands()
-
-  protected readonly repositoryForkBackfill = new RuntimeRepositoryForkBackfill(
-    () => this.store,
-    () => this.notifyReposChanged()
-  )
 
   protected readonly workspaceSessions = new RuntimeWorkspaceSessionController({
     getStore: () => this.store,

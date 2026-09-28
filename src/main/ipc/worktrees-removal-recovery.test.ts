@@ -4,8 +4,6 @@ import { lstat, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { GitWorktreeInfo } from '../../shared/worktree/types'
-import type { RedactableSpan } from '../observability/redactor'
-import { _resetTracerForTests, setActiveSink } from '../observability/tracer'
 import {
   ORIGINAL_PLATFORM,
   setPlatform,
@@ -186,73 +184,6 @@ describe('registerWorktreeHandlers', () => {
     })
     expect(pruneCleanupScanSnapshotMock).not.toHaveBeenCalled()
     expect(pruneSpaceAnalysisSnapshotMock).not.toHaveBeenCalled()
-  })
-
-  it('traces the removal as worktree.remove with a stage sub-span tree', async () => {
-    const records: RedactableSpan[] = []
-    setActiveSink({
-      push: (record) => records.push(record as RedactableSpan),
-      flush: () => {},
-      close: () => {}
-    })
-    try {
-      mockKnownFeatureWorktree()
-      getEffectiveHooksMock.mockReturnValue(null)
-      removeWorktreeMock.mockResolvedValue({})
-
-      await handlers['worktrees:remove'](null, { worktreeId: 'repo-1::/workspace/feature-wt' })
-
-      const parent = records.find((record) => record.name === 'worktree.remove')
-      expect(parent).toBeDefined()
-      expect(parent?.attributes).toMatchObject({
-        kind: 'worktree',
-        'worktree.stage': 'remove',
-        'worktree.path': '/workspace/feature-wt'
-      })
-      const stages = records.filter((record) => record.name.startsWith('worktree.remove.'))
-      expect(stages.map((record) => record.name)).toEqual(
-        expect.arrayContaining([
-          'worktree.remove.watcher_gate',
-          'worktree.remove.pty_sweep',
-          'worktree.remove.git_remove',
-          'worktree.remove.metadata_purge',
-          'worktree.remove.cache_invalidation'
-        ])
-      )
-      // Stages must hang off the removal span, not float as roots, or a freeze can't be attributed.
-      for (const stage of stages) {
-        expect(stage.parentSpanId).toBe(parent?.spanId)
-        expect(stage.attributes).toMatchObject({ kind: 'worktree', 'worktree.flow': 'local' })
-      }
-    } finally {
-      _resetTracerForTests()
-    }
-  })
-
-  it('traces a local archive hook as flow local, not remote', async () => {
-    const records: RedactableSpan[] = []
-    setActiveSink({
-      push: (record) => records.push(record as RedactableSpan),
-      flush: () => {},
-      close: () => {}
-    })
-    try {
-      mockKnownFeatureWorktree()
-      // The archive hook block is shared by both flows, so a local repo must not land under 'remote'.
-      getEffectiveHooksMock.mockReturnValue({ scripts: { archive: 'pnpm worktree:archive' } })
-      runHookMock.mockResolvedValue({ success: true, output: '' })
-      removeWorktreeMock.mockResolvedValue({})
-
-      await handlers['worktrees:remove'](null, { worktreeId: 'repo-1::/workspace/feature-wt' })
-
-      const archiveStage = records.find((record) => record.name === 'worktree.remove.archive_hook')
-      expect(archiveStage?.attributes).toMatchObject({
-        kind: 'worktree',
-        'worktree.flow': 'local'
-      })
-    } finally {
-      _resetTracerForTests()
-    }
   })
 
   it('prunes git worktree tracking when removing an orphaned worktree', async () => {

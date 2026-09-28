@@ -14,7 +14,6 @@ import {
   isLinearIssueSearchActive
 } from '@/components/task-page-linear-issue-request'
 import { folderWorkspaceToWorktree } from '../../../shared/folder-workspace-worktree'
-import { buildLinearIssueWorkspaceAttachmentIndex } from '@/lib/linear-issue-workspace-attachment'
 import {
   collectLinkedLinearIssueRefsFromWorktrees,
   linkedLinearIssueRefsSignature
@@ -112,10 +111,6 @@ export function useTaskPageLinearFilterSelection(model: TaskPageLinearListSelect
     () => [...allWorktrees, ...folderWorkspaces.map(folderWorkspaceToWorktree)],
     [allWorktrees, folderWorkspaces]
   )
-  const linearIssueAttachmentIndex = useMemo(
-    () => buildLinearIssueWorkspaceAttachmentIndex(linearAttachmentWorkspaces),
-    [linearAttachmentWorkspaces]
-  )
   const inOrcaLinkedLinearRefs = useMemo(
     () =>
       collectLinkedLinearIssueRefsFromWorktrees(linearAttachmentWorkspaces, {
@@ -139,7 +134,6 @@ export function useTaskPageLinearFilterSelection(model: TaskPageLinearListSelect
     linearSearchActive: typeof linearSearchActive
     showLinearAttributeFilters: typeof showLinearAttributeFilters
     linearAttachmentWorkspaces: typeof linearAttachmentWorkspaces
-    linearIssueAttachmentIndex: typeof linearIssueAttachmentIndex
     inOrcaLinkedLinearRefs: typeof inOrcaLinkedLinearRefs
     inOrcaLinkedLinearRefsSignature: typeof inOrcaLinkedLinearRefsSignature
     inOrcaLinkedLinearRefsRef: typeof inOrcaLinkedLinearRefsRef
@@ -149,7 +143,6 @@ export function useTaskPageLinearFilterSelection(model: TaskPageLinearListSelect
   nextModel.linearSearchActive = linearSearchActive
   nextModel.showLinearAttributeFilters = showLinearAttributeFilters
   nextModel.linearAttachmentWorkspaces = linearAttachmentWorkspaces
-  nextModel.linearIssueAttachmentIndex = linearIssueAttachmentIndex
   nextModel.inOrcaLinkedLinearRefs = inOrcaLinkedLinearRefs
   nextModel.inOrcaLinkedLinearRefsSignature = inOrcaLinkedLinearRefsSignature
   nextModel.inOrcaLinkedLinearRefsRef = inOrcaLinkedLinearRefsRef

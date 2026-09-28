@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import type { SkillCloudOperation, SkillCloudPublishResult } from './skill-cloud-contract'
+import type { SkillPackageManifestV1 } from './skill-package-manifest'
+import type { SkillBundleManifestV1 } from './skill-bundle-manifest'
 import { SkillDiscoveryTargetSchema } from './skills'
 
 export const AGENT_SKILL_SHARING_UNSUPPORTED_ENVIRONMENT_CODE =
@@ -26,11 +27,36 @@ export type AgentSkillShareSelectedSkill = {
   description: string | null
 }
 
-export type AgentSkillShareResult = SkillCloudPublishResult & {
+// Verbatim shapes formerly supplied by `skill-cloud-contract.ts` (culled);
+// the agent skill-sharing wire contract is unchanged.
+type SkillCloudVersionShape = {
+  packageId: string
+  versionId: string
+  name: string
+  description: string
+  packageDigest: string
+  archiveSha256: string
+  compressedBytes: number
+  createdAt: string
+  releaseNotes: string
+  manifest: SkillPackageManifestV1 | SkillBundleManifestV1
+}
+
+type SkillCloudPublishResultShape = {
+  version: SkillCloudVersionShape
+  share: { id: string; url: string }
+}
+
+type SkillCloudOperationShape<T> =
+  | { status: 'ok'; value: T }
+  | { status: 'unconfigured'; message: string }
+  | { status: 'reconnect-required' }
+
+export type AgentSkillShareResult = SkillCloudPublishResultShape & {
   selectedSkills: AgentSkillShareSelectedSkill[]
 }
 
-export type AgentSkillShareOperation = SkillCloudOperation<AgentSkillShareResult>
+export type AgentSkillShareOperation = SkillCloudOperationShape<AgentSkillShareResult>
 
 export class AgentSkillSharingError extends Error {
   constructor(

@@ -31,7 +31,6 @@ import {
   type AgentSessionRecord
 } from './agent-session-record'
 import type { AgentProviderSessionMetadata } from './agent-session-resume'
-import type { StructuredAgentSessionProjectedStatus } from './structured-agent-session-projection'
 
 /** `agentSession.handoffStatus`. Named for the removed terminal handoff; released desktop clients
  *  still read `owner`. Clients parse the reply as unknown, since older hosts sent more fields. */
@@ -171,6 +170,10 @@ export type AgentSessionSubscribeEvent =
   | { type: 'end' }
 
 // ─── Status feed ────────────────────────────────────────────────────────────
+
+/** Verbatim shape formerly supplied by `structured-agent-session-projection.ts`
+ *  (culled); the session-list wire contract is unchanged. */
+export type StructuredAgentSessionProjectedStatus = 'working' | 'attention' | 'idle'
 
 /** What a session list needs to know about one session. The host projects it
  *  from the journal so no client has to replay a transcript to learn whether a

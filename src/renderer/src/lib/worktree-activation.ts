@@ -2,10 +2,6 @@ import type { FolderWorkspace } from '../../../shared/folder-workspace-types'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import type { PendingSidebarWorktreeReveal } from '@/store/slices/ui'
-import {
-  activateWebRuntimeSessionWorktree,
-  isWebRuntimeSessionActive
-} from '@/runtime/web-runtime-session'
 import { registerWorktreeActivation } from '@/lib/worktree-activation-nav-registration'
 import { workspaceHasSleepingAgentSessions } from '@/lib/worktree-agent-activation-gate'
 import { resumeSleepingAgentSessionsForWorktree } from '@/lib/resume-sleeping-agent-session'
@@ -24,7 +20,6 @@ import type { ExecutionHostId } from '../../../shared/execution-host'
 import { findFolderWorkspaceOwner } from './folder-workspace-runtime-owner'
 import type { WorktreeStartupPayload } from '@/lib/worktree-startup-payload'
 import { ensureWorktreeHasInitialTerminal } from '@/lib/worktree-initial-terminal-seeding'
-import { ensureWebRuntimeWorktreeTerminalAfterWake } from '@/lib/web-runtime-worktree-terminal-after-wake'
 import { applyWorktreeNavViewEntry } from '@/lib/worktree-nav-view-history-replay'
 import {
   activationProvidesInitialSurface,
@@ -161,14 +156,6 @@ export function activateAndRevealFolderWorkspace(
     )
   }
 
-  if (opts?.providesInitialSurface !== true) {
-    ensureWebRuntimeWorktreeTerminalAfterWake(workspaceKey, {
-      runtimeEnvironmentId,
-      startup: opts?.startup,
-      agent: opts?.agent
-    })
-  }
-
   return { primaryTabId }
 }
 
@@ -206,14 +193,6 @@ export function activateAndRevealWorktree(
   // 3. Core activation: setActiveWorktree also restores per-worktree state, clears unread, bumps dead PTY generations, refreshes GitHub
   state.setActiveWorktree(worktreeId, opts?.executionHostId)
   const postActivationState = useAppStore.getState()
-  const ownerRuntimeEnvironmentId = getRuntimeEnvironmentIdForWorktree(postActivationState, wt.id)
-  if (opts?.notifyHostRuntime !== false && isWebRuntimeSessionActive(ownerRuntimeEnvironmentId)) {
-    // Why: paired web clients own only local selection, so the desktop host publishes session surfaces without treating it as a nav command.
-    void activateWebRuntimeSessionWorktree({
-      worktreeId,
-      environmentId: ownerRuntimeEnvironmentId
-    })
-  }
 
   // Why: focus recency for Cmd+J ordering, distinct from recordWorktreeVisit/lastActivityAt; stamp before any later async step could throw. See docs/cmd-j-empty-query-ordering.md.
   if (!isPlainAlreadyActiveTerminal) {
@@ -300,17 +279,6 @@ export function activateAndRevealWorktree(
     } else {
       state.revealWorktreeInSidebar(worktreeId)
     }
-  }
-
-  if (
-    opts?.notifyHostRuntime !== false &&
-    !opts?.backendStartupTerminalSpawned &&
-    opts?.providesInitialSurface !== true
-  ) {
-    ensureWebRuntimeWorktreeTerminalAfterWake(worktreeId, {
-      startup: opts?.startup,
-      agent: opts?.agent
-    })
   }
 
   return { primaryTabId }

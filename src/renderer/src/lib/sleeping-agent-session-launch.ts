@@ -1,7 +1,6 @@
 import { toast } from 'sonner'
 import { useAppStore } from '@/store'
 import { buildAgentResumeStartupPlan } from '@/lib/tui-agent-startup'
-import { tuiAgentToAgentKind } from '@/lib/telemetry'
 import { reconcileTabOrder } from '@/components/tab-bar/reconcile-order'
 import {
   resolveAgentResumeLaunchTarget,
@@ -110,12 +109,7 @@ export function launchSleepingAgentSession(
       ...(startupPlan.startupCommandDelivery
         ? { startupCommandDelivery: startupPlan.startupCommandDelivery }
         : {}),
-      showSessionRestoredBanner: true,
-      telemetry: {
-        agent_kind: tuiAgentToAgentKind(record.agent),
-        launch_source: 'sidebar',
-        request_kind: 'resume'
-      }
+      showSessionRestoredBanner: true
     },
     automaticResumeClaim: {
       worktreeId: record.worktreeId,

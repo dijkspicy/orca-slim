@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createCompatibleRuntimeStatusResponse } from './runtime-status-response-fixture'
 import type { AppState } from '../types'
-import {
-  createCompatibleRuntimeStatusResponse,
-  type RuntimeEnvironmentCallRequest
-} from '../../runtime/runtime-compatibility-test-fixture'
 import { makeWorktree } from './worktrees-slice-test-fixtures'
 import {
   createTestStore,
@@ -184,7 +181,7 @@ describe('worktree remote runtime mutations', () => {
         (capability) => capability !== 'worktree.linked-work-item-context.v1'
       )
     }
-    runtimeEnvironmentTransportCall.mockImplementation((args: RuntimeEnvironmentCallRequest) =>
+    runtimeEnvironmentTransportCall.mockImplementation((args: { method: string }) =>
       args.method === 'status.get' ? oldRuntimeStatus : runtimeEnvironmentCall(args)
     )
     const store = createTestStore()

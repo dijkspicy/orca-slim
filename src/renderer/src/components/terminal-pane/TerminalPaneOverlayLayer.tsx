@@ -3,12 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import type { Tab, TabGroup } from '../../../../shared/tab-types'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
 import { useAppStore } from '../../store'
-import {
-  findActivityTerminalPortal,
-  type ActivityTerminalPortalTarget
-} from '../activity/activity-terminal-portal'
 import { shouldMountBackgroundWorktreeTab } from '../terminal/background-terminal-worktree-mount'
-import { useNativeChatToggleShortcut } from '../native-chat/use-native-chat-toggle-shortcut'
 import { TerminalOverlaySlot } from './TerminalOverlaySlot'
 import { useTerminalTabColdParking } from './use-terminal-tab-cold-parking'
 
@@ -21,7 +16,6 @@ type TerminalOverlayAssignment = {
 const EMPTY_TERMINAL_TABS: readonly TerminalTab[] = []
 const EMPTY_UNIFIED_TABS: readonly Tab[] = []
 const EMPTY_GROUPS: readonly TabGroup[] = []
-const EMPTY_ACTIVITY_PORTALS: ActivityTerminalPortalTarget[] = []
 
 const TerminalPaneOverlayLayer = memo(function TerminalPaneOverlayLayer({
   worktreeId,
@@ -30,7 +24,6 @@ const TerminalPaneOverlayLayer = memo(function TerminalPaneOverlayLayer({
   coldParkTerminalPanes = false,
   isForceParked = false,
   shouldMeasureHiddenWorktree = false,
-  activityTerminalPortals = EMPTY_ACTIVITY_PORTALS,
   backgroundMountTabIds = null,
   activationDeferredMountTabIds = null
 }: {
@@ -41,7 +34,6 @@ const TerminalPaneOverlayLayer = memo(function TerminalPaneOverlayLayer({
   /** Retention-budget force-park keeps eviction-exempt tabs mounted. */
   isForceParked?: boolean
   shouldMeasureHiddenWorktree?: boolean
-  activityTerminalPortals?: ActivityTerminalPortalTarget[]
   /** Targeted mounts connect only these terminal tabs. */
   backgroundMountTabIds?: ReadonlySet<string> | null
   /** Cold-activation deferred tabs receive immediate parked watcher coverage. */
@@ -59,8 +51,6 @@ const TerminalPaneOverlayLayer = memo(function TerminalPaneOverlayLayer({
   const consumeSuppressedPtyExit = useAppStore((state) => state.consumeSuppressedPtyExit)
   const setActiveWorktree = useAppStore((state) => state.setActiveWorktree)
   const reconcileWorktreeTabModel = useAppStore((state) => state.reconcileWorktreeTabModel)
-
-  useNativeChatToggleShortcut(worktreeId, isWorktreeActive)
 
   const leaveWorktreeIfEmpty = useCallback(() => {
     const state = useAppStore.getState()
@@ -122,7 +112,6 @@ const TerminalPaneOverlayLayer = memo(function TerminalPaneOverlayLayer({
     coldParkTerminalPanes,
     isForceParked,
     shouldMeasureHiddenWorktree,
-    activityTerminalPortals,
     activationDeferredMountTabIds
   })
 
@@ -140,10 +129,6 @@ const TerminalPaneOverlayLayer = memo(function TerminalPaneOverlayLayer({
           const assignment = assignments.get(terminalTab.id)
           const isVisible = Boolean(isWorktreeActive && assignment?.isActiveInGroup)
           const isActive = Boolean(isVisible && assignment?.groupId === activeGroupId)
-          const activityTerminalPortal = findActivityTerminalPortal(activityTerminalPortals, {
-            worktreeId,
-            tabId: terminalTab.id
-          })
           if (parkedTerminalTabIds.has(terminalTab.id)) {
             return null
           }
@@ -159,7 +144,6 @@ const TerminalPaneOverlayLayer = memo(function TerminalPaneOverlayLayer({
               isWorktreeActive={isWorktreeActive}
               isVisible={isVisible}
               isActive={isActive}
-              activityTerminalPortal={activityTerminalPortal}
               onFocusOwningGroup={focusOwningGroup}
               consumeSuppressedPtyExit={consumeSuppressedPtyExit}
               leaveWorktreeIfEmpty={leaveWorktreeIfEmpty}

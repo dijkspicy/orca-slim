@@ -1,6 +1,4 @@
 import type { AppState } from '@/store'
-import { getActiveRuntimeTarget } from '@/runtime/runtime-client-target'
-import { parseRemoteRuntimePtyId } from '@/runtime/runtime-terminal-stream'
 import {
   getCodexSelectionLaneKey,
   normalizeCodexAccountSelectionTarget,
@@ -12,9 +10,7 @@ import {
   resolveLocalWindowsTerminalRuntimeOptions,
   type LocalWindowsTerminalRuntimeOptions
 } from '../../../shared/local-windows-terminal-runtime'
-import { parseAppSshPtyId } from '../../../shared/ssh-pty-id'
 import { resolveTerminalStartupCwd } from '../../../shared/terminal-startup-cwd'
-import type { GlobalSettings } from '../../../shared/global-settings-types'
 import type { TerminalTab } from '../../../shared/terminal-tab-types'
 import { parseWorkspaceKey } from '../../../shared/workspace-scope'
 import { parseWslUncPath } from '../../../shared/wsl-paths'
@@ -24,8 +20,6 @@ import {
   getCachedWindowsTerminalCapabilities,
   hasCachedWindowsTerminalCapabilities
 } from './windows-terminal-capabilities'
-
-type RuntimeEnvironmentSettings = Pick<GlobalSettings, 'activeRuntimeEnvironmentId'>
 
 /** Everything the pane lane needs: the workspace path plus the project runtime inputs. */
 type CodexPaneLaneState = Pick<
@@ -43,14 +37,9 @@ type CodexPaneLaneState = Pick<
  * Lane keys for panes whose Codex credentials come from another machine.
  *
  * Why they need keys at all: a managed Codex account is scoped to one machine
- * AND one runtime (`host` or `wsl:<distro>`). A relay environment keeps its own
- * account roster, and an SSH connection has no Orca-managed selection whatsoever
- * — the remote Codex reads that machine's own credentials. Neither can be
- * stranded by a local selection change, so they must not share the local keys.
+ * AND one runtime (`host` or `wsl:<distro>`), so a selection change must only
+ * strand the panes actually keyed to the changed slot.
  */
-const RUNTIME_ENVIRONMENT_LANE_PREFIX = 'env:'
-const SSH_CONNECTION_LANE_KEY = 'ssh-connection'
-const UNATTRIBUTED_REMOTE_LANE_KEY = 'remote-runtime'
 const HOST_LANE_KEY = 'host'
 const WSL_LANE_PREFIX = 'wsl:'
 
@@ -59,20 +48,8 @@ export function isLocalCodexSelectionLaneKey(laneKey: string): boolean {
   return laneKey === HOST_LANE_KEY || laneKey.startsWith(WSL_LANE_PREFIX)
 }
 
-/**
- * True when the pane's shell runs on a machine other than this one.
- *
- * Why it takes only the id: a `remote:`/`ssh:` prefix is assigned at spawn and
- * is decisive on its own, so callers with no store access (the bind-driven
- * sweep) can skip these panes before spending a 15s RPC on them.
- */
-export function isForeignMachineCodexPtyId(ptyId: string): boolean {
-  return parseRemoteRuntimePtyId(ptyId) !== null || parseAppSshPtyId(ptyId) !== null
-}
-
 /** Matches the panes a Codex account mutation could have re-pointed. */
 export function getCodexAccountSwitchLaneMatcher(args: {
-  settings: RuntimeEnvironmentSettings | null | undefined
   target?: CodexAccountSelectionTarget | null
   /**
    * True only when the mutation cleared every WSL distro slot at once, which
@@ -82,14 +59,6 @@ export function getCodexAccountSwitchLaneMatcher(args: {
    */
   clearsEveryWslDistro?: boolean
 }): (laneKey: string) => boolean {
-  const runtimeTarget = getActiveRuntimeTarget(args.settings)
-  // Why: with an environment active the mutation is RPC'd to that machine's
-  // roster and local GlobalSettings are never touched, so the local host/WSL
-  // panes are exactly the ones the switch cannot have affected.
-  if (runtimeTarget.kind === 'environment') {
-    const environmentLaneKey = `${RUNTIME_ENVIRONMENT_LANE_PREFIX}${runtimeTarget.environmentId}`
-    return (laneKey) => laneKey === environmentLaneKey
-  }
   const normalized = normalizeCodexAccountSelectionTarget(args.target)
   // Why a family rather than the `wsl:__default__` key: clearing a distro-less
   // WSL selection nulls every distro slot, so every WSL pane really is stranded.
@@ -132,12 +101,7 @@ export function resolveCodexPaneSelectionLane(args: {
   const recorded = args.recordedLaneKey?.trim()
   // Why the local-key check: the registry accepts any string it finds on disk,
   // and a lane key that matches no switch silently drops that pane's notice.
-  // Why foreign ids still derive: their lane is settled by the id itself and no
-  // record can exist for one, so a hit here would mean a recycled id.
-  const trustsRecord =
-    Boolean(recorded) &&
-    isLocalCodexSelectionLaneKey(recorded as string) &&
-    !isForeignMachineCodexPtyId(args.ptyId)
+  const trustsRecord = Boolean(recorded) && isLocalCodexSelectionLaneKey(recorded as string)
   if (!trustsRecord) {
     const laneKey = resolveCodexPaneSelectionLaneKey(args)
     return { laneKey, source: 'derived', derivedLaneKey: laneKey }
@@ -174,21 +138,6 @@ export function resolveCodexPaneSelectionLaneKey(args: {
   tab: Pick<TerminalTab, 'shellOverride' | 'startupCwd' | 'worktreeId'>
   ptyId: string
 }): string {
-  const remoteParts = parseRemoteRuntimePtyId(args.ptyId)
-  if (remoteParts !== null) {
-    const runtimeTarget = getActiveRuntimeTarget(args.state.settings)
-    // Why: mirror inspectRuntimeTerminalProcess — an owner-less remote id is
-    // routed to whichever environment is active, so that is its lane too.
-    const environmentId =
-      remoteParts.environmentId?.trim() ||
-      (runtimeTarget.kind === 'environment' ? runtimeTarget.environmentId : null)
-    return environmentId
-      ? `${RUNTIME_ENVIRONMENT_LANE_PREFIX}${environmentId}`
-      : UNATTRIBUTED_REMOTE_LANE_KEY
-  }
-  if (parseAppSshPtyId(args.ptyId) !== null) {
-    return SSH_CONNECTION_LANE_KEY
-  }
   return getCodexSelectionLaneKey(resolveLocalPaneSelectionTarget(args))
 }
 

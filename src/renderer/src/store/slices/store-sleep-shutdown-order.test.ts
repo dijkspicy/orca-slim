@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as AgentStatusModule from '@/lib/agent-status'
 import { getDefaultSettings } from '../../../../shared/constants'
 import { shutdownBufferCaptures } from '@/components/terminal-pane/shutdown-buffer-captures'
-import { createCompatibleRuntimeStatusResponseIfNeeded } from '../../runtime/runtime-compatibility-test-fixture'
 import { createTestStore, makeRuntimeOwnedWorktree, makeTab, seedStore } from './store-test-helpers'
 import {
   applySleepRuntimeRpcDefault,
@@ -91,10 +90,6 @@ describe('shutdownWorktreeTerminals ordering', () => {
       ]
     })
     mockApi.runtimeEnvironments.call.mockImplementation(async (args: { method: string }) => {
-      const compatibilityResponse = createCompatibleRuntimeStatusResponseIfNeeded(args)
-      if (compatibilityResponse) {
-        return compatibilityResponse
-      }
       if (args.method === 'terminal.sleep') {
         orderHarness.events.push('owner-runtime-rpc')
       }

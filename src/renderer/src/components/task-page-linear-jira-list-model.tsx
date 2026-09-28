@@ -1,5 +1,3 @@
-import type { LinearIssue } from '../../../shared/linear/issue-types'
-import type { GitHubWorkItem } from '../../../shared/github/work-item-types'
 import {
   type LinearOrderBy,
   type LinearGroupBy,
@@ -13,15 +11,16 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import { AlertCircle, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { TaskPageGitHubMutationIntent } from '@/components/task-page-github-work-item-mutation-patches'
-import type { TaskSourceContext } from '../../../shared/task-source-context'
+import type { TaskPageLinearIssue } from './task-page-linear-cache-selectors'
 import type { LinearGroupSection } from './task-page-linear-issue-model'
+import type { TaskPageWorkItemSignatureInput } from './task-page-work-item-signatures'
 import { compareNumericLocaleText } from '@/lib/locale-text-collators'
 export function getLinearPriorityRank(priority: number): number {
   return priority === 0 ? 5 : priority
 }
 export function compareLinearIssues(
-  a: LinearIssue,
-  b: LinearIssue,
+  a: TaskPageLinearIssue,
+  b: TaskPageLinearIssue,
   orderBy: LinearOrderBy
 ): number {
   if (orderBy === 'updated') {
@@ -37,7 +36,7 @@ export function compareLinearIssues(
   return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
 }
 export function getLinearIssueGroup(
-  issue: LinearIssue,
+  issue: TaskPageLinearIssue,
   groupBy: LinearGroupBy
 ): {
   key: string
@@ -73,7 +72,7 @@ export function getLinearIssueGroup(
   }
 }
 export function groupLinearIssues(
-  issues: LinearIssue[],
+  issues: TaskPageLinearIssue[],
   groupBy: LinearGroupBy,
   orderBy: LinearOrderBy
 ): LinearGroupSection[] {
@@ -172,9 +171,8 @@ export function getLinearIssueGridTemplate(
 }
 export type TaskPageGitHubWorkItemMutationRunner = {
   run: (input: {
-    item: GitHubWorkItem
+    item: TaskPageWorkItemSignatureInput
     intent: TaskPageGitHubMutationIntent
-    sourceContext?: TaskSourceContext | null
     mutate: () => Promise<{
       ok?: boolean
       error?:
@@ -187,8 +185,7 @@ export type TaskPageGitHubWorkItemMutationRunner = {
     errorToast: string
   }) => Promise<'confirmed' | 'rolled_back' | 'stale'>
   isIntentPending: (input: {
-    item: GitHubWorkItem
+    item: TaskPageWorkItemSignatureInput
     intent: TaskPageGitHubMutationIntent
-    sourceContext?: TaskSourceContext | null
   }) => boolean
 }

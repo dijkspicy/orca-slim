@@ -16,10 +16,6 @@ import {
   delegatedMobileSessionTabClose,
   refusedMobileSessionTabClose
 } from './mobile-session-tab-close-outcome'
-import { getRuntimeBrowserPageRegistry } from './runtime-browser-page-registry'
-import type { RuntimeCommandSurfaceHost } from './orca-runtime-core'
-import { structuredAgentSessionTabId } from '../../shared/structured-agent-session-projection'
-import { SESSION_TAB_NOT_FOUND_ERROR } from '../../shared/session-tab-close'
 import { rendererPublicationThrottle } from '../window/renderer-publication-throttle'
 
 export class OrcaRuntimeWithCloseMobileSessionTab extends OrcaRuntimeWithRefuseUnattributedMobileSessionTabClose {
@@ -273,47 +269,11 @@ export class OrcaRuntimeWithCloseMobileSessionTab extends OrcaRuntimeWithRefuseU
       this.notifier.closeTerminal(tab.parentTabId)
       this.clearRuntimeSessionOwnershipForMobileTab(worktreeId, snapshot, tab.parentTabId)
       return delegatedMobileSessionTabClose()
-    } else if (tab.type === 'browser') {
-      // Why: a browser tab can be hosted by a client, by the offscreen backend,
-      // or by the renderer; each surface owns a different retirement path.
-      const clientPage = tab.browserPageId
-        ? getRuntimeBrowserPageRegistry(this).getPage(tab.browserPageId)
-        : undefined
-      if (clientPage) {
-        await (this as RuntimeCommandSurfaceHost<this>).browserTabClose({
-          worktree: `id:${worktreeId}`,
-          page: clientPage.browserPageId
-        })
-      } else if (this.isOffscreenMobileSessionBrowserTab(snapshot, tab)) {
-        await this.offscreenBrowserBackend!.closeTab(tab.browserPageId!).catch(() => {})
-        this.retireRuntimeOwnedBrowserSessionTab(worktreeId, tab.browserPageId!)
-      } else {
-        if (!this.notifier?.closeSessionTab) {
-          throw new Error('runtime_unavailable')
-        }
-        await this.notifier.closeSessionTab(tab.id, worktreeId)
-      }
-    } else if (tab.type === 'agent-session') {
-      if (this.notifier?.closeSessionTab) {
-        try {
-          await this.notifier.closeSessionTab(
-            structuredAgentSessionTabId(tab.sessionId),
-            worktreeId
-          )
-        } catch (error) {
-          // The renderer already having removed the tab is an idempotent close, not a veto.
-          if (!(error instanceof Error && error.message === SESSION_TAB_NOT_FOUND_ERROR)) {
-            throw error
-          }
-        }
-      }
-      await this.closeStructuredAgentSessionTab(tab)
-    } else {
-      if (!this.notifier?.closeSessionTab) {
-        throw new Error('runtime_unavailable')
-      }
-      await this.notifier.closeSessionTab(tab.id, worktreeId)
     }
+    if (!this.notifier?.closeSessionTab) {
+      throw new Error('runtime_unavailable')
+    }
+    await this.notifier.closeSessionTab(tab.id, worktreeId)
     return finishCommittedClose()
   }
 

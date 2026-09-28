@@ -12,11 +12,6 @@
 import { buildCliWorkspaceProvenance } from '../../../../shared/cli-workspace-provenance'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import type { OrcaRuntimeService } from '../../orca-runtime'
-import {
-  finishAutomationWorkspaceProvenanceRequest,
-  releaseAutomationWorkspaceProvenanceRequest,
-  resolveAutomationWorkspaceProvenance
-} from '../../../automations/workspace-provenance'
 import type { AgentLaunchWorkspaceFactory } from '../../../agent-launch/agent-launch-surface-factories'
 import type { RpcContext } from '../core'
 import { resolveRpcWorkspaceCreatorProvenance } from '../workspace-creator-context'
@@ -50,66 +45,51 @@ export function agentLaunchWorkspaceFactory(
       // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: already validated by `AgentLaunch`; the executor only removed the reserved agent fields, so the rest of the payload is the parsed shape.
       const params = create as WorktreeCreateParams
       const { runtime } = context
-      const repo = await runtime.showRepo(params.repo)
-      const automationProvenance = resolveAutomationWorkspaceProvenance({
-        authority: runtime,
-        repoSelector: params.repo,
-        repo,
-        request: params.automationProvenanceRequest
+      const result = await runtime.createManagedWorktree({
+        ...buildManagedWorktreeCreateArgs(
+          {
+            ...params,
+            ...(startupAgent ? { startupAgent } : {}),
+            // Only ever set alongside `startupAgent`, which is what the create requires; the
+            // executor sends it exclusively for an agent that takes its prompt on argv, so this
+            // is the startup command carrying the text rather than a second delivery path.
+            ...(startupPrompt ? { startupPrompt } : {})
+          },
+          {
+            cliProvenance: buildCliWorkspaceProvenance(params.cliProvenanceRequest, {
+              startupAgent: agent,
+              createdAt: Date.now()
+            }),
+            creatorProvenance: resolveRpcWorkspaceCreatorProvenance(context)
+          },
+          context.clientKind ? { clientKind: context.clientKind } : {}
+        ),
+        ...(agentArgs !== undefined ? { startupAgentArgs: agentArgs } : {}),
+        ...(cwd ? { startupCwd: cwd } : {}),
+        ...(launchSource ? { startupLaunchSource: launchSource } : {}),
+        ...(paneKey ? { startupPaneKey: paneKey } : {}),
+        ...(startupLaunchPreferences ? { startupLaunchPreferences } : {}),
+        // The launch owns the agent whichever surface it settles on, so the workspace records
+        // it even when no startup terminal was created for it.
+        createdWithAgent: agent,
+        // Structured sessions have no startup command to sequence behind setup. Provision the
+        // setup terminal synchronously and attach a completion token so the launch can wait
+        // before creating the chat surface.
+        awaitTerminalProvisioning: true,
+        observeSetupCompletion: true
       })
-      // Reserved before creation so a retry can recover; a failed attempt has to release it.
-      try {
-        const result = await runtime.createManagedWorktree({
-          ...buildManagedWorktreeCreateArgs(
-            {
-              ...params,
-              ...(startupAgent ? { startupAgent } : {}),
-              // Only ever set alongside `startupAgent`, which is what the create requires; the
-              // executor sends it exclusively for an agent that takes its prompt on argv, so this
-              // is the startup command carrying the text rather than a second delivery path.
-              ...(startupPrompt ? { startupPrompt } : {})
-            },
-            {
-              automationProvenance,
-              cliProvenance: buildCliWorkspaceProvenance(params.cliProvenanceRequest, {
-                startupAgent: agent,
-                createdAt: Date.now()
-              }),
-              creatorProvenance: resolveRpcWorkspaceCreatorProvenance(context)
-            },
-            context.clientKind ? { clientKind: context.clientKind } : {}
-          ),
-          ...(agentArgs !== undefined ? { startupAgentArgs: agentArgs } : {}),
-          ...(cwd ? { startupCwd: cwd } : {}),
-          ...(launchSource ? { startupLaunchSource: launchSource } : {}),
-          ...(paneKey ? { startupPaneKey: paneKey } : {}),
-          ...(startupLaunchPreferences ? { startupLaunchPreferences } : {}),
-          // The launch owns the agent whichever surface it settles on, so the workspace records
-          // it even when no startup terminal was created for it.
-          createdWithAgent: agent,
-          // Structured sessions have no startup command to sequence behind setup. Provision the
-          // setup terminal synchronously and attach a completion token so the launch can wait
-          // before creating the chat surface.
-          awaitTerminalProvisioning: true,
-          observeSetupCompletion: true
-        })
-        if (!startupAgent) {
-          await waitForStructuredSetup(runtime, result.setupReceipt)
-        }
-        finishAutomationWorkspaceProvenanceRequest(params.automationProvenanceRequest)
-        return {
-          worktreeId: result.worktree.id,
-          startupTerminalHandle: result.startupTerminal?.handle,
-          ...(result.startupTerminal?.paneKey
-            ? { startupTerminalPaneKey: result.startupTerminal.paneKey }
-            : {}),
-          // Carried, not dropped: `createManagedWorktree` reports a failed startup terminal or an
-          // uncopied working tree here, and it is the only place the host says so.
-          ...(result.warning ? { warning: result.warning } : {})
-        }
-      } catch (error) {
-        releaseAutomationWorkspaceProvenanceRequest(params.automationProvenanceRequest)
-        throw error
+      if (!startupAgent) {
+        await waitForStructuredSetup(runtime, result.setupReceipt)
+      }
+      return {
+        worktreeId: result.worktree.id,
+        startupTerminalHandle: result.startupTerminal?.handle,
+        ...(result.startupTerminal?.paneKey
+          ? { startupTerminalPaneKey: result.startupTerminal.paneKey }
+          : {}),
+        // Carried, not dropped: `createManagedWorktree` reports a failed startup terminal or an
+        // uncopied working tree here, and it is the only place the host says so.
+        ...(result.warning ? { warning: result.warning } : {})
       }
     }
   }

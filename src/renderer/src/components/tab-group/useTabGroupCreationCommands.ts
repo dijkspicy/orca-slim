@@ -9,7 +9,6 @@ import {
   isWebRuntimeSessionActive
 } from '../../runtime/web-runtime-session'
 import { openTabBarEntry, type TabCreateEntryArgs } from '../tab-bar/tab-create-entry-action'
-import { buildDuplicatedBrowserTabOptions } from '@/lib/duplicate-browser-tab-options'
 import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
 import { browserWorkspaceHasRemoteOwner } from '@/runtime/remote-browser-tab-ownership'
 import { getClientCreationActionPolicy } from '@/lib/client-creation-action-policy'
@@ -111,7 +110,9 @@ export function useTabGroupCreationCommands({
           throw new Error('The paired runtime could not duplicate the managed browser tab.')
         }
         createBrowserTab(worktreeId, source.url, {
-          ...buildDuplicatedBrowserTabOptions(source),
+          title: source.title,
+          sessionProfileId: source.sessionProfileId ?? null,
+          sessionPartition: source.sessionPartition ?? null,
           ...(runtimeEnvironmentId ? { browserRuntimeEnvironmentId: null } : {}),
           targetGroupId: groupId
         })

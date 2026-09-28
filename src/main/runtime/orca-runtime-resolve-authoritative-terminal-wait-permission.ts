@@ -5,11 +5,7 @@ import type { AgentStatus } from '../../shared/agent-detection'
 import type { RuntimeTerminalWaitBlockedReason } from '../../shared/runtime-types'
 import { detectTerminalWaitBlockedReason } from './terminal-wait-detection'
 import { isOpenCodeNativeTitle } from '../../shared/agent-detection'
-import type { AgentStatusEntry } from '../../shared/agent-status-types'
-import type { RuntimePtyWorktreeRecord } from './runtime-terminal-state-records'
-import { renewRuntimeMobileAgentStatusFromPtyTitle } from './runtime-mobile-agent-status-projection'
 import type { RuntimeTerminalWriteOptions } from './runtime-terminal-writer'
-import { getRegisteredSshState } from '../ssh/ssh-target-registry'
 import { splitWorktreeIdForFilesystem } from '../../shared/worktree/id'
 import { isWindowsAbsolutePathLike } from '../../shared/cross-platform-path'
 import type { TuiAgent } from '../../shared/tui-agent'
@@ -49,14 +45,6 @@ export class OrcaRuntimeWithResolveAuthoritativeTerminalWaitPermission extends O
     return newestPermissionAt >= 0 && newestPermissionAt >= newestClearAt ? blockedByWaitText : null
   }
 
-  renewMobileAgentStatusFromPtyTitle(
-    status: AgentStatusEntry | null,
-    pty: RuntimePtyWorktreeRecord | null,
-    options: { preserveQuestionUnderShellTitle?: boolean } = {}
-  ): AgentStatusEntry | null {
-    return renewRuntimeMobileAgentStatusFromPtyTitle(status, pty, options)
-  }
-
   protected writeTerminalAction(
     ptyId: string,
     action: { text?: string; enter?: boolean; interrupt?: boolean },
@@ -77,21 +65,15 @@ export class OrcaRuntimeWithResolveAuthoritativeTerminalWaitPermission extends O
   /** Platform of the host whose pty transport ingests our writes -- deliberately NOT the OS
    *  the command runs under. A WSL pane is spawned as `wsl.exe` through the Windows ConPTY
    *  (see local-pty-provider), so it pays the ConPTY ingest cost even though its shell is
-   *  Linux; an SSH pane is spawned by node-pty on the remote host, so the client's
-   *  process.platform says nothing about it. */
+   *  Linux. */
   protected getPtyWriteHostPlatform(ptyId: string): NodeJS.Platform {
     const pty = this.ptysById.get(ptyId)
-    const connectionId = pty?.connectionId
-    if (!connectionId) {
+    if (!pty?.connectionId) {
       return process.platform
     }
-    const remotePlatform = getRegisteredSshState(connectionId)?.remotePlatform
-    if (remotePlatform) {
-      return remotePlatform
-    }
-    // Why: remotePlatform only arrives with the relay handshake; until then the worktree path
-    // flavor is the same signal getAgentLaunchPlatformForRepo already trusts for a remote repo.
-    const worktreePath = pty ? splitWorktreeIdForFilesystem(pty.worktreeId)?.worktreePath : null
+    // Why: legacy records can still carry a connection id, but the SSH target registry
+    // was culled — its remote-platform handshake no longer exists to consult.
+    const worktreePath = splitWorktreeIdForFilesystem(pty.worktreeId)?.worktreePath
     return worktreePath && isWindowsAbsolutePathLike(worktreePath) ? 'win32' : 'linux'
   }
 

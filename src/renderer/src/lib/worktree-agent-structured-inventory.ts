@@ -1,5 +1,4 @@
 import type { RuntimeMobileSessionTabsResult } from '../../../shared/runtime-types'
-import { toRuntimeWorktreeSelector } from '@/runtime/runtime-worktree-selector'
 import { worktreeIdsEqual } from '../../../shared/worktree/id'
 
 export type StructuredActivationInventory = {
@@ -15,7 +14,13 @@ export async function readWorktreeStructuredActivationInventory(
   }
   const response = await window.api.runtime.call({
     method: 'session.tabs.list',
-    params: { worktree: toRuntimeWorktreeSelector(worktreeId) }
+    params: {
+      // Runtime `id:` worktree selector; passes through empty or already-prefixed values.
+      worktree: (() => {
+        const trimmed = worktreeId.trim()
+        return trimmed.startsWith('id:') ? trimmed : `id:${trimmed}`
+      })()
+    }
   })
   if (!response.ok) {
     throw new Error('structured session inventory unavailable')

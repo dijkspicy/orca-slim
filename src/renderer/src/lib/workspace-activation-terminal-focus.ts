@@ -1,6 +1,5 @@
 import { useAppStore } from '@/store'
 import { focusTerminalTabSurface } from '@/lib/focus-terminal-tab-surface'
-import { focusRuntimeTerminalSurface } from '@/runtime/sync-runtime-graph'
 import type { ActivateAndRevealResult } from '@/lib/worktree-activation'
 
 function resolveActivatedWorkspaceTerminalTabId(
@@ -46,9 +45,7 @@ export function queueWorkspaceActivationTerminalFocus(
     // Why: creation closes a Radix dialog immediately after activation. Queue
     // focus past that close so focus restoration cannot leave the user on the
     // removed composer field after Cmd/Ctrl+Enter.
-    if (!focusRuntimeTerminalSurface(tabId, null, worktreeId)) {
-      focusTerminalTabSurface(tabId)
-    }
+    focusTerminalTabSurface(tabId)
   })
   return true
 }

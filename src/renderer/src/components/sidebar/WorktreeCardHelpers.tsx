@@ -1,6 +1,6 @@
 import React from 'react'
 import type { GitConflictOperation } from '../../../../shared/git-status-types'
-import type { CheckStatus } from '../../../../shared/github/pull-request-types'
+import type { HostedReviewInfo } from '../../../../shared/hosted-review'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
 
 // ── Pure helper functions ────────────────────────────────────────────
@@ -9,7 +9,7 @@ export function branchDisplayName(branch: string): string {
   return branch.replace(/^refs\/heads\//, '')
 }
 
-export function checksLabel(status: CheckStatus): string {
+export function checksLabel(status: HostedReviewInfo['status']): string {
   switch (status) {
     case 'success':
       return 'Passing'

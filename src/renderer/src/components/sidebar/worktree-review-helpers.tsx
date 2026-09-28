@@ -1,7 +1,6 @@
 import { createElement } from 'react'
 import { GitMerge } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getReviewStateIcon } from '@/components/github/review-state-presentation'
 import { PullRequestIcon } from './WorktreeCardHelpers'
 import type { WorktreeCardPrDisplay } from './worktree-card-pr-display'
 
@@ -73,8 +72,7 @@ export function ReviewIcon({
 }): React.JSX.Element {
   const providerIcon =
     variant === 'provider' && review.provider === 'gitlab' ? GitMerge : PullRequestIcon
-  const Icon = getReviewStateIcon(review.state) ?? providerIcon
-  return createElement(Icon, {
+  return createElement(providerIcon, {
     className: cn(className, getCheckTone(review) ?? getStateTone(review.state))
   })
 }

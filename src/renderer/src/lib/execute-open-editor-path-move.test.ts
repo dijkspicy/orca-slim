@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type * as RuntimeFileClient from '@/runtime/runtime-file-client'
 import type * as EditorAutosave from '@/components/editor/editor-autosave'
 
-const mocks = vi.hoisted(() => ({ renameRuntimePath: vi.fn() }))
-vi.mock('@/runtime/runtime-file-client', async (importOriginal) => {
-  const actual = await importOriginal<typeof RuntimeFileClient>()
-  return { ...actual, renameRuntimePath: mocks.renameRuntimePath }
+const mocks = vi.hoisted(() => ({ fsRename: vi.fn() }))
+vi.stubGlobal('window', {
+  api: {
+    fs: { rename: mocks.fsRename }
+  }
 })
 vi.mock('@/components/editor/editor-autosave', async (importOriginal) => {
   const actual = await importOriginal<typeof EditorAutosave>()
@@ -48,7 +48,7 @@ function openDirtyTab(): string {
 describe('executeOpenEditorPathMove', () => {
   beforeEach(() => {
     useAppStore.setState(useAppStore.getInitialState(), true)
-    mocks.renameRuntimePath.mockReset().mockResolvedValue(undefined)
+    mocks.fsRename.mockReset().mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -66,7 +66,11 @@ describe('executeOpenEditorPathMove', () => {
       worktreePath: '/repo'
     })
 
-    expect(mocks.renameRuntimePath).toHaveBeenCalledWith(CONTEXT, '/repo/a.md', '/repo/sub/a.md')
+    expect(mocks.fsRename).toHaveBeenCalledWith({
+      oldPath: '/repo/a.md',
+      newPath: '/repo/sub/a.md',
+      connectionId: undefined
+    })
     const moved = useAppStore.getState().openFiles[0]!
     expect(moved.filePath).toBe('/repo/sub/a.md')
     expect(moved.isDirty).toBe(true)
@@ -180,8 +184,16 @@ describe('executeOpenEditorPathMove', () => {
     ).rejects.toThrow(/retarget/)
 
     // Forward rename then inverse rename to undo the disk move.
-    expect(mocks.renameRuntimePath).toHaveBeenCalledWith(CONTEXT, '/repo/a.md', '/repo/sub/a.md')
-    expect(mocks.renameRuntimePath).toHaveBeenCalledWith(CONTEXT, '/repo/sub/a.md', '/repo/a.md')
+    expect(mocks.fsRename).toHaveBeenCalledWith({
+      oldPath: '/repo/a.md',
+      newPath: '/repo/sub/a.md',
+      connectionId: undefined
+    })
+    expect(mocks.fsRename).toHaveBeenCalledWith({
+      oldPath: '/repo/sub/a.md',
+      newPath: '/repo/a.md',
+      connectionId: undefined
+    })
     // The stranded source session is left intact (not rekeyed).
     expect(useAppStore.getState().openFiles.map((f) => f.id)).toEqual(before)
   })
@@ -189,7 +201,7 @@ describe('executeOpenEditorPathMove', () => {
   it('leaves the store untouched and settles the transaction when the rename fails', async () => {
     openDirtyTab()
     const before = useAppStore.getState().openFiles.map((f) => ({ ...f }))
-    mocks.renameRuntimePath.mockRejectedValue(new Error('EACCES'))
+    mocks.fsRename.mockRejectedValue(new Error('EACCES'))
 
     await expect(
       executeOpenEditorPathMove({

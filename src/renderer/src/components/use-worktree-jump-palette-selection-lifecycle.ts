@@ -1,8 +1,4 @@
 import { useCallback, useEffect, useLayoutEffect } from 'react'
-import {
-  ORCA_BROWSER_FOCUS_REQUEST_EVENT,
-  queueBrowserFocusRequest
-} from '@/components/browser-pane/host-guest/browser-focus'
 import { captureCmdJActiveGroupSnapshot } from '@/components/cmd-j/quick-action-context'
 import { resolvePaletteFocusRestoreTarget } from '@/components/cmd-j/palette-focus-restore-target'
 import {
@@ -33,7 +29,6 @@ export function useWorktreeJumpPaletteSelectionLifecycle({
   visibleWorktreesForState,
   hasQuery,
   searchScopeWorktrees,
-  browserPageEntries,
   simulatorTabEntries,
   workspaceTabEntries,
   middleItems,
@@ -46,10 +41,6 @@ export function useWorktreeJumpPaletteSelectionLifecycle({
   previousWorktreeIdRef,
   activeTabType,
   previousActiveTabTypeRef,
-  browserTabsByWorktree,
-  activeBrowserTabId,
-  previousBrowserPageIdRef,
-  previousBrowserFocusTargetRef,
   previousFocusElementRef,
   skipRestoreFocusRef,
   latestQueryRef,
@@ -57,7 +48,6 @@ export function useWorktreeJumpPaletteSelectionLifecycle({
   setSelectedItemId,
   setExpandedSectionCaps,
   selectionMovedByUserRef,
-  taskSourceUrl,
   listRef,
   preserveCreateLookupOnCloseRef,
   selectedItemId,
@@ -71,10 +61,7 @@ export function useWorktreeJumpPaletteSelectionLifecycle({
 }: WorktreeJumpPaletteSelectionLifecycleInput) {
   const hasAnyWorktrees = visibleWorktreesForState.length > 0
   const hasAnySearchableWorktrees = hasQuery ? searchScopeWorktrees.length > 0 : hasAnyWorktrees
-  const hasAnyOpenTabs =
-    browserPageEntries.length > 0 ||
-    simulatorTabEntries.length > 0 ||
-    workspaceTabEntries.length > 0
+  const hasAnyOpenTabs = simulatorTabEntries.length > 0 || workspaceTabEntries.length > 0
   const hasAnyMiddleResults = middleItems.length > 0
   useEffect(() => {
     if (visible && !wasVisibleRef.current) {
@@ -84,18 +71,6 @@ export function useWorktreeJumpPaletteSelectionLifecycle({
       activeGroupSnapshotRef.current = captureCmdJActiveGroupSnapshot(appState, activeWorktreeId)
       previousWorktreeIdRef.current = activeWorktreeId
       previousActiveTabTypeRef.current = activeTabType
-      previousBrowserPageIdRef.current =
-        activeWorktreeId && activeTabType === 'browser'
-          ? ((browserTabsByWorktree[activeWorktreeId] ?? []).find(
-              (workspace) => workspace.id === activeBrowserTabId
-            )?.activePageId ?? null)
-          : null
-      previousBrowserFocusTargetRef.current =
-        activeTabType === 'browser' &&
-        document.activeElement instanceof HTMLElement &&
-        document.activeElement.closest('[data-orca-browser-address-bar="true"]')
-          ? 'address-bar'
-          : 'webview'
       previousFocusElementRef.current =
         document.activeElement instanceof HTMLElement && document.activeElement !== document.body
           ? document.activeElement
@@ -119,21 +94,13 @@ export function useWorktreeJumpPaletteSelectionLifecycle({
     }
     wasVisibleRef.current = visible
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- controller refs and state setters are stable.
-  }, [
-    activeBrowserTabId,
-    activeTabType,
-    activeWorktreeId,
-    browserTabsByWorktree,
-    createLookupGuard,
-    recordFeatureInteraction,
-    visible
-  ])
+  }, [activeTabType, activeWorktreeId, createLookupGuard, recordFeatureInteraction, visible])
   const commandSelectedItemId = getNextWorktreePaletteSelection({
     currentSelectedItemId: selectedItemId,
     queryChanged: false,
     selectableItemIds: selectionItemIds,
     showCreateAction,
-    autoSelectCreateAction: taskSourceUrl !== null
+    autoSelectCreateAction: false
   })
   const handleCommandSelectionChange = useCallback(
     (nextItemId: string) => {
@@ -150,7 +117,7 @@ export function useWorktreeJumpPaletteSelectionLifecycle({
         queryChanged: true,
         selectableItemIds: selectionItemIds,
         showCreateAction,
-        autoSelectCreateAction: taskSourceUrl !== null
+        autoSelectCreateAction: false
       })
     )
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- selection resets only when the deferred query commits.
@@ -201,13 +168,6 @@ export function useWorktreeJumpPaletteSelectionLifecycle({
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- controller refs preserve their original stable identities.
     [cancelFallbackFocusFrames]
   )
-  const requestBrowserFocus = useCallback(
-    (detail: { pageId: string; target: 'webview' | 'address-bar' }) => {
-      queueBrowserFocusRequest(detail)
-      window.dispatchEvent(new CustomEvent(ORCA_BROWSER_FOCUS_REQUEST_EVENT, { detail }))
-    },
-    []
-  )
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
@@ -217,19 +177,12 @@ export function useWorktreeJumpPaletteSelectionLifecycle({
       if (skipRestoreFocusRef.current) {
         return
       }
-      if (previousActiveTabTypeRef.current === 'browser' && previousBrowserPageIdRef.current) {
-        requestBrowserFocus({
-          pageId: previousBrowserPageIdRef.current,
-          target: previousBrowserFocusTargetRef.current
-        })
-        return
-      }
       if (previousWorktreeIdRef.current) {
         focusFallbackSurface(previousFocusElementRef.current)
       }
     },
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- controller refs preserve their original stable identities.
-    [closeModal, focusFallbackSurface, requestBrowserFocus]
+    [closeModal, focusFallbackSurface]
   )
   return {
     hasAnyWorktrees,
@@ -240,7 +193,6 @@ export function useWorktreeJumpPaletteSelectionLifecycle({
     handleCommandSelectionChange,
     handleQueryChange,
     focusFallbackSurface,
-    requestBrowserFocus,
     handleOpenChange
   }
 }

@@ -2,11 +2,9 @@ import type {
   WorktreeDefaultTabsLaunch,
   WorktreeSetupLaunch
 } from '../../../shared/worktree/launch-types'
-import { agentKindToTuiAgent } from '../../../shared/agent-kind'
 import { initialAgentTabViewModeProps } from './native-chat-initial-view-mode'
 import { getConnectionId } from '@/lib/connection-context'
 import { isNativeChatTranscriptLocalReadable } from '@/lib/native-chat-transcript-readability'
-import { seedNativeChatAppliedSessionOptions } from '@/components/native-chat/native-chat-session-option-cache'
 import type {
   InitialTerminalOptions,
   WorktreeActivationStore
@@ -42,12 +40,7 @@ export function applyDefaultTerminalTabs(
   let firstTabId: string | null = null
   for (const [index, template] of defaultTabs.tabs.entries()) {
     const isStartupTab = index === 0 && startup !== undefined
-    const launchAgent =
-      isStartupTab && startup?.launchAgent
-        ? startup.launchAgent
-        : isStartupTab && startup?.telemetry
-          ? (agentKindToTuiAgent(startup.telemetry.agent_kind) ?? undefined)
-          : undefined
+    const launchAgent = isStartupTab && startup?.launchAgent ? startup.launchAgent : undefined
     const tab = store.createTab(worktreeId, undefined, undefined, {
       pendingActivationSpawn: true,
       recordInteraction: false,
@@ -89,14 +82,6 @@ export function applyDefaultTerminalTabs(
     store.setActiveTab(firstTabId)
   }
   if (startup) {
-    const startupAgent =
-      startup.launchAgent ??
-      (startup.telemetry
-        ? (agentKindToTuiAgent(startup.telemetry.agent_kind) ?? undefined)
-        : undefined)
-    if (startupAgent) {
-      seedNativeChatAppliedSessionOptions(firstTabId, startupAgent, startup.sessionOptions)
-    }
     store.queueTabStartupCommand(firstTabId, startup)
   }
   queueSetupAndIssueCommands(

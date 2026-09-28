@@ -1,15 +1,7 @@
-import { recordTerminalFreezeBreadcrumb } from '../terminal-freeze-breadcrumbs'
-import { redactPtyIdForDiagnostics } from '../../../../../shared/pty-delivery-diagnostics'
-import { RESET_AFTER_BYTE_GAP } from '../../../../../shared/terminal-mode-reset-profiles'
 import { cancelScheduledHiddenOutputRestore } from '../hidden-output-restore-scheduler'
-import { isRemoteExecutionHostPtyId } from '../remote-execution-host-pty'
 
-import {
-  HIDDEN_OUTPUT_RESTORE_FOREGROUND_TIMEOUT_MS,
-  HIDDEN_OUTPUT_RESTORE_REMOTE_REARM_MAX
-} from './hidden-output-restore-limits'
+import { HIDDEN_OUTPUT_RESTORE_FOREGROUND_TIMEOUT_MS } from './hidden-output-restore-limits'
 import { shouldWritePtyOutputForeground } from './foreground-output-scan'
-import { isRemoteRuntimePtyId } from './paired-parked-terminal-restore'
 
 import type { ConnectPanePtySession } from './connect-pane-pty-session'
 
@@ -105,9 +97,6 @@ export function bindHiddenOutputRestoreDrain(session: ConnectPanePtySession): vo
       session.disposed ||
       session.hiddenOutputRestoreForegroundDeadlineTimer !== null ||
       !shouldWritePtyOutputForeground(session.deps.isVisibleRef.current) ||
-      (isRemoteRuntimePtyId(session.hiddenOutputRestorePtyId) &&
-        session.hiddenOutputRestoreLegacyPtyId !== session.hiddenOutputRestorePtyId &&
-        typeof session.transport.serializeBufferOutcome === 'function') ||
       (session.hiddenOutputRestorePendingChunks.length === 0 &&
         !session.hiddenOutputRestorePendingOverflow)
     ) {
@@ -148,32 +137,9 @@ export function bindHiddenOutputRestoreDrain(session: ConnectPanePtySession): vo
 
   // Trades the loss banner for one bounded post-suppression repaint from whatever
   // answers for this PTY — the paired runtime's own buffer, or main's model of the
-  // direct-SSH stream. Ordered before the state reset so the repaint timer arms
-  // against the live ptyId (mirrors the flood-abandon call sites).
-  session.rearmRemoteHiddenOutputRestoreInsteadOfWarning = function (
-    ptyId: string,
-    reason: string
-  ): boolean {
-    if (!isRemoteExecutionHostPtyId(ptyId)) {
-      return false
-    }
-    if (session.hiddenOutputRestoreRemoteAbandonCycles >= HIDDEN_OUTPUT_RESTORE_REMOTE_REARM_MAX) {
-      // Why the reset: the budget bounds ONE stall, and returning false ends that
-      // stall with the loss banner. Without this, the counter only ever clears on a
-      // successful snapshot or a PTY change, so a single ~10s outage leaves a
-      // long-lived SSH pane at zero tolerance — every later hidden episode banners
-      // on the first null even though that null is still only `unverifiable`.
-      session.hiddenOutputRestoreRemoteAbandonCycles = 0
-      return false
-    }
-    session.hiddenOutputRestoreRemoteAbandonCycles += 1
-    recordTerminalFreezeBreadcrumb('restore-abandon-rearm', {
-      id: redactPtyIdForDiagnostics(ptyId),
-      reason,
-      cycle: session.hiddenOutputRestoreRemoteAbandonCycles
-    })
-    session.noteHiddenOutputRestoreFloodBackpressure()
-    session.writePtyOutputToXterm(RESET_AFTER_BYTE_GAP, true)
-    return true
+  // direct-SSH stream. Remote/SSH hosts are gone, so there is never a remote
+  // buffer to re-arm from and the caller keeps its warning-banner path.
+  session.rearmRemoteHiddenOutputRestoreInsteadOfWarning = function (): boolean {
+    return false
   }
 }

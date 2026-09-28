@@ -1,6 +1,6 @@
 import * as mocks from './orca-runtime-test-mocks.spec'
 
-const { MOCK_GIT_WORKTREES, RuntimeBrowserCommands, _resetTerminalViewAttributesForTest } = mocks
+const { MOCK_GIT_WORKTREES, _resetTerminalViewAttributesForTest } = mocks
 const { addGitHubIssueCommentMock, addGitHubPRReviewCommentMock } = mocks
 const { addGitHubPRReviewCommentReplyMock, addGitLabIssueCommentMock, addGitLabMRCommentMock } =
   mocks
@@ -58,17 +58,15 @@ const { updateGitHubPRDetailsMock, updateGitHubPRStateMock, updateGitHubPRTitleM
 const { updateGitLabIssueMock, updateGitLabMRMock, updateGitLabMRReviewersMock, vi } = mocks
 
 function resetRuntimeTestMocks(): void {
-  // Why: constructing the browser commands is what pulls the Chromium cluster in, so
-  // production installs this at the Electron entry. A Node host installs none and the
-  // browser RPCs reject rather than silently succeeding.
-  setRuntimeBrowserCommandsFactory((host) => new RuntimeBrowserCommands(host))
+  // The browser command implementations were culled with the browser domain, so no
+  // factory can be installed; browser RPCs reject rather than silently succeeding.
+  setRuntimeBrowserCommandsFactory(null)
   setRuntimeBrowserUnavailableCause(null)
   setRuntimeTerminalUnavailableCause(null)
   // Why: the runtime's notification, window lookup and tab-create-reply channel are
   // injected now, so the electron mock alone is inert. Back the surface with the same
   // mocks so every existing expectation still holds.
   setRuntimeDesktopSurface({
-    showNotification: () => true,
     findWindowById: (id) => electronMocks.BrowserWindow.fromId(id) as never,
     onIpc: (channel, listener) => electronMocks.ipcMain.on(channel, listener as never),
     removeIpcListener: (channel, listener) =>

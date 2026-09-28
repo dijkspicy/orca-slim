@@ -1,5 +1,7 @@
 import type { ClassifiedError } from '../../../shared/classified-error'
-import type { GitHubWorkItem } from '../../../shared/github/work-item-types'
+
+/** Structural work-item row: identity + the updatedAt cursor the pagination reads. */
+export type TaskPageWorkItemRow = { id: string; repoId: string; updatedAt: string }
 
 /**
  * Cross-repo Tasks pagination is cursor-based on `updatedAt`: each page's oldest
@@ -28,7 +30,7 @@ import type { GitHubWorkItem } from '../../../shared/github/work-item-types'
 // Why: `item.id` (e.g. "issue:9") is only unique within a repo — two selected
 // repos can carry the same bare id. Key dedup on repo + id, matching the row
 // key the table renders with.
-export function workItemIdentity(item: Pick<GitHubWorkItem, 'id' | 'repoId'>): string {
+export function workItemIdentity(item: Pick<TaskPageWorkItemRow, 'id' | 'repoId'>): string {
   return `${item.repoId}:${item.id}`
 }
 
@@ -166,11 +168,13 @@ export function getTaskPagePerRepoLimit(
   return Math.max(1, Math.min(maxPerRepo, Math.floor(displayLimit / normalizedRepoCount)))
 }
 
-export type WorkItemPageFetchResult = { items: GitHubWorkItem[] }
+export type WorkItemPageFetchResult<T extends TaskPageWorkItemRow = TaskPageWorkItemRow> = {
+  items: T[]
+}
 
 export type AccumulateWorkItemPagesArgs = {
   /** Pages already on screen; their items seed the dedup set. */
-  existingPages: readonly GitHubWorkItem[][]
+  existingPages: readonly TaskPageWorkItemRow[][]
   /** updatedAt of the oldest currently-loaded row — the first fetch cursor. */
   initialCursor: string
   /** 0-indexed page the user is trying to reach. */
@@ -188,7 +192,7 @@ export type AccumulateWorkItemPagesResult =
   | {
       cancelled: false
       /** Freshly fetched, deduped, uniform-sized pages to append. */
-      newPages: GitHubWorkItem[][]
+      newPages: TaskPageWorkItemRow[][]
       /** Total loaded page count after appending (existing + new). */
       loadedPages: number
     }
@@ -213,9 +217,9 @@ export async function accumulateWorkItemPages(
 
   let cursor = initialCursor
   let loadedPages = existingPages.length
-  const newPages: GitHubWorkItem[][] = []
+  const newPages: TaskPageWorkItemRow[][] = []
   // Fresh rows not yet emitted as a page, held until they fill `pageSize`.
-  let buffer: GitHubWorkItem[] = []
+  let buffer: TaskPageWorkItemRow[] = []
 
   const emitFullPages = (): void => {
     while (buffer.length >= pageSize && loadedPages <= targetPage) {

@@ -1,8 +1,3 @@
-import {
-  isEmptyLinearIssueAttributeFilter,
-  type LinearIssueAttributeFilter
-} from '../../../shared/linear/issue-attribute-filter'
-
 export type LinearIssueEmptyKind =
   | 'context'
   | 'search'
@@ -14,7 +9,6 @@ export type LinearIssueEmptyKind =
 export function resolveLinearIssueEmptyKind(options: {
   hasContextLabel: boolean
   searchActive: boolean
-  attributeFilter: LinearIssueAttributeFilter
   serverIssueCount: number
   filteredIssueCount: number
 }): LinearIssueEmptyKind {
@@ -29,9 +23,6 @@ export function resolveLinearIssueEmptyKind(options: {
   }
   if (options.searchActive) {
     return 'search'
-  }
-  if (!isEmptyLinearIssueAttributeFilter(options.attributeFilter)) {
-    return 'server-attribute-filter'
   }
   return 'unfiltered-scope'
 }

@@ -31,7 +31,6 @@ vi.mock('../ssh/ssh-target-registry', () => moduleMocks.sshModuleMock(reposMocks
 
 import { registerRepoHandlers } from './repos'
 import { clearGitCapabilityStateForTests } from '../git/git-capability-state'
-import { resetSshProviderAuthorities } from '../ssh/ssh-provider-authority'
 import { DEFAULT_REPO_BADGE_COLOR } from '../../shared/constants'
 import { clearSubmodulePathsCacheForTests } from '../git/status'
 import { createRepoHandlerHarness, waitForAssertion } from './repos-remote-test-harness'
@@ -49,7 +48,6 @@ const {
 
 beforeEach(() => {
   clearGitCapabilityStateForTests()
-  resetSshProviderAuthorities()
 })
 
 describe('repos:addRemote', () => {
